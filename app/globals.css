@@ -2,12 +2,19 @@
 
 @theme {
   --font-sans: var(--font-geologica), system-ui, -apple-system, sans-serif;
+
+  /* ============================================================
+     BRAND CONSTANTS — não mudam entre temas
+  ============================================================ */
   --color-sidebar-navy: #0A192F;
   --color-action-cyan: #00BCD4;
   --color-status-error: #F54336;
   --color-status-success: #4CAF50;
   --color-status-warning: #FFC107;
 
+  /* ============================================================
+     THEME BRIDGE — Tailwind utility → CSS variable
+  ============================================================ */
   --color-bg-app: var(--bg-app);
   --color-bg-surface: var(--bg-surface);
   --color-bg-surface-elevated: var(--bg-surface-elevated);
@@ -68,217 +75,439 @@
   --color-disabled-text: var(--disabled-text);
   --color-disabled-border: var(--disabled-border);
 
-  /* Font size scale up for operational readability */
-  --font-size-xs: 13.5px;
-  --font-size-sm: 15px;
-  --font-size-base: 16px;
+  /* ============================================================
+     FONT SIZE SCALE — legível e confortável em desktop
+     Mínimo absoluto: 12px. Nada menor que isso.
+  ============================================================ */
+  --font-size-xs: 13px;
+  --font-size-sm: 14.5px;
+  --font-size-base: 15px;
   --font-size-lg: 18px;
   --font-size-xl: 20px;
   --font-size-2xl: 24px;
   --font-size-3xl: 28px;
 }
 
-/* CSS Theme Variables */
+
+/* ============================================================
+   LIGHT MODE — Tokens Visuais
+   Paleta: brancos e azuis frios, contraste alto
+============================================================ */
 :root {
-  --bg-app: #f6f8fb;
+  /* Superfícies */
+  --bg-app: #eef2f7;
   --bg-page: var(--bg-app);
   --bg-surface: #ffffff;
-  --bg-surface-hover: #f1f5f9;
+  --bg-surface-hover: #f0f5fb;
   --bg-surface-elevated: #ffffff;
-  --bg-sidebar: #071426;
+  --bg-sidebar: #0A192F;    /* Sidebar sempre navy — identidade V3A */
   --bg-topbar: #ffffff;
   --bg-input: #ffffff;
   --bg-muted: #f1f5f9;
 
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-disabled: #94a3b8;
+  /* Texto — hierarquia clara e acessível */
+  --text-primary: #0d1c2e;      /* quase preto azulado — principal */
+  --text-secondary: #1e3a5f;    /* azul escuro médio — subtítulos, labels */
+  --text-muted: #475569;        /* slate-600 — metadados, placeholders */
+  --text-disabled: #94a3b8;     /* slate-400 */
   --text-inverse: #ffffff;
 
-  --border-subtle: #d9e2ec;
-  --border-strong: #b8c7d9;
-  --border-focus: #13bfd4;
+  /* Bordas */
+  --border-subtle: #c1d0e0;     /* mais perceptível que antes */
+  --border-strong: #94afc8;
+  --border-focus: #089eb4;
 
+  /* Accent (cyan V3A) */
   --accent: #089eb4;
   --accent-hover: #067f92;
   --accent-soft: rgba(8, 158, 180, 0.10);
   --accent-contrast: #ffffff;
 
+  /* Status — Light */
   --success-bg: #ecfdf5;
-  --success-border: #10b981;
-  --success-text: #047857;
+  --success-border: #059669;
+  --success-text: #065f46;
 
   --warning-bg: #fffbeb;
-  --warning-border: #f59e0b;
-  --warning-text: #92400e;
+  --warning-border: #d97706;
+  --warning-text: #78350f;
 
   --danger-bg: #fef2f2;
-  --danger-border: #ef4444;
-  --danger-text: #b91c1c;
+  --danger-border: #dc2626;
+  --danger-text: #991b1b;
 
   --info-bg: #eff6ff;
-  --info-border: #3b82f6;
-  --info-text: #1d4ed8;
+  --info-border: #2563eb;
+  --info-text: #1e40af;
 
   --neutral-bg: #f1f5f9;
-  --neutral-border: #cbd5e1;
-  --neutral-text: #334155;
+  --neutral-border: #94afc8;
+  --neutral-text: #1e3a5f;
 
-  /* Component specific mappings in Light mode */
-  --table-header-bg: #f8fafc;
+  /* Tabelas — Light */
+  --table-header-bg: #e8f0f9;    /* azul muito claro — header claramente distinto */
+  --table-header-text: #1e3a5f;
   --table-row-bg: #ffffff;
-  --table-row-hover: #f1f5f9;
-  --table-border: #e2e8f0;
-  
-  --chip-bg: #f1f5f9;
-  --chip-text: #334155;
+  --table-row-alt: #f7fafd;      /* zebra striping sutil */
+  --table-row-hover: #eef4fb;
+  --table-border: #d0dcea;
 
+  /* Chips / Badges */
+  --chip-bg: #e8f0f9;
+  --chip-text: #1e3a5f;
+
+  /* Botões */
   --button-primary-bg: var(--accent);
   --button-primary-text: var(--accent-contrast);
   --button-secondary-bg: var(--bg-surface);
   --button-secondary-text: var(--text-primary);
-  
+
+  /* Inputs */
   --input-bg: #ffffff;
-  --input-border: #d9e2ec;
-  --input-text: #0f172a;
-  --input-placeholder: #94a3b8;
+  --input-border: #b8cfe0;
+  --input-text: #0d1c2e;
+  --input-placeholder: #7b96b2;
 
+  /* Disabled */
   --disabled-bg: #f1f5f9;
-  --disabled-text: #64748b;
-  --disabled-border: #cbd5e1;
+  --disabled-text: #94a3b8;
+  --disabled-border: #c1d0e0;
 }
 
+
+/* ============================================================
+   DARK MODE — Tokens Visuais
+   Paleta: azul-marinho profundo, sem preto puro
+   Objetivo: elegante, confortável, alta legibilidade
+============================================================ */
 .dark {
-  --bg-app: #071426;
+  /* Superfícies — hierarquia clara com distinção entre camadas */
+  --bg-app: #060f1e;            /* fundo mais escuro possível sem ser preto puro */
   --bg-page: var(--bg-app);
-  --bg-surface: #10243a;
-  --bg-surface-hover: #1e2e42;
-  --bg-surface-elevated: #15304d;
-  --bg-sidebar: #071426;
-  --bg-topbar: #0b1b2e;
-  --bg-input: #0b1f35;
-  --bg-muted: #172b43;
+  --bg-surface: #0d1f35;        /* cards — claramente distinto do app bg */
+  --bg-surface-hover: #162d48;  /* hover de itens */
+  --bg-surface-elevated: #152a45; /* modais, painéis flutuantes */
+  --bg-sidebar: #0A192F;        /* sidebar mantém identidade navy */
+  --bg-topbar: #0b1c30;         /* header ligeiramente mais claro que app */
+  --bg-input: #0e2440;          /* input com fundo próprio e distinguível */
+  --bg-muted: #112236;          /* seções muted, painéis secundários */
 
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --text-disabled: #64748b;
-  --text-inverse: #071426;
+  /* Texto — hierarquia robusta, sem branco puro */
+  --text-primary: #e8f0f8;      /* branco levemente azulado — confortável */
+  --text-secondary: #b0c8e0;    /* azul-claro para subtítulos/labels — contraste ≥ 5:1 */
+  --text-muted: #7b96b2;        /* metadados — legível mas discreto */
+  --text-disabled: #4a647a;     /* disabled — claramente apagado sem sumir */
+  --text-inverse: #0A192F;
 
-  --border-subtle: #29435f;
-  --border-strong: #3b5f83;
-  --border-focus: #18c5d8;
+  /* Bordas — claramente perceptíveis sem agressividade */
+  --border-subtle: #1e3d5c;     /* bordas padrão de cards e containers */
+  --border-strong: #2e5478;     /* bordas de destaque */
+  --border-focus: #13bfd4;
 
+  /* Accent */
   --accent: #13bfd4;
-  --accent-hover: #22d3ee;
-  --accent-soft: rgba(19, 191, 212, 0.14);
-  --accent-contrast: #06131f;
+  --accent-hover: #0fa8be;
+  --accent-soft: rgba(19, 191, 212, 0.15);
+  --accent-contrast: #060f1e;
 
-  --success-bg: rgba(16, 185, 129, 0.14);
+  /* Status — Dark — texto mais brilhante para contraste no fundo escuro */
+  --success-bg: rgba(16, 185, 129, 0.15);
   --success-border: #10b981;
-  --success-text: #6ee7b7;
+  --success-text: #34d399;       /* verde brilhante — contraste ~5.5:1 */
 
-  --warning-bg: rgba(245, 158, 11, 0.16);
+  --warning-bg: rgba(245, 158, 11, 0.15);
   --warning-border: #f59e0b;
-  --warning-text: #fcd34d;
+  --warning-text: #fbbf24;       /* âmbar brilhante — contraste ~6:1 */
 
-  --danger-bg: rgba(239, 68, 68, 0.16);
+  --danger-bg: rgba(239, 68, 68, 0.15);
   --danger-border: #ef4444;
-  --danger-text: #fca5a5;
+  --danger-text: #f87171;        /* vermelho brilhante — contraste ~5:1 */
 
-  --info-bg: rgba(59, 130, 246, 0.16);
-  --info-border: #3b82f6;
-  --info-text: #93c5fd;
+  --info-bg: rgba(6, 182, 212, 0.14);
+  --info-border: #06b6d4;
+  --info-text: #22d3ee;          /* cyan brilhante — contraste ~6:1 */
 
-  --neutral-bg: rgba(148, 163, 184, 0.14);
-  --neutral-border: #64748b;
-  --neutral-text: #cbd5e1;
+  --neutral-bg: rgba(148, 163, 184, 0.13);
+  --neutral-border: #2e5478;
+  --neutral-text: #b0c8e0;
 
-  /* Component specific mappings in Dark mode */
-  --table-header-bg: var(--bg-muted);
-  --table-row-bg: var(--bg-surface);
-  --table-row-hover: var(--bg-surface-elevated);
-  --table-border: var(--border-subtle);
-  
-  --chip-bg: rgba(148, 163, 184, 0.12);
-  --chip-text: #cbd5e1;
+  /* Tabelas — Dark — inversão clara: header mais escuro que body */
+  --table-header-bg: #091828;    /* mais escuro que --bg-surface para contraste invertido */
+  --table-header-text: #b0c8e0;
+  --table-row-bg: #0d1f35;
+  --table-row-alt: #0f2238;      /* zebra striping sutil — diferença de ~2 luminosidade */
+  --table-row-hover: #162d48;
+  --table-border: #1e3d5c;
 
+  /* Chips / Badges */
+  --chip-bg: rgba(176, 200, 224, 0.13);
+  --chip-text: #b0c8e0;
+
+  /* Botões */
   --button-primary-bg: var(--accent);
   --button-primary-text: var(--accent-contrast);
-  --button-secondary-bg: var(--bg-surface);
+  --button-secondary-bg: #152a45;
   --button-secondary-text: var(--text-primary);
-  
-  --input-bg: #0b1f35;
-  --input-border: var(--border-subtle);
-  --input-text: #f8fafc;
-  --input-placeholder: #64748b;
 
-  --disabled-bg: rgba(148, 163, 184, 0.12);
-  --disabled-text: #94a3b8;
-  --disabled-border: #334155;
+  /* Inputs */
+  --input-bg: #0e2440;
+  --input-border: #1e3d5c;
+  --input-text: #e8f0f8;
+  --input-placeholder: #6b90b0;
+
+  /* Disabled */
+  --disabled-bg: rgba(148, 163, 184, 0.10);
+  --disabled-text: #4a647a;
+  --disabled-border: #1e3d5c;
 }
 
+
+/* ============================================================
+   UTILITIES
+============================================================ */
 @layer utilities {
-  /* Thin elegant scrollbars */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
-/* Base styles override for typography and form controls */
+
+/* ============================================================
+   BASE STYLES — Tipografia global e superfície base
+============================================================ */
 body {
   font-size: 15px;
+  line-height: 1.6;
   background-color: var(--bg-page);
   color: var(--text-primary);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.15s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ensure tables are readable and clean */
+/* ============================================================
+   ESCALA TIPOGRÁFICA — Proibir fontes menores que 12px
+   Normalizar classes Tailwind e valores inline
+============================================================ */
+
+/* Valores inline muito pequenos → 12px mínimo */
+.text-\[6px\],
+.text-\[7px\],
+.text-\[8px\],
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 12px !important;
+}
+
+/* Utilitários Tailwind */
+.text-xs { font-size: 13px !important; }
+.text-sm { font-size: 14.5px !important; }
+
+/* ============================================================
+   TABELAS — Base global (ambos os temas)
+============================================================ */
 table {
-  font-size: 14px !important;
-}
-table th {
-  font-size: 12.5px !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  font-weight: 750 !important;
-}
-table td {
-  font-size: 14px !important;
-}
-table td p, table td span {
-  font-size: 13.5px !important;
-}
-table td .text-\[10px\], table td .text-xs, table td .text-\[11px\] {
-  font-size: 12.5px !important;
+  font-size: 14.5px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-/* Controls & Form Labels */
+/* Cabeçalho de tabela */
+table thead th {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  color: var(--table-header-text, var(--text-secondary));
+  background-color: var(--table-header-bg) !important;
+  border-bottom: 2px solid var(--table-border) !important;
+}
+
+/* Células do body */
+table tbody td {
+  font-size: 14.5px !important;
+  padding-top: 13px !important;
+  padding-bottom: 13px !important;
+  border-bottom: 1px solid var(--table-border) !important;
+  color: var(--text-primary);
+}
+
+/* Textos secundários dentro de células */
+table tbody td p,
+table tbody td span.text-xs,
+table tbody td span.text-sm {
+  font-size: 13px !important;
+}
+
+/* Zebra striping — sutil */
+table tbody tr:nth-child(even) {
+  background-color: var(--table-row-alt);
+}
+
+/* Hover */
+table tbody tr:hover {
+  background-color: var(--table-row-hover) !important;
+  transition: background-color 0.1s ease;
+}
+
+/* Classe de referência para forçar min-height de linha */
+table tbody tr td {
+  vertical-align: middle;
+}
+
+/* ============================================================
+   FORMULÁRIOS — Labels, Inputs, Selects
+============================================================ */
 label {
   font-size: 13.5px !important;
-  font-weight: 650 !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
 }
-input, select, textarea {
-  font-size: 14px !important;
+
+input,
+select,
+textarea {
+  font-size: 14.5px !important;
+  line-height: 1.5;
+  color: var(--input-text);
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder) !important;
+  opacity: 1;
+}
+
+select option {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+/* Focus ring consistente */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--border-focus) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+
+/* Botões */
 button {
   font-size: 14px !important;
+  font-weight: 500;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-/* Sidebar navigation links */
-aside button, aside span, aside p {
-  font-size: 14px !important;
-}
-aside .text-\[9px\] {
-  font-size: 11px !important;
+/* ============================================================
+   SIDEBAR — Identidade V3A preservada, contraste melhorado
+   Sidebar permanece navy em ambos os temas
+============================================================ */
+aside,
+aside .bg-\[\#081528\],
+aside .bg-sidebar-navy {
+  background-color: #0A192F !important;
+  border-color: #122035 !important;
 }
 
-/* --- Dark Mode Semantic overrides for fast, 100% safe adaptation without refactoring --- */
+/* Itens de navegação — contraste aumentado (era #94a3b8, agora #a8bdd4 ≈ 5.2:1) */
+aside p,
+aside span {
+  color: #a8bdd4;
+}
+
+/* Título e brand da sidebar */
+aside h1,
+aside h1 span,
+aside strong,
+aside .text-white {
+  color: #f0f4f8 !important;
+}
+
+/* Botão de item — estado padrão */
+aside button {
+  font-size: 14.5px !important;
+  font-weight: 500;
+  color: #a8bdd4 !important;
+  background-color: transparent !important;
+}
+
+/* Hover de item da sidebar */
+aside button:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #e8f0f8 !important;
+}
+
+/* Item ativo — mantém identidade cyan */
+aside button.bg-action-cyan {
+  background-color: #00BCD4 !important;
+  color: #0A192F !important;
+  font-weight: 600;
+}
+aside button.bg-action-cyan svg,
+aside button.bg-action-cyan span {
+  color: #0A192F !important;
+}
+
+/* Seção do usuário logado na base da sidebar */
+aside .text-\[9px\],
+aside .text-xs {
+  font-size: 11.5px !important;
+  color: #7b96b2 !important;
+}
+
+/* ============================================================
+   ESTADOS DISABLED — Ambos os temas
+============================================================ */
+input:disabled,
+select:disabled,
+textarea:disabled,
+button:disabled {
+  background-color: var(--disabled-bg) !important;
+  color: var(--disabled-text) !important;
+  border-color: var(--disabled-border) !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+}
+
+/* ============================================================
+   CHECKBOXES
+============================================================ */
+input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* ============================================================
+   SCROLLBARS — Elegantes e cross-browser
+============================================================ */
+
+/* Webkit */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: #e8f0f9; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #b8cfe0; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94afc8; }
+
+.dark ::-webkit-scrollbar-track { background: #091828; }
+.dark ::-webkit-scrollbar-thumb { background: #2e5478; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #3d6a90; }
+
+/* Firefox */
+* { scrollbar-width: thin; scrollbar-color: #b8cfe0 #e8f0f9; }
+.dark * { scrollbar-color: #2e5478 #091828; }
+
+
+/* ============================================================
+   DARK MODE — OVERRIDES SEMÂNTICOS DE SUPERFÍCIES
+   Garante que classes Tailwind hardcoded respondam ao tema
+============================================================ */
+
+/* Superfícies principais */
 .dark .bg-white {
   background-color: var(--bg-surface) !important;
 }
@@ -286,17 +515,27 @@ aside .text-\[9px\] {
 .dark .bg-slate-50,
 .dark .bg-\[\#F8FAFC\],
 .dark .bg-\[\#f8fafc\] {
-  background-color: var(--bg-page) !important;
+  background-color: var(--bg-muted) !important;
+}
+
+.dark .bg-slate-100,
+.dark .bg-slate-200 {
+  background-color: var(--bg-surface-elevated) !important;
 }
 
 .dark .bg-slate-50\/50 {
-  background-color: rgba(7, 20, 38, 0.5) !important;
+  background-color: rgba(13, 31, 53, 0.90) !important;
 }
 
-.dark .bg-slate-100 {
-  background-color: var(--bg-page) !important;
+/* Hover de superfícies */
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--bg-surface-hover) !important;
 }
 
+/* ============================================================
+   DARK MODE — OVERRIDES DE BORDAS E DIVISORES
+============================================================ */
 .dark .border-border-subtle,
 .dark .border-slate-50,
 .dark .border-slate-100,
@@ -315,246 +554,204 @@ aside .text-\[9px\] {
   border-color: var(--border-subtle) !important;
 }
 
-.dark .hover\:bg-slate-50:hover {
-  background-color: var(--bg-surface-hover) !important;
-}
-
-.dark .hover\:bg-slate-100:hover {
-  background-color: var(--bg-surface-hover) !important;
-}
-
-/* Sidebar must stay dark (navy) in both modes to preserve V3A identity */
-aside, 
-aside .bg-\[\#081528\],
-aside .bg-sidebar-navy {
-  background-color: #0A192F !important;
-  border-color: #14233c !important;
-}
-
-aside p, 
-aside span {
-  color: #94a3b8;
-}
-
-aside h1, 
-aside h1 span, 
-aside strong,
-aside .text-white {
-  color: #ffffff !important;
-}
-
-aside button {
-  color: #cbd5e1 !important;
-  background-color: transparent !important;
-}
-
-aside button:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: #ffffff !important;
-}
-
-/* Ensure the active/selected button keeps its specific background and text color! */
-aside button.bg-action-cyan {
-  background-color: #00BCD4 !important;
-  color: #0A192F !important;
-}
-aside button.bg-action-cyan svg,
-aside button.bg-action-cyan span {
-  color: #0A192F !important;
-}
-
-/* Scrollbar overrides for elegant scrollbars in all pages */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.dark ::-webkit-scrollbar-track {
-  background: #0b1f35;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #3b5f83;
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #57799d;
-}
-
-/* Typography scale constraints to avoid text smaller than 12px */
-.text-\[8px\],
-.text-\[9px\],
-.text-\[10px\],
-.text-\[11px\] {
-  font-size: 12px !important;
-}
-.text-xs {
-  font-size: 13px !important;
-}
-.text-sm {
-  font-size: 14.5px !important;
-}
-
-/* Table rules for both modes */
-table thead th {
-  font-size: 12px !important;
-  font-weight: 750 !important;
-}
-
-.dark table thead {
-  background-color: var(--table-header-bg) !important;
-}
-.dark table thead th {
-  color: var(--text-secondary) !important;
-  background-color: var(--table-header-bg) !important;
-}
-.dark table tbody tr {
-  background-color: var(--table-row-bg) !important;
-}
-.dark table tbody tr:hover {
-  background-color: var(--table-row-hover) !important;
-}
-.dark table th, 
-.dark table td {
-  border-color: var(--table-border) !important;
-}
-
-/* Text overrides in Dark mode */
+/* ============================================================
+   DARK MODE — OVERRIDES DE TEXTO
+   Hierarquia: primary > secondary > muted
+============================================================ */
 .dark .text-slate-900,
 .dark .text-slate-800,
 .dark .text-slate-700,
-.dark .text-text-primary,
-.dark table tbody tr td,
-.dark table tbody tr td span {
+.dark .text-text-primary {
   color: var(--text-primary) !important;
 }
 
 .dark .text-slate-600,
 .dark .text-slate-500,
-.dark .text-slate-400,
 .dark .text-text-secondary {
   color: var(--text-secondary) !important;
 }
 
+.dark .text-slate-400,
 .dark .text-slate-350,
-.dark .text-slate-300 {
+.dark .text-slate-300,
+.dark .text-text-muted {
   color: var(--text-muted) !important;
 }
 
-/* Form controls overrides in Dark Mode */
-.dark input, 
-.dark select, 
+/* Cor de texto navy da identidade V3A — converte para accent em dark */
+.dark .text-sidebar-navy {
+  color: var(--text-primary) !important;
+}
+.dark h2.text-sidebar-navy,
+.dark h3.text-sidebar-navy {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================================
+   DARK MODE — TABELAS
+============================================================ */
+.dark table thead {
+  background-color: var(--table-header-bg) !important;
+}
+.dark table thead th {
+  color: var(--table-header-text) !important;
+  background-color: var(--table-header-bg) !important;
+  border-bottom-color: var(--border-strong) !important;
+}
+.dark table tbody tr {
+  background-color: var(--table-row-bg);
+}
+.dark table tbody tr:nth-child(even) {
+  background-color: var(--table-row-alt) !important;
+}
+.dark table tbody tr:hover {
+  background-color: var(--table-row-hover) !important;
+}
+.dark table tbody tr td {
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--table-border) !important;
+}
+.dark table tbody tr td span,
+.dark table tbody tr td p {
+  color: var(--text-primary) !important;
+}
+.dark table th,
+.dark table td {
+  border-color: var(--table-border) !important;
+}
+
+/* ============================================================
+   DARK MODE — FORMULÁRIOS
+============================================================ */
+.dark label {
+  color: var(--text-secondary) !important;
+}
+
+.dark input,
+.dark select,
 .dark textarea {
   background-color: var(--input-bg) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-subtle) !important;
+  color: var(--input-text) !important;
+  border-color: var(--input-border) !important;
 }
 
-.dark input::placeholder, 
+.dark input::placeholder,
 .dark select::placeholder,
 .dark textarea::placeholder {
-  color: var(--text-muted) !important;
-  opacity: 0.7;
+  color: var(--input-placeholder) !important;
+  opacity: 1;
 }
 
-.dark input:focus, 
-.dark select:focus, 
+.dark input:focus,
+.dark select:focus,
 .dark textarea:focus {
   border-color: var(--border-focus) !important;
   outline: none !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
 }
 
-/* Checkboxes in Dark Mode */
 .dark input[type="checkbox"] {
   accent-color: var(--accent) !important;
-  border-color: var(--border-subtle) !important;
+  border-color: var(--input-border) !important;
 }
 
-/* Disabled States */
-.dark input:disabled, 
-.dark select:disabled, 
-.dark textarea:disabled,
-.dark button:disabled {
-  background-color: var(--disabled-bg) !important;
-  color: var(--text-disabled) !important;
-  border-color: var(--disabled-border) !important;
-  cursor: not-allowed !important;
-  opacity: 0.65 !important;
-}
-
-input:disabled, 
-select:disabled, 
-textarea:disabled,
-button:disabled {
-  background-color: #f1f5f9 !important;
-  color: #94a3b8 !important;
-  border-color: #cbd5e1 !important;
-  cursor: not-allowed !important;
-  opacity: 0.7 !important;
-}
-
-/* Button variants styling */
+/* ============================================================
+   DARK MODE — BOTÕES SECUNDÁRIOS
+============================================================ */
+.dark button.bg-white,
 .dark button.bg-slate-50,
 .dark button.bg-slate-100 {
   background-color: var(--bg-surface-elevated) !important;
   color: var(--text-primary) !important;
   border-color: var(--border-subtle) !important;
 }
+.dark button.bg-white:hover,
 .dark button.bg-slate-50:hover,
 .dark button.bg-slate-100:hover {
   background-color: var(--bg-surface-hover) !important;
 }
 
-/* Modal/Drawers */
+/* ============================================================
+   DARK MODE — MODAIS E OVERLAYS
+============================================================ */
 .dark .bg-white {
   background-color: var(--bg-surface) !important;
 }
 .dark .bg-slate-900\/60,
-.dark .bg-slate-900\/40 {
-  background-color: rgba(0, 0, 0, 0.6) !important;
+.dark .bg-slate-900\/40,
+.dark .bg-black\/60,
+.dark .bg-black\/40 {
+  background-color: rgba(0, 0, 0, 0.65) !important;
 }
 
-/* --- Status & Badge Overrides for Dark Mode --- */
+/* ============================================================
+   DARK MODE — MATCH GROUPS (Shortlist Step 2)
+   Seções de agrupamento de candidatos
+============================================================ */
+.dark .bg-slate-50\/50 {
+  background-color: rgba(13, 31, 53, 0.92) !important;
+}
+.dark .bg-emerald-50\/30,
+.dark .bg-emerald-50\/40 {
+  background-color: rgba(16, 185, 129, 0.09) !important;
+}
+.dark .bg-amber-50\/30,
+.dark .bg-amber-50\/40 {
+  background-color: rgba(245, 158, 11, 0.09) !important;
+}
+.dark .bg-slate-100\/60 {
+  background-color: rgba(14, 36, 64, 0.80) !important;
+}
+
+/* ============================================================
+   DARK MODE — STATUS BADGES & CHIPS
+   Cada status tem: bg translúcido + borda + texto brilhante
+============================================================ */
+
+/* SUCCESS — verde */
 .dark .bg-emerald-50,
 .dark .bg-emerald-100\/80,
-.dark .bg-emerald-50\/40 {
+.dark .bg-emerald-50\/40,
+.dark .bg-green-50 {
   background-color: var(--success-bg) !important;
 }
 .dark .text-emerald-700,
 .dark .text-emerald-800,
 .dark .text-emerald-850,
 .dark .text-emerald-950,
-.dark .text-emerald-600 {
+.dark .text-emerald-600,
+.dark .text-green-700,
+.dark .text-green-800 {
   color: var(--success-text) !important;
 }
 .dark .border-emerald-150,
-.dark .border-emerald-200 {
+.dark .border-emerald-200,
+.dark .border-green-200 {
   border-color: var(--success-border) !important;
 }
 
+/* WARNING — âmbar */
 .dark .bg-amber-50,
 .dark .bg-amber-100\/80,
-.dark .bg-amber-50\/40 {
+.dark .bg-amber-50\/40,
+.dark .bg-yellow-50 {
   background-color: var(--warning-bg) !important;
 }
 .dark .text-amber-700,
 .dark .text-amber-800,
-.dark .text-\[\#B28900\] {
+.dark .text-amber-900,
+.dark .text-\[\#B28900\],
+.dark .text-yellow-700,
+.dark .text-yellow-800 {
   color: var(--warning-text) !important;
 }
 .dark .border-amber-150,
-.dark .border-amber-200 {
+.dark .border-amber-200,
+.dark .border-yellow-200 {
   border-color: var(--warning-border) !important;
 }
 
+/* DANGER — vermelho/rose */
 .dark .bg-rose-50,
 .dark .bg-red-50,
 .dark .bg-rose-100\/80,
@@ -567,6 +764,7 @@ button:disabled {
 .dark .text-rose-950,
 .dark .text-rose-950\/80,
 .dark .text-red-700,
+.dark .text-red-800,
 .dark .text-rose-600 {
   color: var(--danger-text) !important;
 }
@@ -576,6 +774,7 @@ button:disabled {
   border-color: var(--danger-border) !important;
 }
 
+/* INFO — cyan */
 .dark .bg-cyan-50,
 .dark .bg-cyan-100\/80,
 .dark .bg-cyan-50\/40 {
@@ -594,18 +793,21 @@ button:disabled {
   border-color: var(--info-border) !important;
 }
 
+/* INFO — blue */
 .dark .bg-blue-50 {
-  background-color: rgba(59, 130, 246, 0.16) !important;
+  background-color: rgba(37, 99, 235, 0.14) !important;
 }
 .dark .text-blue-700,
-.dark .text-blue-800 {
-  color: #93c5fd !important;
+.dark .text-blue-800,
+.dark .text-blue-900 {
+  color: #60a5fa !important;
 }
 .dark .border-blue-150,
 .dark .border-blue-200 {
-  border-color: #3b82f6 !important;
+  border-color: #2563eb !important;
 }
 
+/* NEUTRAL — slate */
 .dark .bg-slate-100,
 .dark .bg-slate-200 {
   background-color: var(--neutral-bg) !important;
@@ -620,13 +822,15 @@ button:disabled {
   border-color: var(--neutral-border) !important;
 }
 
-/* --- Translucent formatting and specific component overrides --- */
+/* ============================================================
+   DARK MODE — INDIGO (para badges especiais)
+============================================================ */
 .dark .bg-indigo-50 {
-  background-color: rgba(99, 102, 241, 0.15) !important;
+  background-color: rgba(99, 102, 241, 0.14) !important;
 }
 .dark .border-indigo-100,
 .dark .border-indigo-150 {
-  border-color: rgba(99, 102, 241, 0.3) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
 }
 .dark .text-indigo-950,
 .dark .text-indigo-700,
@@ -634,18 +838,74 @@ button:disabled {
   color: #a5b4fc !important;
 }
 
+/* ============================================================
+   DARK MODE — TRANSLÚCIDOS ESPECIAIS (linhas de tabela bloqueadas etc)
+============================================================ */
 .dark .bg-cyan-50\/40 {
-  background-color: rgba(6, 182, 212, 0.1) !important;
+  background-color: rgba(6, 182, 212, 0.09) !important;
 }
 
-/* Blocked rows translucent backgrounds */
 .dark .bg-rose-50\/40,
 .dark .bg-rose-50\/45 {
-  background-color: rgba(239, 68, 68, 0.08) !important;
+  background-color: rgba(239, 68, 68, 0.07) !important;
 }
 .dark .text-rose-950\/80,
 .dark .text-rose-950 {
   color: var(--danger-text) !important;
 }
 
+/* ============================================================
+   DARK MODE — CHIP / BADGE BASE
+============================================================ */
+.dark .bg-slate-100.text-slate-600,
+.dark [class*="rounded"][class*="bg-slate-100"] {
+  background-color: var(--chip-bg) !important;
+  color: var(--chip-text) !important;
+}
 
+/* ============================================================
+   LIGHT MODE — TABELAS (garantia extra)
+============================================================ */
+table thead th {
+  background-color: var(--table-header-bg);
+  color: var(--table-header-text, var(--text-secondary));
+}
+table tbody tr {
+  background-color: var(--table-row-bg);
+}
+
+/* ============================================================
+   STEPPER — Melhorar estados inativo/completo
+   Usado no Shortlist workflow e outros flows multi-step
+============================================================ */
+.dark .bg-emerald-50.text-emerald-800,
+.dark .bg-emerald-50.border-emerald-200 {
+  background-color: rgba(16, 185, 129, 0.14) !important;
+  color: var(--success-text) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Step inativo no dark mode — mais legível */
+.dark .bg-slate-50.text-text-secondary {
+  background-color: var(--bg-muted) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================================
+   CARDS E PAINÉIS ELEVADOS — Dark
+============================================================ */
+.dark .shadow-sm,
+.dark .shadow-xs {
+  --tw-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.35);
+  box-shadow: var(--tw-shadow);
+}
+
+/* ============================================================
+   EMPTY STATES — Garantir legibilidade
+============================================================ */
+.dark .text-slate-400 {
+  color: var(--text-muted) !important;
+}
+.dark .text-slate-300 {
+  color: var(--text-muted) !important;
+}
