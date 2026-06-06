@@ -49,6 +49,55 @@ const SENIORITY_RANK: Record<string, number> = {
   'Especialista': 4
 };
 
+const normalizeFunctionName = (value: string): string => {
+  if (!value) return '';
+  let normalized = value.trim().toLowerCase();
+  
+  // Remover acentos e caracteres especiais
+  normalized = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  
+  // Remover pontuações comuns
+  normalized = normalized.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '');
+
+  // Aliases conhecidos
+  const aliases: Record<string, string[]> = {
+    'diretor de arte': ['diretor de arte', 'diretor de artes', 'direcao de arte', 'direção de arte', 'art director', 'art directors', 'diretor de criacao', 'diretora de arte', 'diretora de artes'],
+    'designer 3d': ['designer 3d', '3d designer', 'modelador 3d', 'artista 3d', '3d artist'],
+    'produtor executivo': ['produtor executivo', 'producao executiva', 'produção executiva', 'produtora executiva', 'executive producer'],
+    'planejamento': ['planejamento', 'planner', 'planner estrategico', 'estrategista', 'planejamento estrategico', 'diretor de planejamento']
+  };
+
+  for (const [key, list] of Object.entries(aliases)) {
+    const listNormalized = list.map(item => item.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+    if (listNormalized.includes(normalized) || normalized.includes(key)) {
+      return key;
+    }
+  }
+
+  // Singularização básica
+  if (normalized.endsWith('s') && !normalized.endsWith('iss') && normalized.length > 3) {
+    normalized = normalized.slice(0, -1);
+  }
+
+  return normalized;
+};
+
+const areRolesRelated = (r1: string, r2: string): boolean => {
+  const norm1 = normalizeFunctionName(r1);
+  const norm2 = normalizeFunctionName(r2);
+  if (norm1 === norm2) return true;
+
+  const designRoles = ['diretor de arte', 'designer 3d', 'designer', 'designer grafico', 'art director', 'art directors', 'direcao de arte', 'direção de arte', 'motion designer', 'finalizador'];
+  const productionRoles = ['produtor executivo', 'producao executiva', 'produção executiva', 'produtor', 'produtor de campo', 'coordenador de producao', 'diretor de producao'];
+  const planningRoles = ['planejamento', 'planner', 'estrategista', 'diretor de planejamento', 'redator', 'copywriter', 'criativo'];
+
+  if (designRoles.includes(norm1) && designRoles.includes(norm2)) return true;
+  if (productionRoles.includes(norm1) && productionRoles.includes(norm2)) return true;
+  if (planningRoles.includes(norm1) && planningRoles.includes(norm2)) return true;
+
+  return false;
+};
+
 export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   // Navigation / Stepper State
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
@@ -98,6 +147,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const [candidateBrands, setCandidateBrands] = useState('');
   const [showCandidateFilters, setShowCandidateFilters] = useState(false);
 
+  // Smart matching filters
+  const [requireExactRole, setRequireExactRole] = useState(false);
+  const [requireExactSeniority, setRequireExactSeniority] = useState(false);
+  const [showBelowSeniority, setShowBelowSeniority] = useState(true);
+  const [showAboveBudget, setShowAboveBudget] = useState(true);
+
   // Collapse / Expand Match Groups in Step 2
   const [expandBestMatches, setExpandBestMatches] = useState(true);
   const [expandGoodMatches, setExpandGoodMatches] = useState(true);
@@ -116,6 +171,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     setCandidateAvailability('');
     setCandidateV3aExp(null);
     setCandidateBrands('');
+    setRequireExactRole(false);
+    setRequireExactSeniority(false);
+    setShowBelowSeniority(true);
+    setShowAboveBudget(true);
     // If the job has an active allocation, pre-select that freelancer for Negotiation pane
     if (activeJob.selectedFreelancerId) {
       setNegotiatingFreelancerId(activeJob.selectedFreelancerId);
@@ -231,8 +290,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
   // --- CANDIDATE MATCHING & FILTERING ---
   const compatibleFreelancers = db.freelancers.filter(f => {
-    // Hide blocked/inactive freelancers entirely
+    // Hide blocked/inactive freelancers entirely, as well as merged duplicates
     if (f.status === 'Bloqueado' || f.status === 'Inativo') return false;
+    if (f.mergedIntoFreelancerId) return false;
 
     // Search query matches name, main role, or secondary roles
     if (candidateSearch) {
@@ -242,12 +302,45 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       if (!matchName && !matchRole) return false;
     }
 
-    // Additional filters
-    if (candidateRole) {
-      const matchRole = f.mainRole === candidateRole || f.secondaryRoles.includes(candidateRole);
-      if (!matchRole) return false;
+    // Role Match Logic (based on Job or manual candidateRole filter)
+    const roleToMatch = candidateRole || (activeJob ? activeJob.roleNeeded : '');
+    if (roleToMatch) {
+      const hasExactRole = f.mainRole === roleToMatch || f.secondaryRoles.includes(roleToMatch);
+      const normToMatch = normalizeFunctionName(roleToMatch);
+      const normMainRole = normalizeFunctionName(f.mainRole);
+      const hasNormalizedRole = normMainRole === normToMatch || f.secondaryRoles.some(r => normalizeFunctionName(r) === normToMatch);
+      const hasRelatedRole = areRolesRelated(f.mainRole, roleToMatch) || f.secondaryRoles.some(r => areRolesRelated(r, roleToMatch));
+
+      if (requireExactRole) {
+        if (!hasExactRole) return false;
+      } else {
+        if (!hasExactRole && !hasNormalizedRole && !hasRelatedRole) return false;
+      }
     }
-    if (candidateSeniority && f.seniority !== candidateSeniority) return false;
+
+    // Seniority Match Logic
+    const seniorityToMatch = candidateSeniority || (activeJob ? activeJob.seniorityNeeded : '');
+    if (seniorityToMatch) {
+      if (requireExactSeniority) {
+        if (f.seniority !== seniorityToMatch) return false;
+      } else {
+        if (activeJob && seniorityToMatch === activeJob.seniorityNeeded) {
+          const jobRank = SENIORITY_RANK[activeJob.seniorityNeeded] || 2;
+          const fRank = SENIORITY_RANK[f.seniority] || 2;
+          if (!showBelowSeniority && fRank < jobRank) return false;
+        } else {
+          if (candidateSeniority && f.seniority !== candidateSeniority) return false;
+        }
+      }
+    }
+
+    // Budget/Daily rate Filter Logic
+    if (activeJob) {
+      const dailyAvg = calculateDailyAverage(activeJob);
+      if (!showAboveBudget && f.referenceValue > dailyAvg) return false;
+    }
+
+    // Standard filters
     if (candidateMinScore > 0 && f.averageScore < candidateMinScore) return false;
     if (candidateLocation) {
       const loc = candidateLocation.toLowerCase();
@@ -273,49 +366,260 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   // Shortlists linked to selected job
   const jobShortlists = db.shortlists.filter(sl => sl.jobId === selectedJobIdLocal);
 
+  // Match Compatibility Scoring Engine
+  const getCandidateScoreAndReason = (f: Freelancer) => {
+    if (!activeJob) return { score: 0, reasons: [], tags: [] };
+
+    let score = 0;
+    const reasons: string[] = [];
+    const tags: string[] = [];
+
+    const dailyAvg = calculateDailyAverage(activeJob);
+    const jobRank = SENIORITY_RANK[activeJob.seniorityNeeded] || 2;
+    const fRank = SENIORITY_RANK[f.seniority] || 2;
+
+    // 1. Role compatibility (max +40)
+    const jobRole = activeJob.roleNeeded;
+    const hasExactRole = f.mainRole === jobRole || f.secondaryRoles.includes(jobRole);
+    const normJobRole = normalizeFunctionName(jobRole);
+    const normMainRole = normalizeFunctionName(f.mainRole);
+    const hasNormalizedRole = normMainRole === normJobRole || f.secondaryRoles.some(r => normalizeFunctionName(r) === normJobRole);
+    const hasRelatedRole = areRolesRelated(f.mainRole, jobRole) || f.secondaryRoles.some(r => areRolesRelated(r, jobRole));
+
+    if (hasExactRole || hasNormalizedRole) {
+      score += 40;
+      reasons.push('Função compatível');
+      tags.push('Função compatível');
+    } else if (hasRelatedRole) {
+      score += 20;
+      reasons.push('Função relacionada');
+      tags.push('Função relacionada');
+    } else {
+      reasons.push('Função não compatível');
+    }
+
+    // 2. Seniority (max +20, penalty -10)
+    if (fRank >= jobRank) {
+      score += 20;
+      reasons.push('Senioridade compatível ou superior');
+      tags.push('Senioridade compatível');
+    } else {
+      const diff = jobRank - fRank;
+      if (diff === 1) {
+        score += 10;
+        reasons.push('Senioridade 1 nível abaixo');
+        tags.push('Senioridade abaixo do solicitado');
+      } else if (diff === 2) {
+        score += 5;
+        reasons.push('Senioridade 2 níveis abaixo');
+        tags.push('Senioridade abaixo do solicitado');
+      } else {
+        score -= 10; // Penalty
+        reasons.push('Senioridade muito abaixo');
+        tags.push('Senioridade muito abaixo');
+      }
+    }
+
+    // 3. Availability (max +15, penalty -20)
+    if (f.availability === 'Imediata' || f.availability === '15 dias' || f.availability === '30+ dias') {
+      score += 15;
+      reasons.push('Disponibilidade compatível');
+      tags.push('Disponível');
+    } else if (f.availability === 'Indisponível') {
+      score -= 20; // Penalty
+      reasons.push('Indisponível');
+      tags.push('Indisponível');
+    }
+
+    // 4. Daily budget (max +10, penalty -10)
+    if (f.referenceValue <= dailyAvg) {
+      score += 10;
+      reasons.push('Valor dentro do budget');
+      tags.push('Valor dentro do budget');
+    } else {
+      score -= 10; // Penalty
+      reasons.push('Valor acima do budget');
+      tags.push('Valor acima do budget');
+    }
+
+    // 5. Rating/Stars (max +10)
+    if (f.averageScore >= 4.5) {
+      score += 10;
+      reasons.push('Avaliação excelente');
+      tags.push('Avaliação top');
+    } else if (f.averageScore >= 4.0) {
+      score += 8;
+      reasons.push('Avaliação boa');
+    } else if (f.averageScore >= 3.5) {
+      score += 5;
+      reasons.push('Avaliação mediana');
+    }
+
+    // 6. Experience with V3A (max +5)
+    const hasV3aExp = f.experienceWithV3A || f.averageScore > 0 || (f.hasWorkedWithV3a && f.hasWorkedWithV3a.toLowerCase() !== 'não');
+    if (hasV3aExp) {
+      score += 5;
+      reasons.push('Histórico com a V3A');
+      tags.push('Já trabalhou com V3A');
+    }
+
+    // 7. Incomplete data penalty (penalty -5)
+    const hasIncompleteData = !f.city || !f.state || !f.email || (!f.phone && !f.whatsapp);
+    if (hasIncompleteData) {
+      score -= 5;
+      reasons.push('Dados incompletos');
+      tags.push('Cadastro incompleto');
+    }
+
+    // Clamp score 0 to 100
+    const finalScore = Math.max(0, Math.min(100, score));
+
+    return { score: finalScore, reasons, tags };
+  };
+
+  // Helper to render matching row design
+  const renderCandidateRow = (cand: Freelancer & { matchDetails: ReturnType<typeof getCandidateScoreAndReason> }) => {
+    const isAdded = jobShortlists.some(sl => sl.freelancerId === cand.id);
+    const { score, reasons, tags } = cand.matchDetails;
+
+    // Check if below seniority but compatible role
+    const dailyAvg = activeJob ? calculateDailyAverage(activeJob) : 0;
+    const jobRank = activeJob ? (SENIORITY_RANK[activeJob.seniorityNeeded] || 2) : 2;
+    const fRank = SENIORITY_RANK[cand.seniority] || 2;
+    const jobRole = activeJob ? activeJob.roleNeeded : '';
+    const hasExactRole = cand.mainRole === jobRole || cand.secondaryRoles.includes(jobRole);
+    const normJobRole = normalizeFunctionName(jobRole);
+    const normMainRole = normalizeFunctionName(cand.mainRole);
+    const hasNormalizedRole = normMainRole === normJobRole || cand.secondaryRoles.some(r => normalizeFunctionName(r) === normJobRole);
+    
+    const isBelowSeniorityButCompatRole = fRank < jobRank && (hasExactRole || hasNormalizedRole);
+
+    // Score badge style
+    let scoreBadgeStyle = "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20";
+    if (score >= 75) {
+      scoreBadgeStyle = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20";
+    } else if (score >= 50) {
+      scoreBadgeStyle = "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20";
+    }
+
+    return (
+      <div key={cand.id} className="p-3.5 flex flex-col gap-2.5 match-candidate-row hover:bg-bg-hover transition-colors border-b border-border-subtle last:border-0 bg-bg-surface">
+        {/* Name, Score and Seniority */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1">
+            <div className="flex items-center flex-wrap gap-1.5">
+              <strong className="text-text-primary text-sm font-bold">{cand.name}</strong>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                score >= 75 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' :
+                score >= 50 ? 'bg-blue-100 text-blue-800 dark:bg-blue-955/40 dark:text-blue-300' :
+                'bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-300'
+              }`}>
+                {cand.seniority}
+              </span>
+            </div>
+            <p className="text-text-secondary text-[11px] leading-tight">
+              {cand.mainRole} &bull; {cand.city}-{cand.state} &bull; Média diária: <strong className="text-text-primary">R$ {cand.referenceValue}</strong>
+            </p>
+          </div>
+
+          <div className={`flex items-center gap-1 border px-2 py-0.5 rounded-lg text-xs font-bold ${scoreBadgeStyle}`}>
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Score: {score}%</span>
+          </div>
+        </div>
+
+        {/* Ratings, Score & Experience */}
+        <div className="flex items-center flex-wrap gap-3 text-[11px]">
+          <div className="flex items-center gap-1">
+            <ScoreStars score={cand.averageScore} size="xs" showNumber={true} />
+          </div>
+          {cand.experienceWithV3A && (
+            <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold px-1.5 py-0.5 rounded">
+              Histórico V3A
+            </span>
+          )}
+          <span className="text-text-secondary">
+            Agenda: <span className="font-semibold text-text-primary">{cand.availability}</span>
+          </span>
+        </div>
+
+        {/* Semantic Tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((t, idx) => {
+              let tagColor = "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20";
+              if (t === "Função compatível" || t === "Valor dentro do budget" || t === "Já trabalhou com V3A" || t === "Disponível") {
+                tagColor = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20";
+              } else if (t === "Função relacionada") {
+                tagColor = "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20";
+              } else if (t === "Senioridade abaixo do solicitado" || t === "Valor acima do budget" || t === "Cadastro incompleto") {
+                tagColor = "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20";
+              } else if (t === "Indisponível" || t === "Senioridade muito abaixo") {
+                tagColor = "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20";
+              }
+              return (
+                <span key={idx} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tagColor}`}>
+                  {t}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Warning block for Pleno matching Especialista role */}
+        {isBelowSeniorityButCompatRole && (
+          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] p-2.5 rounded-lg flex items-start gap-1.5 leading-snug">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <span>Apesar de estar abaixo da senioridade solicitada, possui função compatível para análise do núcleo.</span>
+          </div>
+        )}
+
+        {/* Action Button */}
+        <div className="flex justify-end pt-1">
+          <button
+            disabled={isAdded || !!activeJob.selectedFreelancerId}
+            onClick={() => handleAddToShortlist(cand.id)}
+            className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
+              isAdded 
+                ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-450 dark:text-emerald-400 font-semibold cursor-default' 
+                : activeJob.selectedFreelancerId
+                  ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
+                  : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
+            }`}
+          >
+            {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}
+            {isAdded ? 'Na Shortlist' : 'Adicionar'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // Match Compatibility Grouping
   const getCandidateMatches = () => {
     if (!activeJob) return { best: [], good: [], other: [] };
-    
-    const dailyAvg = calculateDailyAverage(activeJob);
-    const jobRank = SENIORITY_RANK[activeJob.seniorityNeeded] || 2;
 
-    const best: Freelancer[] = [];
-    const good: Freelancer[] = [];
-    const other: Freelancer[] = [];
+    const best: Array<Freelancer & { matchDetails: ReturnType<typeof getCandidateScoreAndReason> }> = [];
+    const good: Array<Freelancer & { matchDetails: ReturnType<typeof getCandidateScoreAndReason> }> = [];
+    const other: Array<Freelancer & { matchDetails: ReturnType<typeof getCandidateScoreAndReason> }> = [];
 
     compatibleFreelancers.forEach(f => {
-      const fRank = SENIORITY_RANK[f.seniority] || 2;
-      const matchRole = f.mainRole === activeJob.roleNeeded || f.secondaryRoles.includes(activeJob.roleNeeded);
-      
-      if (!matchRole) {
-        other.push(f);
-        return;
-      }
+      const details = getCandidateScoreAndReason(f);
+      const decorated = { ...f, matchDetails: details };
 
-      const hasV3aExp = f.experienceWithV3A || f.averageScore > 0 || (f.hasWorkedWithV3a && f.hasWorkedWithV3a.toLowerCase() !== 'não');
-
-      // Best Matches: Role matching, Seniority >= Job, Rating >= 4.0, Reference rate <= Job daily budget * 1.15, V3A exp = true
-      if (
-        fRank >= jobRank &&
-        f.averageScore >= 4.0 &&
-        f.referenceValue <= dailyAvg * 1.15 &&
-        hasV3aExp
-      ) {
-        best.push(f);
-      } 
-      // Good Alternatives: Role matching, Seniority diff <= 1, Rating >= 3.5
-      else if (
-        Math.abs(fRank - jobRank) <= 1 &&
-        f.averageScore >= 3.5
-      ) {
-        good.push(f);
-      } 
-      // Other Options: other candidates matching general search
-      else {
-        other.push(f);
+      if (details.score >= 75) {
+        best.push(decorated);
+      } else if (details.score >= 50) {
+        good.push(decorated);
+      } else {
+        other.push(decorated);
       }
     });
+
+    const sortByScore = (a: any, b: any) => b.matchDetails.score - a.matchDetails.score;
+    best.sort(sortByScore);
+    good.sort(sortByScore);
+    other.sort(sortByScore);
 
     return { best, good, other };
   };
@@ -1297,11 +1601,57 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           setCandidateAvailability('');
                           setCandidateV3aExp(null);
                           setCandidateBrands('');
+                          setRequireExactRole(false);
+                          setRequireExactSeniority(false);
+                          setShowBelowSeniority(true);
+                          setShowAboveBudget(true);
                         }}
                         className="w-full bg-white hover:bg-slate-100 border border-border-subtle p-1.5 rounded-lg text-xs text-status-error font-bold text-center"
                       >
                         Resetar Filtros
                       </button>
+                    </div>
+
+                    <div className="sm:col-span-3 border-t border-border-subtle pt-3 mt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <label className="flex items-center gap-2 text-[11px] font-semibold text-text-secondary cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={requireExactRole}
+                          onChange={(e) => setRequireExactRole(e.target.checked)}
+                          className="rounded text-action-cyan focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
+                        />
+                        <span>Exigir função exata</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 text-[11px] font-semibold text-text-secondary cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={requireExactSeniority}
+                          onChange={(e) => setRequireExactSeniority(e.target.checked)}
+                          className="rounded text-action-cyan focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
+                        />
+                        <span>Exigir senioridade exata</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 text-[11px] font-semibold text-text-secondary cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showBelowSeniority}
+                          onChange={(e) => setShowBelowSeniority(e.target.checked)}
+                          className="rounded text-action-cyan focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
+                        />
+                        <span>Mostrar alt. abaixo senioridade</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 text-[11px] font-semibold text-text-secondary cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showAboveBudget}
+                          onChange={(e) => setShowAboveBudget(e.target.checked)}
+                          className="rounded text-action-cyan focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
+                        />
+                        <span>Mostrar opções acima budget</span>
+                      </label>
                     </div>
                   </div>
                 )}
@@ -1323,45 +1673,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     </button>
 
                     {expandBestMatches && (
-                      <div className="p-2 divide-y divide-slate-100 max-h-[300px] overflow-y-auto">
+                      <div className="divide-y divide-border-subtle max-h-[400px] overflow-y-auto bg-bg-surface">
                         {matches.best.length === 0 ? (
                           <p className="p-4 text-center text-text-secondary italic text-xs">Nenhum match com pontuação ideal e histórico V3A localizado.</p>
                         ) : (
-                          matches.best.map(cand => {
-                            const isAdded = jobShortlists.some(sl => sl.freelancerId === cand.id);
-                            return (
-                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs match-candidate-row hover:bg-slate-50 transition-colors">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <strong className="text-text-primary font-bold">{cand.name}</strong>
-                                    <span className="match-seniority-badge bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded">{cand.seniority}</span>
-                                  </div>
-                                  <p className="text-text-secondary text-[11px]">
-                                    {cand.mainRole} &bull; {cand.city}-{cand.state} &bull; Média diária: <strong>R$ {cand.referenceValue}</strong>
-                                  </p>
-                                  <div className="flex items-center gap-2">
-                                    <ScoreStars score={cand.averageScore} size="sm" showNumber={true} />
-                                    <span className="bg-slate-100 text-slate-700 text-[10px] font-semibold px-1 rounded">Exp V3A</span>
-                                  </div>
-                                </div>
-
-                                <button
-                                  disabled={isAdded || !!activeJob.selectedFreelancerId}
-                                  onClick={() => handleAddToShortlist(cand.id)}
-                                  className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
-                                    isAdded 
-                                      ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-400 font-semibold cursor-default' 
-                                      : activeJob.selectedFreelancerId
-                                        ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
-                                        : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
-                                  }`}
-                                >
-                                  {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}
-                                  {isAdded ? 'Na Shortlist' : 'Adicionar'}
-                                </button>
-                              </div>
-                            );
-                          })
+                          matches.best.map(cand => renderCandidateRow(cand))
                         )}
                       </div>
                     )}
@@ -1381,42 +1697,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     </button>
 
                     {expandGoodMatches && (
-                      <div className="p-2 divide-y divide-slate-100 max-h-[300px] overflow-y-auto">
+                      <div className="divide-y divide-border-subtle max-h-[400px] overflow-y-auto bg-bg-surface">
                         {matches.good.length === 0 ? (
                           <p className="p-4 text-center text-text-secondary italic text-xs">Nenhuma alternativa compatível localizada.</p>
                         ) : (
-                          matches.good.map(cand => {
-                            const isAdded = jobShortlists.some(sl => sl.freelancerId === cand.id);
-                            return (
-                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs match-candidate-row hover:bg-slate-50 transition-colors">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <strong className="text-text-primary font-bold">{cand.name}</strong>
-                                    <span className="match-seniority-badge bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.5 rounded">{cand.seniority}</span>
-                                  </div>
-                                  <p className="text-text-secondary text-[11px]">
-                                    {cand.mainRole} &bull; {cand.city}-{cand.state} &bull; Média diária: <strong>R$ {cand.referenceValue}</strong>
-                                  </p>
-                                  <ScoreStars score={cand.averageScore} size="sm" showNumber={true} />
-                                </div>
-
-                                <button
-                                  disabled={isAdded || !!activeJob.selectedFreelancerId}
-                                  onClick={() => handleAddToShortlist(cand.id)}
-                                  className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
-                                    isAdded 
-                                      ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-400 font-semibold cursor-default' 
-                                      : activeJob.selectedFreelancerId
-                                        ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
-                                        : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
-                                  }`}
-                                >
-                                  {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}
-                                  {isAdded ? 'Na Shortlist' : 'Adicionar'}
-                                </button>
-                              </div>
-                            );
-                          })
+                          matches.good.map(cand => renderCandidateRow(cand))
                         )}
                       </div>
                     )}
@@ -1436,42 +1721,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     </button>
 
                     {expandOtherMatches && (
-                      <div className="p-2 divide-y divide-slate-100 max-h-[300px] overflow-y-auto">
+                      <div className="divide-y divide-border-subtle max-h-[400px] overflow-y-auto bg-bg-surface">
                         {matches.other.length === 0 ? (
                           <p className="p-4 text-center text-text-secondary italic text-xs">Nenhum profissional elegível.</p>
                         ) : (
-                          matches.other.map(cand => {
-                            const isAdded = jobShortlists.some(sl => sl.freelancerId === cand.id);
-                            return (
-                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs match-candidate-row hover:bg-slate-50 transition-colors">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <strong className="text-text-primary font-bold">{cand.name}</strong>
-                                    <span className="match-seniority-badge bg-slate-200 text-slate-700 text-[10px] font-bold px-1.5 py-0.5 rounded">{cand.seniority}</span>
-                                  </div>
-                                  <p className="text-text-secondary text-[11px]">
-                                    {cand.mainRole} &bull; {cand.city}-{cand.state} &bull; Média diária: <strong>R$ {cand.referenceValue}</strong>
-                                  </p>
-                                  <ScoreStars score={cand.averageScore} size="sm" showNumber={true} />
-                                </div>
-
-                                <button
-                                  disabled={isAdded || !!activeJob.selectedFreelancerId}
-                                  onClick={() => handleAddToShortlist(cand.id)}
-                                  className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
-                                    isAdded 
-                                      ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-400 font-semibold cursor-default' 
-                                      : activeJob.selectedFreelancerId
-                                        ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
-                                        : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
-                                  }`}
-                                >
-                                  {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}
-                                  {isAdded ? 'Na Shortlist' : 'Adicionar'}
-                                </button>
-                              </div>
-                            );
-                          })
+                          matches.other.map(cand => renderCandidateRow(cand))
                         )}
                       </div>
                     )}
