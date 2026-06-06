@@ -1095,14 +1095,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {activeStep === 2 && activeJob && (
         <div className="space-y-6">
           {/* Active Job Meta-Header */}
-          <div className="bg-[#1E293B] text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6">
+          <div className="bg-slate-800 text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6 job-meta-header">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-slate-800 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
                   COD: {activeJob.id.slice(0, 8).toUpperCase()}
                 </span>
                 <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Oportunidade Selecionada</span>
-                <span className="bg-blue-900 text-blue-200 border border-blue-800 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                <span className="bg-blue-900 text-blue-200 border border-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
               </div>
               <h3 className="text-base font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
               <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs text-slate-300">
@@ -1126,7 +1126,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               <div className="flex gap-2">
                 <button
                   onClick={handleClearJob}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold p-2 px-3 rounded-lg text-xs transition-all"
+                  className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600"
                 >
                   Trocar Job
                 </button>
@@ -1181,7 +1181,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     value={candidateSearch}
                     onChange={(e) => setCandidateSearch(e.target.value)}
                     placeholder="Buscar freelancer por nome ou função..."
-                    className="w-full bg-[#F8FAFC] border border-border-subtle pl-9 pr-4 py-2.5 rounded-lg text-xs focus:outline-none focus:border-action-cyan"
+                    className="w-full bg-bg-input border border-border-subtle pl-9 pr-4 py-2.5 rounded-lg text-sm focus:outline-none focus:border-action-cyan text-text-primary"
                   />
                   {candidateSearch && (
                     <button onClick={() => setCandidateSearch('')} className="absolute inset-y-0 right-3 my-auto text-text-secondary">
@@ -1310,13 +1310,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="pt-2 border-t border-border-subtle space-y-4">
                   
                   {/* Melhores Matches Folder */}
-                  <div className="border border-emerald-100 rounded-xl overflow-hidden shadow-xs">
+                  <div className="accordion-match accordion-best border border-emerald-700/40 rounded-xl overflow-hidden shadow-xs">
                     <button 
                       onClick={() => setExpandBestMatches(!expandBestMatches)}
-                      className="w-full bg-emerald-50/50 p-3 flex justify-between items-center text-xs font-bold text-emerald-900 border-b border-emerald-100"
+                      className="w-full bg-emerald-900/30 p-3 flex justify-between items-center text-xs font-bold text-emerald-300 border-b border-emerald-700/40 hover:bg-emerald-900/40 transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-emerald-600" />
+                        <Award className="w-4 h-4 text-emerald-400" />
                         <span>🏆 Melhores Matches ({matches.best.length})</span>
                       </span>
                       {expandBestMatches ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -1330,11 +1330,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           matches.best.map(cand => {
                             const isAdded = jobShortlists.some(sl => sl.freelancerId === cand.id);
                             return (
-                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs hover:bg-slate-50 transition-colors">
+                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs match-candidate-row hover:bg-slate-50 transition-colors">
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-1.5">
-                                    <strong className="text-sidebar-navy font-bold">{cand.name}</strong>
-                                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.2 rounded">{cand.seniority}</span>
+                                    <strong className="text-text-primary font-bold">{cand.name}</strong>
+                                    <span className="match-seniority-badge bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded">{cand.seniority}</span>
                                   </div>
                                   <p className="text-text-secondary text-[11px]">
                                     {cand.mainRole} &bull; {cand.city}-{cand.state} &bull; Média diária: <strong>R$ {cand.referenceValue}</strong>
@@ -1348,12 +1348,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 <button
                                   disabled={isAdded || !!activeJob.selectedFreelancerId}
                                   onClick={() => handleAddToShortlist(cand.id)}
-                                  className={`p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
+                                  className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
                                     isAdded 
-                                      ? 'bg-slate-100 border border-slate-200 text-emerald-600 font-semibold cursor-default' 
+                                      ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-400 font-semibold cursor-default' 
                                       : activeJob.selectedFreelancerId
-                                        ? 'bg-slate-50 border border-slate-200 text-slate-300 cursor-not-allowed'
-                                        : 'bg-primary/10 border-primary/20 text-sidebar-navy hover:bg-action-cyan hover:text-white hover:border-action-cyan'
+                                        ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
+                                        : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
                                   }`}
                                 >
                                   {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}
@@ -1368,13 +1368,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   </div>
 
                   {/* Boas Alternativas Folder */}
-                  <div className="border border-blue-100 rounded-xl overflow-hidden shadow-xs">
+                  <div className="accordion-match accordion-good border border-blue-700/40 rounded-xl overflow-hidden shadow-xs">
                     <button 
                       onClick={() => setExpandGoodMatches(!expandGoodMatches)}
-                      className="w-full bg-blue-50/50 p-3 flex justify-between items-center text-xs font-bold text-blue-900 border-b border-blue-100"
+                      className="w-full bg-blue-900/30 p-3 flex justify-between items-center text-xs font-bold text-blue-300 border-b border-blue-700/40 hover:bg-blue-900/40 transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        <TrendingUp className="w-4 h-4 text-blue-400" />
                         <span>⚡ Boas Alternativas ({matches.good.length})</span>
                       </span>
                       {expandGoodMatches ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -1388,11 +1388,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           matches.good.map(cand => {
                             const isAdded = jobShortlists.some(sl => sl.freelancerId === cand.id);
                             return (
-                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs hover:bg-slate-50 transition-colors">
+                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs match-candidate-row hover:bg-slate-50 transition-colors">
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-1.5">
-                                    <strong className="text-sidebar-navy font-bold">{cand.name}</strong>
-                                    <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.2 rounded">{cand.seniority}</span>
+                                    <strong className="text-text-primary font-bold">{cand.name}</strong>
+                                    <span className="match-seniority-badge bg-blue-100 text-blue-800 text-[10px] font-bold px-1.5 py-0.5 rounded">{cand.seniority}</span>
                                   </div>
                                   <p className="text-text-secondary text-[11px]">
                                     {cand.mainRole} &bull; {cand.city}-{cand.state} &bull; Média diária: <strong>R$ {cand.referenceValue}</strong>
@@ -1403,12 +1403,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 <button
                                   disabled={isAdded || !!activeJob.selectedFreelancerId}
                                   onClick={() => handleAddToShortlist(cand.id)}
-                                  className={`p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
+                                  className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
                                     isAdded 
-                                      ? 'bg-slate-100 border border-slate-200 text-emerald-600 font-semibold cursor-default' 
+                                      ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-400 font-semibold cursor-default' 
                                       : activeJob.selectedFreelancerId
-                                        ? 'bg-slate-50 border border-slate-200 text-slate-300 cursor-not-allowed'
-                                        : 'bg-primary/10 border-primary/20 text-sidebar-navy hover:bg-action-cyan hover:text-white hover:border-action-cyan'
+                                        ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
+                                        : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
                                   }`}
                                 >
                                   {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}
@@ -1423,13 +1423,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   </div>
 
                   {/* Outras Opções Folder */}
-                  <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+                  <div className="accordion-match accordion-neutral border border-slate-600/40 rounded-xl overflow-hidden shadow-xs">
                     <button 
                       onClick={() => setExpandOtherMatches(!expandOtherMatches)}
-                      className="w-full bg-slate-50 p-3 flex justify-between items-center text-xs font-bold text-slate-800 border-b border-slate-200"
+                      className="w-full bg-slate-700/40 p-3 flex justify-between items-center text-xs font-bold text-slate-300 border-b border-slate-600/40 hover:bg-slate-700/60 transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-text-secondary" />
+                        <Users className="w-4 h-4 text-slate-400" />
                         <span>👥 Outras Opções ({matches.other.length})</span>
                       </span>
                       {expandOtherMatches ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -1443,11 +1443,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           matches.other.map(cand => {
                             const isAdded = jobShortlists.some(sl => sl.freelancerId === cand.id);
                             return (
-                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs hover:bg-slate-50 transition-colors">
+                              <div key={cand.id} className="p-3 flex justify-between items-start text-xs match-candidate-row hover:bg-slate-50 transition-colors">
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-1.5">
-                                    <strong className="text-sidebar-navy font-bold">{cand.name}</strong>
-                                    <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.2 rounded">{cand.seniority}</span>
+                                    <strong className="text-text-primary font-bold">{cand.name}</strong>
+                                    <span className="match-seniority-badge bg-slate-200 text-slate-700 text-[10px] font-bold px-1.5 py-0.5 rounded">{cand.seniority}</span>
                                   </div>
                                   <p className="text-text-secondary text-[11px]">
                                     {cand.mainRole} &bull; {cand.city}-{cand.state} &bull; Média diária: <strong>R$ {cand.referenceValue}</strong>
@@ -1458,12 +1458,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 <button
                                   disabled={isAdded || !!activeJob.selectedFreelancerId}
                                   onClick={() => handleAddToShortlist(cand.id)}
-                                  className={`p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
+                                  className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
                                     isAdded 
-                                      ? 'bg-slate-100 border border-slate-200 text-emerald-600 font-semibold cursor-default' 
+                                      ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-400 font-semibold cursor-default' 
                                       : activeJob.selectedFreelancerId
-                                        ? 'bg-slate-50 border border-slate-200 text-slate-300 cursor-not-allowed'
-                                        : 'bg-primary/10 border-primary/20 text-sidebar-navy hover:bg-action-cyan hover:text-white hover:border-action-cyan'
+                                        ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
+                                        : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
                                   }`}
                                 >
                                   {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}

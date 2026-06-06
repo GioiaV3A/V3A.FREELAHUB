@@ -909,3 +909,240 @@ table tbody tr {
 .dark .text-slate-300 {
   color: var(--text-muted) !important;
 }
+
+/* ============================================================
+   SHORTLIST PAGE — ACCORDIONS (Light Mode restore)
+   Os accordions usam bg-*-900/30 dark por padrão agora,
+   mas precisamos restaurar a aparência clara no light mode
+============================================================ */
+
+/* Light mode: Melhores Matches */
+:root .accordion-best {
+  border-color: #bbf7d0 !important; /* emerald-200 */
+}
+:root .accordion-best > button {
+  background-color: #f0fdf4 !important; /* emerald-50 */
+  color: #14532d !important; /* emerald-900 */
+  border-bottom-color: #bbf7d0 !important;
+}
+:root .accordion-best > button svg {
+  color: #16a34a !important; /* emerald-600 */
+}
+
+/* Light mode: Boas Alternativas */
+:root .accordion-good {
+  border-color: #bfdbfe !important; /* blue-200 */
+}
+:root .accordion-good > button {
+  background-color: #eff6ff !important; /* blue-50 */
+  color: #1e3a8a !important; /* blue-900 */
+  border-bottom-color: #bfdbfe !important;
+}
+:root .accordion-good > button svg {
+  color: #2563eb !important; /* blue-600 */
+}
+
+/* Light mode: Outras Opções */
+:root .accordion-neutral {
+  border-color: #e2e8f0 !important; /* slate-200 */
+}
+:root .accordion-neutral > button {
+  background-color: #f8fafc !important; /* slate-50 */
+  color: #1e293b !important; /* slate-800 */
+  border-bottom-color: #e2e8f0 !important;
+}
+:root .accordion-neutral > button svg {
+  color: #64748b !important;
+}
+
+/* ============================================================
+   SHORTLIST — CANDIDATE ROWS (Light Mode)
+============================================================ */
+:root .match-candidate-row {
+  background-color: transparent;
+  color: var(--text-primary);
+}
+:root .match-candidate-row:hover {
+  background-color: var(--table-row-hover) !important;
+}
+:root .match-seniority-badge {
+  /* mantém as classes Tailwind no light */
+}
+
+/* Dark Mode overrides para os accordions de match */
+.dark .accordion-best {
+  border-color: rgba(16, 185, 129, 0.30) !important;
+}
+.dark .accordion-best > button {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  color: #6ee7b7 !important; /* emerald-300 */
+  border-bottom-color: rgba(16, 185, 129, 0.25) !important;
+}
+.dark .accordion-best > button:hover {
+  background-color: rgba(16, 185, 129, 0.18) !important;
+}
+.dark .accordion-best > button svg {
+  color: #34d399 !important; /* emerald-400 */
+}
+
+.dark .accordion-good {
+  border-color: rgba(59, 130, 246, 0.30) !important;
+}
+.dark .accordion-good > button {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  color: #93c5fd !important; /* blue-300 */
+  border-bottom-color: rgba(59, 130, 246, 0.25) !important;
+}
+.dark .accordion-good > button:hover {
+  background-color: rgba(59, 130, 246, 0.18) !important;
+}
+.dark .accordion-good > button svg {
+  color: #60a5fa !important; /* blue-400 */
+}
+
+.dark .accordion-neutral {
+  border-color: rgba(148, 163, 184, 0.25) !important;
+}
+.dark .accordion-neutral > button {
+  background-color: rgba(51, 65, 85, 0.50) !important;
+  color: #94a3b8 !important; /* slate-400 */
+  border-bottom-color: rgba(148, 163, 184, 0.20) !important;
+}
+.dark .accordion-neutral > button:hover {
+  background-color: rgba(51, 65, 85, 0.70) !important;
+}
+.dark .accordion-neutral > button svg {
+  color: #64748b !important;
+}
+
+/* Dark: linha de candidato nos accordions */
+.dark .match-candidate-row {
+  color: var(--text-primary);
+}
+.dark .match-candidate-row:hover {
+  background-color: var(--table-row-hover) !important;
+}
+
+/* Dark: badge de senioridade (emerald) */
+.dark .match-seniority-badge {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.30);
+}
+/* Badge de "Boas Alternativas" (blue) */
+.dark .accordion-good .match-seniority-badge {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: #93c5fd !important;
+  border: 1px solid rgba(59, 130, 246, 0.30);
+}
+/* Badge de "Outras Opções" (neutral) */
+.dark .accordion-neutral .match-seniority-badge {
+  background-color: rgba(148, 163, 184, 0.15) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* ============================================================
+   SHORTLIST — BOTÃO "ADICIONAR" — Dark
+   Garante contraste do estado padrão (accent)
+============================================================ */
+.dark .add-to-shortlist-btn {
+  /* Estado padrão: fundo translúcido + texto cyan */
+  border-color: rgba(19, 191, 212, 0.35) !important;
+  color: var(--accent) !important;
+}
+.dark .add-to-shortlist-btn:not(:disabled):hover {
+  background-color: var(--accent) !important;
+  color: var(--accent-contrast) !important;
+  border-color: var(--accent) !important;
+}
+
+/* ============================================================
+   SHORTLIST — JOB META-HEADER — Dark
+   O header usa bg-slate-800 no dark (bom)
+   No light: ajustar para não ficar preto sobre branco
+============================================================ */
+:root .job-meta-header {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+/* No light mode, o header escuro da vaga fica bem — é intencional (dark-on-light card) */
+
+/* ============================================================
+   SHORTLIST — "Voltar para Seleção de Job" — Dark
+============================================================ */
+.dark button.bg-white.border-border-subtle {
+  background-color: var(--bg-surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-strong) !important;
+}
+.dark button.bg-white.border-border-subtle:hover {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+/* ============================================================
+   HEADER TOPBAR — Dark
+============================================================ */
+.dark header.bg-white {
+  background-color: var(--bg-topbar) !important;
+  border-bottom-color: var(--border-subtle) !important;
+}
+
+/* Dropdown do perfil no topbar */
+.dark header .bg-white,
+.dark header .bg-slate-50 {
+  background-color: var(--bg-surface) !important;
+}
+.dark header .border-border-subtle {
+  border-color: var(--border-subtle) !important;
+}
+
+/* ============================================================
+   BANCO DE TALENTOS PANEL — Título e descrição
+============================================================ */
+.dark h4.text-sidebar-navy {
+  color: var(--text-primary) !important;
+}
+
+/* ============================================================
+   SHORTLIST OFICIAL — EMPTY STATE — Dark
+============================================================ */
+.dark .border-dashed.border-border-subtle {
+  border-color: var(--border-strong) !important;
+  background-color: rgba(14, 36, 64, 0.50);
+}
+
+/* ============================================================
+   FILTROS BUTTON — Dark
+============================================================ */
+.dark button.bg-white.border-border-subtle {
+  background-color: var(--bg-surface-elevated) !important;
+  border-color: var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+.dark button.bg-slate-100.border-slate-300 {
+  background-color: var(--bg-muted) !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ============================================================
+   SCORESTAR COMPONENT — Dark
+============================================================ */
+.dark .text-text-secondary strong {
+  color: var(--text-primary) !important;
+}
+
+/* Exp V3A chip no dark */
+.dark .bg-slate-100.text-slate-700 {
+  background-color: rgba(148, 163, 184, 0.15) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ============================================================
+   DIVIDE LINES no accordion expandido — Dark
+============================================================ */
+.dark .divide-y.divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-subtle) !important;
+}

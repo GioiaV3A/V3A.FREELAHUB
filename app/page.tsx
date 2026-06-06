@@ -1466,7 +1466,7 @@ export default function Home() {
 
   // 3. CORE LOGGED-IN WORKSPACE LAYOUT RENDER
   return (
-    <div id="app-workspace" className="min-h-screen md:h-screen md:overflow-hidden bg-[#F8FAFC] flex flex-col md:flex-row selection:bg-action-cyan selection:text-white">
+    <div id="app-workspace" className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:flex-row selection:bg-action-cyan selection:text-white">
       
       {/* 1. SIDEBAR COLUMN */}
       <aside className="w-full md:w-64 md:h-screen bg-sidebar-navy flex flex-col text-slate-100 shrink-0 border-r border-[#1e293b] sticky top-0 overflow-y-auto">
@@ -1633,7 +1633,7 @@ export default function Home() {
         </header>
 
         {/* 3. SCROLLABLE ROUTE VIEWPORT */}
-        <div className="flex-1 overflow-y-auto p-6 focus:outline-none bg-[#F8FAFC]">
+        <div className="flex-1 overflow-y-auto p-6 focus:outline-none bg-bg-app">
           
           {/* Dashboard router dependent on selected profile */}
           {activeTab === 'Dashboard' && currentUser.profile === 'MASTER' && (
