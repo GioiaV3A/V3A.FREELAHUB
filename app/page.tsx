@@ -183,6 +183,16 @@ export default function Home() {
 
   // App Layout States
   const [activeTab, setActiveTab2] = useState('Dashboard');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam) {
+        setActiveTab2(tabParam);
+      }
+    }
+  }, []);
   const [selectedFreelancerId, setSelectedFreelancerId] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);

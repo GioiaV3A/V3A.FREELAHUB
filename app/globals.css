@@ -18,10 +18,14 @@
   --color-bg-app: var(--bg-app);
   --color-bg-surface: var(--bg-surface);
   --color-bg-surface-elevated: var(--bg-surface-elevated);
+  --color-bg-panel: var(--bg-panel);
   --color-bg-sidebar: var(--bg-sidebar);
   --color-bg-topbar: var(--bg-topbar);
   --color-bg-input: var(--bg-input);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-selected: var(--bg-selected);
   --color-bg-muted: var(--bg-muted);
+  --color-divider: var(--divider);
 
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -79,13 +83,13 @@
      FONT SIZE SCALE — legível e confortável em desktop
      Mínimo absoluto: 12px. Nada menor que isso.
   ============================================================ */
-  --font-size-xs: 13px;
-  --font-size-sm: 14.5px;
-  --font-size-base: 15px;
-  --font-size-lg: 18px;
+  --font-size-xs: 12.5px;
+  --font-size-sm: 13.5px;
+  --font-size-base: 14.5px;
+  --font-size-lg: 17px;
   --font-size-xl: 20px;
-  --font-size-2xl: 24px;
-  --font-size-3xl: 28px;
+  --font-size-2xl: 22px;
+  --font-size-3xl: 26px;
 }
 
 
@@ -93,29 +97,33 @@
    LIGHT MODE — Tokens Visuais
    Paleta: brancos e azuis frios, contraste alto
 ============================================================ */
-:root {
+:root, [data-theme="light"] {
   /* Superfícies */
-  --bg-app: #eef2f7;
+  --bg-app: #f6f8fb;
   --bg-page: var(--bg-app);
   --bg-surface: #ffffff;
-  --bg-surface-hover: #f0f5fb;
+  --bg-surface-hover: #eef4fb;
   --bg-surface-elevated: #ffffff;
+  --bg-panel: #f8fafc;
   --bg-sidebar: #0A192F;    /* Sidebar sempre navy — identidade V3A */
   --bg-topbar: #ffffff;
   --bg-input: #ffffff;
+  --bg-hover: #eef4fb;
+  --bg-selected: rgba(8, 158, 180, 0.10);
   --bg-muted: #f1f5f9;
 
   /* Texto — hierarquia clara e acessível */
-  --text-primary: #0d1c2e;      /* quase preto azulado — principal */
-  --text-secondary: #1e3a5f;    /* azul escuro médio — subtítulos, labels */
-  --text-muted: #475569;        /* slate-600 — metadados, placeholders */
-  --text-disabled: #94a3b8;     /* slate-400 */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
   --text-inverse: #ffffff;
 
   /* Bordas */
-  --border-subtle: #c1d0e0;     /* mais perceptível que antes */
-  --border-strong: #94afc8;
+  --border-subtle: #d9e2ec;
+  --border-strong: #b8c7d9;
   --border-focus: #089eb4;
+  --divider: #e2e8f0;
 
   /* Accent (cyan V3A) */
   --accent: #089eb4;
@@ -141,20 +149,20 @@
   --info-text: #1e40af;
 
   --neutral-bg: #f1f5f9;
-  --neutral-border: #94afc8;
-  --neutral-text: #1e3a5f;
+  --neutral-border: #b8c7d9;
+  --neutral-text: #334155;
 
   /* Tabelas — Light */
-  --table-header-bg: #e8f0f9;    /* azul muito claro — header claramente distinto */
-  --table-header-text: #1e3a5f;
+  --table-header-bg: #e8f0f9;
+  --table-header-text: #334155;
   --table-row-bg: #ffffff;
-  --table-row-alt: #f7fafd;      /* zebra striping sutil */
+  --table-row-alt: #f7fafd;
   --table-row-hover: #eef4fb;
   --table-border: #d0dcea;
 
   /* Chips / Badges */
   --chip-bg: #e8f0f9;
-  --chip-text: #1e3a5f;
+  --chip-text: #334155;
 
   /* Botões */
   --button-primary-bg: var(--accent);
@@ -165,13 +173,13 @@
   /* Inputs */
   --input-bg: #ffffff;
   --input-border: #b8cfe0;
-  --input-text: #0d1c2e;
+  --input-text: #0f172a;
   --input-placeholder: #7b96b2;
 
   /* Disabled */
   --disabled-bg: #f1f5f9;
   --disabled-text: #94a3b8;
-  --disabled-border: #c1d0e0;
+  --disabled-border: #d9e2ec;
 }
 
 
@@ -180,85 +188,89 @@
    Paleta: azul-marinho profundo, sem preto puro
    Objetivo: elegante, confortável, alta legibilidade
 ============================================================ */
-.dark {
+.dark, [data-theme="dark"] {
   /* Superfícies — hierarquia clara com distinção entre camadas */
-  --bg-app: #060f1e;            /* fundo mais escuro possível sem ser preto puro */
+  --bg-app: #071426;
   --bg-page: var(--bg-app);
-  --bg-surface: #0d1f35;        /* cards — claramente distinto do app bg */
-  --bg-surface-hover: #162d48;  /* hover de itens */
-  --bg-surface-elevated: #152a45; /* modais, painéis flutuantes */
+  --bg-surface: #10243a;
+  --bg-surface-hover: #1b3f61;
+  --bg-surface-elevated: #163653;
+  --bg-panel: #132b45;
   --bg-sidebar: #0A192F;        /* sidebar mantém identidade navy */
-  --bg-topbar: #0b1c30;         /* header ligeiramente mais claro que app */
-  --bg-input: #0e2440;          /* input com fundo próprio e distinguível */
-  --bg-muted: #112236;          /* seções muted, painéis secundários */
+  --bg-topbar: #10243a;
+  --bg-input: #0b1f35;
+  --bg-hover: #1b3f61;
+  --bg-selected: rgba(19, 191, 212, 0.18);
+  --bg-muted: #132b45;
 
   /* Texto — hierarquia robusta, sem branco puro */
-  --text-primary: #e8f0f8;      /* branco levemente azulado — confortável */
-  --text-secondary: #b0c8e0;    /* azul-claro para subtítulos/labels — contraste ≥ 5:1 */
-  --text-muted: #7b96b2;        /* metadados — legível mas discreto */
-  --text-disabled: #4a647a;     /* disabled — claramente apagado sem sumir */
+  --text-primary: #f8fafc;
+  --text-secondary: #d6e2f0;
+  --text-muted: #a9b9cc;
+  --text-disabled: #7f91a8;
   --text-inverse: #0A192F;
 
   /* Bordas — claramente perceptíveis sem agressividade */
-  --border-subtle: #1e3d5c;     /* bordas padrão de cards e containers */
-  --border-strong: #2e5478;     /* bordas de destaque */
+  --border-subtle: #34516f;
+  --border-strong: #4d7499;
   --border-focus: #13bfd4;
+  --divider: rgba(148, 163, 184, 0.28);
 
   /* Accent */
   --accent: #13bfd4;
-  --accent-hover: #0fa8be;
-  --accent-soft: rgba(19, 191, 212, 0.15);
-  --accent-contrast: #060f1e;
+  --accent-hover: #22d3ee;
+  --accent-soft: rgba(19, 191, 212, 0.16);
+  --accent-contrast: #071426;
 
-  /* Status — Dark — texto mais brilhante para contraste no fundo escuro */
-  --success-bg: rgba(16, 185, 129, 0.15);
+  /* Status — Dark */
+  --success-bg: rgba(16, 185, 129, 0.18);
   --success-border: #10b981;
-  --success-text: #34d399;       /* verde brilhante — contraste ~5.5:1 */
+  --success-text: #8ff3c5;
 
-  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-bg: rgba(245, 158, 11, 0.18);
   --warning-border: #f59e0b;
-  --warning-text: #fbbf24;       /* âmbar brilhante — contraste ~6:1 */
+  --warning-text: #ffd166;
 
-  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-bg: rgba(239, 68, 68, 0.18);
   --danger-border: #ef4444;
-  --danger-text: #f87171;        /* vermelho brilhante — contraste ~5:1 */
+  --danger-text: #ffb4b4;
 
-  --info-bg: rgba(6, 182, 212, 0.14);
-  --info-border: #06b6d4;
-  --info-text: #22d3ee;          /* cyan brilhante — contraste ~6:1 */
+  --info-bg: rgba(59, 130, 246, 0.18);
+  --info-border: #60a5fa;
+  --info-text: #bfdbfe;
 
   --neutral-bg: rgba(148, 163, 184, 0.13);
-  --neutral-border: #2e5478;
-  --neutral-text: #b0c8e0;
+  --neutral-border: #34516f;
+  --neutral-text: #d6e2f0;
 
-  /* Tabelas — Dark — inversão clara: header mais escuro que body */
-  --table-header-bg: #091828;    /* mais escuro que --bg-surface para contraste invertido */
-  --table-header-text: #b0c8e0;
-  --table-row-bg: #0d1f35;
-  --table-row-alt: #0f2238;      /* zebra striping sutil — diferença de ~2 luminosidade */
-  --table-row-hover: #162d48;
-  --table-border: #1e3d5c;
+  /* Tabelas — Dark */
+  --table-header-bg: #091828;
+  --table-header-text: #d6e2f0;
+  --table-row-bg: #10243a;
+  --table-row-alt: #122942;
+  --table-row-hover: #1b3f61;
+  --table-border: #34516f;
 
   /* Chips / Badges */
-  --chip-bg: rgba(176, 200, 224, 0.13);
-  --chip-text: #b0c8e0;
+  --chip-bg: rgba(214, 226, 240, 0.13);
+  --chip-text: #d6e2f0;
 
   /* Botões */
   --button-primary-bg: var(--accent);
   --button-primary-text: var(--accent-contrast);
-  --button-secondary-bg: #152a45;
+  --button-secondary-bg: #163653;
   --button-secondary-text: var(--text-primary);
 
   /* Inputs */
-  --input-bg: #0e2440;
-  --input-border: #1e3d5c;
-  --input-text: #e8f0f8;
-  --input-placeholder: #6b90b0;
+  --input-bg: #0b1f35;
+  --input-border: #34516f;
+  --input-text: #f8fafc;
+  --input-placeholder: #a9b9cc;
 
   /* Disabled */
   --disabled-bg: rgba(148, 163, 184, 0.10);
-  --disabled-text: #4a647a;
-  --disabled-border: #1e3d5c;
+  --disabled-text: #7f91a8;
+  --disabled-border: #34516f;
 }
 
 
@@ -299,9 +311,14 @@ body {
   font-size: 12px !important;
 }
 
-/* Utilitários Tailwind */
-.text-xs { font-size: 13px !important; }
+/* Utilitários Tailwind e Normalização de Escala Tipográfica */
+.text-3xl { font-size: 26px !important; }
+.text-2xl { font-size: 22px !important; }
+.text-xl { font-size: 20px !important; }
+.text-lg { font-size: 17px !important; }
+.text-base { font-size: 14.5px !important; }
 .text-sm { font-size: 14.5px !important; }
+.text-xs { font-size: 13px !important; }
 
 /* ============================================================
    TABELAS — Base global (ambos os temas)
@@ -964,9 +981,6 @@ table tbody tr {
 }
 :root .match-candidate-row:hover {
   background-color: var(--table-row-hover) !important;
-}
-:root .match-seniority-badge {
-  /* mantém as classes Tailwind no light */
 }
 
 /* Dark Mode overrides para os accordions de match */

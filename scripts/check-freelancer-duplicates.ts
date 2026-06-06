@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
+declare const process: any;
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
@@ -41,6 +43,7 @@ async function run() {
   if (freelaError || !freelancers) {
     console.error("Erro ao buscar freelancers:", freelaError);
     process.exit(1);
+    return;
   }
 
   console.log(`Total de registros de freelancers encontrados: ${freelancers.length}`);
@@ -53,8 +56,8 @@ async function run() {
   // - Name (normalized)
   // - Email (normalized) - if not null
 
-  const groupsByName = new Map<string, typeof freelancers>();
-  const groupsByEmail = new Map<string, typeof freelancers>();
+  const groupsByName = new Map<string, NonNullable<typeof freelancers>>();
+  const groupsByEmail = new Map<string, NonNullable<typeof freelancers>>();
 
   for (const f of activeFreelas) {
     if (f.full_name_normalized) {
