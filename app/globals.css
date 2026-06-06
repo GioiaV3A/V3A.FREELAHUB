@@ -1,0 +1,651 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geologica), system-ui, -apple-system, sans-serif;
+  --color-sidebar-navy: #0A192F;
+  --color-action-cyan: #00BCD4;
+  --color-status-error: #F54336;
+  --color-status-success: #4CAF50;
+  --color-status-warning: #FFC107;
+
+  --color-bg-app: var(--bg-app);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-elevated: var(--bg-surface-elevated);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-bg-topbar: var(--bg-topbar);
+  --color-bg-input: var(--bg-input);
+  --color-bg-muted: var(--bg-muted);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-focus: var(--border-focus);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-contrast: var(--accent-contrast);
+
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
+  --color-success-text: var(--success-text);
+
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-warning-text: var(--warning-text);
+
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-danger-text: var(--danger-text);
+
+  --color-info-bg: var(--info-bg);
+  --color-info-border: var(--info-border);
+  --color-info-text: var(--info-text);
+
+  --color-neutral-bg: var(--neutral-bg);
+  --color-neutral-border: var(--neutral-border);
+  --color-neutral-text: var(--neutral-text);
+
+  --color-table-header-bg: var(--table-header-bg);
+  --color-table-row-bg: var(--table-row-bg);
+  --color-table-row-hover: var(--table-row-hover);
+  --color-table-border: var(--table-border);
+
+  --color-chip-bg: var(--chip-bg);
+  --color-chip-text: var(--chip-text);
+
+  --color-button-primary-bg: var(--button-primary-bg);
+  --color-button-primary-text: var(--button-primary-text);
+  --color-button-secondary-bg: var(--button-secondary-bg);
+  --color-button-secondary-text: var(--button-secondary-text);
+
+  --color-disabled-bg: var(--disabled-bg);
+  --color-disabled-text: var(--disabled-text);
+  --color-disabled-border: var(--disabled-border);
+
+  /* Font size scale up for operational readability */
+  --font-size-xs: 13.5px;
+  --font-size-sm: 15px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 28px;
+}
+
+/* CSS Theme Variables */
+:root {
+  --bg-app: #f6f8fb;
+  --bg-page: var(--bg-app);
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f1f5f9;
+  --bg-surface-elevated: #ffffff;
+  --bg-sidebar: #071426;
+  --bg-topbar: #ffffff;
+  --bg-input: #ffffff;
+  --bg-muted: #f1f5f9;
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-disabled: #94a3b8;
+  --text-inverse: #ffffff;
+
+  --border-subtle: #d9e2ec;
+  --border-strong: #b8c7d9;
+  --border-focus: #13bfd4;
+
+  --accent: #089eb4;
+  --accent-hover: #067f92;
+  --accent-soft: rgba(8, 158, 180, 0.10);
+  --accent-contrast: #ffffff;
+
+  --success-bg: #ecfdf5;
+  --success-border: #10b981;
+  --success-text: #047857;
+
+  --warning-bg: #fffbeb;
+  --warning-border: #f59e0b;
+  --warning-text: #92400e;
+
+  --danger-bg: #fef2f2;
+  --danger-border: #ef4444;
+  --danger-text: #b91c1c;
+
+  --info-bg: #eff6ff;
+  --info-border: #3b82f6;
+  --info-text: #1d4ed8;
+
+  --neutral-bg: #f1f5f9;
+  --neutral-border: #cbd5e1;
+  --neutral-text: #334155;
+
+  /* Component specific mappings in Light mode */
+  --table-header-bg: #f8fafc;
+  --table-row-bg: #ffffff;
+  --table-row-hover: #f1f5f9;
+  --table-border: #e2e8f0;
+  
+  --chip-bg: #f1f5f9;
+  --chip-text: #334155;
+
+  --button-primary-bg: var(--accent);
+  --button-primary-text: var(--accent-contrast);
+  --button-secondary-bg: var(--bg-surface);
+  --button-secondary-text: var(--text-primary);
+  
+  --input-bg: #ffffff;
+  --input-border: #d9e2ec;
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+
+  --disabled-bg: #f1f5f9;
+  --disabled-text: #64748b;
+  --disabled-border: #cbd5e1;
+}
+
+.dark {
+  --bg-app: #071426;
+  --bg-page: var(--bg-app);
+  --bg-surface: #10243a;
+  --bg-surface-hover: #1e2e42;
+  --bg-surface-elevated: #15304d;
+  --bg-sidebar: #071426;
+  --bg-topbar: #0b1b2e;
+  --bg-input: #0b1f35;
+  --bg-muted: #172b43;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-disabled: #64748b;
+  --text-inverse: #071426;
+
+  --border-subtle: #29435f;
+  --border-strong: #3b5f83;
+  --border-focus: #18c5d8;
+
+  --accent: #13bfd4;
+  --accent-hover: #22d3ee;
+  --accent-soft: rgba(19, 191, 212, 0.14);
+  --accent-contrast: #06131f;
+
+  --success-bg: rgba(16, 185, 129, 0.14);
+  --success-border: #10b981;
+  --success-text: #6ee7b7;
+
+  --warning-bg: rgba(245, 158, 11, 0.16);
+  --warning-border: #f59e0b;
+  --warning-text: #fcd34d;
+
+  --danger-bg: rgba(239, 68, 68, 0.16);
+  --danger-border: #ef4444;
+  --danger-text: #fca5a5;
+
+  --info-bg: rgba(59, 130, 246, 0.16);
+  --info-border: #3b82f6;
+  --info-text: #93c5fd;
+
+  --neutral-bg: rgba(148, 163, 184, 0.14);
+  --neutral-border: #64748b;
+  --neutral-text: #cbd5e1;
+
+  /* Component specific mappings in Dark mode */
+  --table-header-bg: var(--bg-muted);
+  --table-row-bg: var(--bg-surface);
+  --table-row-hover: var(--bg-surface-elevated);
+  --table-border: var(--border-subtle);
+  
+  --chip-bg: rgba(148, 163, 184, 0.12);
+  --chip-text: #cbd5e1;
+
+  --button-primary-bg: var(--accent);
+  --button-primary-text: var(--accent-contrast);
+  --button-secondary-bg: var(--bg-surface);
+  --button-secondary-text: var(--text-primary);
+  
+  --input-bg: #0b1f35;
+  --input-border: var(--border-subtle);
+  --input-text: #f8fafc;
+  --input-placeholder: #64748b;
+
+  --disabled-bg: rgba(148, 163, 184, 0.12);
+  --disabled-text: #94a3b8;
+  --disabled-border: #334155;
+}
+
+@layer utilities {
+  /* Thin elegant scrollbars */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Base styles override for typography and form controls */
+body {
+  font-size: 15px;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Ensure tables are readable and clean */
+table {
+  font-size: 14px !important;
+}
+table th {
+  font-size: 12.5px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-weight: 750 !important;
+}
+table td {
+  font-size: 14px !important;
+}
+table td p, table td span {
+  font-size: 13.5px !important;
+}
+table td .text-\[10px\], table td .text-xs, table td .text-\[11px\] {
+  font-size: 12.5px !important;
+}
+
+/* Controls & Form Labels */
+label {
+  font-size: 13.5px !important;
+  font-weight: 650 !important;
+}
+input, select, textarea {
+  font-size: 14px !important;
+}
+button {
+  font-size: 14px !important;
+}
+
+/* Sidebar navigation links */
+aside button, aside span, aside p {
+  font-size: 14px !important;
+}
+aside .text-\[9px\] {
+  font-size: 11px !important;
+}
+
+/* --- Dark Mode Semantic overrides for fast, 100% safe adaptation without refactoring --- */
+.dark .bg-white {
+  background-color: var(--bg-surface) !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-\[\#F8FAFC\],
+.dark .bg-\[\#f8fafc\] {
+  background-color: var(--bg-page) !important;
+}
+
+.dark .bg-slate-50\/50 {
+  background-color: rgba(7, 20, 38, 0.5) !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: var(--bg-page) !important;
+}
+
+.dark .border-border-subtle,
+.dark .border-slate-50,
+.dark .border-slate-100,
+.dark .border-slate-150,
+.dark .border-slate-200,
+.dark .border-white,
+.dark hr {
+  border-color: var(--border-subtle) !important;
+}
+
+.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-150 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-white > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-subtle) !important;
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+/* Sidebar must stay dark (navy) in both modes to preserve V3A identity */
+aside, 
+aside .bg-\[\#081528\],
+aside .bg-sidebar-navy {
+  background-color: #0A192F !important;
+  border-color: #14233c !important;
+}
+
+aside p, 
+aside span {
+  color: #94a3b8;
+}
+
+aside h1, 
+aside h1 span, 
+aside strong,
+aside .text-white {
+  color: #ffffff !important;
+}
+
+aside button {
+  color: #cbd5e1 !important;
+  background-color: transparent !important;
+}
+
+aside button:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #ffffff !important;
+}
+
+/* Ensure the active/selected button keeps its specific background and text color! */
+aside button.bg-action-cyan {
+  background-color: #00BCD4 !important;
+  color: #0A192F !important;
+}
+aside button.bg-action-cyan svg,
+aside button.bg-action-cyan span {
+  color: #0A192F !important;
+}
+
+/* Scrollbar overrides for elegant scrollbars in all pages */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0b1f35;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #3b5f83;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #57799d;
+}
+
+/* Typography scale constraints to avoid text smaller than 12px */
+.text-\[8px\],
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 12px !important;
+}
+.text-xs {
+  font-size: 13px !important;
+}
+.text-sm {
+  font-size: 14.5px !important;
+}
+
+/* Table rules for both modes */
+table thead th {
+  font-size: 12px !important;
+  font-weight: 750 !important;
+}
+
+.dark table thead {
+  background-color: var(--table-header-bg) !important;
+}
+.dark table thead th {
+  color: var(--text-secondary) !important;
+  background-color: var(--table-header-bg) !important;
+}
+.dark table tbody tr {
+  background-color: var(--table-row-bg) !important;
+}
+.dark table tbody tr:hover {
+  background-color: var(--table-row-hover) !important;
+}
+.dark table th, 
+.dark table td {
+  border-color: var(--table-border) !important;
+}
+
+/* Text overrides in Dark mode */
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-text-primary,
+.dark table tbody tr td,
+.dark table tbody tr td span {
+  color: var(--text-primary) !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.dark .text-slate-350,
+.dark .text-slate-300 {
+  color: var(--text-muted) !important;
+}
+
+/* Form controls overrides in Dark Mode */
+.dark input, 
+.dark select, 
+.dark textarea {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+.dark input::placeholder, 
+.dark select::placeholder,
+.dark textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+.dark input:focus, 
+.dark select:focus, 
+.dark textarea:focus {
+  border-color: var(--border-focus) !important;
+  outline: none !important;
+}
+
+/* Checkboxes in Dark Mode */
+.dark input[type="checkbox"] {
+  accent-color: var(--accent) !important;
+  border-color: var(--border-subtle) !important;
+}
+
+/* Disabled States */
+.dark input:disabled, 
+.dark select:disabled, 
+.dark textarea:disabled,
+.dark button:disabled {
+  background-color: var(--disabled-bg) !important;
+  color: var(--text-disabled) !important;
+  border-color: var(--disabled-border) !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+}
+
+input:disabled, 
+select:disabled, 
+textarea:disabled,
+button:disabled {
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border-color: #cbd5e1 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+}
+
+/* Button variants styling */
+.dark button.bg-slate-50,
+.dark button.bg-slate-100 {
+  background-color: var(--bg-surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-subtle) !important;
+}
+.dark button.bg-slate-50:hover,
+.dark button.bg-slate-100:hover {
+  background-color: var(--bg-surface-hover) !important;
+}
+
+/* Modal/Drawers */
+.dark .bg-white {
+  background-color: var(--bg-surface) !important;
+}
+.dark .bg-slate-900\/60,
+.dark .bg-slate-900\/40 {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* --- Status & Badge Overrides for Dark Mode --- */
+.dark .bg-emerald-50,
+.dark .bg-emerald-100\/80,
+.dark .bg-emerald-50\/40 {
+  background-color: var(--success-bg) !important;
+}
+.dark .text-emerald-700,
+.dark .text-emerald-800,
+.dark .text-emerald-850,
+.dark .text-emerald-950,
+.dark .text-emerald-600 {
+  color: var(--success-text) !important;
+}
+.dark .border-emerald-150,
+.dark .border-emerald-200 {
+  border-color: var(--success-border) !important;
+}
+
+.dark .bg-amber-50,
+.dark .bg-amber-100\/80,
+.dark .bg-amber-50\/40 {
+  background-color: var(--warning-bg) !important;
+}
+.dark .text-amber-700,
+.dark .text-amber-800,
+.dark .text-\[\#B28900\] {
+  color: var(--warning-text) !important;
+}
+.dark .border-amber-150,
+.dark .border-amber-200 {
+  border-color: var(--warning-border) !important;
+}
+
+.dark .bg-rose-50,
+.dark .bg-red-50,
+.dark .bg-rose-100\/80,
+.dark .bg-rose-50\/40,
+.dark .bg-rose-50\/45 {
+  background-color: var(--danger-bg) !important;
+}
+.dark .text-rose-700,
+.dark .text-rose-800,
+.dark .text-rose-950,
+.dark .text-rose-950\/80,
+.dark .text-red-700,
+.dark .text-rose-600 {
+  color: var(--danger-text) !important;
+}
+.dark .border-rose-150,
+.dark .border-rose-200,
+.dark .border-red-200 {
+  border-color: var(--danger-border) !important;
+}
+
+.dark .bg-cyan-50,
+.dark .bg-cyan-100\/80,
+.dark .bg-cyan-50\/40 {
+  background-color: var(--info-bg) !important;
+}
+.dark .text-cyan-800,
+.dark .text-cyan-850,
+.dark .text-cyan-900,
+.dark .text-cyan-950,
+.dark .text-cyan-700 {
+  color: var(--info-text) !important;
+}
+.dark .border-cyan-150,
+.dark .border-cyan-200,
+.dark .border-cyan-250 {
+  border-color: var(--info-border) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.16) !important;
+}
+.dark .text-blue-700,
+.dark .text-blue-800 {
+  color: #93c5fd !important;
+}
+.dark .border-blue-150,
+.dark .border-blue-200 {
+  border-color: #3b82f6 !important;
+}
+
+.dark .bg-slate-100,
+.dark .bg-slate-200 {
+  background-color: var(--neutral-bg) !important;
+}
+.dark .text-slate-600,
+.dark .text-slate-650,
+.dark .text-slate-700,
+.dark .text-slate-800 {
+  color: var(--neutral-text) !important;
+}
+.dark .border-slate-200 {
+  border-color: var(--neutral-border) !important;
+}
+
+/* --- Translucent formatting and specific component overrides --- */
+.dark .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+}
+.dark .border-indigo-100,
+.dark .border-indigo-150 {
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+.dark .text-indigo-950,
+.dark .text-indigo-700,
+.dark .text-indigo-800 {
+  color: #a5b4fc !important;
+}
+
+.dark .bg-cyan-50\/40 {
+  background-color: rgba(6, 182, 212, 0.1) !important;
+}
+
+/* Blocked rows translucent backgrounds */
+.dark .bg-rose-50\/40,
+.dark .bg-rose-50\/45 {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+}
+.dark .text-rose-950\/80,
+.dark .text-rose-950 {
+  color: var(--danger-text) !important;
+}
+
+

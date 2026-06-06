@@ -1,0 +1,6 @@
+{
+  "name": "Freela Hub",
+  "description": "Plataforma de gestão e governança de freelancers para agências de live marketing",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,1024 @@
+'use server';
+
+import { getSupabaseAdmin } from '@/lib/supabase';
+
+/**
+ * Creates a new user in Supabase Auth and inserts their profile into the public.profiles table.
+ * Restricted to MASTER or RH users.
+ */
+export async function createUserAction(
+  accessToken: string,
+  userData: {
+    full_name: string;
+    email: string;
+    role: 'master' | 'rh' | 'nucleo';
+    nucleo_id?: string | null;
+    job_title?: string | null;
+    password?: string;
+  }
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // 1. Verify requester session
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    // Check requester profile permissions
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role === 'nucleo') {
+      return { success: false, error: 'Você não tem permissão para cadastrar usuários.' };
+    }
+
+    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
+      return { success: false, error: 'Você não tem permissão para cadastrar usuários.' };
+    }
+
+    // Validar role recebido
+    const normalizedRole = userData.role?.toLowerCase();
+    if (normalizedRole !== 'master' && normalizedRole !== 'rh' && normalizedRole !== 'nucleo') {
+      return { success: false, error: 'Perfil de acesso inválido. Use apenas MASTER, RH ou NÚCLEO.' };
+    }
+
+    // Validar permissão por perfil (RH só cria nucleo, MASTER cria rh ou nucleo)
+    if (requesterProfile.role === 'rh' && normalizedRole !== 'nucleo') {
+      return { success: false, error: 'RH pode cadastrar apenas usuários com perfil de acesso NÚCLEO.' };
+    }
+
+    // Se cargo vier vazio
+    if (!userData.job_title || !userData.job_title.trim()) {
+      return { success: false, error: 'Informe o cargo/função do usuário no núcleo.' };
+    }
+
+    // Se núcleo não for informado
+    if (normalizedRole === 'nucleo' && !userData.nucleo_id) {
+      return { success: false, error: 'Selecione o núcleo vinculado ao usuário.' };
+    }
+
+    // Normalizar e-mail para lowercase
+    const emailLower = userData.email?.toLowerCase().trim();
+    if (!emailLower) {
+      return { success: false, error: 'Informe o e-mail do usuário.' };
+    }
+
+    // Verificar se já existe usuário com esse e-mail
+    const { data: existingUser } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('email', emailLower)
+      .maybeSingle();
+
+    if (existingUser) {
+      return { success: false, error: 'Já existe um usuário cadastrado com este e-mail.' };
+    }
+
+    // 2. Create the user in auth.users
+    const { data: authUser, error: createErr } = await adminClient.auth.admin.createUser({
+      email: emailLower,
+      password: userData.password || 'V3A@123',
+      email_confirm: true,
+    });
+
+    if (createErr || !authUser.user) {
+      if (createErr?.message?.includes('already exists') || createErr?.status === 422) {
+        return { success: false, error: 'Já existe um usuário cadastrado com este e-mail.' };
+      }
+      return { success: false, error: createErr?.message || 'Erro ao criar conta de autenticação.' };
+    }
+
+    // 3. Create profile in public.profiles
+    const { error: profileCreateErr } = await adminClient
+      .from('profiles')
+      .insert({
+        id: authUser.user.id,
+        full_name: userData.full_name,
+        email: emailLower,
+        role: normalizedRole,
+        nucleo_id: normalizedRole === 'nucleo' ? userData.nucleo_id : null,
+        job_title: userData.job_title,
+        status: 'active',
+        first_login_required: true,
+        created_by: requester.id,
+      });
+
+    if (profileCreateErr) {
+      // Rollback auth user creation if profile insert fails
+      await adminClient.auth.admin.deleteUser(authUser.user.id);
+      return { success: false, error: `Erro ao criar perfil do usuário: ${profileCreateErr.message}` };
+    }
+
+    return { success: true, message: 'Usuário de núcleo criado com sucesso. A troca de senha será solicitada no primeiro acesso.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
+/**
+ * Resets a user's password and forces first_login_required to true.
+ * Restricted to MASTER or RH users.
+ */
+export async function resetUserPasswordAction(
+  accessToken: string,
+  targetUserId: string,
+  newPassword?: string
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // Verify requester
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    // Check requester profile
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
+      return { success: false, error: 'Você não tem permissão para redefinir senhas.' };
+    }
+
+    // Check target user role
+    const { data: targetProfile, error: targetProfileErr } = await adminClient
+      .from('profiles')
+      .select('role')
+      .eq('id', targetUserId)
+      .single();
+
+    if (targetProfileErr || !targetProfile) {
+      return { success: false, error: 'Usuário de destino não encontrado.' };
+    }
+
+    // Prevent RH from resetting passwords of non-nucleo users
+    if (requesterProfile.role === 'rh' && targetProfile.role !== 'nucleo') {
+      return { success: false, error: 'RH tem permissão para redefinir senha apenas de usuários do perfil NÚCLEO.' };
+    }
+
+    // 2. Update password in auth
+    const passwordToSet = newPassword || 'V3A@123';
+    const { error: resetErr } = await adminClient.auth.admin.updateUserById(targetUserId, {
+      password: passwordToSet,
+    });
+
+    if (resetErr) {
+      return { success: false, error: resetErr.message };
+    }
+
+    // 3. Update profile first_login_required = true
+    const { error: profileUpdateErr } = await adminClient
+      .from('profiles')
+      .update({
+        first_login_required: true,
+        updated_by: requester.id,
+      })
+      .eq('id', targetUserId);
+
+    if (profileUpdateErr) {
+      return { success: false, error: 'Senha redefinida no auth, mas erro ao atualizar perfil do usuário.' };
+    }
+
+    return { success: true, message: 'Senha redefinida com sucesso. No próximo acesso, o usuário deverá alterar a senha.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
+/**
+ * Updates the logged in user's own password, and clears first_login_required.
+ */
+export async function updateOwnPasswordAction(accessToken: string, newPassword: string) {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // Verify requester
+    const { data: { user }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !user) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    // 1. Update password in auth.users
+    const { error: updateErr } = await adminClient.auth.admin.updateUserById(user.id, {
+      password: newPassword,
+    });
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    // 2. Clear first_login_required in profile
+    const { error: profileErr } = await adminClient
+      .from('profiles')
+      .update({
+        first_login_required: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id);
+
+    if (profileErr) {
+      return { success: false, error: 'Senha alterada no auth, mas falha ao atualizar o perfil.' };
+    }
+
+    return { success: true, message: 'Senha alterada com sucesso!' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
+/**
+ * Seed Initial Data (Nucleos, initial Users, functions, industries, clients, rate policies, freelancers).
+ * Handled idempotently.
+ */
+export async function seedInitialDataAction() {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // 1. Seed Nucleos
+    const nucleosToSeed = [
+      { name: 'Tecnologia', code: 'NUC-TEC', head_name: 'Tiago Silva', head_email: 'tiago.tech@v3a.com.br' },
+      { name: 'Marketing', code: 'NUC-MKT', head_name: 'Ana Lima', head_email: 'ana.mkt@v3a.com.br' },
+      { name: 'Design & Criação', code: 'NUC-DES', head_name: 'Lucas Borges', head_email: 'lucas.design@v3a.com.br' },
+      { name: 'Planejamento & Estratégia', code: 'NUC-PLA', head_name: 'Mariana Duarte', head_email: 'mariana.plan@v3a.com.br' },
+      { name: 'Produção Executiva', code: 'NUC-PRO', head_name: 'Ricardo Lemos', head_email: 'ricardo.prod@v3a.com.br' },
+      { name: 'Operações de Campo', code: 'NUC-OPE', head_name: 'Carla Dias', head_email: 'carla.ops@v3a.com.br' },
+    ];
+
+    const nucleoIds: Record<string, string> = {};
+
+    for (const n of nucleosToSeed) {
+      const { data: existing } = await adminClient
+        .from('nucleos')
+        .select('id')
+        .eq('name', n.name)
+        .maybeSingle();
+
+      if (existing) {
+        nucleoIds[n.name] = existing.id;
+      } else {
+        const { data: created, error } = await adminClient
+          .from('nucleos')
+          .insert(n)
+          .select('id')
+          .single();
+        
+        if (!error && created) {
+          nucleoIds[n.name] = created.id;
+        }
+      }
+    }
+
+    // 2. Seed Users
+    const usersToSeed = [
+      {
+        email: 'renato@v3a.ag',
+        password: 'V3A@123',
+        full_name: 'RENATO GIOIA',
+        role: 'master' as const,
+        first_login_required: false,
+        is_seed_master: true,
+        job_title: 'Diretor Master',
+      },
+      {
+        email: 'karen@v3a.ag',
+        password: 'V3A@123',
+        full_name: 'Karen Maximo',
+        role: 'rh' as const,
+        first_login_required: true,
+        is_seed_master: false,
+        job_title: 'Gerente Operacional de RH',
+      },
+      {
+        email: 'alexandre@v3a.ag',
+        password: 'V3A@123',
+        full_name: 'Alexandre Moreira',
+        role: 'nucleo' as const,
+        nucleo_name: 'Design & Criação',
+        first_login_required: true,
+        is_seed_master: false,
+        job_title: 'Head de Design & Criação',
+      },
+    ];
+
+    for (const u of usersToSeed) {
+      const { data: existingProfile } = await adminClient
+        .from('profiles')
+        .select('id')
+        .eq('email', u.email)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        // Create auth user
+        const { data: authUser, error: authErr } = await adminClient.auth.admin.createUser({
+          email: u.email,
+          password: u.password,
+          email_confirm: true,
+        });
+
+        if (authErr || !authUser.user) {
+          console.error(`Error creating auth user ${u.email}:`, authErr);
+          continue;
+        }
+
+        let nucleoId: string | null = null;
+        if (u.role === 'nucleo' && u.nucleo_name) {
+          nucleoId = nucleoIds[u.nucleo_name] || null;
+        }
+
+        // Create profile
+        const { error: profileErr } = await adminClient
+          .from('profiles')
+          .insert({
+            id: authUser.user.id,
+            full_name: u.full_name,
+            email: u.email,
+            role: u.role,
+            nucleo_id: nucleoId,
+            job_title: u.job_title,
+            status: 'active',
+            first_login_required: u.first_login_required,
+            is_seed_master: u.is_seed_master,
+          });
+
+        if (profileErr) {
+          console.error(`Error creating profile for ${u.email}:`, profileErr);
+          await adminClient.auth.admin.deleteUser(authUser.user.id);
+        }
+      }
+    }
+
+    // 3. Seed functions
+    const functionsToSeed = [
+      'Diretor de Arte', 'Designer 3D', 'Planejamento', 'Produtor Executivo', 
+      'Produtor de Campo', 'Atendimento', 'Redator', 'Motion Designer', 
+      'Cenógrafo', 'Conteúdo',
+    ];
+    const functionIds: Record<string, string> = {};
+    for (const f of functionsToSeed) {
+      const { data: existing } = await adminClient
+        .from('freela_functions')
+        .select('id')
+        .eq('name', f)
+        .maybeSingle();
+      if (existing) {
+        functionIds[f] = existing.id;
+      } else {
+        const { data: created } = await adminClient
+          .from('freela_functions')
+          .insert({ name: f })
+          .select('id')
+          .single();
+        if (created) functionIds[f] = created.id;
+      }
+    }
+
+    // 4. Seed industries
+    const industriesToSeed = [
+      'Automotivo', 'Bebidas', 'Tecnologia', 'Beleza', 'Entretenimento', 
+      'Varejo', 'Financeiro', 'Saúde', 'Agro',
+    ];
+    const industryIds: Record<string, string> = {};
+    for (const i of industriesToSeed) {
+      const { data: existing } = await adminClient
+        .from('industries')
+        .select('id')
+        .eq('name', i)
+        .maybeSingle();
+      if (existing) {
+        industryIds[i] = existing.id;
+      } else {
+        const { data: created } = await adminClient
+          .from('industries')
+          .insert({ name: i })
+          .select('id')
+          .single();
+        if (created) industryIds[i] = created.id;
+      }
+    }
+
+    // 5. Seed clients
+    const clientsToSeed = [
+      { name: 'Monster Energy', industry: 'Bebidas' },
+      { name: 'Monster Arena', industry: 'Entretenimento' },
+      { name: 'AutoCorp Brasil', industry: 'Automotivo' },
+      { name: 'Energy Drinks Ltd', industry: 'Bebidas' },
+      { name: 'Finance Group', industry: 'Financeiro' },
+      { name: 'GamerZone S.A.', industry: 'Entretenimento' },
+      { name: 'Cervejaria Premium', industry: 'Bebidas' },
+      { name: 'Sementes Brasil', industry: 'Agro' },
+      { name: 'Glow Cosmetics', industry: 'Beleza' },
+      { name: 'Core Tech', industry: 'Tecnologia' },
+      { name: 'Beleza S.A.', industry: 'Beleza' },
+      { name: 'AgroFest Corp', industry: 'Agro' },
+    ];
+    for (const c of clientsToSeed) {
+      const { data: existing } = await adminClient
+        .from('clients')
+        .select('id')
+        .eq('name', c.name)
+        .maybeSingle();
+      if (!existing) {
+        await adminClient.from('clients').insert(c);
+      }
+    }
+
+    // 6. Seed rate policies
+    const ratePoliciesToSeed = [
+      { function: 'Diretor de Arte', seniority: 'senior' as const, reference_value: 600, ceiling_value: 800 },
+      { function: 'Designer 3D', seniority: 'senior' as const, reference_value: 700, ceiling_value: 900 },
+      { function: 'Planejamento', seniority: 'pleno' as const, reference_value: 500, ceiling_value: 650 },
+      { function: 'Produtor Executivo', seniority: 'senior' as const, reference_value: 800, ceiling_value: 1000 },
+      { function: 'Produtor de Campo', seniority: 'pleno' as const, reference_value: 400, ceiling_value: 550 },
+      { function: 'Atendimento', seniority: 'pleno' as const, reference_value: 450, ceiling_value: 600 },
+      { function: 'Redator', seniority: 'pleno' as const, reference_value: 400, ceiling_value: 550 },
+      { function: 'Motion Designer', seniority: 'senior' as const, reference_value: 650, ceiling_value: 850 },
+      { function: 'Cenógrafo', seniority: 'especialista' as const, reference_value: 900, ceiling_value: 1200 },
+      { function: 'Conteúdo', seniority: 'pleno' as const, reference_value: 400, ceiling_value: 500 },
+    ];
+    for (const rp of ratePoliciesToSeed) {
+      const funcId = functionIds[rp.function];
+      if (funcId) {
+        const { data: existing } = await adminClient
+          .from('rate_policies')
+          .select('id')
+          .eq('function_id', funcId)
+          .eq('seniority', rp.seniority)
+          .maybeSingle();
+        if (!existing) {
+          await adminClient.from('rate_policies').insert({
+            function_id: funcId,
+            seniority: rp.seniority,
+            billing_type: 'diaria',
+            reference_value: rp.reference_value,
+            ceiling_value: rp.ceiling_value,
+          });
+        }
+      }
+    }
+
+    // 7. Seed freelancers
+    const freelancersToSeed = [
+      { full_name: 'Carlos Silva', email: 'carlos.designer@gmail.com', whatsapp: '(11) 98765-4321', city: 'São Paulo', state: 'SP', main_function: 'Designer 3D', seniority: 'senior' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 750, average_score: 4.85, observations: 'Perfil extremamente criativo.' },
+      { full_name: 'Amanda Costa', email: 'amanda.mkt@hotmail.com', whatsapp: '(21) 99123-4567', city: 'Rio de Janeiro', state: 'RJ', main_function: 'Planejamento', seniority: 'pleno' as const, status: 'elegivel' as const, availability: 'sob_consulta' as const, reference_daily_rate: 520, average_score: 4.90, observations: 'Excelente comunicação.' },
+      { full_name: 'João Pedro Santos', email: 'jp.arte@v3a.com', whatsapp: '(11) 98111-2222', city: 'Campinas', state: 'SP', main_function: 'Diretor de Arte', seniority: 'senior' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 650, average_score: 4.72, observations: 'Alta produtividade.' },
+      { full_name: 'Mariana Costa', email: 'mari.conteudo@v3a.com', whatsapp: '(31) 98555-6666', city: 'Belo Horizonte', state: 'MG', main_function: 'Conteúdo', seniority: 'junior' as const, status: 'em_analise' as const, availability: 'disponivel' as const, reference_daily_rate: 350, average_score: 0, observations: 'Indicada no núcleo de marketing.' },
+      { full_name: 'Lucas Martins', email: 'lucas.produtor@gmail.com', whatsapp: '(21) 99666-5544', city: 'Niterói', state: 'RJ', main_function: 'Produtor Executivo', seniority: 'senior' as const, status: 'elegivel' as const, availability: 'sob_consulta' as const, reference_daily_rate: 850, average_score: 4.98, observations: 'Larga experiência.' },
+      { full_name: 'Ana Paula Rosa', email: 'anapaula.atendimento@outlook.com', whatsapp: '(41) 98888-7777', city: 'Curitiba', state: 'PR', main_function: 'Atendimento', seniority: 'senior' as const, status: 'bloqueado' as const, availability: 'indisponivel' as const, reference_daily_rate: 620, average_score: 2.10, observations: 'Bloqueado por problemas.' },
+      { full_name: 'Roberto Alves', email: 'roberto.alves.campo@gmail.com', whatsapp: '(11) 97777-8888', city: 'São Paulo', state: 'SP', main_function: 'Produtor de Campo', seniority: 'pleno' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 450, average_score: 4.65, observations: 'Muito proativo.' },
+      { full_name: 'Fernanda Lima', email: 'fernandalima.redacao@gmail.com', whatsapp: '(51) 98122-3344', city: 'Porto Alegre', state: 'RS', main_function: 'Redator', seniority: 'pleno' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 480, average_score: 4.80, observations: 'Especialista em tom.' },
+      { full_name: 'Eduardo Santos', email: 'edu.motion@v3a.com', whatsapp: '(11) 99188-3322', city: 'Santos', state: 'SP', main_function: 'Motion Designer', seniority: 'senior' as const, status: 'em_onboarding' as const, availability: 'disponivel' as const, reference_daily_rate: 680, average_score: 0, observations: 'Passando por validação.' },
+      { full_name: 'Camila Alves', email: 'camila.cenografia@gmail.com', whatsapp: '(21) 98144-1122', city: 'Rio de Janeiro', state: 'RJ', main_function: 'Cenógrafo', seniority: 'especialista' as const, status: 'elegivel' as const, availability: 'sob_consulta' as const, reference_daily_rate: 1100, average_score: 4.95, observations: 'Referência no mercado.' },
+      { full_name: 'Guilherme Ferreira', email: 'guilherme.f@v3a.com', whatsapp: '(11) 92345-6789', city: 'São Paulo', state: 'SP', main_function: 'Produtor de Campo', seniority: 'pleno' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 420, average_score: 4.5, observations: 'Confiável.' },
+      { full_name: 'Patricia Ramos', email: 'patricia.r@v3a.com', whatsapp: '(21) 93456-7890', city: 'Niterói', state: 'RJ', main_function: 'Atendimento', seniority: 'pleno' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 480, average_score: 4.6, observations: 'Bom trato.' },
+      { full_name: 'Julio Castela', email: 'julio.c@v3a.com', whatsapp: '(31) 94567-8901', city: 'Belo Horizonte', state: 'MG', main_function: 'Planejamento', seniority: 'pleno' as const, status: 'em_observacao' as const, availability: 'disponivel' as const, reference_daily_rate: 500, average_score: 3.4, observations: 'Problemas de prazo.' },
+      { full_name: 'Bruna Marquez', email: 'bruna.m@v3a.com', whatsapp: '(11) 95678-9012', city: 'São Paulo', state: 'SP', main_function: 'Diretor de Arte', seniority: 'senior' as const, status: 'inativo' as const, availability: 'indisponivel' as const, reference_daily_rate: 680, average_score: 4.8, observations: 'Desligado.' },
+      { full_name: 'Renato Gaúcho', email: 'renato.g@v3a.com', whatsapp: '(51) 96789-0123', city: 'Porto Alegre', state: 'RS', main_function: 'Produtor Executivo', seniority: 'senior' as const, status: 'elegivel' as const, availability: 'sob_consulta' as const, reference_daily_rate: 800, average_score: 4.7, observations: 'Muito experiente.' },
+      { full_name: 'Larissa Manoela', email: 'larissa.m@v3a.com', whatsapp: '(11) 97890-1234', city: 'São Paulo', state: 'SP', main_function: 'Conteúdo', seniority: 'junior' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 320, average_score: 4.3, observations: 'Boa escrita.' },
+      { full_name: 'Felipe Neto', email: 'felipe.n@v3a.com', whatsapp: '(21) 98901-2345', city: 'Rio de Janeiro', state: 'RJ', main_function: 'Redator', seniority: 'pleno' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 450, average_score: 4.5, observations: 'Revisões rápidas.' },
+      { full_name: 'Gisele Bündchen', email: 'gisele.b@v3a.com', whatsapp: '(11) 99012-3456', city: 'São Paulo', state: 'SP', main_function: 'Diretor de Arte', seniority: 'especialista' as const, status: 'elegivel' as const, availability: 'sob_consulta' as const, reference_daily_rate: 1000, average_score: 4.9, observations: 'Incrível identidade.' },
+      { full_name: 'Neymar Junior', email: 'neymar.j@v3a.com', whatsapp: '(13) 91234-5678', city: 'Santos', state: 'SP', main_function: 'Produtor de Campo', seniority: 'junior' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 350, average_score: 4.1, observations: 'Impulsivo.' },
+      { full_name: 'Marta Vieira', email: 'marta.v@v3a.com', whatsapp: '(82) 92345-6789', city: 'Maceio', state: 'AL', main_function: 'Produtor Executivo', seniority: 'especialista' as const, status: 'elegivel' as const, availability: 'disponivel' as const, reference_daily_rate: 1200, average_score: 5.0, observations: 'A melhor.' },
+    ];
+    for (const f of freelancersToSeed) {
+      const { data: existing } = await adminClient
+        .from('freelancers')
+        .select('id')
+        .eq('full_name', f.full_name)
+        .maybeSingle();
+
+      if (!existing) {
+        const funcId = functionIds[f.main_function] || null;
+        const { data: freelaCreated, error: freelaErr } = await adminClient
+          .from('freelancers')
+          .insert({
+            full_name: f.full_name,
+            email: f.email,
+            whatsapp: f.whatsapp,
+            city: f.city,
+            state: f.state,
+            main_function_id: funcId,
+            seniority: f.seniority,
+            status: f.status,
+            availability: f.availability,
+            reference_daily_rate: f.reference_daily_rate,
+            average_score: f.average_score,
+            observations: f.observations,
+          })
+          .select('id')
+          .single();
+
+        // Seed some mock industries and skills
+        if (!freelaErr && freelaCreated) {
+          const mockIndName = f.main_function === 'Planejamento' ? 'Varejo' : 'Bebidas';
+          const indId = industryIds[mockIndName];
+          if (indId) {
+            await adminClient.from('freelancer_industries').insert({
+              freelancer_id: freelaCreated.id,
+              industry_id: indId,
+            });
+          }
+        }
+      }
+    }
+
+    return { success: true, message: 'Seeding executado com sucesso!' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Erro durante o seeding.' };
+  }
+}
+
+export async function createNucleoWithOptionalHeadUserAction(
+  accessToken: string,
+  payload: {
+    nucleoName: string;
+    headName: string;
+    headEmail: string;
+    createHeadUser: boolean;
+    initialPassword?: string;
+    confirmInitialPassword?: string;
+  }
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // 1. Verify requester session
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    // Check requester profile permissions
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
+      return { success: false, error: 'Você não tem permissão para cadastrar núcleos.' };
+    }
+
+    // Validations:
+    if (!payload.nucleoName || !payload.headName || !payload.headEmail) {
+      return { success: false, error: 'Por favor, preencha todos os campos obrigatórios (Nome do Núcleo, Nome do Head e E-mail).' };
+    }
+
+    let existingAuthUserId: string | null = null;
+
+    if (payload.createHeadUser) {
+      if (!payload.initialPassword || !payload.confirmInitialPassword) {
+        return { success: false, error: 'Por favor, preencha a senha inicial e a confirmação.' };
+      }
+      if (payload.initialPassword !== payload.confirmInitialPassword) {
+        return { success: false, error: 'As senhas informadas não coincidem.' };
+      }
+
+      // Check if email already exists in profiles
+      const { data: existingUser } = await adminClient
+        .from('profiles')
+        .select('role, email')
+        .eq('email', payload.headEmail.trim().toLowerCase())
+        .maybeSingle();
+
+      if (existingUser) {
+        return { 
+          success: false, 
+          error: `E-mail duplicado`, 
+          emailExists: true,
+          existingUserRole: existingUser.role 
+        };
+      }
+
+      // Caso 3 check: Check if user exists in auth.users
+      existingAuthUserId = await getAuthUserIdByEmail(adminClient, payload.headEmail);
+    }
+
+    // 2. Create the nucleo
+    const { data: newNucleo, error: nucCreateErr } = await adminClient
+      .from('nucleos')
+      .insert({
+        name: payload.nucleoName,
+        head_name: payload.headName,
+        head_email: payload.headEmail.trim().toLowerCase(),
+        status: 'active',
+        created_by: requester.id
+      })
+      .select('*')
+      .single();
+
+    if (nucCreateErr || !newNucleo) {
+      return { success: false, error: `Erro ao criar núcleo: ${nucCreateErr?.message}` };
+    }
+
+    let profileResult = null;
+    let finalHeadUserId: string | null = null;
+
+    if (payload.createHeadUser) {
+      if (existingAuthUserId) {
+        // Caso 3: User already in auth.users but has no profile
+        const { data: newProfile, error: profileCreateErr } = await adminClient
+          .from('profiles')
+          .insert({
+            id: existingAuthUserId,
+            full_name: payload.headName,
+            email: payload.headEmail.trim().toLowerCase(),
+            role: 'nucleo',
+            nucleo_id: newNucleo.id,
+            job_title: 'Head do Núcleo',
+            status: 'active',
+            first_login_required: true,
+            created_by: requester.id,
+          })
+          .select('*')
+          .single();
+
+        if (profileCreateErr) {
+          // Rollback nucleo
+          await adminClient.from('nucleos').delete().eq('id', newNucleo.id);
+          return { success: false, error: `Erro ao criar perfil do Head (Usuário existente): ${profileCreateErr.message}` };
+        }
+
+        profileResult = newProfile;
+        finalHeadUserId = existingAuthUserId;
+      } else {
+        // 3. Create the user in auth.users
+        const { data: authUser, error: createAuthErr } = await adminClient.auth.admin.createUser({
+          email: payload.headEmail.trim().toLowerCase(),
+          password: payload.initialPassword,
+          email_confirm: true,
+        });
+
+        if (createAuthErr || !authUser.user) {
+          // Rollback nucleo creation
+          await adminClient.from('nucleos').delete().eq('id', newNucleo.id);
+          return { success: false, error: `Erro ao criar usuário do Head: ${createAuthErr?.message || 'Erro desconhecido.'}` };
+        }
+
+        // 4. Create profile in public.profiles
+        const { data: newProfile, error: profileCreateErr } = await adminClient
+          .from('profiles')
+          .insert({
+            id: authUser.user.id,
+            full_name: payload.headName,
+            email: payload.headEmail.trim().toLowerCase(),
+            role: 'nucleo',
+            nucleo_id: newNucleo.id,
+            job_title: 'Head do Núcleo',
+            status: 'active',
+            first_login_required: true,
+            created_by: requester.id,
+          })
+          .select('*')
+          .single();
+
+        if (profileCreateErr) {
+          // Rollback both auth user and nucleo
+          await adminClient.auth.admin.deleteUser(authUser.user.id);
+          await adminClient.from('nucleos').delete().eq('id', newNucleo.id);
+          return { success: false, error: `Erro ao criar perfil do Head: ${profileCreateErr.message}` };
+        }
+
+        profileResult = newProfile;
+        finalHeadUserId = authUser.user.id;
+      }
+
+      // Update nucleo with head_user_id
+      if (finalHeadUserId) {
+        const { error: updateNucErr } = await adminClient
+          .from('nucleos')
+          .update({ head_user_id: finalHeadUserId })
+          .eq('id', newNucleo.id);
+        
+        if (!updateNucErr) {
+          newNucleo.head_user_id = finalHeadUserId;
+        }
+      }
+    }
+
+    return {
+      success: true,
+      nucleo: newNucleo,
+      userCreated: payload.createHeadUser && !existingAuthUserId,
+      profile: profileResult,
+      message: payload.createHeadUser
+        ? (existingAuthUserId 
+            ? 'Núcleo criado com sucesso. O perfil do Head foi associado ao usuário de autenticação já existente.'
+            : 'Núcleo criado com sucesso. O usuário do Head foi cadastrado e deverá alterar a senha no primeiro acesso.')
+        : 'Núcleo criado com sucesso. Nenhum usuário foi criado para o Head.'
+    };
+
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
+export async function createRetroactiveHeadUserAction(
+  accessToken: string,
+  payload: {
+    nucleoId: string;
+    headName: string;
+    headEmail: string;
+    initialPassword?: string;
+    confirmInitialPassword?: string;
+  }
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // 1. Verify requester session
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    // Check requester profile permissions
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
+      return { success: false, error: 'Você não tem permissão para cadastrar usuários.' };
+    }
+
+    // Validations:
+    if (!payload.nucleoId || !payload.headName || !payload.headEmail) {
+      return { success: false, error: 'Dados do núcleo e do head são obrigatórios.' };
+    }
+
+    if (!payload.initialPassword || !payload.confirmInitialPassword) {
+      return { success: false, error: 'Por favor, preencha a senha inicial e a confirmação.' };
+    }
+    if (payload.initialPassword !== payload.confirmInitialPassword) {
+      return { success: false, error: 'As senhas informadas não coincidem.' };
+    }
+
+    // Check if email already exists in profiles
+    const { data: existingUser } = await adminClient
+      .from('profiles')
+      .select('role, email')
+      .eq('email', payload.headEmail.trim().toLowerCase())
+      .maybeSingle();
+
+    if (existingUser) {
+      return { 
+        success: false, 
+        error: `E-mail duplicado`, 
+        emailExists: true,
+        existingUserRole: existingUser.role 
+      };
+    }
+
+    // Caso 3 check: Check if user exists in auth.users
+    const existingAuthUserId = await getAuthUserIdByEmail(adminClient, payload.headEmail);
+
+    let profileResult = null;
+    let finalHeadUserId: string | null = null;
+
+    if (existingAuthUserId) {
+      // Caso 3: User already in auth.users but has no profile
+      const { data: newProfile, error: profileCreateErr } = await adminClient
+        .from('profiles')
+        .insert({
+          id: existingAuthUserId,
+          full_name: payload.headName,
+          email: payload.headEmail.trim().toLowerCase(),
+          role: 'nucleo',
+          nucleo_id: payload.nucleoId,
+          job_title: 'Head do Núcleo',
+          status: 'active',
+          first_login_required: true,
+          created_by: requester.id,
+        })
+        .select('*')
+        .single();
+
+      if (profileCreateErr) {
+        return { success: false, error: `Erro ao criar perfil do Head (Usuário existente): ${profileCreateErr.message}` };
+      }
+
+      profileResult = newProfile;
+      finalHeadUserId = existingAuthUserId;
+    } else {
+      // Create user in auth.users
+      const { data: authUser, error: createAuthErr } = await adminClient.auth.admin.createUser({
+        email: payload.headEmail.trim().toLowerCase(),
+        password: payload.initialPassword,
+        email_confirm: true,
+      });
+
+      if (createAuthErr || !authUser.user) {
+        return { success: false, error: `Erro ao criar conta de autenticação do Head: ${createAuthErr?.message || 'Erro desconhecido.'}` };
+      }
+
+      // Create profile in public.profiles
+      const { data: newProfile, error: profileCreateErr } = await adminClient
+        .from('profiles')
+        .insert({
+          id: authUser.user.id,
+          full_name: payload.headName,
+          email: payload.headEmail.trim().toLowerCase(),
+          role: 'nucleo',
+          nucleo_id: payload.nucleoId,
+          job_title: 'Head do Núcleo',
+          status: 'active',
+          first_login_required: true,
+          created_by: requester.id,
+        })
+        .select('*')
+        .single();
+
+      if (profileCreateErr) {
+        // Rollback auth user
+        await adminClient.auth.admin.deleteUser(authUser.user.id);
+        return { success: false, error: `Erro ao criar perfil do Head: ${profileCreateErr.message}` };
+      }
+
+      profileResult = newProfile;
+      finalHeadUserId = authUser.user.id;
+    }
+
+    // Update nucleo with head_user_id
+    if (finalHeadUserId) {
+      await adminClient
+        .from('nucleos')
+        .update({ head_user_id: finalHeadUserId })
+        .eq('id', payload.nucleoId);
+    }
+
+    return {
+      success: true,
+      profile: profileResult,
+      message: existingAuthUserId
+        ? 'Perfil do Head associado ao usuário de autenticação já existente.'
+        : 'Usuário do Head criado retroativamente com sucesso.'
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
+/**
+ * Helper to retrieve a user ID from auth.users by email.
+ */
+async function getAuthUserIdByEmail(adminClient: any, email: string): Promise<string | null> {
+  const { data, error } = await adminClient.auth.admin.listUsers({
+    perPage: 1000,
+  });
+  if (error || !data || !data.users) return null;
+  const user = data.users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+  return user ? user.id : null;
+}
+
+
+/**
+ * Uploads a portfolio file for a freelancer to Supabase Storage.
+ * Only MASTER and RH can upload.
+ * Stores path, URL, and filename in the freelancers table.
+ */
+export async function uploadFreelancerPortfolioAction(
+  accessToken: string,
+  freelancerId: string,
+  formData: FormData
+): Promise<{ success: boolean; url?: string; path?: string; name?: string; error?: string }> {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // Verify requester
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Sessão inválida. Faça login novamente.' };
+    }
+
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
+      return { success: false, error: 'Apenas MASTER ou RH podem fazer upload de portfólios.' };
+    }
+
+    const file = formData.get('file') as File | null;
+    if (!file) {
+      return { success: false, error: 'Nenhum arquivo enviado.' };
+    }
+
+    // Max 20MB
+    if (file.size > 20 * 1024 * 1024) {
+      return { success: false, error: 'Arquivo excede 20MB.' };
+    }
+
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `${freelancerId}/portfolio/${timestamp}-${safeName}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const { data: uploadData, error: uploadErr } = await adminClient.storage
+      .from('freelancer-portfolios')
+      .upload(storagePath, buffer, {
+        contentType: file.type,
+        upsert: true,
+      });
+
+    if (uploadErr) {
+      return { success: false, error: `Erro no upload: ${uploadErr.message}` };
+    }
+
+    // Get a signed URL (valid 365 days) 
+    const { data: signedData, error: signedErr } = await adminClient.storage
+      .from('freelancer-portfolios')
+      .createSignedUrl(storagePath, 60 * 60 * 24 * 365);
+
+    const fileUrl = signedData?.signedUrl || '';
+
+    // Update freelancer record
+    const { error: updateErr } = await adminClient
+      .from('freelancers')
+      .update({
+        portfolio_file_url: fileUrl,
+        portfolio_file_path: storagePath,
+        portfolio_file_name: file.name,
+      })
+      .eq('id', freelancerId);
+
+    if (updateErr) {
+      return { success: false, error: `Upload concluído mas falha ao salvar no banco: ${updateErr.message}` };
+    }
+
+    return {
+      success: true,
+      url: fileUrl,
+      path: storagePath,
+      name: file.name,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Erro inesperado no upload.' };
+  }
+}
+
+/**
+ * Updates the theme preference for the currently authenticated user profile.
+ */
+export async function updateThemePreferenceAction(accessToken: string, theme: string) {
+  try {
+    if (!['dark', 'light', 'system'].includes(theme)) {
+      return { success: false, error: 'Tema inválido.' };
+    }
+
+    const adminClient = getSupabaseAdmin();
+    const { data: { user }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !user) {
+      return { success: false, error: 'Sessão inválida ou expirada.' };
+    }
+
+    const { error: updateErr } = await adminClient
+      .from('profiles')
+      .update({ theme_preference: theme })
+      .eq('id', user.id);
+
+    if (updateErr) {
+      console.error('Error updating theme preference:', updateErr);
+      return { success: false, error: `Erro ao salvar preferência no banco: ${updateErr.message}` };
+    }
+
+    return { success: true, message: 'Preferência de tema salva com sucesso.' };
+  } catch (err: any) {
+    console.error('updateThemePreferenceAction error:', err);
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
