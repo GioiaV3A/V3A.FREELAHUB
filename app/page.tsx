@@ -91,6 +91,7 @@ import {
   Key, 
   SlidersHorizontal,
   ChevronRight,
+  ChevronLeft,
   ShieldCheck,
   Award,
   Lock,
@@ -197,6 +198,22 @@ export default function Home() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const collapsed = localStorage.getItem('freela_hub_sidebar_collapsed');
+      if (collapsed === 'true') {
+        setIsSidebarCollapsed(true);
+      }
+    }
+  }, []);
+
+  const toggleSidebar = () => {
+    const nextVal = !isSidebarCollapsed;
+    setIsSidebarCollapsed(nextVal);
+    localStorage.setItem('freela_hub_sidebar_collapsed', String(nextVal));
+  };
 
   const setActiveTab = (tab: string) => {
     setActiveTab2(tab);
@@ -1496,38 +1513,53 @@ export default function Home() {
       <aside 
         className={`
           fixed inset-y-0 left-0 z-50 w-72
-          md:static md:w-64 md:z-auto
+          md:static md:z-auto
           bg-sidebar-navy flex flex-col text-slate-100 shrink-0
           border-r border-[#1e293b]
           overflow-y-auto
-          transform transition-transform duration-300 ease-in-out
+          transform transition-[width,transform] duration-180 ease-in-out
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
+          ${isSidebarCollapsed ? 'md:w-20' : 'md:w-64'}
           safe-top
         `}
       >
         {/* Brand header */}
-        <div className="p-5 border-b border-[#14233c] flex justify-between items-center bg-[#081528]">
+        <div className={`p-4 border-b border-[#14233c] flex items-center bg-[#081528] ${isSidebarCollapsed ? 'flex-col gap-3 justify-center' : 'justify-between'}`}>
           <div className="flex items-center gap-3">
-            <BrandLogo variant="sidebar" className="shrink-0" />
-            <div>
-              <h1 className="text-sm font-black tracking-wider text-white uppercase leading-tight select-none">
-                Freela <span className="text-action-cyan">Hub</span>
-              </h1>
-              <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider select-none mt-0.5">
-                Membro V3A Agência
-              </p>
-            </div>
+            <BrandLogo variant={isSidebarCollapsed ? "compact" : "sidebar"} className="shrink-0" />
+            {!isSidebarCollapsed && (
+              <div>
+                <h1 className="text-sm font-black tracking-wider text-white uppercase leading-tight select-none">
+                  Freela <span className="text-action-cyan">Hub</span>
+                </h1>
+                <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider select-none mt-0.5">
+                  Membro V3A Agência
+                </p>
+              </div>
+            )}
           </div>
-          {/* Close button — mobile only */}
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-            aria-label="Fechar menu"
-          >
-            <XIcon className="w-5 h-5" />
-          </button>
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0 hidden md:block" title="Seguro e Conectado"></div>
+          
+          <div className={`flex items-center gap-1.5 ${isSidebarCollapsed ? 'w-full justify-center' : ''}`}>
+            {/* Collapse button — desktop only */}
+            <button
+              onClick={toggleSidebar}
+              className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              aria-label={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+              title={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+            >
+              {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+            
+            {/* Close button — mobile only */}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              aria-label="Fechar menu"
+            >
+              <XIcon className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation Items */}
@@ -1537,34 +1569,43 @@ export default function Home() {
             const isSelected = isMenuSelected(item.name);
 
             return (
-              <button
-                key={idx}
-                onClick={() => handleMenuClick(item.name)}
-                className={`w-full text-left p-3 rounded-xl flex items-center gap-2.5 transition-all cursor-pointer min-h-[44px]
-                  ${isSelected 
-                    ? 'bg-action-cyan text-[#0F2342] shadow-sm font-extrabold' 
-                    : 'text-slate-350 hover:bg-white/5 hover:text-white'}`}
-              >
-                <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#0F2342]' : 'text-slate-400'}`} />
-                <span>{item.name}</span>
-              </button>
+              <div key={idx} className="relative group">
+                <button
+                  onClick={() => handleMenuClick(item.name)}
+                  className={`w-full text-left p-3 rounded-xl flex items-center transition-all cursor-pointer min-h-[44px]
+                    ${isSelected 
+                      ? 'bg-action-cyan text-[#0F2342] shadow-sm font-extrabold' 
+                      : 'text-slate-350 hover:bg-white/5 hover:text-white'}
+                    ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}
+                  aria-label={item.name}
+                >
+                  <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#0F2342]' : 'text-slate-400'}`} />
+                  {!isSidebarCollapsed && <span>{item.name}</span>}
+                </button>
+
+                {isSidebarCollapsed && (
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1.5 bg-slate-900 text-white text-[11px] font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50 whitespace-nowrap border border-white/10">
+                    {item.name}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
 
         {/* Static Sidebar Identity Card */}
-        <div className="p-4 border-t border-[#1e293b] space-y-2 bg-[#081528] text-xs safe-bottom">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-action-cyan/15 flex items-center justify-center font-bold text-action-cyan text-[10px] uppercase shrink-0">
-              {currentUser.name.slice(0, 2)}
-            </div>
+        <div className={`p-4 border-t border-[#1e293b] bg-[#081528] text-xs safe-bottom flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}>
+          <div className="w-7 h-7 rounded-full bg-action-cyan/15 flex items-center justify-center font-bold text-action-cyan text-[10px] uppercase shrink-0" title={`${currentUser.name} (Perfil: ${currentUser.profile})`}>
+            {currentUser.name.slice(0, 2)}
+          </div>
+          {!isSidebarCollapsed && (
             <div className="truncate">
               <p className="font-bold text-white leading-tight truncate">{currentUser.name}</p>
               <span className="text-[9px] text-[#A2E9F2] font-semibold block mt-0.5">
                 PERFIL: {currentUser.profile}
               </span>
             </div>
-          </div>
+          )}
         </div>
       </aside>
 
