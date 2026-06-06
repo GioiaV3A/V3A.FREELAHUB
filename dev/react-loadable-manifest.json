@@ -1,1 +1,10 @@
-{}
+{
+  "components/PerfilFreela.tsx -> @/lib/supabase": {
+    "id": "components/PerfilFreela.tsx -> @/lib/supabase",
+    "files": []
+  },
+  "components/PublicSubmissionsPanel.tsx -> @/lib/dbMapper": {
+    "id": "components/PublicSubmissionsPanel.tsx -> @/lib/dbMapper",
+    "files": []
+  }
+}

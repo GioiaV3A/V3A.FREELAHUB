@@ -5,3 +5,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Next.js build/cache
+.next/
+out/
+dev/

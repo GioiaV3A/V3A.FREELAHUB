@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"components/PerfilFreela.tsx -> @/lib/supabase\":{\"id\":\"components/PerfilFreela.tsx -> @/lib/supabase\",\"files\":[]},\"components/PublicSubmissionsPanel.tsx -> @/lib/dbMapper\":{\"id\":\"components/PublicSubmissionsPanel.tsx -> @/lib/dbMapper\",\"files\":[]}}"
