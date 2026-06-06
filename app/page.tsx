@@ -100,7 +100,9 @@ import {
   QrCode,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Menu,
+  X as XIcon
 } from 'lucide-react';
 
 import { useTheme } from '@/components/ThemeProvider';
@@ -184,6 +186,7 @@ export default function Home() {
   const [selectedFreelancerId, setSelectedFreelancerId] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const setActiveTab = (tab: string) => {
     setActiveTab2(tab);
@@ -191,6 +194,7 @@ export default function Home() {
       setSelectedFreelancerId(null);
     }
     setIsHeaderMenuOpen(false);
+    setIsMobileMenuOpen(false); // close drawer on navigation
   };
 
   // Helper functions to map DB ids on inserts
@@ -1468,9 +1472,30 @@ export default function Home() {
   return (
     <div id="app-workspace" className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:flex-row selection:bg-action-cyan selection:text-white">
       
-      {/* 1. SIDEBAR COLUMN */}
-      <aside className="w-full md:w-64 md:h-screen bg-sidebar-navy flex flex-col text-slate-100 shrink-0 border-r border-[#1e293b] sticky top-0 overflow-y-auto">
-        
+      {/* ============ MOBILE BACKDROP ============ */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ============ 1. SIDEBAR ============ */}
+      {/* Mobile: fixed overlay drawer | Desktop: static sidebar */}
+      <aside 
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72
+          md:static md:w-64 md:z-auto
+          bg-sidebar-navy flex flex-col text-slate-100 shrink-0
+          border-r border-[#1e293b]
+          overflow-y-auto
+          transform transition-transform duration-300 ease-in-out
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0
+          safe-top
+        `}
+      >
         {/* Brand header */}
         <div className="p-5 border-b border-[#14233c] flex justify-between items-center bg-[#081528]">
           <div className="flex items-center gap-3">
@@ -1484,7 +1509,15 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Seguro e Conectado"></div>
+          {/* Close button — mobile only */}
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Fechar menu"
+          >
+            <XIcon className="w-5 h-5" />
+          </button>
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0 hidden md:block" title="Seguro e Conectado"></div>
         </div>
 
         {/* Navigation Items */}
@@ -1497,7 +1530,7 @@ export default function Home() {
               <button
                 key={idx}
                 onClick={() => handleMenuClick(item.name)}
-                className={`w-full text-left p-2.5 rounded-xl flex items-center gap-2.5 transition-all cursor-pointer
+                className={`w-full text-left p-3 rounded-xl flex items-center gap-2.5 transition-all cursor-pointer min-h-[44px]
                   ${isSelected 
                     ? 'bg-action-cyan text-[#0F2342] shadow-sm font-extrabold' 
                     : 'text-slate-350 hover:bg-white/5 hover:text-white'}`}
@@ -1510,7 +1543,7 @@ export default function Home() {
         </nav>
 
         {/* Static Sidebar Identity Card */}
-        <div className="p-4 border-t border-[#1e293b] space-y-2 bg-[#081528] text-xs">
+        <div className="p-4 border-t border-[#1e293b] space-y-2 bg-[#081528] text-xs safe-bottom">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-full bg-action-cyan/15 flex items-center justify-center font-bold text-action-cyan text-[10px] uppercase shrink-0">
               {currentUser.name.slice(0, 2)}
@@ -1529,15 +1562,33 @@ export default function Home() {
       <main className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-hidden">
         
         {/* Dynamic Top Header Bar */}
-        <header className="bg-white border-b border-border-subtle p-4 px-6 flex justify-between items-center relative z-25 shadow-xs">
+        <header className="bg-white border-b border-border-subtle p-3 px-4 md:p-4 md:px-6 flex justify-between items-center relative z-25 shadow-xs safe-top">
           
-          {/* Breadcrumbs tab */}
-          <div className="text-xs">
-            <span className="text-text-secondary font-semibold">Plataforma</span> &bull; <strong className="text-text-primary text-xs uppercase font-extrabold">{activeTab}</strong>
+          {/* Mobile: Hamburger + Logo | Desktop: Breadcrumbs */}
+          <div className="flex items-center gap-3">
+            {/* Hamburger — mobile only */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 rounded-lg text-text-secondary hover:bg-slate-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Abrir menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Mobile breadcrumb (compact) */}
+            <div className="md:hidden">
+              <span className="font-extrabold text-text-primary text-sm uppercase tracking-wide">{activeTab}</span>
+            </div>
+
+            {/* Desktop breadcrumb */}
+            <div className="hidden md:block text-xs">
+              <span className="text-text-secondary font-semibold">Plataforma</span> &bull; <strong className="text-text-primary text-xs uppercase font-extrabold">{activeTab}</strong>
+            </div>
           </div>
 
           {/* Unified Safe Identity Indicator & Top Dropdown menu */}
-          <div className="flex items-center gap-4 relative">
+          <div className="flex items-center gap-2 md:gap-4 relative">
             
             {/* Informative Static Profile Label */}
             <span className="bg-[#0F2342] text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
@@ -1548,7 +1599,7 @@ export default function Home() {
             <div className="relative">
               <button 
                 onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
-                className="flex items-center gap-2 hover:bg-slate-50 p-1.5 px-3 rounded-xl transition text-xs border border-border-subtle cursor-pointer select-none"
+                className="flex items-center gap-2 hover:bg-slate-50 p-1.5 px-2 md:px-3 rounded-xl transition text-xs border border-border-subtle cursor-pointer select-none min-h-[44px]"
               >
                 <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] font-bold uppercase text-slate-800">
                   {currentUser.name.slice(0, 2)}
@@ -1556,7 +1607,7 @@ export default function Home() {
                 <div className="text-left hidden md:block">
                   <p className="font-bold text-text-primary leading-none text-[11px]">{currentUser.name}</p>
                 </div>
-                <span className="text-text-secondary text-[10px]">▼</span>
+                <span className="text-text-secondary text-[10px] hidden md:inline">▼</span>
               </button>
 
               {/* Popover Dropdown menu */}
@@ -1567,14 +1618,14 @@ export default function Home() {
                     <p className="text-[10px] text-text-secondary mt-0.5">Perfil: {currentUser.profile}</p>
                   </div>
                   <button 
-                    onClick={() => setActiveTab('Meu Perfil')}
-                    className="w-full text-left p-3 hover:bg-slate-50 flex items-center gap-2 text-text-primary"
+                    onClick={() => { setActiveTab('Meu Perfil'); setIsHeaderMenuOpen(false); }}
+                    className="w-full text-left p-3 hover:bg-slate-50 flex items-center gap-2 text-text-primary min-h-[44px]"
                   >
                     <UserSquare2 className="w-4 h-4 text-slate-500" /> Meu Perfil
                   </button>
                   <button 
-                    onClick={() => setActiveTab('Meu Perfil')}
-                    className="w-full text-left p-3 hover:bg-slate-50 flex items-center gap-2 text-text-primary border-b border-border-subtle"
+                    onClick={() => { setActiveTab('Meu Perfil'); setIsHeaderMenuOpen(false); }}
+                    className="w-full text-left p-3 hover:bg-slate-50 flex items-center gap-2 text-text-primary border-b border-border-subtle min-h-[44px]"
                   >
                     <Key className="w-4 h-4 text-slate-500" /> Alterar Senha
                   </button>
@@ -1621,7 +1672,7 @@ export default function Home() {
                   </div>
                   <button 
                     onClick={handleLogOut}
-                    className="w-full text-left p-3 hover:bg-red-50 text-red-700 flex items-center gap-2"
+                    className="w-full text-left p-3 hover:bg-red-50 text-red-700 flex items-center gap-2 min-h-[44px]"
                   >
                     <LogOut className="w-4 h-4 text-red-500" /> Sair da Plataforma
                   </button>
