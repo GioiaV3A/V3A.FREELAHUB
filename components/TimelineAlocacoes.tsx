@@ -7,6 +7,34 @@ import { useSortableTable } from '@/hooks/useSortableTable';
 import { useRouter } from 'next/navigation';
 
 // ============================================================
+// SAFE FORMATTING HELPERS
+// ============================================================
+const safeFormatDate = (value: any): string => {
+  if (!value || typeof value !== 'string') return '—';
+  const parts = value.split('-');
+  if (parts.length < 3) return value;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+};
+
+const safeFormatCurrency = (value: any): string => {
+  if (value === null || value === undefined) return '—';
+  const num = Number(value);
+  if (isNaN(num)) return '—';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
+};
+
+const safeFormatPeriod = (start: any, end: any): string => {
+  const s = safeFormatDate(start);
+  const e = safeFormatDate(end);
+  if (s !== '—' && e !== '—') {
+    return `${s} a ${e}`;
+  }
+  if (s !== '—') return `A partir de ${s}`;
+  if (e !== '—') return `Até ${e}`;
+  return 'Período não informado';
+};
+
+// ============================================================
 // STATUS CHIP COLORS MAPPING
 // ============================================================
 const getJobStatusColors = (status: string, hasConflict: boolean) => {
@@ -68,6 +96,46 @@ const getJobStatusColors = (status: string, hasConflict: boolean) => {
 };
 
 // ============================================================
+// TIMELINE ERROR BOUNDARY CLASS COMPONENT
+// ============================================================
+class TimelineErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Erro capturado no Gantt/Timeline:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 bg-status-error/10 border border-status-error/20 rounded-2xl text-center space-y-3">
+          <div className="flex items-center justify-center gap-2 text-status-error font-bold">
+            <AlertTriangle className="w-5 h-5" />
+            <span>Erro ao renderizar a Timeline de Alocações</span>
+          </div>
+          <p className="text-xs text-text-secondary">Ocorreu um erro inesperado de renderização. Tente recarregar a página.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-bg-surface hover:bg-bg-hover text-text-primary border border-border-subtle p-2 px-4 rounded-xl text-xs font-bold transition"
+          >
+            Recarregar
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// ============================================================
 // TIMELINE WEEK HEADER COMPONENT
 // ============================================================
 function TimelineWeekHeader() {
@@ -98,12 +166,13 @@ interface TimelineJobBarProps {
 
 function TimelineJobBar({ job, allocation, freelancer, onClick, onHover, status, hasConflict, leftPercent, widthPercent }: TimelineJobBarProps) {
   const colors = getJobStatusColors(status, hasConflict);
+  const barText = job?.name || 'Job';
 
   return (
     <div
       role="button"
       tabIndex={0}
-      aria-label={`Abrir detalhes do job ${job?.name || 'Job'}`}
+      aria-label={`Abrir detalhes do job ${barText}`}
       className={`absolute top-1.5 bottom-1.5 rounded-md flex items-center justify-between px-3 text-[10px] font-extrabold shadow-sm cursor-pointer transition-all border outline-none focus:ring-2 focus:ring-accent ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg} ${colors.hoverBorder}`}
       style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
       onClick={(e) => {
@@ -119,7 +188,7 @@ function TimelineJobBar({ job, allocation, freelancer, onClick, onHover, status,
       onMouseEnter={(e) => onHover(e)}
       onMouseLeave={() => onHover(null)}
     >
-      <span className="truncate">{job?.name || 'Job'}</span>
+      <span className="truncate">{barText}</span>
     </div>
   );
 }
@@ -141,16 +210,13 @@ interface TimelineAllocationRowProps {
 }
 
 function TimelineAllocationRow({ alloc, freelancer, job, nucleo, hasConflict, overlaps, leftPercent, widthPercent, onJobClick, onJobHover }: TimelineAllocationRowProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '—';
-    const parts = dateString.split('-');
-    if (parts.length < 3) return dateString;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  };
+  const allocationCode = alloc?.allocationCode || '—';
+  const freelancerName = freelancer?.name || 'Incompleto';
+  const mainRole = freelancer?.mainRole || '—';
+  const nucleoName = nucleo?.name || 'V3A';
+  const jobTitle = job?.name || '—';
+  const clientName = job?.client || '—';
+  const dailyRate = alloc?.approvedValue || 0;
 
   return (
     <div className={`p-4 hover:bg-bg-hover transition-colors ${hasConflict ? 'bg-status-error/[0.03] dark:bg-danger-bg/5' : ''} border-b border-border-subtle`}>
@@ -158,14 +224,14 @@ function TimelineAllocationRow({ alloc, freelancer, job, nucleo, hasConflict, ov
         {/* Panel 1: Details */}
         <div className="md:col-span-4 space-y-1.5">
           <div className="flex flex-wrap items-center gap-1.5">
-            <strong className="text-text-primary text-sm font-extrabold">{freelancer?.name || 'Incompleto'}</strong>
+            <strong className="text-text-primary text-sm font-extrabold">{freelancerName}</strong>
             <span className="font-mono text-[10px] font-bold text-text-secondary bg-bg-panel border border-border-subtle px-1.5 py-0.5 rounded-lg">
-              {alloc.allocationCode}
+              {allocationCode}
             </span>
           </div>
           
           <p className="text-xs text-text-secondary font-medium">
-            <span className="font-bold text-text-primary">{freelancer?.mainRole || '—'}</span> &bull; {nucleo?.name || 'V3A'}
+            <span className="font-bold text-text-primary">{mainRole}</span> &bull; {nucleoName}
           </p>
           
           {/* Status chips */}
@@ -210,9 +276,9 @@ function TimelineAllocationRow({ alloc, freelancer, job, nucleo, hasConflict, ov
 
           {/* Small mobile date fallback display */}
           <div className="md:hidden space-y-2 bg-bg-surface-elevated p-3.5 rounded-xl border border-border-subtle shadow-xs">
-            <p className="text-text-primary text-xs"><span className="font-bold text-text-secondary">Campanha:</span> {job?.name || '—'} ({job?.client || '—'})</p>
-            <p className="text-text-secondary text-xs"><span className="font-bold text-text-muted">Cronograma:</span> {formatDate(alloc.startDate)} a {formatDate(alloc.endDate)}</p>
-            <p className="text-text-secondary text-xs"><span className="font-bold text-text-muted">Taxa Diária:</span> {formatCurrency(alloc.approvedValue)}</p>
+            <p className="text-text-primary text-xs"><span className="font-bold text-text-secondary">Campanha:</span> {jobTitle} ({clientName})</p>
+            <p className="text-text-secondary text-xs"><span className="font-bold text-text-muted">Cronograma:</span> {safeFormatPeriod(alloc?.startDate, alloc?.endDate)}</p>
+            <p className="text-text-secondary text-xs"><span className="font-bold text-text-muted">Taxa Diária:</span> {safeFormatCurrency(dailyRate)}</p>
             
             {hasConflict && (
               <div className="mt-2 text-status-error font-semibold flex items-center gap-1 text-[10px]">
@@ -249,7 +315,9 @@ function JobHoverCard({ job, allocation, freelancer, targetRect, paymentCodes }:
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
 
-  const paymentCode = paymentCodes.find(pc => pc.allocationCode === allocation.allocationCode);
+  const allocCode = allocation?.allocationCode || '—';
+  const paymentCodesArray = Array.isArray(paymentCodes) ? paymentCodes : [];
+  const paymentCode = paymentCodesArray.find(pc => pc?.allocationCode === allocCode);
   const paymentStatus = paymentCode?.paymentStatus || 'Aguardando conclusão do job';
 
   useEffect(() => {
@@ -278,12 +346,15 @@ function JobHoverCard({ job, allocation, freelancer, targetRect, paymentCodes }:
     setCoords({ top, left });
   }, [targetRect]);
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '—';
-    const parts = dateString.split('-');
-    if (parts.length < 3) return dateString;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  };
+  const jobName = job?.name || 'Job sem título';
+  const clientName = job?.client || 'Não informado';
+  const jobId = job?.id ? job.id.slice(0, 8).toUpperCase() : '—';
+  const freelancerName = freelancer?.name || 'Não informado';
+  const nucleoName = job?.nucleoName || 'Não informado';
+  const roleName = job?.roleNeeded || 'Não informado';
+  const seniorityName = job?.seniorityNeeded || 'Não informado';
+  const periodText = safeFormatPeriod(allocation?.startDate, allocation?.endDate);
+  const rateText = allocation?.approvedValue ? `${safeFormatCurrency(allocation.approvedValue)}/dia` : '—';
 
   return (
     <div
@@ -298,38 +369,38 @@ function JobHoverCard({ job, allocation, freelancer, targetRect, paymentCodes }:
     >
       <div className="flex justify-between items-start border-b border-border-subtle pb-1.5">
         <div>
-          <h4 className="font-extrabold text-text-primary leading-tight text-sm truncate max-w-[180px]">{job.name}</h4>
-          <p className="text-[11px] text-text-secondary font-medium">Cliente: {job.client}</p>
+          <h4 className="font-extrabold text-text-primary leading-tight text-sm truncate max-w-[180px]">{jobName}</h4>
+          <p className="text-[11px] text-text-secondary font-medium">Cliente: {clientName}</p>
         </div>
         <span className="font-mono text-[9px] font-bold text-accent bg-accent-soft border border-accent/20 px-1 rounded-sm">
-          {job.id.slice(0, 8).toUpperCase()}
+          {jobId}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-[11px]">
         <div>
           <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Freelancer</span>
-          <span className="text-text-primary font-bold">{freelancer?.name || 'Incompleto'}</span>
+          <span className="text-text-primary font-bold truncate block">{freelancerName}</span>
         </div>
         <div>
           <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Núcleo</span>
-          <span className="text-text-primary font-bold">{job.nucleoName || 'V3A'}</span>
+          <span className="text-text-primary font-bold truncate block">{nucleoName}</span>
         </div>
-        <div>
+        <div className="col-span-2">
           <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Função / Senioridade</span>
-          <span className="text-text-primary font-bold text-ellipsis overflow-hidden whitespace-nowrap">{job.roleNeeded} — {job.seniorityNeeded}</span>
+          <span className="text-text-primary font-bold text-ellipsis overflow-hidden whitespace-nowrap block">{roleName} — {seniorityName}</span>
         </div>
-        <div>
+        <div className="col-span-2">
           <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Período</span>
-          <span className="text-text-primary font-bold">{formatDate(allocation.startDate)} a {formatDate(allocation.endDate)}</span>
+          <span className="text-text-primary font-bold block">{periodText}</span>
         </div>
         <div>
           <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Código Alocação</span>
-          <span className="text-text-primary font-bold font-mono">{allocation.allocationCode}</span>
+          <span className="text-text-primary font-bold font-mono">{allocCode}</span>
         </div>
         <div>
           <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Taxa Aprovada</span>
-          <span className="text-text-primary font-bold">R$ {allocation.approvedValue}/dia</span>
+          <span className="text-text-primary font-bold">{rateText}</span>
         </div>
       </div>
 
@@ -338,7 +409,7 @@ function JobHoverCard({ job, allocation, freelancer, targetRect, paymentCodes }:
           <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Status Financeiro</span>
           <span className="text-text-primary font-bold">{paymentStatus}</span>
         </div>
-        {allocation.observations && (
+        {allocation?.observations && (
           <div>
             <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Observações</span>
             <p className="text-text-secondary italic truncate">{allocation.observations}</p>
@@ -362,15 +433,19 @@ interface JobDetailPopoverProps {
 }
 
 function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails, paymentCodes }: JobDetailPopoverProps) {
-  const paymentCode = paymentCodes.find(pc => pc.allocationCode === allocation.allocationCode);
+  const allocCode = allocation?.allocationCode || '—';
+  const paymentCodesArray = Array.isArray(paymentCodes) ? paymentCodes : [];
+  const paymentCode = paymentCodesArray.find(pc => pc?.allocationCode === allocCode);
   const paymentStatus = paymentCode?.paymentStatus || 'Aguardando conclusão do job';
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '—';
-    const parts = dateString.split('-');
-    if (parts.length < 3) return dateString;
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  };
+  const jobName = job?.name || 'Job sem título';
+  const clientName = job?.client || 'Não informado';
+  const freelancerName = freelancer?.name || 'Não informado';
+  const nucleoName = job?.nucleoName || 'Não informado';
+  const roleName = job?.roleNeeded || 'Não informado';
+  const seniorityName = job?.seniorityNeeded || 'Não informado';
+  const periodText = safeFormatPeriod(allocation?.startDate, allocation?.endDate);
+  const rateText = allocation?.approvedValue ? safeFormatCurrency(allocation.approvedValue) : '—';
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs">
@@ -381,8 +456,8 @@ function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails,
 
         <div className="flex justify-between items-start border-b border-border-subtle pb-3">
           <div>
-            <h3 className="font-extrabold text-text-primary text-base leading-snug">{job.name}</h3>
-            <p className="text-xs text-text-secondary">Cliente: {job.client}</p>
+            <h3 className="font-extrabold text-text-primary text-base leading-snug">{jobName}</h3>
+            <p className="text-xs text-text-secondary">Cliente: {clientName}</p>
           </div>
           <button 
             onClick={onClose}
@@ -395,27 +470,27 @@ function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails,
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
             <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Freelancer</span>
-            <span className="text-text-primary font-bold">{freelancer?.name || 'Incompleto'}</span>
+            <span className="text-text-primary font-bold truncate block">{freelancerName}</span>
           </div>
           <div>
             <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Núcleo</span>
-            <span className="text-text-primary font-bold">{job.nucleoName || 'V3A'}</span>
+            <span className="text-text-primary font-bold truncate block">{nucleoName}</span>
           </div>
           <div>
             <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Função / Senioridade</span>
-            <span className="text-text-primary font-bold">{job.roleNeeded} — {job.seniorityNeeded}</span>
+            <span className="text-text-primary font-bold truncate block">{roleName} — {seniorityName}</span>
           </div>
           <div>
             <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Período</span>
-            <span className="text-text-primary font-bold">{formatDate(allocation.startDate)} a {formatDate(allocation.endDate)}</span>
+            <span className="text-text-primary font-bold block">{periodText}</span>
           </div>
           <div>
             <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Código Alocação</span>
-            <span className="text-text-primary font-bold font-mono">{allocation.allocationCode}</span>
+            <span className="text-text-primary font-bold font-mono">{allocCode}</span>
           </div>
           <div>
             <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Taxa Aprovada</span>
-            <span className="text-text-primary font-bold">R$ {allocation.approvedValue}/dia</span>
+            <span className="text-text-primary font-bold">{rateText}</span>
           </div>
           <div className="col-span-2">
             <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Status Financeiro</span>
@@ -424,13 +499,19 @@ function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails,
         </div>
 
         <div className="pt-4 flex flex-col gap-2">
-          <button
-            onClick={onOpenDetails}
-            className="w-full bg-[#00BCD4] hover:bg-[#00BCD4]/95 text-white font-bold p-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition"
-          >
-            <span>Abrir detalhes do job</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {job?.id ? (
+            <button
+              onClick={onOpenDetails}
+              className="w-full bg-[#00BCD4] hover:bg-[#00BCD4]/95 text-white font-bold p-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition"
+            >
+              <span>Abrir detalhes do job</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <div className="text-center text-text-muted text-xs italic py-2">
+              Detalhes do Job indisponíveis (ID ausente)
+            </div>
+          )}
           <button
             onClick={onClose}
             className="w-full bg-bg-surface-elevated hover:bg-bg-hover text-text-secondary font-bold p-3 rounded-xl text-xs transition border border-border-subtle"
@@ -444,9 +525,9 @@ function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails,
 }
 
 // ============================================================
-// MAIN TIMELINE COMPONENT
+// TIMELINE CORE CONTENT COMPONENT
 // ============================================================
-export default function TimelineAlocacoes({ db }: { db: DatabaseProps }) {
+function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
   const router = useRouter();
   const [filterActiveOnly, setFilterActiveOnly] = useState(false);
   const [hoveredJob, setHoveredJob] = useState<{
@@ -513,10 +594,16 @@ export default function TimelineAlocacoes({ db }: { db: DatabaseProps }) {
   };
 
   const handleJobClick = (alloc: any, job: any, fl: any) => {
+    const jobId = job?.id;
+    if (!jobId) {
+      alert('Não foi possível abrir os detalhes deste job. ID da vaga inválido ou ausente.');
+      return;
+    }
+
     if (window.innerWidth < 768) {
       setActiveMobileJob({ alloc, job, freelancer: fl });
     } else {
-      router.push(`/jobs/${job.id}`);
+      router.push(`/jobs/${jobId}`);
     }
   };
 
@@ -619,6 +706,7 @@ export default function TimelineAlocacoes({ db }: { db: DatabaseProps }) {
 
               // Visual calculations for progress bar placement
               const getDayFromDate = (dateString: string) => {
+                if (!dateString || typeof dateString !== 'string') return 1;
                 const dayStr = dateString.split('-')[2];
                 return dayStr ? parseInt(dayStr) : 1;
               };
@@ -670,12 +758,25 @@ export default function TimelineAlocacoes({ db }: { db: DatabaseProps }) {
           paymentCodes={db.paymentCodes}
           onClose={() => setActiveMobileJob(null)}
           onOpenDetails={() => {
-            const jobId = activeMobileJob.job.id;
+            const jobId = activeMobileJob.job?.id;
             setActiveMobileJob(null);
-            router.push(`/jobs/${jobId}`);
+            if (jobId) {
+              router.push(`/jobs/${jobId}`);
+            }
           }}
         />
       )}
     </div>
+  );
+}
+
+// ============================================================
+// EXPORTING WRAPPED WITH ERROR BOUNDARY
+// ============================================================
+export default function TimelineAlocacoes({ db }: { db: DatabaseProps }) {
+  return (
+    <TimelineErrorBoundary>
+      <TimelineAlocacoesContent db={db} />
+    </TimelineErrorBoundary>
   );
 }
