@@ -1519,3 +1519,438 @@ body.sidebar-open {
 /* Backdrop: z-40 | Drawer: z-50 | Dropdowns: z-30 */
 aside { z-index: 50; }
 .backdrop-mobile { z-index: 40; }
+
+
+/* ============================================================
+   DARK MODE — PURPLE COLOR OVERRIDES
+   ANTES COMPLETAMENTE AUSENTE → causava chips C-LEVEL com
+   fundo claro estourado sobre azul escuro. Agora corrigido.
+============================================================ */
+.dark .bg-purple-50 {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+}
+.dark .bg-purple-50\/50 {
+  background-color: rgba(168, 85, 247, 0.09) !important;
+}
+.dark .bg-purple-100 {
+  background-color: rgba(168, 85, 247, 0.20) !important;
+}
+.dark .bg-purple-100\/80 {
+  background-color: rgba(168, 85, 247, 0.18) !important;
+}
+.dark .bg-purple-200 {
+  background-color: rgba(168, 85, 247, 0.25) !important;
+}
+.dark .text-purple-600,
+.dark .text-purple-700,
+.dark .text-purple-800,
+.dark .text-purple-900,
+.dark .text-purple-950,
+.dark .text-purple-75 {
+  color: #d8b4fe !important;
+}
+.dark .border-purple-100,
+.dark .border-purple-150,
+.dark .border-purple-200 {
+  border-color: rgba(168, 85, 247, 0.45) !important;
+}
+
+/* ============================================================
+   DARK MODE — IMPROVED BLUE OVERRIDES (RH, info boxes)
+============================================================ */
+.dark .bg-blue-50\/50 {
+  background-color: rgba(37, 99, 235, 0.09) !important;
+}
+.dark .bg-blue-100 {
+  background-color: rgba(37, 99, 235, 0.20) !important;
+}
+.dark .text-blue-900 {
+  color: #93c5fd !important;
+}
+.dark .border-blue-100 {
+  border-color: rgba(37, 99, 235, 0.40) !important;
+}
+
+/* ============================================================
+   DARK MODE — IMPROVED CYAN OVERRIDES (NÚCLEO chips)
+============================================================ */
+.dark .bg-cyan-50\/50 {
+  background-color: rgba(6, 182, 212, 0.09) !important;
+}
+.dark .bg-cyan-100 {
+  background-color: rgba(6, 182, 212, 0.20) !important;
+}
+.dark .border-cyan-100 {
+  border-color: rgba(6, 182, 212, 0.40) !important;
+}
+.dark .text-cyan-700 {
+  color: #a5f3fc !important;
+}
+.dark .text-cyan-800,
+.dark .text-cyan-850 {
+  color: var(--info-text) !important;
+}
+
+/* ============================================================
+   DARK MODE — IMPROVED RED OVERRIDES (action buttons)
+============================================================ */
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.13) !important;
+}
+.dark .bg-red-100 {
+  background-color: rgba(239, 68, 68, 0.20) !important;
+}
+.dark .text-red-700,
+.dark .text-red-800 {
+  color: #ffb4b4 !important;
+}
+.dark .border-red-200 {
+  border-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+
+/* ============================================================
+   SEMANTIC ROLE AVATARS
+   Círculos de iniciais nas linhas da tabela de usuários
+============================================================ */
+.role-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.role-avatar-master {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+.dark .role-avatar-master {
+  background-color: rgba(30, 41, 59, 0.80);
+  color: #e2e8f0;
+  outline: 1px solid rgba(148, 163, 184, 0.35);
+}
+.role-avatar-rh {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+.dark .role-avatar-rh {
+  background-color: rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
+}
+.role-avatar-clevel {
+  background-color: #f3e8ff;
+  color: #6d28d9;
+}
+.dark .role-avatar-clevel {
+  background-color: rgba(168, 85, 247, 0.22);
+  color: #d8b4fe;
+}
+.role-avatar-nucleo {
+  background-color: #cffafe;
+  color: #0e7490;
+}
+.dark .role-avatar-nucleo {
+  background-color: rgba(6, 182, 212, 0.22);
+  color: #67e8f9;
+}
+
+
+/* ============================================================
+   SEMANTIC ROLE BADGES
+   Chips de perfil de acesso (MASTER / RH / C-LEVEL / NÚCLEO)
+   Funciona corretamente em light e dark mode via CSS dual-class
+============================================================ */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.role-badge-master {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+.dark .role-badge-master {
+  background-color: rgba(30, 41, 59, 0.70);
+  color: #f1f5f9;
+  border-color: rgba(148, 163, 184, 0.55);
+}
+.role-badge-rh {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+.dark .role-badge-rh {
+  background-color: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.55);
+}
+.role-badge-clevel {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+  border-color: #c4b5fd;
+}
+.dark .role-badge-clevel {
+  background-color: rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+  border-color: rgba(168, 85, 247, 0.55);
+}
+.role-badge-nucleo {
+  background-color: #cffafe;
+  color: #0e7490;
+  border-color: #67e8f9;
+}
+.dark .role-badge-nucleo {
+  background-color: rgba(6, 182, 212, 0.18);
+  color: #67e8f9;
+  border-color: rgba(6, 182, 212, 0.55);
+}
+
+
+/* ============================================================
+   NUCLEO CHIPS
+   Chips de vínculo com núcleo na tabela de usuários
+============================================================ */
+.nucleo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.nucleo-chip-master {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+.dark .nucleo-chip-master {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.50);
+}
+.nucleo-chip-clevel {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+  border-color: #c4b5fd;
+}
+.dark .nucleo-chip-clevel {
+  background-color: rgba(168, 85, 247, 0.15);
+  color: #d8b4fe;
+  border-color: rgba(168, 85, 247, 0.50);
+}
+.nucleo-chip-nucleo {
+  background-color: #cffafe;
+  color: #0e7490;
+  border-color: #67e8f9;
+}
+.dark .nucleo-chip-nucleo {
+  background-color: rgba(6, 182, 212, 0.15);
+  color: #67e8f9;
+  border-color: rgba(6, 182, 212, 0.50);
+}
+
+
+/* ============================================================
+   STATUS BADGES
+   Indicadores de status operacional do usuário
+============================================================ */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.status-badge-active {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-color: #34d399;
+}
+.dark .status-badge-active {
+  background-color: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.55);
+}
+.status-badge-inactive {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+.dark .status-badge-inactive {
+  background-color: rgba(148, 163, 184, 0.13);
+  color: #afc0d4;
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+
+/* ============================================================
+   LOGIN PENDING BADGES
+   Estado de primeiro acesso pendente vs liberado
+============================================================ */
+.login-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.login-badge-pending {
+  background-color: #fef9c3;
+  color: #92400e;
+  border-color: #f59e0b;
+}
+.dark .login-badge-pending {
+  background-color: rgba(245, 158, 11, 0.18);
+  color: #ffd166;
+  border-color: rgba(245, 158, 11, 0.55);
+}
+.login-badge-released {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border-color: #86efac;
+}
+.dark .login-badge-released {
+  background-color: rgba(6, 182, 212, 0.12);
+  color: #a5f3fc;
+  border-color: rgba(6, 182, 212, 0.45);
+}
+
+
+/* ============================================================
+   GOVERNANCE ACTION BUTTONS
+   Botões de ação na coluna "Ações Governança" da tabela
+============================================================ */
+.btn-gov {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.btn-gov-details {
+  background-color: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+.btn-gov-details:hover:not(:disabled) {
+  background-color: #e2e8f0;
+  color: #334155;
+  border-color: #94a3b8;
+}
+.dark .btn-gov-details {
+  background-color: rgba(148, 163, 184, 0.14);
+  color: #d6e2f0;
+  border-color: rgba(148, 163, 184, 0.45);
+}
+.dark .btn-gov-details:hover:not(:disabled) {
+  background-color: rgba(148, 163, 184, 0.25);
+  color: #f1f5f9;
+  border-color: rgba(148, 163, 184, 0.60);
+}
+
+.btn-gov-edit {
+  background-color: transparent;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+.btn-gov-edit:hover:not(:disabled) {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+.dark .btn-gov-edit {
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.55);
+}
+.dark .btn-gov-edit:hover:not(:disabled) {
+  background-color: rgba(59, 130, 246, 0.18);
+  color: #bfdbfe;
+  border-color: rgba(59, 130, 246, 0.70);
+}
+
+.btn-gov-reset {
+  background-color: transparent;
+  color: #b45309;
+  border-color: #fcd34d;
+}
+.btn-gov-reset:hover:not(:disabled) {
+  background-color: #fffbeb;
+  color: #92400e;
+}
+.dark .btn-gov-reset {
+  color: #ffd166;
+  border-color: rgba(245, 158, 11, 0.55);
+}
+.dark .btn-gov-reset:hover:not(:disabled) {
+  background-color: rgba(245, 158, 11, 0.18);
+  color: #fef08a;
+  border-color: rgba(245, 158, 11, 0.70);
+}
+
+.btn-gov-inactive {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+.btn-gov-inactive:hover:not(:disabled) {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.dark .btn-gov-inactive {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ffb4b4;
+  border-color: rgba(239, 68, 68, 0.50);
+}
+.dark .btn-gov-inactive:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.22);
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.65);
+}
+
+.btn-gov-active {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-color: #34d399;
+}
+.btn-gov-active:hover:not(:disabled) {
+  background-color: #a7f3d0;
+  color: #064e3b;
+}
+.dark .btn-gov-active {
+  background-color: rgba(16, 185, 129, 0.13);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.50);
+}
+.dark .btn-gov-active:hover:not(:disabled) {
+  background-color: rgba(16, 185, 129, 0.22);
+  color: #a7f3d0;
+  border-color: rgba(16, 185, 129, 0.65);
+}

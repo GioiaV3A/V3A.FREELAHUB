@@ -439,8 +439,12 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                     >
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-extrabold text-xs uppercase
-                            ${getRoleLabel(usr.profile) === 'MASTER' ? 'bg-[#0F2342] text-white' : getRoleLabel(usr.profile) === 'RH' ? 'bg-blue-600/10 text-blue-650' : getRoleLabel(usr.profile) === 'C-LEVEL' ? 'bg-purple-600/10 text-purple-650' : 'bg-cyan-650/10 text-cyan-700'}`}>
+                          <div className={`role-avatar ${
+                            getRoleLabel(usr.profile) === 'MASTER' ? 'role-avatar-master' :
+                            getRoleLabel(usr.profile) === 'RH' ? 'role-avatar-rh' :
+                            getRoleLabel(usr.profile) === 'C-LEVEL' ? 'role-avatar-clevel' :
+                            'role-avatar-nucleo'
+                          }`}>
                             {usr.name.slice(0, 2)}
                           </div>
                           <div>
@@ -456,8 +460,12 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                       </td>
                       
                       <td className="px-5 py-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase
-                          ${getRoleLabel(usr.profile) === 'MASTER' ? 'bg-slate-900 text-slate-100' : getRoleLabel(usr.profile) === 'RH' ? 'bg-blue-150 text-blue-800' : getRoleLabel(usr.profile) === 'C-LEVEL' ? 'bg-purple-150 text-purple-800' : 'bg-cyan-150 text-cyan-800'}`}>
+                        <span className={`role-badge ${
+                          getRoleLabel(usr.profile) === 'MASTER' ? 'role-badge-master' :
+                          getRoleLabel(usr.profile) === 'RH' ? 'role-badge-rh' :
+                          getRoleLabel(usr.profile) === 'C-LEVEL' ? 'role-badge-clevel' :
+                          'role-badge-nucleo'
+                        }`}>
                           {getRoleLabel(usr.profile)}
                         </span>
                         {usr.role && (
@@ -469,39 +477,36 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
 
                       <td className="px-5 py-4 text-text-primary font-semibold">
                         {getRoleLabel(usr.profile) === 'NÚCLEO' ? (
-                          <span className="text-cyan-700 font-bold bg-cyan-50 border border-cyan-100 px-2 py-0.5 rounded-md">
+                          <span className="nucleo-chip nucleo-chip-nucleo">
                             💡 {linkedNucleo ? linkedNucleo.name : 'Não vinculado'}
                           </span>
                         ) : getRoleLabel(usr.profile) === 'C-LEVEL' ? (
-                          <span className="text-purple-700 font-bold bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-md">
+                          <span className="nucleo-chip nucleo-chip-clevel">
                             🌐 Multi-núcleo
                           </span>
                         ) : getRoleLabel(usr.profile) === 'MASTER' ? (
-                          <span className="text-blue-700 font-bold bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md">
+                          <span className="nucleo-chip nucleo-chip-master">
                             👑 Todos os núcleos
                           </span>
                         ) : (
-                          <span className="text-text-secondary">Estratégico / Geral</span>
+                          <span className="text-text-secondary font-semibold">Estratégico / Geral</span>
                         )}
                       </td>
 
                       <td className="px-5 py-4">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border
-                          ${usr.status === 'Ativo' 
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-150' 
-                            : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${usr.status === 'Ativo' ? 'bg-emerald-505' : 'bg-slate-500'}`} />
+                        <span className={`status-badge ${usr.status === 'Ativo' ? 'status-badge-active' : 'status-badge-inactive'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${usr.status === 'Ativo' ? 'bg-emerald-400' : 'bg-slate-400'}`} />
                           {usr.status}
                         </span>
                       </td>
 
-                      <td className="px-5 py-4 font-semibold">
+                      <td className="px-5 py-4">
                         {usr.firstAccessPending ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] bg-amber-50 text-amber-700 border border-amber-150 font-bold">
+                          <span className="login-badge login-badge-pending">
                             ⚠️ Primeiro acesso pendente
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] bg-slate-50 text-slate-600 border border-slate-150">
+                          <span className="login-badge login-badge-released">
                             ✓ Liberado
                           </span>
                         )}
@@ -515,7 +520,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                         <div className="flex justify-end gap-1.5">
                           <button
                             onClick={() => openDetailsModal(usr)}
-                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-1 px-2 rounded-lg font-bold text-[10px]"
+                            className="btn-gov btn-gov-details"
                             title="Ver Detalhes do Usuário"
                           >
                             Detalhes
@@ -525,8 +530,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                             <>
                               <button
                                 onClick={() => openEditModal(usr)}
-                                className={`text-blue-700 hover:bg-blue-50 p-1 px-2 border border-blue-200 rounded-lg font-bold text-[10px]
-                                  ${usr.status === 'Inativo' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                className={`btn-gov btn-gov-edit ${usr.status === 'Inativo' ? 'opacity-40 cursor-not-allowed' : ''}`}
                                 disabled={usr.status === 'Inativo'}
                                 title="Editar Cadastro"
                               >
@@ -535,8 +539,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
 
                               <button
                                 onClick={() => openResetPasswordModal(usr)}
-                                className={`text-amber-700 hover:bg-amber-50 p-1 px-2 border border-amber-200 rounded-lg font-bold text-[10px]
-                                  ${usr.status === 'Inativo' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                className={`btn-gov btn-gov-reset ${usr.status === 'Inativo' ? 'opacity-40 cursor-not-allowed' : ''}`}
                                 disabled={usr.status === 'Inativo'}
                                 title="Redefinir Senha Inicial corporativa"
                               >
@@ -545,10 +548,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
 
                               <button
                                 onClick={() => handleToggleStatus(usr)}
-                                className={`p-1 px-2 rounded-lg font-bold text-[10px] border 
-                                  ${usr.status === 'Ativo' 
-                                    ? 'text-red-700 bg-red-50 hover:bg-red-100 border-red-200' 
-                                    : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200'}`}
+                                className={`btn-gov ${usr.status === 'Ativo' ? 'btn-gov-inactive' : 'btn-gov-active'}`}
                                 title={usr.status === 'Ativo' ? 'Inativar Usuário' : 'Reativar Usuário'}
                               >
                                 {usr.status === 'Ativo' ? 'Inativar' : 'Reativar'}
