@@ -11,7 +11,7 @@ export async function createUserAction(
   userData: {
     full_name: string;
     email: string;
-    role: 'master' | 'rh' | 'nucleo';
+    role: 'master' | 'rh' | 'nucleo' | 'c_level';
     nucleo_id?: string | null;
     job_title?: string | null;
     password?: string;
@@ -47,8 +47,8 @@ export async function createUserAction(
 
     // Validar role recebido
     const normalizedRole = userData.role?.toLowerCase();
-    if (normalizedRole !== 'master' && normalizedRole !== 'rh' && normalizedRole !== 'nucleo') {
-      return { success: false, error: 'Perfil de acesso inválido. Use apenas MASTER, RH ou NÚCLEO.' };
+    if (normalizedRole !== 'master' && normalizedRole !== 'rh' && normalizedRole !== 'nucleo' && normalizedRole !== 'c_level') {
+      return { success: false, error: 'Perfil de acesso inválido. Use apenas MASTER, RH, NÚCLEO ou C-LEVEL.' };
     }
 
     // Validar permissão por perfil (RH só cria nucleo, MASTER cria rh ou nucleo)
@@ -575,7 +575,7 @@ export async function createNucleoWithOptionalHeadUserAction(
       return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
     }
 
-    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
+    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh' && requesterProfile.role !== 'c_level') {
       return { success: false, error: 'Você não tem permissão para cadastrar núcleos.' };
     }
 
@@ -763,7 +763,7 @@ export async function createRetroactiveHeadUserAction(
       return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
     }
 
-    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
+    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh' && requesterProfile.role !== 'c_level') {
       return { success: false, error: 'Você não tem permissão para cadastrar usuários.' };
     }
 

@@ -48,7 +48,8 @@ import {
   mapCandidateStatusToUI,
   mapBillingTypeToUI,
   mapNegotiationStatusToUI,
-  mapUrgencyToDB
+  mapUrgencyToDB,
+  getRoleLabel
 } from '@/lib/dbMapper';
 import { 
   createUserAction, 
@@ -1137,7 +1138,7 @@ export default function Home() {
       const res = await createUserAction(token, {
         full_name: u.name,
         email: u.email,
-        role: ((u.profile as string) === 'NÚCLEO' || (u.profile as string) === 'NUCLEO' ? 'nucleo' : u.profile.toLowerCase()) as any,
+        role: ((u.profile as string) === 'NÚCLEO' || (u.profile as string) === 'NUCLEO' ? 'nucleo' : (u.profile === 'C-LEVEL' ? 'c_level' : u.profile.toLowerCase())) as any,
         nucleo_id: u.nucleoId || null,
         job_title: u.role,
         password: u.password,
@@ -1177,7 +1178,7 @@ export default function Home() {
         full_name: u.name,
         email: u.email,
         job_title: u.role,
-        role: ((u.profile as string) === 'NÚCLEO' || (u.profile as string) === 'NUCLEO' ? 'nucleo' : u.profile.toLowerCase()) as any,
+        role: ((u.profile as string) === 'NÚCLEO' || (u.profile as string) === 'NUCLEO' ? 'nucleo' : (u.profile === 'C-LEVEL' ? 'c_level' : u.profile.toLowerCase())) as any,
         nucleo_id: u.nucleoId || null,
         status: u.status === 'Ativo' ? 'active' : 'inactive',
         first_login_required: u.firstAccessPending,
@@ -1228,7 +1229,7 @@ export default function Home() {
   const getSidebarNavigationItems = () => {
     if (!currentUser) return [];
 
-    switch (currentUser.profile) {
+    switch (getRoleLabel(currentUser.profile)) {
       case 'MASTER':
         return [
           { name: 'Dashboard Geral', icon: LayoutDashboard },
@@ -1261,6 +1262,19 @@ export default function Home() {
           { name: 'Faturamento & Códigos', icon: Key },
           { name: 'Relatórios', icon: TrendingUp }
         ];
+      case 'C-LEVEL':
+        return [
+          { name: 'Dashboard C-LEVEL', icon: LayoutDashboard },
+          { name: 'Cadastro de Núcleos', icon: Building },
+          { name: 'Banco de Freelancers', icon: Users },
+          { name: 'Sugestões de Freelas', icon: FileCheck2 },
+          { name: 'Criar Oportunidade', icon: Briefcase },
+          { name: 'Shortlist & Negociação', icon: SlidersHorizontal },
+          { name: 'Timeline de Alocações', icon: CalendarDays },
+          { name: 'Faturamento & Códigos', icon: Key },
+          { name: 'Relatórios', icon: TrendingUp },
+          { name: 'Configurações', icon: SlidersHorizontal }
+        ];
       case 'NÚCLEO':
         return [
           { name: 'Meu Núcleo', icon: LayoutDashboard },
@@ -1284,7 +1298,7 @@ export default function Home() {
 
   // Helper mapping function to handle correct activeTab routing cleanly
   const handleMenuClick = (menuName: string) => {
-    if (menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Meu Núcleo' || menuName === 'Meus Bookings' || menuName === 'Concluir Job') {
+    if (menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo' || menuName === 'Meus Bookings' || menuName === 'Concluir Job') {
       setActiveTab('Dashboard');
     } else if (menuName === 'Buscar Freelancers' || menuName === 'Banco de Freelancers') {
       setActiveTab('Banco de Freelancers');
@@ -1309,7 +1323,7 @@ export default function Home() {
 
   const isMenuSelected = (menuName: string) => {
     if (activeTab === 'Dashboard') {
-      return menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Meu Núcleo';
+      return menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo';
     }
     if (activeTab === 'Banco de Freelancers') {
       return menuName === 'Banco de Freelancers' || menuName === 'Buscar Freelancers';
@@ -1595,14 +1609,14 @@ export default function Home() {
 
         {/* Static Sidebar Identity Card */}
         <div className={`p-4 border-t border-[#1e293b] bg-[#081528] text-xs safe-bottom flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}>
-          <div className="w-7 h-7 rounded-full bg-action-cyan/15 flex items-center justify-center font-bold text-action-cyan text-[10px] uppercase shrink-0" title={`${currentUser.name} (Perfil: ${currentUser.profile})`}>
+          <div className="w-7 h-7 rounded-full bg-action-cyan/15 flex items-center justify-center font-bold text-action-cyan text-[10px] uppercase shrink-0" title={`${currentUser.name} (Perfil: ${getRoleLabel(currentUser.profile)})`}>
             {currentUser.name.slice(0, 2)}
           </div>
           {!isSidebarCollapsed && (
             <div className="truncate">
               <p className="font-bold text-white leading-tight truncate">{currentUser.name}</p>
               <span className="text-[9px] text-[#A2E9F2] font-semibold block mt-0.5">
-                PERFIL: {currentUser.profile}
+                PERFIL: {getRoleLabel(currentUser.profile)}
               </span>
             </div>
           )}
@@ -1643,7 +1657,7 @@ export default function Home() {
             
             {/* Informative Static Profile Label */}
             <span className="bg-[#0F2342] text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
-              Perfil: {currentUser.profile}
+              Perfil: {getRoleLabel(currentUser.profile)}
             </span>
 
             {/* Profile trigger dropdown button */}
@@ -1666,7 +1680,7 @@ export default function Home() {
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-border-subtle rounded-xl shadow-lg z-30 overflow-hidden text-xs font-semibold animate-scale-up">
                   <div className="p-3 bg-slate-50 border-b border-border-subtle md:hidden">
                     <p className="font-bold text-text-primary">{currentUser.name}</p>
-                    <p className="text-[10px] text-text-secondary mt-0.5">Perfil: {currentUser.profile}</p>
+                    <p className="text-[10px] text-text-secondary mt-0.5">Perfil: {getRoleLabel(currentUser.profile)}</p>
                   </div>
                   <button 
                     onClick={() => { setActiveTab('Meu Perfil'); setIsHeaderMenuOpen(false); }}
@@ -1738,15 +1752,15 @@ export default function Home() {
         <div className="flex-1 overflow-y-auto p-6 focus:outline-none bg-bg-app">
           
           {/* Dashboard router dependent on selected profile */}
-          {activeTab === 'Dashboard' && currentUser.profile === 'MASTER' && (
+          {activeTab === 'Dashboard' && getRoleLabel(currentUser.profile) === 'MASTER' && (
             <DashboardMaster db={db} />
           )}
 
-          {activeTab === 'Dashboard' && currentUser.profile === 'RH' && (
+          {activeTab === 'Dashboard' && getRoleLabel(currentUser.profile) === 'RH' && (
             <DashboardRh db={db} />
           )}
 
-          {activeTab === 'Dashboard' && currentUser.profile === 'NÚCLEO' && (
+          {activeTab === 'Dashboard' && (getRoleLabel(currentUser.profile) === 'NÚCLEO' || getRoleLabel(currentUser.profile) === 'C-LEVEL') && (
             <DashboardNucleo db={db} />
           )}
 

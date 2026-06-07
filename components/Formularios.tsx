@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { DatabaseProps } from '@/app/page';
+import { getRoleLabel } from '@/lib/dbMapper';
 import { Sparkles, Save, HelpCircle, Briefcase, Plus, Scale, Building } from 'lucide-react';
 
 // Form 1: Cadastrar Freelancer (Master & RH)
@@ -381,7 +382,7 @@ export function FormSugerir({ db, onCancel }: { db: DatabaseProps; onCancel: () 
 
 // Form 3: Criar Oportunidade / Job (NÚCLEO and MASTER)
 export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel: () => void }) {
-  const isMaster = db.currentUser.profile === 'MASTER';
+  const canSelectNucleo = getRoleLabel(db.currentUser.profile) === 'MASTER' || getRoleLabel(db.currentUser.profile) === 'C-LEVEL';
 
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
@@ -395,7 +396,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   const [urgency, setUrgency] = useState<'Alta' | 'Média' | 'Baixa'>('Média');
   // MASTER must select a nucleo; NÚCLEO auto-fills
   const [selectedNucleoId, setSelectedNucleoId] = useState(
-    isMaster ? '' : (db.currentUser.nucleoId || '')
+    canSelectNucleo ? '' : (db.currentUser.nucleoId || '')
   );
 
   // Active nucleos only (for MASTER selector)
@@ -409,13 +410,13 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       return;
     }
 
-    // MASTER must pick a nucleo
-    if (isMaster && !selectedNucleoId) {
+    // Selection validation
+    if (canSelectNucleo && !selectedNucleoId) {
       alert('Por favor, selecione o Núcleo Responsável para este job.');
       return;
     }
 
-    const nucleoId = isMaster ? selectedNucleoId : (db.currentUser.nucleoId || '');
+    const nucleoId = canSelectNucleo ? selectedNucleoId : (db.currentUser.nucleoId || '');
 
     if (!nucleoId) {
       alert('Núcleo não identificado. Verifique seu perfil.');
@@ -458,8 +459,8 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
 
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
 
-        {/* MASTER: Nucleo selector */}
-        {isMaster && (
+        {/* MASTER / C-LEVEL: Nucleo selector */}
+        {canSelectNucleo && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2">
             <label className="font-bold text-amber-800 block text-xs flex items-center gap-1.5">
               <Building className="w-3.5 h-3.5" />

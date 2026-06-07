@@ -8,7 +8,16 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
   // Identify active nucleus based on currently selected profile logic
   // To keep the simulation fluid, we query the logged in user or offer a dropdown of nuclei!
   const user = db.currentUser;
-  const activeNucleoId = user?.nucleoId || (db.nucleos && db.nucleos[0]?.id) || '55d9d7c0-d3cb-4f1e-84ad-e77ff961805b';
+  const initialNucleoId = user?.nucleoId || (db.nucleos && db.nucleos[0]?.id) || '55d9d7c0-d3cb-4f1e-84ad-e77ff961805b';
+  const [selectedNucleoId, setSelectedNucleoId] = React.useState(initialNucleoId);
+
+  React.useEffect(() => {
+    if (user?.nucleoId) {
+      setSelectedNucleoId(user.nucleoId);
+    }
+  }, [user?.nucleoId]);
+
+  const activeNucleoId = user?.nucleoId || selectedNucleoId;
   const nucleo = db.nucleos.find(n => n.id === activeNucleoId);
 
   // Filter jobs and allocations belonging to this nucleus
@@ -59,7 +68,22 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
       {/* Target heading */}
       <div className="flex md:flex-row flex-col gap-2 justify-between items-start md:items-center">
         <div>
-          <h2 className="text-xl font-bold text-text-primary">Painel Operacional — Núcleo {nucleo?.name}</h2>
+          <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
+            <span>Painel Operacional — Núcleo</span>
+            {user?.nucleoId ? (
+              <span>{nucleo?.name}</span>
+            ) : (
+              <select
+                value={activeNucleoId}
+                onChange={(e) => setSelectedNucleoId(e.target.value)}
+                className="bg-surface border border-border-subtle rounded px-2 py-0.5 text-sm font-semibold text-text-primary outline-none focus:border-action-cyan"
+              >
+                {db.nucleos.map(n => (
+                  <option key={n.id} value={n.id}>{n.name}</option>
+                ))}
+              </select>
+            )}
+          </h2>
           <p className="text-xs text-text-secondary">Visão consolidada de orçamento, alocações de terceiros e demandas do seu núcleo.</p>
         </div>
         <div className="flex gap-2">

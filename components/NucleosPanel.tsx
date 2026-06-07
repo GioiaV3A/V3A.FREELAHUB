@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { DatabaseProps } from '@/app/page';
 import { Building, Plus, Save, Users, Trash2, Edit2, ShieldAlert, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { mapNucleoToUI, mapProfileToUser } from '@/lib/dbMapper';
+import { mapNucleoToUI, mapProfileToUser, getRoleLabel } from '@/lib/dbMapper';
 import { 
   createNucleoWithOptionalHeadUserAction, 
   createRetroactiveHeadUserAction 
@@ -94,12 +94,12 @@ export default function NucleosPanel({ db }: { db: any }) {
       let confirmPass = headConfirmPassword;
 
       if (createHeadUser && existingUser) {
-        if (existingUser.profile === 'MASTER' || existingUser.profile === 'RH') {
+        if (getRoleLabel(existingUser.profile) === 'MASTER' || getRoleLabel(existingUser.profile) === 'RH') {
           alert('Este e-mail está associado a um usuário MASTER ou RH. Não é permitido vinculá-lo como Head de Núcleo.');
           setIsSaving(false);
           return;
         }
-        if (existingUser.profile === 'NÚCLEO') {
+        if (getRoleLabel(existingUser.profile) === 'NÚCLEO') {
           if (!confirm(`Já existe um usuário de Núcleo cadastrado com este e-mail (${existingUser.name}). Deseja vinculá-lo a este novo núcleo?`)) {
             setIsSaving(false);
             return;
@@ -132,7 +132,7 @@ export default function NucleosPanel({ db }: { db: any }) {
         const mappedUser = mapProfileToUser(res.profile);
         db.setUsers((prevUsers: any) => [mappedUser, ...prevUsers]);
         alert(`Núcleo "${name}" criado com sucesso. O usuário do Head foi cadastrado e deverá alterar a senha no primeiro acesso.`);
-      } else if (createHeadUser && existingUser && existingUser.profile === 'NÚCLEO') {
+      } else if (createHeadUser && existingUser && getRoleLabel(existingUser.profile) === 'NÚCLEO') {
         // Update linkage on existing user
         db.setUsers((prevUsers: any) => prevUsers.map((u: any) => {
           if (u.id === existingUser.id) {
@@ -185,12 +185,12 @@ export default function NucleosPanel({ db }: { db: any }) {
       const token = sessionData?.session?.access_token || '';
 
       if (existingUser) {
-        if (existingUser.profile === 'MASTER' || existingUser.profile === 'RH') {
+        if (getRoleLabel(existingUser.profile) === 'MASTER' || getRoleLabel(existingUser.profile) === 'RH') {
           alert('Este e-mail está associado a um usuário MASTER ou RH. Não é permitido vinculá-lo como Head de Núcleo.');
           setIsSaving(false);
           return;
         }
-        if (existingUser.profile === 'NÚCLEO') {
+        if (getRoleLabel(existingUser.profile) === 'NÚCLEO') {
           if (confirm(`Já existe um usuário de Núcleo cadastrado com este e-mail (${existingUser.name}). Deseja vinculá-lo a este núcleo?`)) {
             db.setUsers((prevUsers: any) => prevUsers.map((u: any) => {
               if (u.id === existingUser.id) {
@@ -377,7 +377,7 @@ export default function NucleosPanel({ db }: { db: any }) {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-1.5">
-                          {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') && (
+                          {(getRoleLabel(db.currentUser.profile) === 'MASTER' || getRoleLabel(db.currentUser.profile) === 'RH') && (
                             <>
                               <button
                                 onClick={() => {
@@ -436,7 +436,7 @@ export default function NucleosPanel({ db }: { db: any }) {
 
         {/* Right column: Form to add new core/núcleo (RH / Master only) */}
         <div className="xl:col-span-4 space-y-6">
-          {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') ? (
+          {(getRoleLabel(db.currentUser.profile) === 'MASTER' || getRoleLabel(db.currentUser.profile) === 'RH' || getRoleLabel(db.currentUser.profile) === 'C-LEVEL') ? (
             <div className="bg-white p-5 rounded-2xl border border-border-subtle space-y-4 text-xs">
               <div className="flex gap-1.5 items-center">
                 <Plus className="w-5 h-5 text-action-cyan" />

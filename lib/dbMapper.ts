@@ -195,6 +195,16 @@ export function mapPaymentStatusToUI(status: string | null): PaymentCode['paymen
 }
 
 // --- Profile & User Mapping ---
+export function getRoleLabel(role: string | null | undefined): string {
+  if (!role) return '';
+  const cleaned = role.toLowerCase().replace(/_/g, '-').trim();
+  if (cleaned === 'master') return 'MASTER';
+  if (cleaned === 'rh') return 'RH';
+  if (cleaned === 'nucleo' || cleaned === 'núcleo') return 'NÚCLEO';
+  if (cleaned === 'c-level' || cleaned === 'c_level') return 'C-LEVEL';
+  return role.toUpperCase();
+}
+
 export function mapProfileToUser(profile: any): User {
   // Format last login: e.g. "Hoje, 14:06"
   let lastLoginStr = 'Nunca';
@@ -207,7 +217,7 @@ export function mapProfileToUser(profile: any): User {
     id: profile.id,
     name: profile.full_name,
     email: profile.email,
-    profile: profile.role.toUpperCase() as any, // 'master' -> 'MASTER'
+    profile: getRoleLabel(profile.role) as any,
     nucleoId: profile.nucleo_id || undefined,
     status: profile.status === 'active' ? 'Ativo' : 'Inativo',
     role: profile.job_title || '',

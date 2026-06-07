@@ -1,4 +1,4 @@
-export type ProfileType = 'MASTER' | 'RH' | 'NÚCLEO';
+export type ProfileType = 'MASTER' | 'RH' | 'NÚCLEO' | 'C-LEVEL';
 
 export interface User {
   id: string;
