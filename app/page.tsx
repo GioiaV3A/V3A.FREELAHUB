@@ -1526,7 +1526,7 @@ export default function Home() {
       {/* Mobile: fixed overlay drawer | Desktop: static sidebar */}
       <aside 
         className={`
-          fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[290px]
+          fixed inset-y-0 left-0 z-50 w-72
           md:static md:z-auto
           bg-sidebar-navy flex flex-col text-slate-100 shrink-0
           border-r border-[#1e293b]
@@ -1749,7 +1749,7 @@ export default function Home() {
         </header>
 
         {/* 3. SCROLLABLE ROUTE VIEWPORT */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 focus:outline-none bg-bg-app">
+        <div className="flex-1 overflow-y-auto p-6 focus:outline-none bg-bg-app">
           
           {/* Dashboard router dependent on selected profile */}
           {activeTab === 'Dashboard' && getRoleLabel(currentUser.profile) === 'MASTER' && (

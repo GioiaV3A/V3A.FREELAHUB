@@ -36,7 +36,6 @@ export default function BancoFreelas({ db }: { db: any }) {
   const [selectedWorkedV3a, setSelectedWorkedV3a] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('');
   const [minScore, setMinScore] = useState(0);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Sorting state
   const [sortBy, setSortBy] = useState<string>('name');
@@ -446,14 +445,14 @@ export default function BancoFreelas({ db }: { db: any }) {
       </div>
 
       {/* Filter and search bar card */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-border-subtle shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="bg-white p-5 rounded-2xl border border-border-subtle shadow-xs space-y-4">
+        <div className="flex md:flex-row flex-col gap-3">
           {/* Main search text field */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-text-secondary" />
+            <Search className="absolute left-3.5 top-3 w-4 h-4 text-text-secondary" />
             <input
               type="text"
-              placeholder="Buscar por nome, e-mail, marcas, segmento, cidade ou experiência..."
+              placeholder="Buscar por nome, e-mail, marcas, segmento, cidade ou experiência com V3A..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               className="w-full pl-10 pr-4 py-2.5 border border-border-subtle rounded-xl text-xs text-text-primary focus:outline-none focus:border-action-cyan focus:ring-1 focus:ring-action-cyan bg-slate-50"
@@ -461,34 +460,19 @@ export default function BancoFreelas({ db }: { db: any }) {
           </div>
 
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="md:hidden border border-border-subtle hover:bg-slate-50 text-text-primary p-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shrink-0 font-bold justify-center"
-            >
-              <Filter className="w-4 h-4 text-slate-500" />
-              <span>Filtros</span>
-              {((selectedRole ? 1 : 0) + (selectedSeniority ? 1 : 0) + (selectedAvailability ? 1 : 0) + (selectedStatus ? 1 : 0) + (minScore > 0 ? 1 : 0) + (selectedLocation ? 1 : 0) + (selectedWorkedV3a ? 1 : 0) + (selectedIndustry ? 1 : 0)) > 0 && (
-                <span className="bg-action-cyan text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0">
-                  {(selectedRole ? 1 : 0) + (selectedSeniority ? 1 : 0) + (selectedAvailability ? 1 : 0) + (selectedStatus ? 1 : 0) + (minScore > 0 ? 1 : 0) + (selectedLocation ? 1 : 0) + (selectedWorkedV3a ? 1 : 0) + (selectedIndustry ? 1 : 0)}
-                </span>
-              )}
-            </button>
-
             <button 
-              type="button"
               onClick={handleClearFilters}
-              className="border border-border-subtle hover:bg-slate-50 text-text-primary p-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shrink-0 font-bold justify-center"
+              className="border border-border-subtle hover:bg-slate-50 text-text-primary p-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shrink-0 font-bold"
               title="Limpar filtros"
             >
               <FilterX className="w-4 h-4" />
-              <span className="hidden sm:inline">Limpar Filtros</span>
+              <span>Limpar Filtros</span>
             </button>
           </div>
         </div>
 
         {/* Detailed Filters grid */}
-        <div className={`${showMobileFilters ? 'grid' : 'hidden'} md:grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-dashed border-border-subtle md:border-none md:pt-0`}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1">
           {/* Filter 1: Main Role */}
           <div>
             <label className="text-[10px] uppercase tracking-wider font-bold text-text-secondary block mb-1">Função Principal</label>
