@@ -34,6 +34,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
   const [nucleoFilter, setNucleoFilter] = useState<string>('todos');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [pendingFilter, setPendingFilter] = useState<string>('todos');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Modal States
   const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
@@ -55,9 +56,6 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
   // Reset Password form state
   const [resetPassword, setResetPassword] = useState('');
   const [resetConfirmPassword, setResetConfirmPassword] = useState('');
-
-  // Mobile filter drawer state
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // UI toast/notify trigger
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -330,50 +328,36 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       </div>
 
       {/* Filters grid and Search widgets */}
-      <div className="bg-white p-5 border border-border-subtle rounded-2xl shadow-xs space-y-4">
+      <div className="bg-white p-4 sm:p-5 border border-border-subtle rounded-2xl shadow-xs space-y-4">
         
-        {/* Search Input bar — DESKTOP ONLY */}
-        <div className="relative hidden md:block">
-          <Search className="w-4 h-4 text-text-secondary absolute left-3 top-3" />
-          <input
-            type="text"
-            placeholder="Pesquisar usuários por nome completo ou e-mail corporativo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 border border-border-subtle p-2.5 rounded-xl text-xs text-text-primary focus:outline-none focus:border-action-cyan bg-slate-50"
-          />
-        </div>
-
-        {/* MOBILE: Search + Filter Button */}
-        <div className="flex gap-2 md:hidden">
+        {/* Search Input bar & Filters toggle on mobile */}
+        <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-text-secondary absolute left-3 top-3" />
+            <Search className="w-4 h-4 text-text-secondary absolute left-3 top-3.5" />
             <input
               type="text"
-              placeholder="Buscar usuário..."
+              placeholder="Pesquisar usuários por nome completo ou e-mail..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 border border-border-subtle p-2.5 rounded-xl text-xs text-text-primary focus:outline-none focus:border-action-cyan bg-slate-50 min-h-[44px]"
+              className="w-full pl-10 border border-border-subtle p-2.5 rounded-xl text-xs text-text-primary focus:outline-none focus:border-action-cyan bg-slate-50"
             />
           </div>
           <button
-            onClick={() => setIsMobileFilterOpen(true)}
-            className={`mobile-filter-btn ${
-              profileFilter !== 'todos' || nucleoFilter !== 'todos' || statusFilter !== 'todos' || pendingFilter !== 'todos' ? 'has-filters' : ''
-            }`}
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="md:hidden border border-border-subtle hover:bg-slate-50 text-text-primary p-2.5 px-3 rounded-xl text-xs flex items-center gap-1.5 shrink-0 font-bold"
           >
-            <Filter className="w-4 h-4" />
-            Filtros
-            {(profileFilter !== 'todos' || nucleoFilter !== 'todos' || statusFilter !== 'todos' || pendingFilter !== 'todos') && (
-              <span className="w-4 h-4 rounded-full bg-current text-white flex items-center justify-center text-[9px] font-black">
-                {[profileFilter !== 'todos', nucleoFilter !== 'todos', statusFilter !== 'todos', pendingFilter !== 'todos'].filter(Boolean).length}
+            <Filter className="w-4 h-4 text-slate-500" />
+            <span className="hidden sm:inline">Filtros</span>
+            {((profileFilter !== 'todos' ? 1 : 0) + (nucleoFilter !== 'todos' ? 1 : 0) + (statusFilter !== 'todos' ? 1 : 0) + (pendingFilter !== 'todos' ? 1 : 0)) > 0 && (
+              <span className="bg-action-cyan text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0">
+                {(profileFilter !== 'todos' ? 1 : 0) + (nucleoFilter !== 'todos' ? 1 : 0) + (statusFilter !== 'todos' ? 1 : 0) + (pendingFilter !== 'todos' ? 1 : 0)}
               </span>
             )}
           </button>
         </div>
 
-        {/* Row of dropdown indicators — DESKTOP ONLY */}
-        <div className="hidden md:grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+        {/* Row of dropdown indicators */}
+        <div className={`${showMobileFilters ? 'grid' : 'hidden'} md:grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 text-xs border-t border-dashed border-border-subtle md:border-none md:pt-0`}>
           
           {/* Filter 1: profile type */}
           <div>
@@ -436,9 +420,11 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
         </div>
       </div>
 
-      {/* Main Data Table */}
+      {/* Main Data View Container */}
       <div className="bg-white rounded-2xl border border-border-subtle overflow-hidden shadow-xs animate-fade-in">
-        <div className="overflow-x-auto">
+        
+        {/* DESKTOP TABLE VIEW */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs whitespace-nowrap">
             <thead className="bg-[#0A192F] text-white font-semibold border-b border-border-subtle">
               <tr>
@@ -596,110 +582,111 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
           </table>
         </div>
 
-        {/* MOBILE CARD VIEW */}
-        <div className="md:hidden divide-y divide-border-subtle">
+        {/* MOBILE CARDS VIEW */}
+        <div className="md:hidden divide-y divide-border-subtle bg-white">
           {sortedUsers.length === 0 ? (
-            <div className="p-8 text-center text-text-secondary italic text-xs">
-              Nenhum usuário encontrado com os filtros selecionados.
+            <div className="p-8 text-center text-text-secondary italic">
+              Nenhum usuário cadastrado atende aos filtros de pesquisa selecionados atualmente.
             </div>
           ) : (
             sortedUsers.map((usr) => {
               const linkedNucleo = nucleos.find(n => n.id === usr.nucleoId);
               const canModifyThisUser = getRoleLabel(currentUser.profile) === 'MASTER' || (getRoleLabel(currentUser.profile) === 'RH' && getRoleLabel(usr.profile) === 'NÚCLEO' && !usr.isSeedMaster);
-              const roleLabel = getRoleLabel(usr.profile);
-              const initials = usr.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
-
-              const roleBadgeClass = {
-                'MASTER': 'role-badge-master',
-                'RH': 'role-badge-rh',
-                'NÚCLEO': 'role-badge-nucleo',
-                'C-LEVEL': 'role-badge-clevel',
-              }[roleLabel] || 'role-badge-nucleo';
-
-              const avatarClass = {
-                'MASTER': 'role-avatar-master',
-                'RH': 'role-avatar-rh',
-                'NÚCLEO': 'role-avatar-nucleo',
-                'C-LEVEL': 'role-avatar-clevel',
-              }[roleLabel] || 'role-avatar-nucleo';
-
               return (
-                <div key={usr.id} className={`mobile-data-card ${usr.status === 'Inativo' ? 'opacity-60' : ''}`}>
-                  {/* Header */}
-                  <div className="flex items-start gap-3">
-                    <div className={`role-avatar ${avatarClass} shrink-0`}>{initials}</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-text-primary text-sm truncate">{usr.name}</p>
-                      <p className="text-[11px] text-text-secondary truncate mt-0.5">{usr.email}</p>
-                      {usr.role && <p className="text-[10px] text-text-secondary truncate">{usr.role}</p>}
+                <div key={usr.id} className={`p-4 space-y-3.5 ${usr.status === 'Inativo' ? 'opacity-65 bg-slate-50' : ''}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`role-avatar ${
+                      getRoleLabel(usr.profile) === 'MASTER' ? 'role-avatar-master' :
+                      getRoleLabel(usr.profile) === 'RH' ? 'role-avatar-rh' :
+                      getRoleLabel(usr.profile) === 'C-LEVEL' ? 'role-avatar-clevel' :
+                      'role-avatar-nucleo'
+                    }`}>
+                      {usr.name.slice(0, 2)}
                     </div>
-                    <span className={`role-badge ${roleBadgeClass} shrink-0`}>{roleLabel}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-text-primary text-xs flex items-center gap-1.5 truncate">
+                        {usr.name}
+                        {usr.id === currentUser.id && (
+                          <span className="bg-slate-200 text-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0">Você</span>
+                        )}
+                      </p>
+                      <p className="text-[10px] text-text-secondary truncate mt-0.5">{usr.email}</p>
+                    </div>
                   </div>
 
-                  {/* Details grid */}
-                  <div className="mobile-data-card-grid">
+                  <div className="grid grid-cols-2 gap-3 text-[11px] pt-2 border-t border-dashed border-border-subtle">
                     <div>
-                      <span className="mobile-data-card-label">Núcleo</span>
-                      {linkedNucleo ? (
-                        <span className="inline-block px-2 py-0.5 bg-cyan-50 text-cyan-800 border border-cyan-200 rounded-md text-[10px] font-bold truncate max-w-full">
-                          {linkedNucleo.name}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] text-text-secondary italic">
-                          {roleLabel === 'C-LEVEL' ? 'Todos (C-Level)' : '—'}
-                        </span>
-                      )}
+                      <span className="text-[9px] text-text-secondary font-bold uppercase block">Perfil</span>
+                      <span className={`role-badge mt-1 ${
+                        getRoleLabel(usr.profile) === 'MASTER' ? 'role-badge-master' :
+                        getRoleLabel(usr.profile) === 'RH' ? 'role-badge-rh' :
+                        getRoleLabel(usr.profile) === 'C-LEVEL' ? 'role-badge-clevel' :
+                        'role-badge-nucleo'
+                      }`}>
+                        {getRoleLabel(usr.profile)}
+                      </span>
                     </div>
                     <div>
-                      <span className="mobile-data-card-label">Status</span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border ${
-                        usr.status === 'Ativo'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}>
+                      <span className="text-[9px] text-text-secondary font-bold uppercase block">Núcleo</span>
+                      <span className="mt-1 block truncate">
+                        {getRoleLabel(usr.profile) === 'NÚCLEO' ? (
+                          <span className="nucleo-chip nucleo-chip-nucleo">
+                            💡 {linkedNucleo ? linkedNucleo.name : 'Não vinculado'}
+                          </span>
+                        ) : getRoleLabel(usr.profile) === 'C-LEVEL' ? (
+                          <span className="nucleo-chip nucleo-chip-clevel">
+                            🌐 Multi-núcleo
+                          </span>
+                        ) : getRoleLabel(usr.profile) === 'MASTER' ? (
+                          <span className="nucleo-chip nucleo-chip-master">
+                            👑 Todos
+                          </span>
+                        ) : (
+                          <span className="text-text-secondary font-semibold">Geral</span>
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-text-secondary font-bold uppercase block">Status</span>
+                      <span className={`status-badge mt-1 ${usr.status === 'Ativo' ? 'status-badge-active' : 'status-badge-inactive'}`}>
                         {usr.status}
                       </span>
                     </div>
                     <div>
-                      <span className="mobile-data-card-label">1º Acesso</span>
-                      {usr.firstAccessPending ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                          <Lock className="w-2.5 h-2.5" /> Pendente
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <Check className="w-2.5 h-2.5" /> Liberado
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <span className="mobile-data-card-label">Último Login</span>
-                      <p className="text-[11px] font-medium text-text-primary">{usr.lastLogin || '—'}</p>
+                      <span className="text-[9px] text-text-secondary font-bold uppercase block">Login</span>
+                      <span className={`login-badge mt-1 ${usr.firstAccessPending ? 'login-badge-pending' : 'login-badge-released'}`}>
+                        {usr.firstAccessPending ? 'Senha Pendente' : 'Liberado'}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="mobile-data-card-actions">
+                  <div className="flex justify-end gap-1.5 pt-2.5 border-t border-dashed border-border-subtle">
                     <button
                       onClick={() => openDetailsModal(usr)}
-                      className="flex-1 bg-slate-50 hover:bg-slate-100 border border-border-subtle text-text-primary font-bold px-3 py-2 rounded-xl text-[11px] flex items-center justify-center gap-1 min-h-[40px]"
+                      className="btn-gov btn-gov-details px-3 py-1.5 text-[10px]"
                     >
-                      <Eye className="w-3.5 h-3.5" /> Detalhes
+                      Detalhes
                     </button>
                     {hasEditPermission && canModifyThisUser && (
                       <>
                         <button
                           onClick={() => openEditModal(usr)}
-                          className="bg-slate-50 hover:bg-slate-100 border border-border-subtle text-text-primary font-bold px-3 py-2 rounded-xl text-[11px] flex items-center justify-center gap-1 min-h-[40px]"
+                          className="btn-gov btn-gov-edit px-3 py-1.5 text-[10px]"
                         >
-                          <Edit2 className="w-3.5 h-3.5" /> Editar
+                          Editar
                         </button>
                         <button
                           onClick={() => openResetPasswordModal(usr)}
-                          className="bg-slate-50 hover:bg-slate-100 border border-border-subtle text-text-primary font-bold px-2 py-2 rounded-xl text-[11px] flex items-center justify-center min-h-[40px]"
-                          title="Redefinir senha"
+                          className="btn-gov btn-gov-reset px-3 py-1.5 text-[10px]"
+                          title="Redefinir Senha de Acesso"
                         >
-                          <RefreshCw className="w-3.5 h-3.5" />
+                          Senha
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(usr)}
+                          className={`btn-gov px-3 py-1.5 text-[10px] ${usr.status === 'Ativo' ? 'btn-gov-inactive' : 'btn-gov-active'}`}
+                        >
+                          {usr.status === 'Ativo' ? 'Inativar' : 'Reativar'}
                         </button>
                       </>
                     )}
@@ -709,12 +696,13 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
             })
           )}
         </div>
+      </div>
 
       {/* MODAL 1: CREATE USER */}
       {isNewUserModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full sm:max-w-lg text-xs animate-scale-up">
-            <div className="p-5 bg-sidebar-navy text-white flex justify-between items-center">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-lg text-xs animate-scale-up flex flex-col max-h-[90vh]">
+            <div className="p-5 bg-sidebar-navy text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2">
                 <Plus className="w-5 h-5 text-action-cyan" />
                 <h3 className="font-extrabold text-sm">Criar Novo Usuário Interno</h3>
@@ -724,7 +712,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               </button>
             </div>
 
-            <form onSubmit={handleCreateUserSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleCreateUserSubmit} className="p-6 space-y-4 overflow-y-auto">
               
               <div>
                 <label className="font-bold text-text-secondary block mb-1">Nome Completo *</label>
@@ -750,7 +738,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-text-secondary block mb-1">Perfil de Acesso *</label>
                   {getRoleLabel(currentUser.profile) === 'RH' ? (
@@ -858,7 +846,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 </div>
               ) : null}
 
-              <div className="grid grid-cols-2 gap-3 pb-2 border-b border-dashed border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-2 border-b border-dashed border-slate-100">
                 <div>
                   <label className="font-bold text-text-secondary block mb-1">Senha Inicial Obrigatória *</label>
                   <input
@@ -929,10 +917,11 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       )}
 
       {/* MODAL 2: EDIT USER */}
+      {/* MODAL 2: EDIT USER */}
       {isEditUserModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-lg text-xs animate-scale-up">
-            <div className="p-5 bg-sidebar-navy text-white flex justify-between items-center">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-lg text-xs animate-scale-up flex flex-col max-h-[90vh]">
+            <div className="p-5 bg-sidebar-navy text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2">
                 <Edit2 className="w-5 h-5 text-action-cyan" />
                 <h3 className="font-extrabold text-sm">Editar Cadastro de Usuário</h3>
@@ -942,7 +931,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               </button>
             </div>
 
-            <form onSubmit={handleEditUserSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleEditUserSubmit} className="p-6 space-y-4 overflow-y-auto">
               
               <div>
                 <label className="font-bold text-text-secondary block mb-1">Nome Completo *</label>
@@ -968,7 +957,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-text-secondary block mb-1">Perfil de Acesso *</label>
                   <select
@@ -1126,8 +1115,8 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       {/* MODAL 3: REDEFINE INITIAL PASSWORD */}
       {isResetPasswordModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-sm text-xs animate-scale-up">
-            <div className="p-4 bg-sidebar-navy text-white flex justify-between items-center">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-sm text-xs animate-scale-up flex flex-col max-h-[90vh]">
+            <div className="p-4 bg-sidebar-navy text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-action-cyan" />
                 <h3 className="font-extrabold text-xs uppercase tracking-wider">Redefinir Senha Inicial</h3>
@@ -1137,7 +1126,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               </button>
             </div>
 
-            <form onSubmit={handleResetPasswordSubmit} className="p-5 space-y-4">
+            <form onSubmit={handleResetPasswordSubmit} className="p-5 space-y-4 overflow-y-auto">
               <div className="bg-amber-50 border border-amber-100 text-amber-900 p-3 rounded-xl space-y-1">
                 <h4 className="font-bold text-[11px]">Atenção operacional:</h4>
                 <p className="text-[10px] leading-relaxed">
@@ -1193,8 +1182,8 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       {/* MODAL 4: DETAILS MODEL */}
       {isDetailsModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-sm text-xs animate-scale-up">
-            <div className="p-4 bg-sidebar-navy text-white flex justify-between items-center">
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-sm text-xs animate-scale-up flex flex-col max-h-[90vh]">
+            <div className="p-4 bg-sidebar-navy text-white flex justify-between items-center shrink-0">
               <h3 className="font-extrabold text-xs uppercase tracking-wider flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-action-cyan" /> Detalhes do Usuário
               </h3>
@@ -1203,7 +1192,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 overflow-y-auto">
               <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                 <div className="w-10 h-10 rounded-full bg-[#E0F7FA] text-cyan-800 font-extrabold flex items-center justify-center text-sm uppercase">
                   {selectedUser.name.slice(0, 2)}

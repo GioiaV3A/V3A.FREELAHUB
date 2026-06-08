@@ -225,18 +225,6 @@ export default function Home() {
     setIsMobileMenuOpen(false); // close drawer on navigation
   };
 
-  // Close mobile drawer on Escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsMobileMenuOpen(false);
-        setIsHeaderMenuOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
-
   // Helper functions to map DB ids on inserts
   const getFunctionIdByName = async (name: string): Promise<string | null> => {
     const { data } = await supabase
@@ -1523,7 +1511,7 @@ export default function Home() {
 
   // 3. CORE LOGGED-IN WORKSPACE LAYOUT RENDER
   return (
-    <div id="app-workspace" className="min-h-screen md:h-screen md:overflow-hidden overflow-x-hidden bg-bg-app flex flex-col md:flex-row selection:bg-action-cyan selection:text-white">
+    <div id="app-workspace" className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:flex-row selection:bg-action-cyan selection:text-white">
       
       {/* ============ MOBILE BACKDROP ============ */}
       {isMobileMenuOpen && (
@@ -1538,8 +1526,8 @@ export default function Home() {
       {/* Mobile: fixed overlay drawer | Desktop: static sidebar */}
       <aside 
         className={`
-          fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw]
-          md:static md:z-auto md:max-w-none
+          fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[290px]
+          md:static md:z-auto
           bg-sidebar-navy flex flex-col text-slate-100 shrink-0
           border-r border-[#1e293b]
           overflow-y-auto
@@ -1761,7 +1749,7 @@ export default function Home() {
         </header>
 
         {/* 3. SCROLLABLE ROUTE VIEWPORT */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 focus:outline-none bg-bg-app">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 focus:outline-none bg-bg-app">
           
           {/* Dashboard router dependent on selected profile */}
           {activeTab === 'Dashboard' && getRoleLabel(currentUser.profile) === 'MASTER' && (
