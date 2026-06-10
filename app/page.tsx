@@ -68,6 +68,7 @@ import { FormFreela, FormSugerir, FormOportunidade } from '@/components/Formular
 import ShortlistPanel from '@/components/ShortlistPanel';
 import ExcecaoPanel from '@/components/ExcecaoPanel';
 import PaymentCodesPanel from '@/components/PaymentCodesPanel';
+import EvaluationForm from '@/components/EvaluationForm';
 import RelatoriosPanel from '@/components/RelatoriosPanel';
 import NucleosPanel from '@/components/NucleosPanel';
 import UserManagement from '@/components/UserManagement';
@@ -113,6 +114,7 @@ import { useTheme } from '@/components/ThemeProvider';
 export interface DatabaseProps {
   freelancers: Freelancer[];
   setFreelancers: React.Dispatch<React.SetStateAction<Freelancer[]>>;
+  setFreelancersState?: React.Dispatch<React.SetStateAction<Freelancer[]>>;
   jobs: Job[];
   setJobs: React.Dispatch<React.SetStateAction<Job[]>>;
   shortlists: Shortlist[];
@@ -131,6 +133,13 @@ export interface DatabaseProps {
   setSuggestions: React.Dispatch<React.SetStateAction<Suggestion[]>>;
   nucleos: Nucleo[];
   setNucleos: React.Dispatch<React.SetStateAction<Nucleo[]>>;
+  approvals: any[];
+  setApprovals: React.Dispatch<React.SetStateAction<any[]>>;
+  reverseEvaluations: any[];
+  setReverseEvaluations: React.Dispatch<React.SetStateAction<any[]>>;
+  users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+  reloadDatabase: () => Promise<void>;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   selectedFreelancerId: string | null;
@@ -158,6 +167,8 @@ export default function Home() {
   const [paymentCodesState, setPaymentCodesState] = useState<PaymentCode[]>(initialPaymentCodes);
   const [suggestionsState, setSuggestionsState] = useState<Suggestion[]>(initialSuggestions);
   const [nucleosState, setNucleosState] = useState<Nucleo[]>(initialNucleos);
+  const [approvalsState, setApprovalsState] = useState<any[]>([]);
+  const [reverseEvaluationsState, setReverseEvaluationsState] = useState<any[]>([]);
 
   // Auth credential states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -302,8 +313,29 @@ export default function Home() {
             id: sc.id,
             jobId: sc.request_id,
             freelancerId: sc.freelancer_id,
-            candidateStatus: mapCandidateStatusToUI(sc.candidate_status),
+            candidateStatus: mapCandidateStatusToUI(sc.negotiation_status || sc.candidate_status),
             notes: sc.notes || '',
+            negotiationStatus: mapCandidateStatusToUI(sc.negotiation_status || sc.candidate_status),
+            negotiatedRate: Number(sc.negotiated_rate || 0),
+            remunerationModel: sc.remuneration_model || 'diaria',
+            policyStatus: sc.policy_status || 'pending_check',
+            scheduleConflict: sc.schedule_conflict || false,
+            requiresRhApproval: sc.requires_rh_approval || false,
+            requiresHeadApproval: sc.requires_head_approval || false,
+            selectedForAllocation: sc.selected_for_allocation || false,
+            sourceBucket: sc.source_bucket || 'manual',
+            matchScore: sc.match_score || 0,
+            recommendationReasons: sc.recommendation_reasons || [],
+            shortlistPosition: sc.shortlist_position || 0,
+            negotiatedTotal: sc.negotiated_total !== null && sc.negotiated_total !== undefined ? Number(sc.negotiated_total) : undefined,
+            budgetSavingAmount: sc.budget_saving_amount !== null && sc.budget_saving_amount !== undefined ? Number(sc.budget_saving_amount) : undefined,
+            budgetSavingPercentage: sc.budget_saving_percentage !== null && sc.budget_saving_percentage !== undefined ? Number(sc.budget_saving_percentage) : undefined,
+            dailyBudgetReference: sc.daily_budget_reference !== null && sc.daily_budget_reference !== undefined ? Number(sc.daily_budget_reference) : undefined,
+            dailySavingAmount: sc.daily_saving_amount !== null && sc.daily_saving_amount !== undefined ? Number(sc.daily_saving_amount) : undefined,
+            budgetDeltaStatus: sc.budget_delta_status || 'not_calculated',
+            estimatedHours: sc.estimated_hours !== null && sc.estimated_hours !== undefined ? Number(sc.estimated_hours) : undefined,
+            scheduleApprovalId: sc.schedule_approval_id || null,
+            valueApprovalId: sc.value_approval_id || null,
           }))
         );
       }
@@ -342,6 +374,65 @@ export default function Home() {
       const { data: dbSuggestions } = await supabase.from('suggestions').select('*');
       if (dbSuggestions) {
         setSuggestionsState(dbSuggestions.map(mapSuggestionToUI));
+      }
+
+      const { data: dbApprovals } = await supabase.from('allocation_approvals').select('*');
+      if (dbApprovals) {
+        setApprovalsState(
+          dbApprovals.map((ap: any) => ({
+            id: ap.id,
+            jobId: ap.job_id,
+            requestId: ap.request_id,
+            shortlistCandidateId: ap.shortlist_candidate_id,
+            freelancerId: ap.freelancer_id,
+            approvalType: ap.approval_type,
+            status: ap.status,
+            requestedBy: ap.requested_by,
+            requestedTo: ap.requested_to,
+            approverId: ap.approver_id,
+            approverRole: ap.approver_role,
+            reason: ap.reason,
+            decisionNotes: ap.decision_notes,
+            policyReferenceValue: Number(ap.policy_reference_value || 0),
+            policyCeilingValue: Number(ap.policy_ceiling_value || 0),
+            negotiatedValue: Number(ap.negotiated_value || 0),
+            createdAt: ap.created_at,
+            decidedAt: ap.decided_at,
+          }))
+        );
+      }
+
+      const { data: dbReverse } = await supabase.from('reverse_evaluations').select('*');
+      if (dbReverse) {
+        setReverseEvaluationsState(
+          dbReverse.map((re: any) => ({
+            id: re.id,
+            allocationId: re.allocation_id,
+            jobId: re.job_id,
+            requestId: re.request_id,
+            freelancerId: re.freelancer_id,
+            leaderId: re.leader_id,
+            nucleoId: re.nucleo_id,
+            client: re.client,
+            briefingClarity: Number(re.briefing_clarity || 0),
+            scopeAlignment: Number(re.scope_alignment || 0),
+            directLeadership: Number(re.direct_leadership || 0),
+            decisionSpeed: Number(re.decision_speed || 0),
+            communication: Number(re.communication || 0),
+            projectOrganization: Number(re.project_organization || 0),
+            workingConditions: Number(re.working_conditions || 0),
+            administrativeFlow: Number(re.administrative_flow || 0),
+            npsProject: Number(re.nps_project || 0),
+            csatProject: Number(re.csat_project || 0),
+            cesOperational: Number(re.ces_operational || 0),
+            observations: re.observations,
+            projectExperienceScore: Number(re.project_experience_score || 0),
+            leaderScoreComponent: Number(re.leader_score_component || 0),
+            nucleusExperienceComponent: Number(re.nucleus_experience_component || 0),
+            status: re.status,
+            createdAt: re.created_at,
+          }))
+        );
       }
     } catch (error) {
       console.warn('Error loading data from Supabase:', error instanceof Error ? error.message : String(error));
@@ -566,6 +657,10 @@ export default function Home() {
     setIsHeaderMenuOpen(false);
   };
 
+  const isUuid = (id: string): boolean => {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  };
+
   // State wrappers to intercept local mutations and sync to Supabase in the background
   const wrapStateSetter = <T extends { id: string }>(
     currentState: T[],
@@ -585,7 +680,9 @@ export default function Home() {
       // 1. Sync inserts
       for (const item of nextState) {
         if (!currentMap.has(item.id)) {
-          onInsert(item).catch(err => console.error('Failed to sync insert:', err));
+          if (isUuid(item.id)) {
+            onInsert(item).catch(err => console.error('Failed to sync insert:', err));
+          }
         }
       }
 
@@ -593,7 +690,9 @@ export default function Home() {
       for (const item of nextState) {
         const original = currentMap.get(item.id);
         if (original && JSON.stringify(original) !== JSON.stringify(item)) {
-          onUpdate(item, original).catch(err => console.error('Failed to sync update:', err));
+          if (isUuid(item.id)) {
+            onUpdate(item, original).catch(err => console.error('Failed to sync update:', err));
+          }
         }
       }
 
@@ -601,7 +700,9 @@ export default function Home() {
       if (onDelete) {
         for (const item of currentState) {
           if (!nextMap.has(item.id)) {
-            onDelete(item).catch(err => console.error('Failed to sync delete:', err));
+            if (isUuid(item.id)) {
+              onDelete(item).catch(err => console.error('Failed to sync delete:', err));
+            }
           }
         }
       }
@@ -786,6 +887,7 @@ export default function Home() {
   };
 
   const handleShortlistInsert = async (s: Shortlist) => {
+    if (!isUuid(s.id) || !isUuid(s.jobId) || !isUuid(s.freelancerId)) return;
     const { data: reqData } = await supabase
       .from('job_freelancer_requests')
       .select('job_id')
@@ -799,8 +901,29 @@ export default function Home() {
           job_id: reqData.job_id,
           request_id: s.jobId,
           freelancer_id: s.freelancerId,
-          candidate_status: mapCandidateStatusToDB(s.candidateStatus),
+          candidate_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
           notes: s.notes || null,
+          negotiation_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
+          negotiated_rate: s.negotiatedRate || null,
+          remuneration_model: s.remunerationModel || 'diaria',
+          policy_status: s.policyStatus || 'pending_check',
+          schedule_conflict: s.scheduleConflict || false,
+          requires_rh_approval: s.requiresRhApproval || false,
+          requires_head_approval: s.requiresHeadApproval || false,
+          selected_for_allocation: s.selectedForAllocation || false,
+          source_bucket: s.sourceBucket || 'manual',
+          match_score: s.matchScore || null,
+          recommendation_reasons: s.recommendationReasons || null,
+          shortlist_position: s.shortlistPosition || null,
+          negotiated_total: s.negotiatedTotal || null,
+          budget_saving_amount: s.budgetSavingAmount || null,
+          budget_saving_percentage: s.budgetSavingPercentage || null,
+          daily_budget_reference: s.dailyBudgetReference || null,
+          daily_saving_amount: s.dailySavingAmount || null,
+          budget_delta_status: s.budgetDeltaStatus || 'not_calculated',
+          estimated_hours: s.estimatedHours || null,
+          schedule_approval_id: s.scheduleApprovalId || null,
+          value_approval_id: s.valueApprovalId || null,
         })
         .select('id')
         .single();
@@ -814,16 +937,39 @@ export default function Home() {
   };
 
   const handleShortlistUpdate = async (s: Shortlist, original: Shortlist) => {
+    if (!isUuid(s.id)) return;
     await supabase
       .from('shortlist_candidates')
       .update({
-        candidate_status: mapCandidateStatusToDB(s.candidateStatus),
+        candidate_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
         notes: s.notes || null,
+        negotiation_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
+        negotiated_rate: s.negotiatedRate || null,
+        remuneration_model: s.remunerationModel || 'diaria',
+        policy_status: s.policyStatus || 'pending_check',
+        schedule_conflict: s.scheduleConflict || false,
+        requires_rh_approval: s.requiresRhApproval || false,
+        requires_head_approval: s.requiresHeadApproval || false,
+        selected_for_allocation: s.selectedForAllocation || false,
+        source_bucket: s.sourceBucket || 'manual',
+        match_score: s.matchScore || null,
+        recommendation_reasons: s.recommendationReasons || null,
+        shortlist_position: s.shortlistPosition || null,
+        negotiated_total: s.negotiatedTotal || null,
+        budget_saving_amount: s.budgetSavingAmount || null,
+        budget_saving_percentage: s.budgetSavingPercentage || null,
+        daily_budget_reference: s.dailyBudgetReference || null,
+        daily_saving_amount: s.dailySavingAmount || null,
+        budget_delta_status: s.budgetDeltaStatus || 'not_calculated',
+        estimated_hours: s.estimatedHours || null,
+        schedule_approval_id: s.scheduleApprovalId || null,
+        value_approval_id: s.valueApprovalId || null,
       })
       .eq('id', s.id);
   };
 
   const handleShortlistDelete = async (s: Shortlist) => {
+    if (!isUuid(s.id)) return;
     await supabase
       .from('shortlist_candidates')
       .delete()
@@ -887,6 +1033,7 @@ export default function Home() {
   };
 
   const handleAllocationInsert = async (a: Allocation) => {
+    if (!isUuid(a.id) || !isUuid(a.jobId) || !isUuid(a.freelancerId)) return;
     const { data: reqData } = await supabase
       .from('job_freelancer_requests')
       .select('job_id, jobs(nucleo_id)')
@@ -908,6 +1055,13 @@ export default function Home() {
           end_date: a.endDate,
           approved_value: a.approvedValue,
           status: mapAllocationStatusToDB(a.status),
+          negotiated_total: a.negotiatedTotal || null,
+          budget_saving_amount: a.budgetSavingAmount || null,
+          budget_saving_percentage: a.budgetSavingPercentage || null,
+          daily_budget_reference: a.dailyBudgetReference || null,
+          daily_saving_amount: a.dailySavingAmount || null,
+          budget_delta_status: a.budgetDeltaStatus || 'not_calculated',
+          estimated_hours: a.estimatedHours || null,
         })
         .select('id, allocation_code')
         .single();
@@ -925,6 +1079,7 @@ export default function Home() {
   };
 
   const handleAllocationUpdate = async (a: Allocation, original: Allocation) => {
+    if (!isUuid(a.id)) return;
     await supabase
       .from('allocations')
       .update({
@@ -932,11 +1087,19 @@ export default function Home() {
         end_date: a.endDate,
         approved_value: a.approvedValue,
         status: mapAllocationStatusToDB(a.status),
+        negotiated_total: a.negotiatedTotal || null,
+        budget_saving_amount: a.budgetSavingAmount || null,
+        budget_saving_percentage: a.budgetSavingPercentage || null,
+        daily_budget_reference: a.dailyBudgetReference || null,
+        daily_saving_amount: a.dailySavingAmount || null,
+        budget_delta_status: a.budgetDeltaStatus || 'not_calculated',
+        estimated_hours: a.estimatedHours || null,
       })
       .eq('id', a.id);
   };
 
   const handleAllocationDelete = async (a: Allocation) => {
+    if (!isUuid(a.id)) return;
     await supabase
       .from('allocations')
       .delete()
@@ -1191,8 +1354,17 @@ export default function Home() {
     }
   };
 
+  const reloadDatabase = async () => {
+    if (currentUser) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await loadDatabaseFromSupabase(currentUser, session.access_token);
+      }
+    }
+  };
+
   // State bundle pack for UI
-  const db: any = {
+  const db: DatabaseProps = {
     freelancers: freelancersState,
     setFreelancers: wrapStateSetter(freelancersState, setFreelancersState, handleFreelancerInsert, handleFreelancerUpdate),
     setFreelancersState,
@@ -1214,13 +1386,18 @@ export default function Home() {
     setSuggestions: wrapStateSetter(suggestionsState, setSuggestionsState, handleSuggestionInsert, handleSuggestionUpdate),
     nucleos: nucleosState,
     setNucleos: wrapStateSetter(nucleosState, setNucleosState, handleNucleoInsert, handleNucleoUpdate),
+    approvals: approvalsState,
+    setApprovals: setApprovalsState,
+    reverseEvaluations: reverseEvaluationsState,
+    setReverseEvaluations: setReverseEvaluationsState,
+    reloadDatabase,
     activeTab,
     setActiveTab,
     selectedFreelancerId,
     setSelectedFreelancerId,
     selectedJobId,
     setSelectedJobId,
-    currentUser,
+    currentUser: currentUser as User,
     setCurrentUser,
     users: usersState,
     setUsers: wrapStateSetter(usersState, setUsersState, handleUserInsert, handleUserUpdate)
@@ -1512,7 +1689,11 @@ export default function Home() {
 
   // 3. CORE LOGGED-IN WORKSPACE LAYOUT RENDER
   return (
-    <div id="app-workspace" className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:flex-row selection:bg-action-cyan selection:text-white">
+    <div 
+      id="app-workspace" 
+      style={{ '--sidebar-width': isSidebarCollapsed ? '80px' : '256px' } as React.CSSProperties}
+      className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] selection:bg-action-cyan selection:text-white"
+    >
       
       {/* ============ MOBILE BACKDROP ============ */}
       {isMobileMenuOpen && (
@@ -1524,18 +1705,17 @@ export default function Home() {
       )}
 
       {/* ============ 1. SIDEBAR ============ */}
-      {/* Mobile: fixed overlay drawer | Desktop: static sidebar */}
+      {/* Mobile: fixed overlay drawer | Desktop: relative sidebar */}
       <aside 
         className={`
           fixed inset-y-0 left-0 z-50 w-72
-          md:static md:z-auto
+          md:relative md:z-40
           bg-sidebar-navy flex flex-col text-slate-100 shrink-0
           border-r border-[#1e293b]
-          overflow-y-auto
-          transform transition-[width,transform] duration-180 ease-in-out
+          overflow-y-auto overflow-x-hidden
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
-          ${isSidebarCollapsed ? 'md:w-20' : 'md:w-64'}
+          md:w-[var(--sidebar-width)]
           safe-top
         `}
       >
@@ -1618,7 +1798,7 @@ export default function Home() {
       </aside>
 
       {/* 2. MAIN APPLICATION CONTENT COLUMN */}
-      <main className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-hidden relative z-10">
         
         {/* Dynamic Top Header Bar */}
         <header className="bg-white border-b border-border-subtle p-3 px-4 md:p-4 md:px-6 flex justify-between items-center relative z-25 shadow-xs safe-top">
@@ -1821,7 +2001,7 @@ export default function Home() {
           )}
 
           {activeTab === 'Avaliar Freelancers' && (
-            <PaymentCodesPanel db={db} />
+            <EvaluationForm db={db} />
           )}
 
           {activeTab === 'Relatórios & Exportar' && (

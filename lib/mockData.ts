@@ -63,18 +63,12 @@ export interface Freelancer {
   portfolioFilePath?: string;
   portfolioFileName?: string;
   mergedIntoFreelancerId?: string | null;
+  consolidatedScore?: number;
+  recommendationRate?: number;
+  operationalStatus?: string;
 }
 
-export type JobStatus = 
-  | 'Oportunidade criada' 
-  | 'Em shortlist' 
-  | 'Em negociação' 
-  | 'Aguardando RH' 
-  | 'Bookado' 
-  | 'Em andamento' 
-  | 'Concluído' 
-  | 'Avaliação pendente' 
-  | 'Encerrado';
+export type JobStatus = string;
 
 export interface Job {
   id: string;
@@ -101,8 +95,30 @@ export interface Shortlist {
   id: string;
   jobId: string;
   freelancerId: string;
-  candidateStatus: 'Selecionado' | 'Em negociação' | 'Aprovado pelo RH' | 'Rejeitado' | 'Indisponível' | 'Valor fora da política' | 'Aceitou' | 'Não aceitou' | 'Aguardando retorno';
+  candidateStatus: string;
   notes?: string;
+  negotiationStatus?: string;
+  negotiatedRate?: number;
+  remunerationModel?: string;
+  policyStatus?: string;
+  scheduleConflict?: boolean;
+  requiresRhApproval?: boolean;
+  requiresHeadApproval?: boolean;
+  selectedForAllocation?: boolean;
+  sourceBucket?: string;
+  matchScore?: number;
+  recommendationReasons?: string[];
+  shortlistPosition?: number;
+  // Financial calculation fields
+  negotiatedTotal?: number;
+  budgetSavingAmount?: number;
+  budgetSavingPercentage?: number;
+  dailyBudgetReference?: number;
+  dailySavingAmount?: number;
+  budgetDeltaStatus?: string;
+  estimatedHours?: number;
+  scheduleApprovalId?: string | null;
+  valueApprovalId?: string | null;
 }
 
 export interface Negotiation {
@@ -112,7 +128,7 @@ export interface Negotiation {
   negotiatedValue: number;
   billingType: 'Diária' | 'Hora' | 'Job Fechado';
   scope: string;
-  status: 'Pendente aprovação RH' | 'Aprovado pelo RH' | 'Rejeitado pelo RH' | 'Em andamento';
+  status: string;
   justificationIfAbovePolicy?: string;
 }
 
@@ -136,7 +152,15 @@ export interface Allocation {
   startDate: string;
   endDate: string;
   approvedValue: number;
-  status: 'Ativo' | 'Concluído' | 'Pendente';
+  status: string;
+  // Financial calculation fields
+  negotiatedTotal?: number;
+  budgetSavingAmount?: number;
+  budgetSavingPercentage?: number;
+  dailyBudgetReference?: number;
+  dailySavingAmount?: number;
+  budgetDeltaStatus?: string;
+  estimatedHours?: number;
 }
 
 export interface Evaluation {
@@ -144,15 +168,23 @@ export interface Evaluation {
   jobId: string;
   freelancerId: string;
   evaluatorId: string;
-  technicalQuality: number; // 30%
-  deadline: number;         // 20%
-  briefingAdherence: number;// 15%
-  communication: number;    // 15%
-  autonomy: number;         // 10%
-  behavior: number;         // 10%
+  technicalQuality: number;
+  deadline: number;
+  briefingAdherence: number;
+  communication: number;
+  autonomy: number;
+  behavior: number;
+  collaboration?: number;
+  flexibility?: number;
+  costBenefit?: number;
   finalScore: number;
+  score0to100?: number;
   comment: string;
   recommendation: 'Sim' | 'Sim, com restrição' | 'Não';
+  wouldHireAgain?: string;
+  reworkLevel?: string;
+  criticalProblem?: boolean;
+  conditionalAnswers?: any;
 }
 
 export interface PaymentCode {

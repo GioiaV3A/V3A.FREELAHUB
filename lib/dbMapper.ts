@@ -91,94 +91,145 @@ export function mapBillingTypeToDB(type: string): 'diaria' | 'hora' | 'pacote' |
 // --- Job Status Mapping ---
 export function mapJobStatusToUI(status: string | null): Job['status'] {
   switch (status?.toLowerCase()) {
-    case 'oportunidade_criada': return 'Oportunidade criada';
-    case 'em_shortlist': return 'Em shortlist';
-    case 'em_negociacao': return 'Em negociação';
-    case 'aguardando_rh': return 'Aguardando RH';
-    case 'bookado': return 'Bookado';
-    case 'em_andamento': return 'Em andamento';
-    case 'concluido': return 'Concluído';
-    case 'avaliacao_pendente': return 'Avaliação pendente';
-    case 'encerrado': return 'Encerrado';
+    case 'opportunity_created':
+    case 'oportunidade_criada':
+      return 'Oportunidade criada';
+    case 'shortlist':
+    case 'em_shortlist':
+      return 'Em shortlist';
+    case 'negotiation':
+    case 'em_negociacao':
+      return 'Em negociação';
+    case 'pending_approval':
+    case 'aguardando_rh':
+      return 'Pendente aprovação';
+    case 'allocation_ready':
+      return 'Alocação pronta';
+    case 'booked':
+    case 'bookado':
+      return 'Bookado';
+    case 'delivered':
+    case 'em_andamento':
+      return 'Entregue';
+    case 'completed':
+    case 'concluido':
+    case 'avaliacao_pendente':
+      return 'Concluído';
+    case 'released_for_payment':
+      return 'Liberado para pagamento';
+    case 'paid':
+      return 'Pago';
+    case 'closed':
+    case 'encerrado':
+      return 'Fechado';
+    case 'cancelled':
+    case 'cancelado':
+      return 'Cancelado';
     default: return 'Oportunidade criada';
   }
 }
 
-export function mapJobStatusToDB(status: string): 'oportunidade_criada' | 'em_shortlist' | 'em_negociacao' | 'aguardando_rh' | 'bookado' | 'em_andamento' | 'concluido' | 'avaliacao_pendente' | 'encerrado' {
+export function mapJobStatusToDB(status: string): string {
   switch (status) {
-    case 'Oportunidade criada': return 'oportunidade_criada';
-    case 'Em shortlist': return 'em_shortlist';
-    case 'Em negociação': return 'em_negociacao';
-    case 'Aguardando RH': return 'aguardando_rh';
-    case 'Bookado': return 'bookado';
-    case 'Em andamento': return 'em_andamento';
-    case 'Concluído': return 'concluido';
-    case 'Avaliação pendente': return 'avaliacao_pendente';
-    case 'Encerrado': return 'encerrado';
-    default: return 'oportunidade_criada';
+    case 'Oportunidade criada': return 'opportunity_created';
+    case 'Em shortlist': return 'shortlist';
+    case 'Em negociação': return 'negotiation';
+    case 'Pendente aprovação': return 'pending_approval';
+    case 'Alocação pronta': return 'allocation_ready';
+    case 'Bookado': return 'booked';
+    case 'Entregue': return 'delivered';
+    case 'Concluído': return 'completed';
+    case 'Liberado para pagamento': return 'released_for_payment';
+    case 'Pago': return 'paid';
+    case 'Fechado': return 'closed';
+    case 'Cancelado': return 'cancelled';
+    default: return 'opportunity_created';
   }
 }
 
 // --- Shortlist Candidate Status Mapping ---
 export function mapCandidateStatusToUI(status: string | null): Shortlist['candidateStatus'] {
   switch (status?.toLowerCase()) {
-    case 'selecionado': return 'Selecionado';
-    case 'em_negociacao': return 'Em negociação';
-    case 'aprovado_rh': return 'Aprovado pelo RH';
-    case 'rejeitado': return 'Rejeitado';
-    case 'indisponivel': return 'Indisponível';
-    case 'valor_fora_politica': return 'Valor fora da política';
+    case 'shortlisted':
+    case 'selecionado':
+      return 'Selecionado';
+    case 'em_negociacao':
+      return 'Em negociação';
+    case 'aguardando_retorno':
+      return 'Aguardando retorno';
+    case 'valor_fora_politica':
+      return 'Valor fora da política';
+    case 'aceitou':
+    case 'aprovado_rh':
+      return 'Aceitou';
+    case 'nao_aceitou':
+    case 'rejeitado':
+    case 'indisponivel':
+      return 'Não aceitou';
+    case 'bloqueado_conflito_agenda':
+      return 'Bloqueado por conflito de agenda';
+    case 'pendente_aprovacao_rh':
+      return 'Pendente aprovação RH';
+    case 'pendente_aprovacao_head':
+      return 'Pendente aprovação Head';
+    case 'aprovado_para_alocacao':
+      return 'Aprovado para alocação';
+    case 'selecionado_para_alocacao':
+      return 'Selecionado para alocação';
     default: return 'Selecionado';
   }
 }
 
-export function mapCandidateStatusToDB(status: string): 'selecionado' | 'em_negociacao' | 'aprovado_rh' | 'rejeitado' | 'indisponivel' | 'valor_fora_politica' {
+export function mapCandidateStatusToDB(status: string): string {
   switch (status) {
-    case 'Selecionado': return 'selecionado';
+    case 'Selecionado': return 'shortlisted';
     case 'Em negociação': return 'em_negociacao';
-    case 'Aprovado pelo RH':
-    case 'Aprovado RH':
-    case 'Aceitou':
-      return 'aprovado_rh';
-    case 'Rejeitado': return 'rejeitado';
-    case 'Indisponível':
-    case 'Não aceitou':
-      return 'indisponivel';
+    case 'Aguardando retorno': return 'aguardando_retorno';
     case 'Valor fora da política': return 'valor_fora_politica';
-    case 'Aguardando retorno': return 'em_negociacao';
-    default: return 'selecionado';
-  }
-}
-
-// --- Negotiation Status Mapping ---
-export function mapNegotiationStatusToUI(status: string | null, isAbovePolicy = false): Negotiation['status'] {
-  switch (status?.toLowerCase()) {
-    case 'aprovado_rh': return 'Aprovado pelo RH';
-    case 'rejeitado': return 'Rejeitado pelo RH';
-    case 'em_negociacao':
-    default:
-      return isAbovePolicy ? 'Pendente aprovação RH' : 'Em andamento';
+    case 'Aceitou': return 'aceitou';
+    case 'Não aceitou': return 'nao_aceitou';
+    case 'Bloqueado por conflito de agenda': return 'bloqueado_conflito_agenda';
+    case 'Pendente aprovação RH': return 'pendente_aprovacao_rh';
+    case 'Pendente aprovação Head': return 'pendente_aprovacao_head';
+    case 'Aprovado para alocação': return 'aprovado_para_alocacao';
+    case 'Selecionado para alocação': return 'selecionado_para_alocacao';
+    default: return 'shortlisted';
   }
 }
 
 // --- Allocation Status Mapping ---
 export function mapAllocationStatusToUI(status: string | null): Allocation['status'] {
   switch (status?.toLowerCase()) {
+    case 'booked':
     case 'reservado':
     case 'bookado':
       return 'Pendente';
-    case 'em_andamento': return 'Ativo';
-    case 'concluido': return 'Concluído';
+    case 'delivered':
+    case 'em_andamento':
+      return 'Ativo';
+    case 'completed':
+    case 'concluido':
+      return 'Concluído';
+    case 'released_for_payment':
+      return 'Liberado para pagamento';
+    case 'paid':
+      return 'Pago';
+    case 'cancelled':
+    case 'cancelado':
+      return 'Cancelado';
     default: return 'Pendente';
   }
 }
 
-export function mapAllocationStatusToDB(status: string): 'bookado' | 'em_andamento' | 'concluido' {
+export function mapAllocationStatusToDB(status: string): string {
   switch (status) {
-    case 'Pendente': return 'bookado';
-    case 'Ativo': return 'em_andamento';
-    case 'Concluído': return 'concluido';
-    default: return 'bookado';
+    case 'Pendente': return 'booked';
+    case 'Ativo': return 'delivered';
+    case 'Concluído': return 'completed';
+    case 'Liberado para pagamento': return 'released_for_payment';
+    case 'Pago': return 'paid';
+    case 'Cancelado': return 'cancelled';
+    default: return 'booked';
   }
 }
 
@@ -279,6 +330,9 @@ export function mapFreelancerToUI(f: any): Freelancer {
     portfolioFilePath: f.portfolio_file_path || '',
     portfolioFileName: f.portfolio_file_name || '',
     mergedIntoFreelancerId: f.merged_into_freelancer_id || null,
+    consolidatedScore: Number(f.consolidated_score || 0),
+    recommendationRate: Number(f.recommendation_rate || 0),
+    operationalStatus: f.operational_status || 'Elegível',
   };
 }
 
@@ -308,6 +362,13 @@ export function mapAllocationToUI(alloc: any): Allocation {
     endDate: alloc.end_date,
     approvedValue: Number(alloc.approved_value || 0),
     status: mapAllocationStatusToUI(alloc.status),
+    negotiatedTotal: alloc.negotiated_total !== null && alloc.negotiated_total !== undefined ? Number(alloc.negotiated_total) : undefined,
+    budgetSavingAmount: alloc.budget_saving_amount !== null && alloc.budget_saving_amount !== undefined ? Number(alloc.budget_saving_amount) : undefined,
+    budgetSavingPercentage: alloc.budget_saving_percentage !== null && alloc.budget_saving_percentage !== undefined ? Number(alloc.budget_saving_percentage) : undefined,
+    dailyBudgetReference: alloc.daily_budget_reference !== null && alloc.daily_budget_reference !== undefined ? Number(alloc.daily_budget_reference) : undefined,
+    dailySavingAmount: alloc.daily_saving_amount !== null && alloc.daily_saving_amount !== undefined ? Number(alloc.daily_saving_amount) : undefined,
+    budgetDeltaStatus: alloc.budget_delta_status || 'not_calculated',
+    estimatedHours: alloc.estimated_hours !== null && alloc.estimated_hours !== undefined ? Number(alloc.estimated_hours) : undefined,
   };
 }
 
@@ -324,9 +385,17 @@ export function mapEvaluationToUI(ev: any): Evaluation {
     communication: Number(ev.communication),
     autonomy: Number(ev.autonomy),
     behavior: Number(ev.behavior),
+    collaboration: ev.collaboration !== null && ev.collaboration !== undefined ? Number(ev.collaboration) : undefined,
+    flexibility: ev.flexibility !== null && ev.flexibility !== undefined ? Number(ev.flexibility) : undefined,
+    costBenefit: ev.cost_benefit !== null && ev.cost_benefit !== undefined ? Number(ev.cost_benefit) : undefined,
     finalScore: Number(ev.final_score || 0),
+    score0to100: ev.score_0_100 !== null && ev.score_0_100 !== undefined ? Number(ev.score_0_100) : undefined,
     comment: ev.comment || '',
     recommendation: ev.recommendation === 'sim' ? 'Sim' : ev.recommendation === 'sim_com_restricao' ? 'Sim, com restrição' : 'Não',
+    wouldHireAgain: ev.would_hire_again || undefined,
+    reworkLevel: ev.rework_level || undefined,
+    criticalProblem: ev.critical_problem || false,
+    conditionalAnswers: ev.conditional_answers || undefined,
   };
 }
 
@@ -405,4 +474,20 @@ export function mapJobToUI(req: any): Job {
     closedBy: req.closed_by || null,
     closureReason: req.closure_reason || null,
   };
+}
+
+export function mapNegotiationStatusToUI(status: string | null, isAbovePolicy?: boolean): string {
+  switch (status?.toLowerCase()) {
+    case 'aprovado_rh': return 'Aprovado pelo RH';
+    case 'rejeitado_rh': return 'Rejeitado pelo RH';
+    case 'em_andamento': return 'Em andamento';
+    case 'pendente_aprovacao_rh': return 'Pendente aprovação RH';
+    case 'pendente_aprovacao_head': return 'Pendente aprovação Head';
+    case 'valor_fora_politica': return 'Valor fora da política';
+    case 'bloqueado_conflito_agenda': return 'Bloqueado por conflito';
+    case 'aceitou': return 'Aceitou';
+    case 'nao_aceitou': return 'Não aceitou';
+    case 'aguardando_retorno': return 'Aguardando retorno';
+    default: return status || 'Pendente';
+  }
 }

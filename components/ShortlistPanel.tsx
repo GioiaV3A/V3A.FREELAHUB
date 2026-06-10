@@ -4,6 +4,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DatabaseProps } from '@/app/page';
 import { generateUniqueId } from '@/lib/utils';
 import { Job, Shortlist, Freelancer, ValuePolicy, Allocation, PaymentCode } from '@/lib/mockData';
+import { createApprovalRequestAction } from '@/app/actions/evaluation';
+import { supabase } from '@/lib/supabase';
+import { 
+  calculateAllocationDays, 
+  calculateNegotiatedTotal, 
+  calculateBudgetSaving, 
+  getBudgetDeltaStatus,
+  formatCurrencyBRL,
+  formatPercentage
+} from '@/lib/financial';
+import NegotiationFinancialSummary from '@/components/NegotiationFinancialSummary';
 import { 
   Briefcase, 
   Users, 
@@ -12,7 +23,7 @@ import {
   HelpCircle, 
   FileWarning, 
   CheckCircle, 
-  Clock, 
+  Clock,  
   Search, 
   Filter, 
   ChevronLeft, 
@@ -23,6 +34,7 @@ import {
   Unlock, 
   Star,
   RefreshCw,
+  Loader2,
   TrendingUp,
   DollarSign,
   AlertTriangle,
@@ -100,9 +112,41 @@ const areRolesRelated = (r1: string, r2: string): boolean => {
 
 export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   // Navigation / Stepper State
-  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedJobIdLocal, setSelectedJobIdLocal] = useState(db.selectedJobId || '');
   const [negotiatingFreelancerId, setNegotiatingFreelancerId] = useState<string>('');
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [compareSortKey, setCompareSortKey] = useState<'default' | 'saving' | 'total' | 'status' | 'score'>('default');
+
+  // State for Custom Approval Modal
+  const [approvalModal, setApprovalModal] = useState<{
+    isOpen: boolean;
+    slId: string;
+    freelancerId: string;
+    type: 'value_exception' | 'schedule_conflict';
+    currentRate?: number;
+    reason: string;
+    loading: boolean;
+    error: string | null;
+  }>({
+    isOpen: false,
+    slId: '',
+    freelancerId: '',
+    type: 'schedule_conflict',
+    reason: '',
+    loading: false,
+    error: null
+  });
+
+  // State for Toast Notifications
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
 
   // Sync selected job state if db changes natively (e.g. from outer tabs selection)
   const [prevSelectedId, setPrevSelectedId] = useState(db.selectedJobId);
@@ -218,6 +262,24 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays > 0 ? job.budget / diffDays : job.budget;
+  };
+
+  const hasScheduleConflict = (freelancerId: string, startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return false;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    return db.allocations.some(alloc => {
+      if (alloc.freelancerId !== freelancerId) return false;
+      if (alloc.status === 'Cancelado') return false;
+      if (alloc.jobId === selectedJobIdLocal) return false; // ignore current job
+
+      if (!alloc.startDate || !alloc.endDate) return false;
+      const allocStart = new Date(alloc.startDate);
+      const allocEnd = new Date(alloc.endDate);
+
+      return start <= allocEnd && end >= allocStart;
+    });
   };
 
   // --- JOB FILTERING AND ROLE ISOLATION ---
@@ -464,7 +526,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     }
 
     // 7. Incomplete data penalty (penalty -5)
-    const hasIncompleteData = !f.city || !f.state || !f.email || (!f.phone && !f.whatsapp);
+    const hasIncompleteData = !f.city || !f.state || !f.email || !f.whatsapp;
     if (hasIncompleteData) {
       score -= 5;
       reasons.push('Dados incompletos');
@@ -503,7 +565,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     }
 
     return (
-      <div key={cand.id} className="p-3.5 flex flex-col gap-2.5 match-candidate-row hover:bg-bg-hover transition-colors border-b border-border-subtle last:border-0 bg-bg-surface">
+      <div 
+        key={cand.id} 
+        draggable={!isAdded && !activeJob?.selectedFreelancerId}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', cand.id);
+        }}
+        className="p-3.5 flex flex-col gap-2.5 match-candidate-row hover:bg-bg-hover transition-all border-b border-border-subtle last:border-0 bg-bg-surface cursor-grab active:cursor-grabbing hover:border-action-cyan"
+      >
         {/* Name, Score and Seniority */}
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-1">
@@ -531,7 +600,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         {/* Ratings, Score & Experience */}
         <div className="flex items-center flex-wrap gap-3 text-[11px]">
           <div className="flex items-center gap-1">
-            <ScoreStars score={cand.averageScore} size="xs" showNumber={true} />
+            <ScoreStars score={cand.averageScore} size="sm" showNumber={true} />
           </div>
           {cand.experienceWithV3A && (
             <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold px-1.5 py-0.5 rounded">
@@ -577,12 +646,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         {/* Action Button */}
         <div className="flex justify-end pt-1">
           <button
-            disabled={isAdded || !!activeJob.selectedFreelancerId}
+            disabled={isAdded || !!activeJob?.selectedFreelancerId}
             onClick={() => handleAddToShortlist(cand.id)}
             className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
               isAdded 
                 ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-450 dark:text-emerald-400 font-semibold cursor-default' 
-                : activeJob.selectedFreelancerId
+                : activeJob?.selectedFreelancerId
                   ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
                   : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
             }`}
@@ -716,7 +785,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   };
 
   // Step navigation helper with validation checks
-  const handleNavigateStep = (step: 1 | 2 | 3) => {
+  const handleNavigateStep = (step: 1 | 2 | 3 | 4) => {
     if (step === 1) {
       setActiveStep(1);
       return;
@@ -741,104 +810,263 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         return;
       }
       setActiveStep(3);
-    }
-  };
-
-  // Submit and save the booking allocation
-  const handleSaveNegotiation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeJob || !negotiatingFreelancerId) return;
-
-    const policy = db.policies.find(p => p.role === activeJob.roleNeeded && p.seniority === activeJob.seniorityNeeded);
-    const ceilingValue = policy ? policy.ceilingValue : 99999;
-    const isExceeding = negotiatedValue > ceilingValue;
-
-    if (isExceeding && !justification.trim()) {
-      alert('⚠️ Governança Corporativa V3A:\nValores acima do teto acordado da política exigem uma justificativa técnica obrigatória para análise do RH.');
       return;
     }
 
-    const nextStatus = isExceeding ? 'Aguardando RH' : 'Bookado';
-
-    // 1. Update job details
-    db.setJobs(prev => prev.map(j => {
-      if (j.id === activeJob.id) {
-        return {
-          ...j,
-          status: nextStatus,
-          selectedFreelancerId: isExceeding ? null : negotiatingFreelancerId,
-          closedAt: isExceeding ? null : new Date().toISOString(),
-          closedBy: isExceeding ? null : db.currentUser.id,
-          closureReason: isExceeding ? null : 'Contratação validada dentro da política de diárias'
-        };
+    if (step === 4) {
+      if (!selectedJobIdLocal) {
+        alert('⚠️ Validação de Fluxo:\nPor favor, selecione uma oportunidade antes de ir para a homologação.');
+        return;
       }
-      return j;
-    }));
+      setActiveStep(4);
+      return;
+    }
+  };
 
-    // 2. Update candidate status in Shortlist
+  const handleUpdateNegotiation = (
+    freelancerId: string, 
+    updates: { 
+      negotiationStatus?: Shortlist['candidateStatus'];
+      negotiatedRate?: number;
+      remunerationModel?: string;
+      notes?: string;
+      estimatedHours?: number;
+    }
+  ) => {
     db.setShortlists(prev => prev.map(sl => {
-      if (sl.jobId === activeJob.id && sl.freelancerId === negotiatingFreelancerId) {
+      if (sl.jobId === selectedJobIdLocal && sl.freelancerId === freelancerId) {
+        const rate = updates.negotiatedRate !== undefined ? updates.negotiatedRate : sl.negotiatedRate;
+        const model = updates.remunerationModel !== undefined ? updates.remunerationModel : sl.remunerationModel;
+        const notes = updates.notes !== undefined ? updates.notes : sl.notes;
+        const estHours = updates.estimatedHours !== undefined ? updates.estimatedHours : sl.estimatedHours;
+        
+        let nextStatus = updates.negotiationStatus !== undefined ? updates.negotiationStatus : sl.candidateStatus;
+        
+        const policy = db.policies.find(p => p.role === activeJob?.roleNeeded && p.seniority === activeJob?.seniorityNeeded);
+        const ceilingValue = policy ? policy.ceilingValue : 99999;
+        const currentRate = rate || 0;
+        
+        if (currentRate > ceilingValue && nextStatus !== 'Pendente aprovação Head') {
+          nextStatus = 'Valor fora da política';
+        }
+
+        const allocationDays = calculateAllocationDays(activeJob?.startDate, activeJob?.endDate);
+        const negotiatedTotal = calculateNegotiatedTotal({
+          negotiatedRate: rate,
+          remunerationModel: model,
+          allocationDays,
+          estimatedHours: estHours
+        }) ?? undefined;
+
+        const { savingAmount, savingPercentage } = calculateBudgetSaving({
+          budget: activeJob?.budget,
+          negotiatedTotal
+        });
+
+        const budgetDeltaStatus = getBudgetDeltaStatus({
+          budget: activeJob?.budget,
+          negotiatedTotal
+        });
+
+        const dailyBudgetReference = allocationDays > 0 && activeJob?.budget ? activeJob.budget / allocationDays : 0;
+        
+        const dailySavingAmount = (model?.toLowerCase() === 'diária' || model?.toLowerCase() === 'diaria')
+          ? (rate !== null && rate !== undefined ? dailyBudgetReference - rate : 0)
+          : 0;
+
         return {
           ...sl,
-          candidateStatus: isExceeding ? 'Valor fora da política' : 'Aprovado pelo RH',
-          notes: isExceeding ? `Proposta de exceção: R$ ${negotiatedValue}. Justificativa: ${justification}` : sl.notes
+          candidateStatus: nextStatus,
+          negotiationStatus: nextStatus,
+          negotiatedRate: rate,
+          remunerationModel: model,
+          notes,
+          estimatedHours: estHours,
+          negotiatedTotal,
+          budgetSavingAmount: savingAmount ?? undefined,
+          budgetSavingPercentage: savingPercentage ?? undefined,
+          dailyBudgetReference: dailyBudgetReference || undefined,
+          dailySavingAmount: dailySavingAmount || undefined,
+          budgetDeltaStatus
+        };
+      }
+      return sl;
+    }));
+  };
+
+  const handleRequestApproval = (slId: string, freelancerId: string, type: 'value_exception' | 'schedule_conflict', currentRate?: number) => {
+    if (!activeJob) {
+      showToast('Nenhuma oportunidade selecionada.', 'error');
+      return;
+    }
+    
+    // Front-end parameters validation
+    if (!slId) {
+      showToast('Candidato da shortlist não identificado.', 'error');
+      console.error('[handleRequestApproval] candidate ID missing');
+      return;
+    }
+    if (!freelancerId) {
+      showToast('Freelancer não identificado.', 'error');
+      console.error('[handleRequestApproval] freelancer ID missing');
+      return;
+    }
+
+    setApprovalModal({
+      isOpen: true,
+      slId,
+      freelancerId,
+      type,
+      currentRate,
+      reason: '',
+      loading: false,
+      error: null
+    });
+  };
+
+  const handleSubmitApprovalRequest = async () => {
+    const trimmedReason = approvalModal.reason.trim();
+    if (!trimmedReason) {
+      setApprovalModal(prev => ({ ...prev, error: 'A justificativa técnica é obrigatória.' }));
+      return;
+    }
+    if (trimmedReason.length < 10) {
+      setApprovalModal(prev => ({ ...prev, error: 'A justificativa deve conter no mínimo 10 caracteres.' }));
+      return;
+    }
+    if (trimmedReason.length > 1000) {
+      setApprovalModal(prev => ({ ...prev, error: 'A justificativa não deve exceder 1000 caracteres.' }));
+      return;
+    }
+
+    if (!activeJob) {
+      setApprovalModal(prev => ({ ...prev, error: 'Oportunidade ativa não identificada.' }));
+      return;
+    }
+
+    setApprovalModal(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || '';
+
+      if (!token) {
+        setApprovalModal(prev => ({ ...prev, loading: false, error: 'Sessão expirada. Por favor, refaça o login.' }));
+        return;
+      }
+
+      const policy = db.policies.find(p => p.role === activeJob.roleNeeded && p.seniority === activeJob.seniorityNeeded);
+      const refVal = policy ? policy.referenceValue : 0;
+      const ceiling = policy ? policy.ceilingValue : 99999;
+
+      const res = await createApprovalRequestAction(token, {
+        shortlistCandidateId: approvalModal.slId,
+        freelancerId: approvalModal.freelancerId,
+        approvalType: approvalModal.type,
+        requestedBy: db.currentUser.id,
+        reason: trimmedReason,
+        policyReferenceValue: refVal,
+        policyCeilingValue: ceiling,
+        negotiatedValue: approvalModal.currentRate || ceiling
+      });
+
+      if (res.success) {
+        setApprovalModal(prev => ({ ...prev, isOpen: false, reason: '', loading: false }));
+        showToast('Solicitação de aprovação enviada com sucesso.', 'success');
+        await db.reloadDatabase();
+      } else {
+        setApprovalModal(prev => ({ ...prev, loading: false, error: res.error || 'Erro ao registrar solicitação.' }));
+      }
+    } catch (err: any) {
+      console.error('[requestApproval] failed:', {
+        error: err,
+        payload: {
+          jobId: activeJob?.id,
+          shortlistCandidateId: approvalModal.slId,
+          freelancerId: approvalModal.freelancerId,
+          approvalType: approvalModal.type,
+          reason: trimmedReason
+        }
+      });
+      setApprovalModal(prev => ({ ...prev, loading: false, error: 'Erro inesperado no servidor.' }));
+    }
+  };
+
+  const handleFinalAllocation = async (freelancerId: string, slId: string, rate: number, model: string, scopeText: string) => {
+    if (!activeJob) return;
+
+    const slCandidate = db.shortlists.find(sl => sl.id === slId);
+
+    // 1. Create Allocation
+    const nextNumString = String(db.allocations.length + 1).padStart(4, '0');
+    const mockAllocCode = `ALOC-2026-${nextNumString}`;
+
+    const newAlloc = {
+      id: generateUniqueId('alloc'),
+      allocationCode: mockAllocCode,
+      jobId: activeJob.id,
+      freelancerId: freelancerId,
+      nucleoId: activeJob.nucleoId,
+      startDate: activeJob.startDate,
+      endDate: activeJob.endDate,
+      approvedValue: rate,
+      status: 'Pendente' as any,
+      negotiatedTotal: slCandidate?.negotiatedTotal,
+      budgetSavingAmount: slCandidate?.budgetSavingAmount,
+      budgetSavingPercentage: slCandidate?.budgetSavingPercentage,
+      dailyBudgetReference: slCandidate?.dailyBudgetReference,
+      dailySavingAmount: slCandidate?.dailySavingAmount,
+      budgetDeltaStatus: slCandidate?.budgetDeltaStatus,
+      estimatedHours: slCandidate?.estimatedHours,
+    };
+
+    db.setAllocations(prev => [...prev, newAlloc]);
+
+    // 2. Update candidate selected_for_allocation
+    db.setShortlists(prev => prev.map(sl => {
+      if (sl.id === slId) {
+        return { 
+          ...sl, 
+          selectedForAllocation: true,
+          candidateStatus: 'Aceitou',
+          negotiationStatus: 'Aceitou'
         };
       }
       return sl;
     }));
 
-    // 3. Create Negotiation record
+    // 3. Update job request to Bookado and lock the freelancer
+    db.setJobs(prev => prev.map(j => {
+      if (j.id === activeJob.id) {
+        return {
+          ...j,
+          status: 'Bookado',
+          selectedFreelancerId: freelancerId,
+          closedAt: new Date().toISOString(),
+          closedBy: db.currentUser.id,
+          closureReason: 'Alocação homologada pelo núcleo'
+        };
+      }
+      return j;
+    }));
+
+    // 4. Create Negotiation record for history tracking
     const newNeg = {
       id: generateUniqueId('neg'),
       jobId: activeJob.id,
-      freelancerId: negotiatingFreelancerId,
-      negotiatedValue,
-      billingType,
-      scope,
-      status: (isExceeding ? 'Pendente aprovação RH' : 'Aprovado pelo RH') as any,
-      justificationIfAbovePolicy: isExceeding ? justification : undefined
+      freelancerId: freelancerId,
+      negotiatedValue: rate,
+      billingType: model as any,
+      scope: scopeText,
+      status: 'Aprovado pelo RH' as any,
     };
     db.setNegotiations(prev => [newNeg, ...prev]);
 
-    if (!isExceeding) {
-      // 4. Create Allocation (only if within policy and successfully booked)
-      const nextNumString = String(db.allocations.length + 1).padStart(4, '0');
-      const mockAllocCode = `ALOC-2026-${nextNumString}`;
-
-      const newAlloc = {
-        id: generateUniqueId('alloc'),
-        allocationCode: mockAllocCode,
-        jobId: activeJob.id,
-        freelancerId: negotiatingFreelancerId,
-        nucleoId: activeJob.nucleoId,
-        startDate: activeJob.startDate,
-        endDate: activeJob.endDate,
-        approvedValue: negotiatedValue,
-        status: 'Ativo' as const
-      };
-      db.setAllocations(prev => [...prev, newAlloc]);
-
-      // Note: Payment Code and allocation code trigger generation is automated in PostgreSQL, 
-      // but we update the local states here to ensure UI instant responsiveness
-      db.setPaymentCodes(prev => [
-        ...prev,
-        {
-          id: generateUniqueId('pay'),
-          allocationCode: mockAllocCode,
-          jobId: activeJob.id,
-          freelancerId: negotiatingFreelancerId,
-          approvedValue: negotiatedValue,
-          paymentStatus: 'Aguardando conclusão do job'
-        }
-      ]);
-
-      alert(`✅ Sucesso!\nContratação realizada com sucesso!\nCódigo de alocação ${mockAllocCode} gerado.`);
-    } else {
-      alert(`⚠️ Exceção Enviada!\nO valor de R$ ${negotiatedValue} excede o teto contratual de R$ ${ceilingValue}.\nEsta contratação foi encaminhada para a aprovação do RH.`);
-    }
-
-    // Refresh view
-    setActiveStep(3);
+    alert(`✅ Alocação homologada com sucesso!\nO profissional foi alocado para o job e a vaga foi bookada.`);
+    
+    setTimeout(async () => {
+      await db.reloadDatabase();
+    }, 1000);
   };
 
   // Reopen Job allocation and deselect professional (MASTER / RH only)
@@ -884,6 +1112,80 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     alert(`✅ Sucesso!\nAlocação revogada. Oportunidade reaberta e retornada para a fase de shortlist.`);
     setActiveStep(2);
   };
+
+  // --- STEP 3: COMPARISON GRID SORTING LOGIC ---
+  const getStatusRank = (status: string | null | undefined): number => {
+    const s = status?.toLowerCase() || '';
+    if (s.includes('aceitou')) return 5;
+    if (s.includes('fora_politica') || s.includes('fora da política')) return 4;
+    if (s.includes('em_negociacao') || s.includes('negociação')) return 3;
+    if (s.includes('aguardando')) return 2;
+    if (s.includes('nao_aceitou') || s.includes('não aceitou') || s.includes('rejeitado')) return 1;
+    return 0;
+  };
+
+  const sortedCompareList = useMemo(() => {
+    const list = jobShortlists.map(sl => {
+      const cand = db.freelancers.find(f => f.id === sl.freelancerId);
+      const policy = db.policies.find(p => p.role === activeJob?.roleNeeded && p.seniority === activeJob?.seniorityNeeded);
+      const ceilingValue = policy ? policy.ceilingValue : 99999;
+      
+      const rate = sl.negotiatedRate || cand?.referenceValue || 0;
+      const billing = sl.remunerationModel || 'Diária';
+      const allocationDays = calculateAllocationDays(activeJob?.startDate, activeJob?.endDate);
+      
+      const negotiatedTotal = calculateNegotiatedTotal({
+        negotiatedRate: rate,
+        remunerationModel: billing,
+        allocationDays,
+        estimatedHours: sl.estimatedHours
+      }) || 0;
+
+      const { savingAmount, savingPercentage } = calculateBudgetSaving({
+        budget: activeJob?.budget || 0,
+        negotiatedTotal
+      });
+
+      const hasConflict = cand ? hasScheduleConflict(cand.id, activeJob?.startDate || '', activeJob?.endDate || '') : false;
+      const exceedsCeiling = rate > ceilingValue;
+
+      const budgetApproval = db.approvals?.find(ap => 
+        ap.shortlistCandidateId === sl.id && 
+        ap.approvalType === 'value_exception' &&
+        ap.freelancerId === cand?.id
+      );
+      const isBudgetApproved = budgetApproval?.status === 'approved';
+
+      const isEligible = sl.candidateStatus === 'Aceitou' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
+
+      return {
+        sl,
+        cand,
+        rate,
+        billing,
+        negotiatedTotal,
+        savingAmount: savingAmount || 0,
+        savingPercentage: savingPercentage || 0,
+        exceedsCeiling,
+        hasConflict,
+        isEligible,
+        statusRank: getStatusRank(sl.candidateStatus),
+        score: cand?.averageScore || 0
+      };
+    });
+
+    if (compareSortKey === 'saving') {
+      return [...list].sort((a, b) => b.savingAmount - a.savingAmount);
+    } else if (compareSortKey === 'total') {
+      return [...list].sort((a, b) => a.negotiatedTotal - b.negotiatedTotal);
+    } else if (compareSortKey === 'status') {
+      return [...list].sort((a, b) => b.statusRank - a.statusRank);
+    } else if (compareSortKey === 'score') {
+      return [...list].sort((a, b) => b.score - a.score);
+    } else {
+      return [...list].sort((a, b) => b.statusRank - a.statusRank);
+    }
+  }, [jobShortlists, activeJob, db.freelancers, db.policies, db.approvals, compareSortKey]);
 
   // Helper lists for filter dropdown options
   const uniqueClients = Array.from(new Set(db.jobs.map(j => j.client))).filter(Boolean).sort();
@@ -948,7 +1250,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               }`}>
                 {jobShortlists.length > 0 && selectedJobIdLocal ? <Check className="w-3 h-3" /> : '2'}
               </span>
-              <span>2. Shortlist</span>
+              <span>2. Shortlist Oficial</span>
             </button>
 
             <ChevronRight className="w-4 h-4 text-text-secondary hidden md:block" />
@@ -959,7 +1261,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               className={`flex items-center gap-2 p-2 px-3.5 rounded-xl border transition-all ${
                 activeStep === 3 
                   ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs' 
-                  : activeJob?.selectedFreelancerId
+                  : jobShortlists.some(sl => ['Aceitou', 'Valor fora da política'].includes(sl.candidateStatus))
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
                     : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
               }`}
@@ -967,9 +1269,30 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] ${
                 activeStep === 3 ? 'bg-action-cyan text-sidebar-navy font-bold' : 'bg-slate-200 text-text-secondary'
               }`}>
-                {activeJob?.selectedFreelancerId ? <Check className="w-3 h-3" /> : '3'}
+                {jobShortlists.some(sl => ['Aceitou', 'Valor fora da política'].includes(sl.candidateStatus)) ? <Check className="w-3 h-3" /> : '3'}
               </span>
-              <span>3. Alocação</span>
+              <span>3. Negociação</span>
+            </button>
+
+            <ChevronRight className="w-4 h-4 text-text-secondary hidden md:block" />
+
+            {/* Step 4 */}
+            <button 
+              onClick={() => handleNavigateStep(4)}
+              className={`flex items-center gap-2 p-2 px-3.5 rounded-xl border transition-all ${
+                activeStep === 4 
+                  ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs' 
+                  : activeJob?.selectedFreelancerId
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                    : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
+              }`}
+            >
+              <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] ${
+                activeStep === 4 ? 'bg-action-cyan text-sidebar-navy font-bold' : 'bg-slate-200 text-text-secondary'
+              }`}>
+                {activeJob?.selectedFreelancerId ? <Check className="w-3 h-3" /> : '4'}
+              </span>
+              <span>4. Homologação</span>
             </button>
           </div>
         </div>
@@ -1737,19 +2060,41 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
             {/* RIGHT COLUMN: SHORTLIST OFICIAL DA VAGA */}
             <div className="xl:col-span-5 space-y-4">
-              <div className="bg-white p-5 rounded-2xl border border-border-subtle shadow-xs space-y-4">
+              <div 
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (!activeJob.selectedFreelancerId) {
+                    setIsDraggingOver(true);
+                  }
+                }}
+                onDragLeave={() => setIsDraggingOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDraggingOver(false);
+                  if (activeJob.selectedFreelancerId) return;
+                  const freelancerId = e.dataTransfer.getData('text/plain');
+                  if (freelancerId) {
+                    handleAddToShortlist(freelancerId);
+                  }
+                }}
+                className={`bg-white p-5 rounded-2xl border-2 transition-all shadow-xs space-y-4 ${
+                  isDraggingOver 
+                    ? 'border-dashed border-action-cyan bg-action-cyan/5 scale-[1.01]' 
+                    : 'border-border-subtle'
+                }`}
+              >
                 <div>
                   <h4 className="font-bold text-sidebar-navy text-sm flex items-center gap-1.5">
                     <CheckCircle className="w-4.5 h-4.5 text-emerald-600" />
                     <span>Shortlist Oficial da Demanda ({jobShortlists.length})</span>
                   </h4>
-                  <p className="text-[11px] text-text-secondary mt-0.5">Determine o status de negociação de cada candidato.</p>
+                  <p className="text-[11px] text-text-secondary mt-0.5">Arraste talentos aqui ou clique em "Adicionar" para compor a shortlist.</p>
                 </div>
 
                 <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
                   {jobShortlists.length === 0 ? (
                     <div className="p-8 text-center text-text-secondary border border-dashed border-border-subtle rounded-2xl italic text-xs">
-                      Shortlist vazia. Adicione profissionais recomendados no painel lateral.
+                      Shortlist vazia. Arraste profissionais recomendados aqui ou use o botão de fallback no painel lateral.
                     </div>
                   ) : (
                     jobShortlists.map(sl => {
@@ -1788,28 +2133,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             </button>
                           </div>
 
-                          {/* Candidate negotiation status */}
+                          {/* Candidate Observations / Notes */}
                           <div className="mt-3.5 space-y-2.5 pt-3 border-t border-dashed border-border-subtle text-xs">
-                            <div>
-                              <label className="text-[11px] font-bold text-text-secondary block mb-1">Status da Negociação</label>
-                              <select
-                                disabled={!!activeJob.selectedFreelancerId}
-                                value={sl.candidateStatus}
-                                onChange={(e) => handleStatusChange(sl.freelancerId, e.target.value as any)}
-                                className="w-full bg-white border border-border-subtle p-2 rounded-lg text-xs font-semibold focus:outline-none focus:border-action-cyan disabled:bg-slate-50 disabled:opacity-85"
-                              >
-                                <option value="Selecionado">Selecionado</option>
-                                <option value="Em negociação">Em negociação</option>
-                                <option value="Aguardando retorno">Aguardando retorno</option>
-                                <option value="Valor fora da política">Valor fora da política</option>
-                                <option value="Aprovado RH">Aprovado pelo RH</option>
-                                <option value="Rejeitado">Rejeitado</option>
-                                <option value="Aceitou">Aceitou</option>
-                                <option value="Não aceitou">Não aceitou</option>
-                              </select>
-                            </div>
-
-                            {/* Candidate Observations / Notes */}
                             <div>
                               <div className="flex justify-between items-center mb-1">
                                 <label className="text-[11px] font-bold text-text-secondary">Observações / Notas internas</label>
@@ -1848,7 +2173,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => handleNavigateStep(3)}
                 className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
               >
-                <span>Avançar para Contratação & Alocação</span>
+                <span>Avançar para Negociação</span>
                 <ArrowRight className="w-4 h-4 text-action-cyan" />
               </button>
             )}
@@ -1856,10 +2181,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         </div>
       )}
 
-      {/* -------------------- STEP 3: CONTRACT NEGOTIATION & ALLOCATION -------------------- */}
+      {/* -------------------- STEP 3: CONTRACT NEGOTIATION -------------------- */}
       {activeStep === 3 && activeJob && (
-        <div className="space-y-6">
-          
+        <div className="space-y-6 animate-fade-in">
           {/* Active Job Meta-Header */}
           <div className="bg-[#1E293B] text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6">
             <div className="space-y-2">
@@ -1867,8 +2191,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <span className="bg-slate-750 text-slate-100 border border-slate-650 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
                   COD: {activeJob.id.slice(0, 8).toUpperCase()}
                 </span>
-                <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Homologação da Alocação</span>
-                <span className="bg-emerald-950 text-emerald-300 border border-emerald-800/90 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Negociação Individual</span>
+                <span className="bg-blue-955 text-blue-300 border border-blue-800/90 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
               </div>
               <h3 className="text-lg font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
               <p className="text-xs text-slate-200">
@@ -1898,6 +2222,503 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             </div>
           </div>
 
+          {/* COMPARISON GRID BETWEEN FREELANCERS */}
+          {jobShortlists.length > 1 && (
+            <div className="bg-[#1E293B] border border-slate-700/50 p-6 rounded-2xl shadow-lg space-y-4">
+              <div className="flex justify-between items-center flex-wrap gap-4">
+                <div>
+                  <h4 className="font-extrabold text-white text-sm uppercase tracking-wider flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-5 h-5 text-action-cyan" />
+                    <span>Painel Comparativo de Propostas</span>
+                  </h4>
+                  <p className="text-xs text-slate-350">RH, Master e Heads de Núcleo podem comparar o impacto financeiro de cada opção.</p>
+                </div>
+
+                {/* Sorting Controls */}
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-slate-400 font-bold">Ordenar por:</span>
+                  <button
+                    type="button"
+                    onClick={() => setCompareSortKey('default')}
+                    className={`p-2 px-3 rounded-lg font-bold transition-all border ${
+                      compareSortKey === 'default'
+                        ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
+                        : 'bg-slate-800 text-slate-300 border-slate-750 hover:bg-slate-750'
+                    }`}
+                  >
+                    Status
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCompareSortKey('saving')}
+                    className={`p-2 px-3 rounded-lg font-bold transition-all border ${
+                      compareSortKey === 'saving'
+                        ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
+                        : 'bg-slate-800 text-slate-300 border-slate-750 hover:bg-slate-750'
+                    }`}
+                  >
+                    Maior Saving
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCompareSortKey('total')}
+                    className={`p-2 px-3 rounded-lg font-bold transition-all border ${
+                      compareSortKey === 'total'
+                        ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
+                        : 'bg-slate-800 text-slate-300 border-slate-750 hover:bg-slate-750'
+                    }`}
+                  >
+                    Menor Total
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCompareSortKey('score')}
+                    className={`p-2 px-3 rounded-lg font-bold transition-all border ${
+                      compareSortKey === 'score'
+                        ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
+                        : 'bg-slate-800 text-slate-300 border-slate-750 hover:bg-slate-750'
+                    }`}
+                  >
+                    Melhor Score
+                  </button>
+                </div>
+              </div>
+
+              {/* Table Wrapper for Desktop */}
+              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-750">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-800 border-b border-slate-750 text-slate-200">
+                      <th className="p-3.5 font-bold uppercase tracking-wider">Freelancer</th>
+                      <th className="p-3.5 font-bold uppercase tracking-wider">Status Negociação</th>
+                      <th className="p-3.5 font-bold uppercase tracking-wider text-right">Rate Negociado</th>
+                      <th className="p-3.5 font-bold uppercase tracking-wider text-right">Total Negociado</th>
+                      <th className="p-3.5 font-bold uppercase tracking-wider text-right">Saving</th>
+                      <th className="p-3.5 font-bold uppercase tracking-wider text-center">Saving %</th>
+                      <th className="p-3.5 font-bold uppercase tracking-wider text-center">Política</th>
+                      <th className="p-3.5 font-bold uppercase tracking-wider text-center">Agenda</th>
+                      <th className="p-3.5 font-bold uppercase tracking-wider text-center">Homologável</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60 bg-slate-900/30 text-slate-300">
+                    {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict, isEligible }) => (
+                      <tr key={sl.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="p-3.5">
+                          <div className="font-bold text-white">{cand?.name || '—'}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{cand?.seniority} &bull; {cand?.mainRole}</div>
+                        </td>
+                        <td className="p-3.5">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            sl.candidateStatus === 'Aceitou'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50'
+                              : sl.candidateStatus === 'Valor fora da política'
+                                ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
+                                : sl.candidateStatus === 'Bloqueado por conflito de agenda'
+                                  ? 'bg-red-950 text-red-400 border border-red-800/50'
+                                  : 'bg-slate-800 text-slate-300 border border-slate-700/60'
+                          }`}>
+                            {sl.candidateStatus}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right font-semibold">
+                          {formatCurrencyBRL(rate)}/{billing === 'Hora' ? 'h' : billing === 'Diária' ? 'dia' : 'job'}
+                        </td>
+                        <td className="p-3.5 text-right font-bold text-white">
+                          {formatCurrencyBRL(negotiatedTotal)}
+                        </td>
+                        <td className={`p-3.5 text-right font-bold ${
+                          savingAmount > 0 
+                            ? 'text-emerald-450' 
+                            : savingAmount < 0 
+                              ? 'text-red-400' 
+                              : 'text-slate-300'
+                        }`}>
+                          {savingAmount < 0 
+                            ? `-${formatCurrencyBRL(Math.abs(savingAmount))}` 
+                            : formatCurrencyBRL(savingAmount)
+                          }
+                        </td>
+                        <td className={`p-3.5 text-center font-bold ${
+                          savingAmount > 0 
+                            ? 'text-emerald-450' 
+                            : savingAmount < 0 
+                              ? 'text-red-400' 
+                              : 'text-slate-300'
+                        }`}>
+                          {savingAmount < 0 
+                            ? `${Math.abs(Math.round(savingPercentage))}% acima` 
+                            : formatPercentage(savingPercentage)
+                          }
+                        </td>
+                        <td className="p-3.5 text-center">
+                          {exceedsCeiling ? (
+                            <span className="text-red-400 font-bold bg-red-950/40 p-1 px-2 rounded border border-red-900/40">Excedeu</span>
+                          ) : (
+                            <span className="text-emerald-400 font-bold bg-emerald-950/40 p-1 px-2 rounded border border-emerald-900/40">Dentro</span>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-center">
+                          {hasConflict ? (
+                            <span className="text-red-400 font-bold bg-red-950/40 p-1 px-2 rounded border border-red-900/40">Conflito</span>
+                          ) : (
+                            <span className="text-emerald-400 font-semibold bg-emerald-950/40 p-1 px-2 rounded border border-emerald-900/40">Livre</span>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-center">
+                          {isEligible ? (
+                            <span className="text-emerald-400 font-bold flex items-center justify-center gap-1">
+                              <Check className="w-4 h-4 text-emerald-500" />
+                              <span>Sim</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-semibold">Não</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Cards Wrapper for Mobile */}
+              <div className="md:hidden space-y-3">
+                {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict, isEligible }) => (
+                  <div key={sl.id} className="bg-slate-900/40 p-4 rounded-xl border border-slate-750 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-white text-xs">{cand?.name || '—'}</div>
+                        <div className="text-[10px] text-slate-400">{cand?.seniority} &bull; {cand?.mainRole}</div>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                        sl.candidateStatus === 'Aceitou'
+                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                          : 'bg-slate-800 text-slate-350'
+                      }`}>
+                        {sl.candidateStatus}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div>
+                        <span className="text-slate-400 block">Rate Negociado:</span>
+                        <strong className="text-white">{formatCurrencyBRL(rate)}/{billing === 'Hora' ? 'h' : billing === 'Diária' ? 'dia' : 'job'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block">Total Negociado:</span>
+                        <strong className="text-white">{formatCurrencyBRL(negotiatedTotal)}</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block">Saving Gerado:</span>
+                        <strong className={savingAmount > 0 ? 'text-emerald-400' : savingAmount < 0 ? 'text-red-400' : 'text-slate-300'}>
+                          {savingAmount < 0 
+                            ? `-${formatCurrencyBRL(Math.abs(savingAmount))}` 
+                            : formatCurrencyBRL(savingAmount)
+                          }
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block">Saving %:</span>
+                        <strong className={savingAmount > 0 ? 'text-emerald-400' : savingAmount < 0 ? 'text-red-400' : 'text-slate-300'}>
+                          {savingAmount < 0 
+                            ? `${Math.abs(Math.round(savingPercentage))}% acima` 
+                            : formatPercentage(savingPercentage)
+                          }
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 flex flex-wrap gap-2 text-[9px] font-bold">
+                      <span className={`p-1 px-2 rounded ${exceedsCeiling ? 'bg-red-950 text-red-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                        Política: {exceedsCeiling ? 'Excedeu' : 'Dentro'}
+                      </span>
+                      <span className={`p-1 px-2 rounded ${hasConflict ? 'bg-red-950 text-red-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                        Agenda: {hasConflict ? 'Conflito' : 'Livre'}
+                      </span>
+                      <span className={`p-1 px-2 rounded ${isEligible ? 'bg-emerald-950 text-emerald-400' : 'bg-slate-850 text-slate-400'}`}>
+                        Homologável: {isEligible ? 'Sim' : 'Não'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cards for each candidate in shortlist */}
+          <div className="grid grid-cols-1 gap-6">
+            {jobShortlists.length === 0 ? (
+              <div className="bg-white p-12 text-center text-text-secondary border border-border-subtle rounded-2xl italic text-xs">
+                Nenhum candidato na shortlist para negociar. Volte para o Passo 2.
+              </div>
+            ) : (
+              jobShortlists.map(sl => {
+                const cand = db.freelancers.find(f => f.id === sl.freelancerId);
+                if (!cand) return null;
+
+                const policy = db.policies.find(p => p.role === activeJob.roleNeeded && p.seniority === activeJob.seniorityNeeded);
+                const ceilingValue = policy ? policy.ceilingValue : 99999;
+                const referenceValue = policy ? policy.referenceValue : 0;
+                
+                const rate = sl.negotiatedRate || cand.referenceValue;
+                const billing = sl.remunerationModel || 'Diária';
+                
+                const hasConflict = hasScheduleConflict(cand.id, activeJob.startDate, activeJob.endDate);
+                const exceedsCeiling = rate > ceilingValue;
+
+                const conflictApproval = db.approvals?.find(ap => 
+                  ap.shortlistCandidateId === sl.id && 
+                  ap.approvalType === 'schedule_conflict' &&
+                  ap.freelancerId === cand.id
+                );
+                const isConflictApproved = conflictApproval?.status === 'approved';
+                const isConflictPending = conflictApproval?.status === 'pending';
+
+                const budgetApproval = db.approvals?.find(ap => 
+                  ap.shortlistCandidateId === sl.id && 
+                  ap.approvalType === 'value_exception' &&
+                  ap.freelancerId === cand.id
+                );
+                const isBudgetApproved = budgetApproval?.status === 'approved';
+                const isBudgetPending = budgetApproval?.status === 'pending';
+
+                let isLocked = isConflictPending || isBudgetPending || !!activeJob.selectedFreelancerId;
+                
+                return (
+                  <div key={sl.id} className="bg-white p-6 rounded-2xl border border-border-subtle shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Freelancer Header Info */}
+                    <div className="lg:col-span-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-extrabold text-sidebar-navy text-sm">{cand.name}</h4>
+                        <span className="bg-slate-100 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded">{cand.seniority}</span>
+                      </div>
+                      <p className="text-xs text-text-secondary">{cand.mainRole} &bull; {cand.city}-{cand.state}</p>
+                      
+                      <div className="flex items-center gap-1.5 pt-1 text-xs">
+                        <ScoreStars score={cand.averageScore} size="sm" showNumber={true} />
+                        <span className="text-text-secondary">&bull; Referência: R$ {cand.referenceValue}/diária</span>
+                      </div>
+
+                      {/* Warnings / Alerts */}
+                      <div className="space-y-2 pt-2">
+                        {hasConflict && (
+                          <div className={`p-2.5 rounded-lg border text-[11px] flex items-start gap-1.5 leading-snug ${
+                            isConflictApproved 
+                              ? 'bg-emerald-55 border-emerald-200 text-emerald-800'
+                              : 'bg-red-55 border-red-200 text-red-800'
+                          }`}>
+                            <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${isConflictApproved ? 'text-emerald-650' : 'text-red-650'}`} />
+                            <div>
+                              <span className="font-bold block text-[11.5px] mb-0.5">Conflito de Agenda Detectado</span>
+                              {isConflictApproved ? (
+                                <p className="text-[10px] text-emerald-700">Aprovado pelo RH: {conflictApproval.decisionNotes}</p>
+                              ) : isConflictPending ? (
+                                <p className="text-[10px] text-red-700">Solicitação pendente de aprovação com o RH.</p>
+                              ) : (
+                                <div className="mt-1">
+                                  <p className="text-[10px] text-red-700">Profissional alocado em outro job neste período.</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRequestApproval(sl.id, cand.id, 'schedule_conflict')}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
+                                  >
+                                    Solicitar aprovação RH
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {exceedsCeiling && (
+                          <div className={`p-2.5 rounded-lg border text-[11px] flex items-start gap-1.5 leading-snug ${
+                            isBudgetApproved
+                              ? 'bg-emerald-55 border-emerald-200 text-emerald-800'
+                              : 'bg-red-55 border-red-200 text-red-800'
+                          }`}>
+                            <Scale className={`w-4 h-4 shrink-0 mt-0.5 ${isBudgetApproved ? 'text-emerald-650' : 'text-red-650'}`} />
+                            <div>
+                              <span className="font-bold block text-[11.5px] mb-0.5">Excedeu Teto de Referência</span>
+                              {isBudgetApproved ? (
+                                <p className="text-[10px] text-emerald-700">Aprovado pelo Head: {budgetApproval.decisionNotes}</p>
+                              ) : isBudgetPending ? (
+                                <p className="text-[10px] text-red-700">Aguardando aprovação do Head do Núcleo.</p>
+                              ) : (
+                                <div className="mt-1">
+                                  <p className="text-[10px] text-red-700">O teto comercial é de R$ {ceilingValue}.</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRequestApproval(sl.id, cand.id, 'value_exception', rate)}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
+                                  >
+                                    Solicitar aprovação Head
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Negotiation Form Inputs */}
+                    <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[11px] font-bold text-text-secondary block mb-1">Taxa Acordada (R$) *</label>
+                        <input
+                          type="number"
+                          disabled={isLocked}
+                          value={rate}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            handleUpdateNegotiation(cand.id, { negotiatedRate: val });
+                          }}
+                          className="w-full bg-[#F8FAFC] border border-border-subtle p-2.5 rounded-lg text-xs font-bold text-text-primary focus:outline-none focus:border-action-cyan disabled:opacity-60"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-bold text-text-secondary block mb-1">Modelo de Remuneração</label>
+                        <select
+                          disabled={isLocked}
+                          value={billing}
+                          onChange={(e) => handleUpdateNegotiation(cand.id, { remunerationModel: e.target.value })}
+                          className="w-full bg-white border border-border-subtle p-2.5 rounded-lg text-xs font-semibold focus:outline-none focus:border-action-cyan disabled:opacity-60"
+                        >
+                          <option value="Diária">Diária</option>
+                          <option value="Hora">Hora</option>
+                          <option value="Job Fechado">Job Fechado</option>
+                        </select>
+                      </div>
+
+                      {billing === 'Hora' && (
+                        <div className="sm:col-span-2">
+                          <label className="text-[11px] font-bold text-text-secondary block mb-1">Horas Estimadas *</label>
+                          <input
+                            type="number"
+                            disabled={isLocked}
+                            value={sl.estimatedHours || ''}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? undefined : Number(e.target.value);
+                              handleUpdateNegotiation(cand.id, { estimatedHours: val });
+                            }}
+                            placeholder="Ex: 40"
+                            className="w-full bg-[#F8FAFC] border border-border-subtle p-2.5 rounded-lg text-xs font-bold text-text-primary focus:outline-none focus:border-action-cyan disabled:opacity-60"
+                          />
+                        </div>
+                      )}
+
+                      <div className="sm:col-span-2">
+                        <label className="text-[11px] font-bold text-text-secondary block mb-1">Status da Negociação</label>
+                        <select
+                          disabled={isLocked || (hasConflict && !isConflictApproved) || (exceedsCeiling && !isBudgetApproved)}
+                          value={sl.candidateStatus}
+                          onChange={(e) => handleUpdateNegotiation(cand.id, { negotiationStatus: e.target.value as any })}
+                          className="w-full bg-white border border-border-subtle p-2.5 rounded-lg text-xs font-bold focus:outline-none focus:border-action-cyan disabled:opacity-60"
+                        >
+                          <option value="Selecionado">Selecionado (Fase Inicial)</option>
+                          <option value="Em negociação">Em negociação</option>
+                          <option value="Aguardando retorno">Aguardando retorno</option>
+                          <option value="Valor fora da política" disabled={!exceedsCeiling}>Valor fora da política</option>
+                          <option value="Bloqueado por conflito de agenda" disabled={!hasConflict}>Bloqueado por conflito de agenda</option>
+                          {isConflictPending && <option value="Pendente aprovação RH">Pendente aprovação RH</option>}
+                          {isBudgetPending && <option value="Pendente aprovação Head">Pendente aprovação Head</option>}
+                          <option value="Aceitou">Aceitou a proposta</option>
+                          <option value="Não aceitou">Rejeitou a proposta / Não aceitou</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="text-[11px] font-bold text-text-secondary block mb-1">Observações Internas</label>
+                        <textarea
+                          disabled={isLocked}
+                          defaultValue={sl.notes || ''}
+                          onBlur={(e) => handleUpdateNegotiation(cand.id, { notes: e.target.value })}
+                          placeholder="Adicione notas sobre agenda, escopo acertado, contrapropostas, etc."
+                          rows={2}
+                          className="w-full bg-white border border-border-subtle p-2.5 rounded-lg text-xs focus:outline-none focus:border-action-cyan disabled:opacity-60 text-text-primary resize-none"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2 pt-2 text-left">
+                        <NegotiationFinancialSummary
+                          budget={activeJob.budget}
+                          startDate={activeJob.startDate}
+                          endDate={activeJob.endDate}
+                          negotiatedRate={rate}
+                          remunerationModel={billing}
+                          estimatedHours={sl.estimatedHours}
+                          variant="detailed"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="flex justify-between pt-4 border-t border-border-subtle">
+            <button
+              onClick={() => handleNavigateStep(2)}
+              className="bg-white border border-border-subtle hover:bg-slate-50 text-text-primary font-bold p-3 px-6 rounded-xl text-xs transition-all cursor-pointer"
+            >
+              Voltar para Shortlist
+            </button>
+
+            {jobShortlists.some(sl => ['Aceitou', 'Valor fora da política'].includes(sl.candidateStatus)) && (
+              <button
+                onClick={() => handleNavigateStep(4)}
+                className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+              >
+                <span>Avançar para Homologação</span>
+                <ArrowRight className="w-4 h-4 text-action-cyan" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- STEP 4: HOMOLOGAÇÃO & ALLOCATION -------------------- */}
+      {activeStep === 4 && activeJob && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Active Job Meta-Header */}
+          <div className="bg-[#1E293B] text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="bg-slate-750 text-slate-100 border border-slate-650 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                  COD: {activeJob.id.slice(0, 8).toUpperCase()}
+                </span>
+                <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Homologação da Alocação</span>
+                <span className="bg-emerald-950 text-emerald-300 border border-emerald-800/90 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+              </div>
+              <h3 className="text-lg font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+              <p className="text-xs text-slate-200">
+                Alocação: <strong className="text-white font-extrabold">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong> &bull; Período: <strong className="text-white font-extrabold">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong>
+              </p>
+            </div>
+
+            <div className="flex flex-col justify-between items-end gap-3 min-w-[200px]">
+              <div className="text-right">
+                <div className="text-[10px] uppercase font-bold text-slate-300">Budget do Job</div>
+                <div className="text-lg font-extrabold text-action-cyan">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
+                </div>
+                <div className="text-[10px] text-slate-300">
+                  Média diária: <strong className="text-white font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}</strong>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleNavigateStep(3)}
+                  className="bg-slate-700 hover:bg-slate-600 text-white font-extrabold p-2 px-3 rounded-lg text-xs transition-all cursor-pointer"
+                >
+                  Voltar para Negociação
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* CHECK IF JOB IS ALREADY BOOKED (BOOKING HISTORY MODE) */}
           {activeJob.selectedFreelancerId ? (() => {
             const bookedFreelancer = db.freelancers.find(f => f.id === activeJob.selectedFreelancerId);
@@ -1907,7 +2728,6 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
             return (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
                 {/* Booked Candidate Card */}
                 <div className="bg-white p-5 rounded-2xl border border-border-subtle shadow-xs space-y-4">
                   <div className="text-center pb-4 border-b border-border-subtle">
@@ -1933,18 +2753,6 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       <span>Avaliação Média:</span>
                       <div className="flex items-center"><ScoreStars score={bookedFreelancer?.averageScore} size="sm" showNumber={true} /></div>
                     </div>
-                    {bookedFreelancer?.whatsapp && (
-                      <div className="flex justify-between items-center pt-2 border-t border-dashed border-border-subtle">
-                        <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> WhatsApp:</span>
-                        <strong className="text-text-primary">{bookedFreelancer.whatsapp}</strong>
-                      </div>
-                    )}
-                    {bookedFreelancer?.email && (
-                      <div className="flex justify-between items-center">
-                        <span className="flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> E-mail:</span>
-                        <strong className="text-text-primary text-[11.5px] truncate max-w-[150px]" title={bookedFreelancer.email}>{bookedFreelancer.email}</strong>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -2003,7 +2811,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="pt-4 border-t border-border-subtle flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div className="text-[11px] text-text-secondary leading-normal flex items-start gap-1">
                       <AlertCircle className="w-4.5 h-4.5 text-text-secondary shrink-0 mt-0.5" />
-                      <span>Para rescindir, trocar profissional ou reabrir esta vaga, utilize o painel ao lado (apenas Master/RH).</span>
+                      <span>Para rescindir, trocar profissional ou reabrir esta vaga, utilize a ação ao lado (apenas Master/RH).</span>
                     </div>
 
                     {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') ? (
@@ -2024,239 +2832,290 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       </button>
                     )}
                   </div>
-
                 </div>
               </div>
             );
           })() : (
             /* INTERACTIVE ALLOCATION FORM */
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-              
-              {/* Form Input fields */}
-              <div className="xl:col-span-7 bg-bg-surface p-5 rounded-2xl border border-border-subtle shadow-xs">
+            <div className="grid grid-cols-1 gap-6">
+              <div className="bg-white p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
                 <div>
                   <h4 className="font-bold text-text-primary text-sm flex items-center gap-1.5">
-                    <Scale className="w-5 h-5 text-action-cyan" />
-                    <span>Diretrizes e Rates de Contratação</span>
+                    <FileCheck className="w-5 h-5 text-emerald-600" />
+                    <span>Profissionais Elegíveis para Alocação Final</span>
                   </h4>
-                  <p className="text-[11px] text-text-secondary mt-0.5">Insira o rate fechado com o profissional e valide com a política corporativa.</p>
+                  <p className="text-[11.5px] text-text-secondary mt-0.5">Selecione o profissional acordado para homologar a alocação oficial e bloquear o job.</p>
                 </div>
 
-                <form onSubmit={handleSaveNegotiation} className="space-y-4 pt-4 text-xs">
-                  
-                  {/* Select candidate from shortlist */}
-                  <div>
-                    <label className="font-bold text-text-primary block mb-1">Selecionar Profissional da Shortlist *</label>
-                    <select
-                      required
-                      value={negotiatingFreelancerId}
-                      onChange={(e) => setNegotiatingFreelancerId(e.target.value)}
-                      className="w-full border border-border-strong p-2.5 rounded-lg text-xs font-semibold bg-bg-input text-text-primary focus:outline-none focus:border-action-cyan"
-                    >
-                      <option value="">-- Selecione o profissional --</option>
-                      {jobShortlists.map(sl => {
-                        const cand = db.freelancers.find(f => f.id === sl.freelancerId);
-                        return (
-                          <option key={sl.freelancerId} value={sl.freelancerId} className="bg-bg-surface text-text-primary">
-                            {cand?.name} ({cand?.seniority}) - Ref: R$ {cand?.referenceValue}/diária
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  {(() => {
+                    const eligibleCandidates = jobShortlists.filter(sl => {
+                      const cand = db.freelancers.find(f => f.id === sl.freelancerId);
+                      if (!cand) return false;
 
-                  {negotiatingFreelancerId && (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="font-bold text-text-primary block mb-1">Taxa Acordada (R$) *</label>
-                          <input
-                            type="number"
-                            required
-                            value={negotiatedValue || ''}
-                            onChange={(e) => setNegotiatedValue(Number(e.target.value))}
-                            className="w-full border border-border-strong p-2.5 rounded-lg text-xs bg-bg-input text-text-primary font-bold focus:outline-none focus:border-action-cyan"
-                            placeholder="Ex: 650"
-                          />
+                      const budgetApproval = db.approvals?.find(ap => 
+                        ap.shortlistCandidateId === sl.id && 
+                        ap.approvalType === 'value_exception' &&
+                        ap.freelancerId === cand.id
+                      );
+                      const isBudgetApproved = budgetApproval?.status === 'approved';
+
+                      return sl.candidateStatus === 'Aceitou' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
+                    });
+
+                    if (eligibleCandidates.length === 0) {
+                      return (
+                        <div className="col-span-2 bg-slate-50 p-8 text-center text-text-secondary border border-border-subtle rounded-xl italic text-xs">
+                          Nenhum profissional finalizou a fase de negociação com status "Aceitou" ou com exceção de valor aprovada pelo Head. 
+                          Avance na negociação dos rates no Passo 3.
                         </div>
+                      );
+                    }
 
-                        <div>
-                          <label className="font-bold text-text-primary block mb-1">Modelo de Remuneração</label>
-                          <select
-                            value={billingType}
-                            onChange={(e) => setBillingType(e.target.value as any)}
-                            className="w-full border border-border-strong p-2.5 rounded-lg text-xs bg-bg-input text-text-primary focus:outline-none focus:border-action-cyan font-medium"
-                          >
-                            <option value="Diária" className="bg-bg-surface text-text-primary">Diária</option>
-                            <option value="Hora" className="bg-bg-surface text-text-primary">Hora</option>
-                            <option value="Job Fechado" className="bg-bg-surface text-text-primary">Job Fechado</option>
-                          </select>
-                        </div>
-                      </div>
+                    return eligibleCandidates.map(sl => {
+                      const cand = db.freelancers.find(f => f.id === sl.freelancerId);
+                      if (!cand) return null;
 
-                      {/* REAL-TIME POLICY COMPARATOR WIDGET */}
-                      {(() => {
-                        const policy = db.policies.find(p => p.role === activeJob.roleNeeded && p.seniority === activeJob.seniorityNeeded);
-                        const ceilingValue = policy ? policy.ceilingValue : 99999;
-                        const reference = policy ? policy.referenceValue : 0;
-                        const exceedsCeiling = negotiatedValue > ceilingValue;
-                        const belowReference = negotiatedValue < reference;
+                      const rate = sl.negotiatedRate || cand.referenceValue;
+                      const model = sl.remunerationModel || 'Diária';
+                      
+                      const allocationDays = calculateAllocationDays(activeJob.startDate, activeJob.endDate);
+                      const negotiatedTotal = calculateNegotiatedTotal({
+                        negotiatedRate: rate,
+                        remunerationModel: model,
+                        allocationDays,
+                        estimatedHours: sl.estimatedHours
+                      });
 
-                        return (
-                          <div className={`p-4 rounded-xl border transition-all ${
-                            exceedsCeiling
-                              ? 'bg-danger-bg border-danger-border text-danger-text'
-                              : belowReference
-                                ? 'bg-warning-bg border-warning-border text-warning-text'
-                                : 'bg-success-bg border-success-border text-success-text'
-                          }`}>
-                            <div className="flex gap-2.5 items-start">
-                              <Scale className={`w-5 h-5 shrink-0 mt-0.5 ${exceedsCeiling ? 'text-danger-border' : belowReference ? 'text-warning-border' : 'text-success-border'}`} />
-                              <div className="space-y-1">
-                                {exceedsCeiling ? (
-                                  <>
-                                    <h5 className="font-bold text-danger-text text-xs">🚨 Alerta de Exceção de Política (Acima do Teto)</h5>
-                                    <p className="text-[11.5px] text-text-secondary leading-normal">
-                                      A diária proposta excede o teto contratual de <strong>R$ {ceilingValue}</strong> estabelecido para {activeJob.roleNeeded} {activeJob.seniorityNeeded}.
-                                      Para prosseguir, insira uma justificativa técnica robusta abaixo. O RH avaliará manualmente.
-                                    </p>
-                                  </>
-                                ) : belowReference ? (
-                                  <>
-                                    <h5 className="font-bold text-warning-text text-xs">⚠️ Tarifa Abaixo da Referência Padrão</h5>
-                                    <p className="text-[11.5px] text-text-secondary leading-normal">
-                                      O valor está abaixo da referência de mercado homologada (R$ {reference}). 
-                                      Homologação será instantânea. Métrica do teto máximo: R$ {ceilingValue}.
-                                    </p>
-                                  </>
-                                ) : (
-                                  <>
-                                    <h5 className="font-bold text-success-text text-xs">✅ Tarifa Dentro da Política Homologada</h5>
-                                    <p className="text-[11.5px] text-text-secondary leading-normal">
-                                      O valor proposto está perfeitamente alinhado com o acordo comercial (Teto: R$ {ceilingValue} | Referência: R$ {reference}).
-                                      A alocação será consolidada instantaneamente e o job será bloqueado para o profissional.
-                                    </p>
-                                  </>
-                                )}
+                      const savingAmount = negotiatedTotal !== null ? activeJob.budget - negotiatedTotal : 0;
+                      const savingPercentage = negotiatedTotal !== null && activeJob.budget > 0 ? (savingAmount / activeJob.budget) * 100 : 0;
+
+                      const isHoursMissing = model === 'Hora' && !sl.estimatedHours;
+                      const isJustificationMissing = savingAmount < 0 && !sl.notes?.trim();
+                      const isConflictPending = sl.requiresRhApproval;
+                      const isBudgetPending = sl.requiresHeadApproval;
+                      const isButtonDisabled = isHoursMissing || isJustificationMissing || isConflictPending || isBudgetPending;
+
+                      return (
+                        <div key={sl.id} className="border border-border-subtle hover:border-emerald-500/50 p-5 rounded-2xl bg-white space-y-4 flex flex-col justify-between transition-all">
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <strong className="text-sidebar-navy font-bold text-sm">{cand.name}</strong>
+                                <p className="text-[11px] text-text-secondary">{cand.mainRole} ({cand.seniority})</p>
                               </div>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                                isButtonDisabled
+                                  ? 'bg-red-50 text-red-700 border-red-200'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              }`}>
+                                {isButtonDisabled ? 'Bloqueado por Pendências' : 'Pronto para Alocação'}
+                              </span>
                             </div>
+                            
+                            {/* Embedded Financial Summary Card (Compact) */}
+                            <NegotiationFinancialSummary
+                              budget={activeJob.budget}
+                              startDate={activeJob.startDate}
+                              endDate={activeJob.endDate}
+                              negotiatedRate={rate}
+                              remunerationModel={model}
+                              estimatedHours={sl.estimatedHours}
+                              variant="compact"
+                            />
 
-                            {exceedsCeiling && (
-                              <div className="mt-4 pt-3.5 border-t border-danger-border/30">
-                                <label className="font-bold text-danger-text block mb-1 uppercase tracking-wider text-[10px]">Justificativa Técnica ao RH *</label>
-                                <textarea
-                                  rows={3}
-                                  required
-                                  value={justification}
-                                  onChange={(e) => setJustification(e.target.value)}
-                                  placeholder="Explique os motivos técnicos para exceder a política (Ex: Professional com conhecimento especializado requerido pelo cliente, complexidade de cronograma)..."
-                                  className="w-full bg-bg-input border border-danger-border/50 p-2.5 rounded-lg text-xs focus:outline-none focus:border-danger-border text-text-primary placeholder:text-text-muted/70"
-                                />
+                            {/* Warnings & Justifications */}
+                            {isConflictPending && (
+                              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
+                                <div>
+                                  <span className="font-bold block">Aprovação do RH Pendente</span>
+                                  Este profissional possui um conflito de agenda no período deste job. A homologação está bloqueada até que o RH aprove a solicitação de exceção.
+                                </div>
+                              </div>
+                            )}
+
+                            {isBudgetPending && (
+                              <div className="p-3 bg-red-50 dark:bg-red-955/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
+                                <div>
+                                  <span className="font-bold block">Aprovação do Head Pendente</span>
+                                  O valor acordado ultrapassa o teto comercial. A homologação está bloqueada até que o Head do Núcleo aprove a solicitação de exceção.
+                                </div>
+                              </div>
+                            )}
+
+                            {isHoursMissing && (
+                              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
+                                <div>
+                                  <span className="font-bold block">Horas Estimadas Obrigatórias</span>
+                                  Para modelo por hora, você precisa informar a estimativa de horas no Passo 3 antes de confirmar a homologação.
+                                </div>
+                              </div>
+                            )}
+
+                            {savingAmount < 0 && (
+                              <div className="space-y-3">
+                                <div className="p-3 bg-amber-50 dark:bg-amber-955/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-450 flex items-start gap-2 leading-relaxed">
+                                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-650 dark:text-amber-500" />
+                                  <div>
+                                    <span className="font-bold block">Estouro de budget detectado: {formatCurrencyBRL(Math.abs(savingAmount))}</span>
+                                    Esta alocação ultrapassa o budget definido para o job ({Math.abs(Math.round(savingPercentage))}% acima).
+                                  </div>
+                                </div>
+
+                                <div className="text-left">
+                                  <label className="text-[11px] font-bold text-text-secondary block mb-1">
+                                    Justificativa do estouro de budget (Obrigatório) *
+                                  </label>
+                                  <textarea
+                                    disabled={!!activeJob.selectedFreelancerId}
+                                    placeholder="Explique o motivo do teto ultrapassado (ex: profissional sênior com alta aderência técnica)..."
+                                    value={sl.notes || ''}
+                                    onChange={(e) => handleUpdateNegotiation(cand.id, { notes: e.target.value })}
+                                    className="w-full bg-white border border-border-subtle p-2 rounded-lg text-xs focus:outline-none focus:border-action-cyan text-text-primary resize-none"
+                                    rows={2}
+                                  />
+                                </div>
                               </div>
                             )}
                           </div>
-                        );
-                      })()}
 
-                      <div>
-                        <label className="font-bold text-text-primary block mb-1 font-semibold">Escopo e Cronograma Específicos</label>
-                        <textarea
-                          rows={3}
-                          value={scope}
-                          onChange={(e) => setScope(e.target.value)}
-                          placeholder="Detalhes adicionais combinados para a execução da atividade..."
-                          className="w-full bg-bg-input border border-border-strong p-2.5 rounded-lg text-xs focus:outline-none focus:border-action-cyan text-text-primary placeholder:text-text-muted/70"
-                        />
-                      </div>
-
-                      <div className="flex justify-end gap-2.5 pt-3">
-                        <button
-                          type="button"
-                          onClick={() => setNegotiatingFreelancerId('')}
-                          className="bg-bg-surface border border-border-strong hover:bg-bg-hover text-text-secondary font-bold p-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
-                        >
-                          Limpar
-                        </button>
-                        <button
-                          type="submit"
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold p-2.5 px-5 rounded-xl flex items-center gap-1 text-xs shadow-xs transition-colors cursor-pointer"
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          <span>Homologar & Concluir Alocação</span>
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                </form>
-              </div>
-
-              {/* RIGHT SIDEBAR: POLICY TABLE REFERENCE METRICS */}
-              <div className="xl:col-span-5 space-y-4">
-                <div className="bg-bg-panel p-5 rounded-2xl border border-border-subtle space-y-4 text-xs">
-                  <div>
-                    <h4 className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-                      <SlidersHorizontal className="w-4 h-4 text-action-cyan" />
-                      <span>Política Comercial de Referência V3A</span>
-                    </h4>
-                    <p className="text-[10px] text-text-secondary mt-0.5">Tabela referencial homologada comercialmente.</p>
-                  </div>
-
-                  <div className="space-y-3.5 max-h-[400px] overflow-y-auto pr-1">
-                    {db.policies.filter(p => p.role === activeJob.roleNeeded).map(p => {
-                      const isExactSeniority = p.seniority === activeJob.seniorityNeeded;
-                      return (
-                        <div 
-                          key={p.id} 
-                          className={`p-3 rounded-xl border transition-all ${
-                            isExactSeniority 
-                              ? 'bg-action-cyan/10 border-action-cyan ring-1 ring-action-cyan' 
-                              : 'bg-bg-surface border-border-subtle'
-                          }`}
-                        >
-                          <div className="flex justify-between items-center mb-1">
-                            <strong className="text-text-primary font-bold">{p.role}</strong>
-                            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                              isExactSeniority ? 'bg-action-cyan text-[#0F2342]' : 'bg-bg-muted text-text-secondary border border-border-subtle'
-                            }`}>
-                              {p.seniority}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-[11px] text-text-secondary pt-2 border-t border-dashed border-border-subtle mt-1.5">
-                            <div>
-                              <span>Média Referência</span>
-                              <div className="font-bold text-text-primary text-xs">R$ {p.referenceValue}</div>
-                            </div>
-                            <div>
-                              <span>Teto Contratual</span>
-                              <div className="font-bold text-danger-text text-xs">R$ {p.ceilingValue}</div>
-                            </div>
+                          <div className="pt-3 border-t border-border-subtle flex justify-end">
+                            <button
+                              type="button"
+                              disabled={isButtonDisabled}
+                              onClick={() => handleFinalAllocation(cand.id, sl.id, rate, model, sl.notes || '')}
+                              className={`font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                isButtonDisabled 
+                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60' 
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              }`}
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Confirmar Alocação</span>
+                            </button>
                           </div>
                         </div>
                       );
-                    })}
-
-                    {db.policies.filter(p => p.role === activeJob.roleNeeded).length === 0 && (
-                      <div className="bg-bg-surface p-4 rounded-xl border border-border-subtle text-center italic text-text-secondary">
-                        Nenhuma diretriz de política cadastrada para {activeJob.roleNeeded}.
-                      </div>
-                    )}
-                  </div>
+                    });
+                  })()}
                 </div>
               </div>
-
             </div>
           )}
 
           <div className="flex justify-start pt-4 border-t border-border-subtle">
             <button
-              onClick={() => handleNavigateStep(2)}
-              className="bg-bg-surface border border-border-strong hover:bg-bg-hover text-text-secondary font-bold p-3 px-6 rounded-xl text-xs transition-all cursor-pointer"
+              onClick={() => handleNavigateStep(3)}
+              className="bg-white border border-border-strong hover:bg-slate-50 text-text-secondary font-bold p-3 px-6 rounded-xl text-xs transition-all cursor-pointer"
             >
-              Voltar para Composição da Shortlist
+              Voltar para Negociação
             </button>
           </div>
+        </div>
+      )}      {/* Custom Approval Request Modal */}
+      {approvalModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs font-sans">
+          <div className="bg-[#0b1329] border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-[#0e172e]">
+              <div>
+                <h3 className="font-extrabold text-white text-sm">
+                  {approvalModal.type === 'schedule_conflict' 
+                    ? 'Solicitar aprovação RH' 
+                    : 'Solicitar aprovação Head'}
+                </h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                  Fluxo de Exceção Operacional
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApprovalModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition cursor-pointer"
+                disabled={approvalModal.loading}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 flex flex-col gap-4 text-xs">
+              <p className="text-slate-300 leading-relaxed">
+                {approvalModal.type === 'schedule_conflict'
+                  ? 'Este freelancer possui conflito de agenda no período do job. Informe a justificativa para solicitar uma exceção ao RH.'
+                  : 'Este freelancer está com valor acordado acima do teto da política comercial. Informe a justificativa para solicitar uma exceção ao Head.'}
+              </p>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+                  Justificativa da solicitação <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={approvalModal.reason}
+                  onChange={(e) => setApprovalModal(prev => ({ ...prev, reason: e.target.value, error: null }))}
+                  placeholder="Descreva detalhadamente a justificativa técnica para esta contratação excepcional (mínimo 10 caracteres)..."
+                  className="w-full h-32 px-3 py-2 text-xs bg-[#121c38] border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-action-cyan placeholder-slate-500 resize-none transition-all"
+                  maxLength={1000}
+                  disabled={approvalModal.loading}
+                />
+                <div className="flex justify-between items-center text-[10px] text-slate-400 font-medium px-1">
+                  <span>Mínimo 10, máx. 1000 caracteres</span>
+                  <span>{approvalModal.reason.length}/1000</span>
+                </div>
+              </div>
+
+              {approvalModal.error && (
+                <div className="p-3 rounded-lg bg-red-950/40 border border-red-800/80 text-[11px] text-red-400 font-semibold">
+                  ⚠️ {approvalModal.error}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-[#0e172e] border-t border-slate-800 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setApprovalModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
+                disabled={approvalModal.loading}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitApprovalRequest}
+                className="px-4 py-2 text-xs font-bold bg-[#00BCD4] hover:bg-[#00BCD4]/95 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={approvalModal.loading}
+              >
+                {approvalModal.loading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  'Enviar solicitação'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Alert UI */}
+      {toast && (
+        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 p-4 px-5 rounded-2xl shadow-xl border text-white animate-fade-in
+          ${toast.type === 'success' ? 'bg-[#0b1329] border-[#00BCD4] text-white' : 'bg-red-900 border-red-650'}`}>
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 
+            ${toast.type === 'success' ? 'bg-[#00BCD4]/15 text-[#00BCD4]' : 'bg-white/10 text-white'}`}>
+            <CheckCircle className="w-4 h-4" />
+          </div>
+          <p className="text-xs font-semibold">{toast.message}</p>
+          <button onClick={() => setToast(null)} className="opacity-70 hover:opacity-100 p-1 cursor-pointer">
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

@@ -65,20 +65,23 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
   const myEvaluations = db.evaluations.filter(ev => ev.freelancerId === f.id);
 
   // Compute average of specific evaluation sub-indices if any evaluations exist
-  const getSubIndexAverage = (key: 'technicalQuality' | 'deadline' | 'briefingAdherence' | 'communication' | 'autonomy' | 'behavior') => {
+  const getSubIndexAverage = (key: 'technicalQuality' | 'deadline' | 'briefingAdherence' | 'communication' | 'autonomy' | 'behavior' | 'collaboration' | 'flexibility' | 'costBenefit') => {
     if (myEvaluations.length === 0) return 0;
-    const sum = myEvaluations.reduce((s, ev) => s + ev[key], 0);
+    const sum = myEvaluations.reduce((s, ev) => s + (Number(ev[key]) || 0), 0);
     return Number((sum / myEvaluations.length).toFixed(1));
   };
 
   const getWeightPercentage = (key: string) => {
     switch (key) {
-      case 'técnica': return '30%';
-      case 'prazo': return '20%';
+      case 'técnica': return '25%';
       case 'briefing': return '15%';
-      case 'comunicação': return '15%';
+      case 'prazo': return '15%';
       case 'autonomia': return '10%';
+      case 'comunicação': return '10%';
       case 'postura': return '10%';
+      case 'colaboração': return '5%';
+      case 'flexibilidade': return '5%';
+      case 'custo_beneficio': return '5%';
       default: return '0%';
     }
   };
@@ -153,13 +156,35 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
             </div>
           </div>
 
-          {/* Rating Badge */}
-          <div className="flex items-center gap-4 border-l border-border-subtle pl-0 md:pl-6">
-            <div>
-              <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider">Score Geral</span>
-              <div className="mt-0.5">
-                <ScoreStars score={f.averageScore} size="md" showNumber={true} evalCount={myEvaluations.length} />
-              </div>
+          {/* Score & Operational Governance Badges */}
+          <div className="flex flex-wrap items-center gap-4 border-l border-border-subtle pl-0 md:pl-6 text-xs">
+            <div className="text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 px-3.5 rounded-xl min-w-[80px] shadow-3xs">
+              <span className="text-[9px] text-text-secondary block font-bold uppercase tracking-wider">Score</span>
+              <span className="text-lg font-black text-text-primary">
+                {f.consolidatedScore !== undefined && f.consolidatedScore > 0 
+                  ? f.consolidatedScore.toFixed(1) 
+                  : (f.averageScore > 5 ? f.averageScore.toFixed(1) : (f.averageScore * 20).toFixed(1))}
+              </span>
+              <span className="text-[9px] text-slate-405 block font-bold">/ 100</span>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[9px] text-text-secondary block font-bold uppercase tracking-wider">Status Operacional</span>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border
+                ${(f.operationalStatus || 'Elegível') === 'Preferencial' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Recomendado' ? 'bg-teal-500/10 text-teal-500 border-teal-500/20' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Elegível' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Em observação' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Restrito' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Não recomendado' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : ''}
+              `}>
+                {f.operationalStatus || 'Elegível'}
+              </span>
+              {f.recommendationRate !== undefined && f.recommendationRate > 0 && (
+                <span className="text-[9px] text-text-secondary block font-bold uppercase">
+                  👍 {f.recommendationRate.toFixed(0)}% Recomendação
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -435,46 +460,67 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
             ) : (
               <div className="space-y-6">
                 {/* Visual scorecard grids */}
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                  {/* index 1 */}
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-9 gap-3">
+                  {/* index 1: Técnica */}
                   <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
-                    <span className="text-[10px] text-text-secondary block font-bold uppercase">Técnica ({getWeightPercentage('técnica')})</span>
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Técnica ({getWeightPercentage('técnica')})</span>
                     <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('technicalQuality')}</span>
                     <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
                   </div>
 
-                  {/* index 2 */}
+                  {/* index 2: Briefing */}
                   <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
-                    <span className="text-[10px] text-text-secondary block font-bold uppercase">Prazo ({getWeightPercentage('prazo')})</span>
-                    <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('deadline')}</span>
-                    <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
-                  </div>
-
-                  {/* index 3 */}
-                  <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
-                    <span className="text-[10px] text-text-secondary block font-bold uppercase">Briefing ({getWeightPercentage('briefing')})</span>
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Briefing ({getWeightPercentage('briefing')})</span>
                     <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('briefingAdherence')}</span>
                     <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
                   </div>
 
-                  {/* index 4 */}
+                  {/* index 3: Prazo */}
                   <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
-                    <span className="text-[10px] text-text-secondary block font-bold uppercase">Comunicação ({getWeightPercentage('comunicação')})</span>
-                    <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('communication')}</span>
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Prazo ({getWeightPercentage('prazo')})</span>
+                    <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('deadline')}</span>
                     <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
                   </div>
 
-                  {/* index 5 */}
+                  {/* index 4: Autonomia */}
                   <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
-                    <span className="text-[10px] text-text-secondary block font-bold uppercase">Autonomia ({getWeightPercentage('autonomia')})</span>
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Autonomia ({getWeightPercentage('autonomia')})</span>
                     <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('autonomy')}</span>
                     <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
                   </div>
 
-                  {/* index 6 */}
+                  {/* index 5: Comunicação */}
                   <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
-                    <span className="text-[10px] text-text-secondary block font-bold uppercase">Postura ({getWeightPercentage('postura')})</span>
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Comunicação ({getWeightPercentage('comunicação')})</span>
+                    <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('communication')}</span>
+                    <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
+                  </div>
+
+                  {/* index 6: Postura */}
+                  <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Postura ({getWeightPercentage('postura')})</span>
                     <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('behavior')}</span>
+                    <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
+                  </div>
+
+                  {/* index 7: Colaboração */}
+                  <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Colab. ({getWeightPercentage('colaboração')})</span>
+                    <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('collaboration')}</span>
+                    <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
+                  </div>
+
+                  {/* index 8: Flexibilidade */}
+                  <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Flex. ({getWeightPercentage('flexibilidade')})</span>
+                    <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('flexibility')}</span>
+                    <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
+                  </div>
+
+                  {/* index 9: Custo-benefício */}
+                  <div className="bg-surface p-3 rounded-xl border border-border-subtle text-center">
+                    <span className="text-[10px] text-text-secondary block font-bold uppercase truncate">Custo-B. ({getWeightPercentage('custo_beneficio')})</span>
+                    <span className="text-xl font-bold text-text-primary block mt-1">{getSubIndexAverage('costBenefit')}</span>
                     <div className="flex justify-center text-status-warning text-[10px] mt-0.5">★★★★★</div>
                   </div>
                 </div>
