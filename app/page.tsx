@@ -74,6 +74,7 @@ import UserManagement from '@/components/UserManagement';
 import SugestoesPanel from '@/components/SugestoesPanel';
 import PerfilUsuario from '@/components/PerfilUsuario';
 import BrandLogo from '@/components/BrandLogo';
+import SidebarBrand from '@/components/SidebarBrand';
 import PublicLinksPanel from '@/components/PublicLinksPanel';
 import PublicSubmissionsPanel from '@/components/PublicSubmissionsPanel';
 
@@ -1539,20 +1540,13 @@ export default function Home() {
         `}
       >
         {/* Brand header */}
-        <div className={`p-4 border-b border-[#14233c] flex items-center bg-[#081528] ${isSidebarCollapsed ? 'flex-col gap-3 justify-center' : 'justify-between'}`}>
-          <div className="flex items-center gap-3">
-            <BrandLogo variant={isSidebarCollapsed ? "compact" : "sidebar"} className="shrink-0" />
-            {!isSidebarCollapsed && (
-              <div>
-                <h1 className="text-sm font-black tracking-wider text-white uppercase leading-tight select-none">
-                  Freela <span className="text-action-cyan">Hub</span>
-                </h1>
-                <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider select-none mt-0.5">
-                  Membro V3A Agência
-                </p>
-              </div>
-            )}
-          </div>
+        <div className={`
+          border-b border-[#14233c] flex bg-[#081528] transition-[height,padding] duration-300 ease-in-out
+          ${isSidebarCollapsed 
+            ? 'h-[100px] flex-col justify-center items-center gap-3 py-4 px-2' 
+            : 'h-[120px] items-center justify-between px-6 py-5'}
+        `}>
+          <SidebarBrand collapsed={isSidebarCollapsed} />
           
           <div className={`flex items-center gap-1.5 ${isSidebarCollapsed ? 'w-full justify-center' : ''}`}>
             {/* Collapse button — desktop only */}
