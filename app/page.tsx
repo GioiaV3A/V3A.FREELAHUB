@@ -680,7 +680,7 @@ export default function Home() {
       // 1. Sync inserts
       for (const item of nextState) {
         if (!currentMap.has(item.id)) {
-          if (isUuid(item.id)) {
+          if (!isUuid(item.id)) {
             onInsert(item).catch(err => console.error('Failed to sync insert:', err));
           }
         }
@@ -713,6 +713,7 @@ export default function Home() {
 
   // DB Sync Handlers for each model
   const handleFreelancerInsert = async (f: Freelancer) => {
+    if (isUuid(f.id)) return;
     const funcId = await getFunctionIdByName(f.mainRole);
     const { data: created, error } = await supabase
       .from('freelancers')
@@ -792,6 +793,7 @@ export default function Home() {
   };
 
   const handleJobInsert = async (j: Job) => {
+    if (isUuid(j.id)) return;
     const urgencyDb = mapUrgencyToDB(j.urgency);
     const statusDb = mapJobStatusToDB(j.status);
     
@@ -887,7 +889,7 @@ export default function Home() {
   };
 
   const handleShortlistInsert = async (s: Shortlist) => {
-    if (!isUuid(s.id) || !isUuid(s.jobId) || !isUuid(s.freelancerId)) return;
+    if (isUuid(s.id) || !isUuid(s.jobId) || !isUuid(s.freelancerId)) return;
     const { data: reqData } = await supabase
       .from('job_freelancer_requests')
       .select('job_id')
@@ -977,6 +979,7 @@ export default function Home() {
   };
 
   const handleNegotiationInsert = async (n: Negotiation) => {
+    if (isUuid(n.id)) return;
     const { data: reqData } = await supabase
       .from('job_freelancer_requests')
       .select('job_id, is_above_policy')
@@ -1033,7 +1036,7 @@ export default function Home() {
   };
 
   const handleAllocationInsert = async (a: Allocation) => {
-    if (!isUuid(a.id) || !isUuid(a.jobId) || !isUuid(a.freelancerId)) return;
+    if (isUuid(a.id) || !isUuid(a.jobId) || !isUuid(a.freelancerId)) return;
     const { data: reqData } = await supabase
       .from('job_freelancer_requests')
       .select('job_id, jobs(nucleo_id)')
@@ -1107,6 +1110,7 @@ export default function Home() {
   };
 
   const handleEvaluationInsert = async (e: Evaluation) => {
+    if (isUuid(e.id)) return;
     const { data: reqData } = await supabase
       .from('job_freelancer_requests')
       .select('job_id, jobs(nucleo_id)')
@@ -1186,6 +1190,7 @@ export default function Home() {
   };
 
   const handleSuggestionInsert = async (s: Suggestion) => {
+    if (isUuid(s.id)) return;
     const { data: created, error } = await supabase
       .from('suggestions')
       .insert({
@@ -1259,6 +1264,7 @@ export default function Home() {
   };
 
   const handlePolicyInsert = async (p: ValuePolicy) => {
+    if (isUuid(p.id)) return;
     const funcId = await getFunctionIdByName(p.role);
     const { data: created, error } = await supabase
       .from('rate_policies')

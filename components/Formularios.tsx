@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import { DatabaseProps } from '@/app/page';
-import { getRoleLabel } from '@/lib/dbMapper';
+import { getRoleLabel, mapSeniorityToDB, mapFreelancerStatusToDB, mapAvailabilityToDB, mapFreelancerToUI } from '@/lib/dbMapper';
 import { Sparkles, Save, HelpCircle, Briefcase, Plus, Scale, Building } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 // Form 1: Cadastrar Freelancer (Master & RH)
 export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () => void }) {
@@ -19,7 +20,7 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
   const [referenceValue, setReferenceValue] = useState(500);
   const [observations, setObservations] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name || !email || !whatsapp || !city || !state) {
@@ -27,29 +28,97 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
       return;
     }
 
-    const newFreela = {
-      id: `free-${Date.now()}`,
-      name,
-      email,
-      whatsapp,
-      city,
-      state,
-      mainRole,
-      secondaryRoles: [],
-      seniority,
-      industries: industries ? industries.split(',').map(s => s.trim()) : ['Bebidas'],
-      portfolioUrl,
-      status: 'Elegível' as const,
-      availability: 'Imediata' as const,
-      referenceValue: Number(referenceValue),
-      averageScore: 0,
-      observations: observations || 'Onboarding inicial efetuado no banco.',
-      experienceWithV3A: false,
-    };
+    try {
+      // 1. Get or create function ID
+      const { data: funcData } = await supabase
+        .from('freela_functions')
+        .select('id')
+        .eq('name', mainRole)
+        .maybeSingle();
 
-    db.setFreelancers(prev => [newFreela, ...prev]);
-    alert(`Success: Freelancer "${name}" cadastrado com sucesso!`);
-    db.setActiveTab('Banco de Freelancers');
+      let funcId = funcData?.id;
+      if (!funcId) {
+        const { data: newFunc } = await supabase
+          .from('freela_functions')
+          .insert({ name: mainRole })
+          .select('id')
+          .single();
+        funcId = newFunc?.id;
+      }
+
+      // 2. Insert freelancer in database
+      const { data: created, error } = await supabase
+        .from('freelancers')
+        .insert({
+          full_name: name,
+          email: email.trim().toLowerCase(),
+          whatsapp: whatsapp.trim(),
+          city,
+          state,
+          main_function_id: funcId,
+          seniority: mapSeniorityToDB(seniority),
+          portfolio_url: portfolioUrl,
+          status: mapFreelancerStatusToDB('Elegível'),
+          availability: mapAvailabilityToDB('Imediata'),
+          reference_daily_rate: Number(referenceValue),
+          observations: observations || 'Onboarding inicial efetuado no banco.',
+        })
+        .select('*, main_function:freela_functions(name), freelancer_industries(industry:industries(name))')
+        .single();
+
+      if (error || !created) {
+        throw error || new Error('Erro ao criar freelancer.');
+      }
+
+      // 3. Insert industries
+      const industryList = industries ? industries.split(',').map(s => s.trim()) : ['Bebidas'];
+      for (const indName of industryList) {
+        const { data: indData } = await supabase
+          .from('industries')
+          .select('id')
+          .eq('name', indName)
+          .maybeSingle();
+
+        let indId = indData?.id;
+        if (!indId) {
+          const { data: newInd } = await supabase
+            .from('industries')
+            .insert({ name: indName })
+            .select('id')
+            .single();
+          indId = newInd?.id;
+        }
+
+        if (indId) {
+          await supabase
+            .from('freelancer_industries')
+            .insert({ freelancer_id: created.id, industry_id: indId });
+        }
+      }
+
+      // 4. Fetch the final record with industries updated
+      const { data: finalCreated } = await supabase
+        .from('freelancers')
+        .select('*, main_function:freela_functions(name), freelancer_industries(industry:industries(name))')
+        .eq('id', created.id)
+        .single();
+
+      if (finalCreated) {
+        const mappedFreela = mapFreelancerToUI(finalCreated);
+        
+        if (db.setFreelancersState) {
+          db.setFreelancersState(prev => [mappedFreela, ...prev]);
+        } else {
+          db.setFreelancers(prev => [mappedFreela, ...prev]);
+        }
+
+        alert(`Success: Freelancer "${name}" cadastrado com sucesso!`);
+        db.setActiveTab('Banco de Freelancers');
+      }
+    } catch (err: any) {
+      console.error('Error inserting manual freelancer:', err);
+      alert(`Erro ao cadastrar freelancer: ${err.message || err}`);
+    }
   };
 
   return (

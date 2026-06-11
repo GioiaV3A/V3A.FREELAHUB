@@ -8,6 +8,10 @@ function computeHash(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+const isUuid = (id: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+};
+
 /**
  * Verifies if the requester has administrative permissions (MASTER or RH).
  */
@@ -49,8 +53,41 @@ export async function generatePublicFormLinkAction(
     const adminClient = getSupabaseAdmin();
     const requester = await verifyAdminRequester(adminClient, accessToken);
 
-    if (payload.type === 'update_freelancer' && !payload.freelancerId) {
-      return { success: false, error: 'Freelancer é obrigatório para links de atualização.' };
+    if (payload.type === 'update_freelancer') {
+      if (!payload.freelancerId) {
+        return { success: false, error: 'Freelancer é obrigatório para links de atualização.' };
+      }
+      if (!isUuid(payload.freelancerId)) {
+        console.error('[Technical Error] generatePublicFormLinkAction: invalid freelancerId UUID format:', {
+          freelancerId: payload.freelancerId,
+          requester: requester.id,
+          timestamp: new Date().toISOString()
+        });
+        return { success: false, error: 'ID inválido do freelancer. Selecione novamente a partir da base oficial.' };
+      }
+
+      const { data: freelaExists, error: freelaErr } = await adminClient
+        .from('freelancers')
+        .select('id, full_name')
+        .eq('id', payload.freelancerId)
+        .maybeSingle();
+
+      if (freelaErr) {
+        console.error('[Technical Error] generatePublicFormLinkAction: failed to check freelancer existence:', {
+          freelancerId: payload.freelancerId,
+          error: freelaErr,
+          timestamp: new Date().toISOString()
+        });
+        return { success: false, error: 'Erro ao verificar existência do freelancer no banco.' };
+      }
+
+      if (!freelaExists) {
+        console.error('[Technical Error] generatePublicFormLinkAction: freelancer does not exist in database:', {
+          freelancerId: payload.freelancerId,
+          timestamp: new Date().toISOString()
+        });
+        return { success: false, error: 'Freelancer selecionado não existe na base de dados.' };
+      }
     }
 
     // Generate random secure token

@@ -28,6 +28,10 @@ import {
   Trash,
 } from 'lucide-react';
 
+const isValidUUID = (id: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+};
+
 interface PublicLinksPanelProps {
   db: any; // Allow full access to db tabs/setters
 }
@@ -149,9 +153,26 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    if (linkFormType === 'update_freelancer' && !selectedFreelaId) {
-      setErrorMsg('Selecione um freelancer para gerar o link de atualização.');
-      return;
+    if (linkFormType === 'update_freelancer') {
+      if (!selectedFreelaId) {
+        setErrorMsg('Selecione um freelancer para gerar o link de atualização.');
+        return;
+      }
+      if (!isValidUUID(selectedFreelaId)) {
+        const targetFreela = db.freelancers?.find((f: any) => f.id === selectedFreelaId);
+        const freelaName = targetFreela ? targetFreela.name : 'Desconhecido';
+        const userEmail = db.currentUser?.email || 'Desconhecido';
+        
+        console.error('[Technical Error] Invalid UUID for public form update link generation:', {
+          selectedFreelaId,
+          freelancerName: freelaName,
+          user: userEmail,
+          timestamp: new Date().toISOString()
+        });
+        
+        setErrorMsg('ID inválido do freelancer. Atualize a página e selecione novamente o freelancer a partir da base oficial.');
+        return;
+      }
     }
 
     setIsActionLoading(true);
