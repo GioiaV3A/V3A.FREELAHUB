@@ -701,7 +701,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const handleSelectJob = (jobId: string) => {
     setSelectedJobIdLocal(jobId);
     db.setSelectedJobId(jobId);
-    setActiveStep(2); // Auto advance to Step 2
+    
+    const job = db.jobs.find(j => j.id === jobId);
+    if (job && (job.status === 'Bookado' || job.selectedFreelancerId)) {
+      setActiveStep(4);
+    } else {
+      setActiveStep(2); // Auto advance to Step 2
+    }
   };
 
   // Clear Selected Job
@@ -786,6 +792,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
   // Step navigation helper with validation checks
   const handleNavigateStep = (step: 1 | 2 | 3 | 4) => {
+    if (activeJob?.selectedFreelancerId && (step === 2 || step === 3)) {
+      alert('⚠️ Bloqueio de Fluxo:\nEste job já está bookado/alocado. A shortlist e negociação estão fechadas.');
+      return;
+    }
+
     if (step === 1) {
       setActiveStep(1);
       return;
@@ -995,82 +1006,36 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const handleFinalAllocation = async (freelancerId: string, slId: string, rate: number, model: string, scopeText: string) => {
     if (!activeJob) return;
 
-    const slCandidate = db.shortlists.find(sl => sl.id === slId);
+    try {
+      const { data, error } = await supabase.rpc('confirm_allocation', {
+        p_request_id: activeJob.id,
+        p_freelancer_id: freelancerId,
+        p_user_id: db.currentUser.id,
+        p_negotiated_rate: rate,
+        p_remuneration_model: model,
+        p_scope: scopeText || 'Alocação homologada pelo núcleo'
+      });
 
-    // 1. Create Allocation
-    const nextNumString = String(db.allocations.length + 1).padStart(4, '0');
-    const mockAllocCode = `ALOC-2026-${nextNumString}`;
+      if (error) throw error;
 
-    const newAlloc = {
-      id: generateUniqueId('alloc'),
-      allocationCode: mockAllocCode,
-      jobId: activeJob.id,
-      freelancerId: freelancerId,
-      nucleoId: activeJob.nucleoId,
-      startDate: activeJob.startDate,
-      endDate: activeJob.endDate,
-      approvedValue: rate,
-      status: 'Pendente' as any,
-      negotiatedTotal: slCandidate?.negotiatedTotal,
-      budgetSavingAmount: slCandidate?.budgetSavingAmount,
-      budgetSavingPercentage: slCandidate?.budgetSavingPercentage,
-      dailyBudgetReference: slCandidate?.dailyBudgetReference,
-      dailySavingAmount: slCandidate?.dailySavingAmount,
-      budgetDeltaStatus: slCandidate?.budgetDeltaStatus,
-      estimatedHours: slCandidate?.estimatedHours,
-    };
-
-    db.setAllocations(prev => [...prev, newAlloc]);
-
-    // 2. Update candidate selected_for_allocation
-    db.setShortlists(prev => prev.map(sl => {
-      if (sl.id === slId) {
-        return { 
-          ...sl, 
-          selectedForAllocation: true,
-          candidateStatus: 'Aceitou',
-          negotiationStatus: 'Aceitou'
-        };
+      const result = typeof data === 'string' ? JSON.parse(data) : data;
+      if (!result.success) {
+        alert(`❌ Erro ao homologar alocação: ${result.error}`);
+        return;
       }
-      return sl;
-    }));
 
-    // 3. Update job request to Bookado and lock the freelancer
-    db.setJobs(prev => prev.map(j => {
-      if (j.id === activeJob.id) {
-        return {
-          ...j,
-          status: 'Bookado',
-          selectedFreelancerId: freelancerId,
-          closedAt: new Date().toISOString(),
-          closedBy: db.currentUser.id,
-          closureReason: 'Alocação homologada pelo núcleo'
-        };
-      }
-      return j;
-    }));
-
-    // 4. Create Negotiation record for history tracking
-    const newNeg = {
-      id: generateUniqueId('neg'),
-      jobId: activeJob.id,
-      freelancerId: freelancerId,
-      negotiatedValue: rate,
-      billingType: model as any,
-      scope: scopeText,
-      status: 'Aprovado pelo RH' as any,
-    };
-    db.setNegotiations(prev => [newNeg, ...prev]);
-
-    alert(`✅ Alocação homologada com sucesso!\nO profissional foi alocado para o job e a vaga foi bookada.`);
-    
-    setTimeout(async () => {
+      alert(`✅ Alocação homologada com sucesso!\nO profissional foi alocado para o job e a vaga foi bookada.`);
+      
       await db.reloadDatabase();
-    }, 1000);
+      setActiveStep(4);
+    } catch (err: any) {
+      console.error('[confirmAllocation] failed:', err);
+      alert(`❌ Erro ao homologar alocação: ${err.message || err}`);
+    }
   };
 
   // Reopen Job allocation and deselect professional (MASTER / RH only)
-  const handleReopenJob = () => {
+  const handleReopenJob = async () => {
     if (!activeJob) return;
 
     if (db.currentUser.profile !== 'MASTER' && db.currentUser.profile !== 'RH') {
@@ -1083,34 +1048,35 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       `Você está prestes a reabrir esta vaga e cancelar a alocação de "${currentBookedFreela?.name}".\n\nInsira a justificativa técnica obrigatória:`
     );
 
-    if (reasonInput === null) return; // Prompt cancelled
+    if (reasonInput === null) return;
     if (!reasonInput.trim()) {
       alert('⚠️ Justificativa técnica é obrigatória para cancelar a alocação.');
       return;
     }
 
-    // Update job columns to revert booking
-    db.setJobs(prev => prev.map(j => {
-      if (j.id === activeJob.id) {
-        return {
-          ...j,
-          status: 'Em shortlist',
-          selectedFreelancerId: null,
-          closedAt: null,
-          closedBy: null,
-          closureReason: `Alocação cancelada por ${db.currentUser.name}. Justificativa: ${reasonInput}`
-        };
+    try {
+      const { data, error } = await supabase.rpc('reopen_job_allocation', {
+        p_request_id: activeJob.id,
+        p_user_id: db.currentUser.id,
+        p_reason: `Alocação cancelada por ${db.currentUser.name}. Justificativa: ${reasonInput}`
+      });
+
+      if (error) throw error;
+
+      const result = typeof data === 'string' ? JSON.parse(data) : data;
+      if (!result.success) {
+        alert(`❌ Erro ao reabrir vaga: ${result.error}`);
+        return;
       }
-      return j;
-    }));
 
-    // Inactivate or delete the allocation
-    db.setAllocations(prev => prev.filter(alloc => !(alloc.jobId === activeJob.id && alloc.freelancerId === activeJob.selectedFreelancerId)));
-    // Inactivate or delete the payment codes
-    db.setPaymentCodes(prev => prev.filter(pc => !(pc.jobId === activeJob.id && pc.freelancerId === activeJob.selectedFreelancerId)));
-
-    alert(`✅ Sucesso!\nAlocação revogada. Oportunidade reaberta e retornada para a fase de shortlist.`);
-    setActiveStep(2);
+      alert(`✅ Sucesso!\nAlocação revogada. Oportunidade reaberta e retornada para a fase de shortlist.`);
+      
+      await db.reloadDatabase();
+      setActiveStep(2);
+    } catch (err: any) {
+      console.error('[reopenJob] failed:', err);
+      alert(`❌ Erro ao reabrir vaga: ${err.message || err}`);
+    }
   };
 
   // --- STEP 3: COMPARISON GRID SORTING LOGIC ---
@@ -1573,7 +1539,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                     : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy'
                                 }`}
                               >
-                                {isSelected ? 'Selecionado' : 'Selecionar'}
+                                {isSelected ? 'Selecionado' : (job.status === 'Bookado' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
                               </button>
                             </td>
                           </tr>
@@ -1694,7 +1660,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy'
                           }`}
                         >
-                          {isSelected ? 'Selecionado' : 'Selecionar'}
+                          {isSelected ? 'Selecionado' : (job.status === 'Bookado' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
                         </button>
                       </div>
                     </div>
@@ -1704,15 +1670,25 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             </div>
           )}
 
-          {selectedJobIdLocal && (
+          {selectedJobIdLocal && activeJob && (
             <div className="flex justify-end pt-4">
-              <button
-                onClick={() => handleNavigateStep(2)}
-                className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
-              >
-                <span>Avançar para Shortlist</span>
-                <ArrowRight className="w-4 h-4 text-action-cyan" />
-              </button>
+              {activeJob.selectedFreelancerId ? (
+                <button
+                  onClick={() => handleNavigateStep(4)}
+                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                >
+                  <span>Avançar para Alocação</span>
+                  <ArrowRight className="w-4 h-4 text-action-cyan" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleNavigateStep(2)}
+                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                >
+                  <span>Avançar para Shortlist</span>
+                  <ArrowRight className="w-4 h-4 text-action-cyan" />
+                </button>
+              )}
             </div>
           )}
         </div>

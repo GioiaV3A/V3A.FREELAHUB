@@ -43,6 +43,7 @@ import {
   mapAvailabilityToDB,
   mapJobStatusToDB,
   mapCandidateStatusToDB,
+  mapCandidateStatusToDBEnum,
   mapBillingTypeToDB,
   mapAllocationStatusToDB,
   mapCandidateStatusToUI,
@@ -903,7 +904,7 @@ export default function Home() {
           job_id: reqData.job_id,
           request_id: s.jobId,
           freelancer_id: s.freelancerId,
-          candidate_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
+          candidate_status: mapCandidateStatusToDBEnum(s.negotiationStatus || s.candidateStatus),
           notes: s.notes || null,
           negotiation_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
           negotiated_rate: s.negotiatedRate || null,
@@ -943,7 +944,7 @@ export default function Home() {
     await supabase
       .from('shortlist_candidates')
       .update({
-        candidate_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
+        candidate_status: mapCandidateStatusToDBEnum(s.negotiationStatus || s.candidateStatus),
         notes: s.notes || null,
         negotiation_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
         negotiated_rate: s.negotiatedRate || null,

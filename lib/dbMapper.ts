@@ -131,19 +131,19 @@ export function mapJobStatusToUI(status: string | null): Job['status'] {
 
 export function mapJobStatusToDB(status: string): string {
   switch (status) {
-    case 'Oportunidade criada': return 'opportunity_created';
-    case 'Em shortlist': return 'shortlist';
-    case 'Em negociação': return 'negotiation';
-    case 'Pendente aprovação': return 'pending_approval';
-    case 'Alocação pronta': return 'allocation_ready';
-    case 'Bookado': return 'booked';
-    case 'Entregue': return 'delivered';
-    case 'Concluído': return 'completed';
-    case 'Liberado para pagamento': return 'released_for_payment';
-    case 'Pago': return 'paid';
-    case 'Fechado': return 'closed';
-    case 'Cancelado': return 'cancelled';
-    default: return 'opportunity_created';
+    case 'Oportunidade criada': return 'oportunidade_criada';
+    case 'Em shortlist': return 'em_shortlist';
+    case 'Em negociação': return 'em_negociacao';
+    case 'Pendente aprovação': return 'aguardando_rh';
+    case 'Alocação pronta': return 'oportunidade_criada';
+    case 'Bookado': return 'bookado';
+    case 'Entregue': return 'em_andamento';
+    case 'Concluído': return 'concluido';
+    case 'Liberado para pagamento': return 'concluido';
+    case 'Pago': return 'concluido';
+    case 'Fechado': return 'encerrado';
+    case 'Cancelado': return 'cancelado';
+    default: return 'oportunidade_criada';
   }
 }
 
@@ -194,6 +194,41 @@ export function mapCandidateStatusToDB(status: string): string {
     case 'Aprovado para alocação': return 'aprovado_para_alocacao';
     case 'Selecionado para alocação': return 'selecionado_para_alocacao';
     default: return 'shortlisted';
+  }
+}
+
+export function mapCandidateStatusToDBEnum(status: string): 'selecionado' | 'em_negociacao' | 'indisponivel' | 'valor_fora_politica' | 'aprovado_rh' | 'rejeitado' {
+  switch (status) {
+    case 'Selecionado':
+    case 'shortlisted':
+      return 'selecionado';
+    case 'Em negociação':
+    case 'em_negociacao':
+    case 'Aguardando retorno':
+    case 'aguardando_retorno':
+    case 'Pendente aprovação RH':
+    case 'pendente_aprovacao_rh':
+    case 'Pendente aprovação Head':
+    case 'pendente_aprovacao_head':
+      return 'em_negociacao';
+    case 'Valor fora da política':
+    case 'valor_fora_politica':
+      return 'valor_fora_politica';
+    case 'Aceitou':
+    case 'aceitou':
+    case 'Aprovado para alocação':
+    case 'aprovado_para_alocacao':
+    case 'Selecionado para alocação':
+    case 'selecionado_para_alocacao':
+      return 'aprovado_rh';
+    case 'Não aceitou':
+    case 'nao_aceitou':
+      return 'rejeitado';
+    case 'Bloqueado por conflito de agenda':
+    case 'bloqueado_conflito_agenda':
+      return 'indisponivel';
+    default:
+      return 'selecionado';
   }
 }
 

@@ -103,3 +103,56 @@ export function getBudgetDeltaStatus({
   if (saving === 0) return 'neutral';
   return 'over_budget';
 }
+
+export function parseBrazilianDateToISODate(value: string | null | undefined): string {
+  if (!value) return '';
+  const parts = value.split('/');
+  if (parts.length === 3) {
+    const day = parts[0].padStart(2, '0');
+    const month = parts[1].padStart(2, '0');
+    const year = parts[2];
+    return `${year}-${month}-${day}`;
+  }
+  return value;
+}
+
+export function formatISODateToBR(value: string | null | undefined): string {
+  if (!value) return '';
+  const parts = value.split('-');
+  if (parts.length === 3) {
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    return `${day}/${month}/${year}`;
+  }
+  return value;
+}
+
+export function calculateInclusiveDays(
+  startDate: string | null | undefined,
+  endDate: string | null | undefined
+): number {
+  if (!startDate || !endDate) return 0;
+  const startParts = startDate.split('-');
+  const endParts = endDate.split('-');
+  if (startParts.length !== 3 || endParts.length !== 3) return 0;
+  
+  const startYear = parseInt(startParts[0], 10);
+  const startMonth = parseInt(startParts[1], 10) - 1;
+  const startDay = parseInt(startParts[2], 10);
+  
+  const endYear = parseInt(endParts[0], 10);
+  const endMonth = parseInt(endParts[1], 10) - 1;
+  const endDay = parseInt(endParts[2], 10);
+  
+  const start = new Date(startYear, startMonth, startDay);
+  const end = new Date(endYear, endMonth, endDay);
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+  if (end < start) return -1;
+  
+  const diffTime = end.getTime() - start.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  return diffDays;
+}
+
