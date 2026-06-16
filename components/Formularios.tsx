@@ -471,8 +471,67 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // New fields
+  const [paymentFlow, setPaymentFlow] = useState<'one_time' | 'recurring'>('one_time');
+  const [remunerationModel, setRemunerationModel] = useState<'daily' | 'hourly' | 'fixed_job' | 'monthly_salary'>('daily');
+  const [expectedRate, setExpectedRate] = useState<number>(0);
+  const [expectedHours, setExpectedHours] = useState<number>(0);
+  const [expectedPaymentDay, setExpectedPaymentDay] = useState<number>(5);
+  const [expectedPaymentCount, setExpectedPaymentCount] = useState<number>(1);
+  const [isCountManuallyAdjusted, setIsCountManuallyAdjusted] = useState(false);
+
+  // Auto calculate expectedPaymentCount if recurring
+  React.useEffect(() => {
+    if (paymentFlow === 'recurring' && startDate && endDate && !isCountManuallyAdjusted) {
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      if (!isNaN(s.getTime()) && !isNaN(e.getTime()) && e >= s) {
+        const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
+        const count = Math.max(1, months + 1);
+        setExpectedPaymentCount(count);
+      }
+    }
+  }, [startDate, endDate, paymentFlow, isCountManuallyAdjusted]);
+
   // Active nucleos only (for MASTER/RH/C-LEVEL selector)
   const activeNucleos = db.nucleos.filter((n: any) => n.status === 'Ativo');
+
+  // Math calculations
+  const days = calculateInclusiveDays(startDate, endDate);
+  let expectedTotalCompensation = 0;
+  if (remunerationModel === 'daily') {
+    expectedTotalCompensation = expectedRate * (days > 0 ? days : 0);
+  } else if (remunerationModel === 'hourly') {
+    expectedTotalCompensation = expectedRate * (expectedHours || 0);
+  } else if (remunerationModel === 'fixed_job') {
+    expectedTotalCompensation = expectedRate;
+  } else if (remunerationModel === 'monthly_salary') {
+    expectedTotalCompensation = expectedRate * expectedPaymentCount;
+  }
+
+  const savingAmount = budget - expectedTotalCompensation;
+  const savingPercentage = budget > 0 ? (savingAmount / budget) * 100 : 0;
+
+  // Policy validation
+  const billingTypeForMatch = 
+    remunerationModel === 'daily' ? 'Diária' :
+    remunerationModel === 'hourly' ? 'Hora' :
+    remunerationModel === 'fixed_job' ? 'Job Fechado' : 'Mensal / Salário';
+
+  const matchedPolicy = db.policies.find((p: any) => 
+    p.role === roleNeeded && 
+    p.seniority === seniorityNeeded && 
+    p.billingType === billingTypeForMatch
+  );
+
+  let policyStatus: 'within_policy' | 'above_policy_requires_approval' | 'no_policy_found' = 'no_policy_found';
+  if (matchedPolicy) {
+    if (expectedRate <= matchedPolicy.ceilingValue) {
+      policyStatus = 'within_policy';
+    } else {
+      policyStatus = 'above_policy_requires_approval';
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -508,13 +567,22 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       alert('Por favor, informe a data de início e término.');
       return;
     }
-    const days = calculateInclusiveDays(startDate, endDate);
     if (days < 1) {
       alert('A data de fim deve ser igual ou posterior à data de início.');
       return;
     }
     if (!budget || budget <= 0) {
       alert('Por favor, preencha o budget com um valor maior que zero.');
+      return;
+    }
+
+    // Extra validation for remuneration model
+    if (expectedRate <= 0) {
+      alert('Por favor, informe um valor previsto de remuneração maior que zero.');
+      return;
+    }
+    if (remunerationModel === 'hourly' && expectedHours <= 0) {
+      alert('Por favor, informe a quantidade de horas previstas maior que zero.');
       return;
     }
 
@@ -554,6 +622,16 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
           status: statusDb,
           start_date: startDate,
           end_date: endDate,
+          payment_flow: paymentFlow,
+          remuneration_model: remunerationModel,
+          expected_rate: expectedRate,
+          expected_hours: remunerationModel === 'hourly' ? expectedHours : null,
+          expected_payment_day: paymentFlow === 'recurring' ? expectedPaymentDay : null,
+          expected_payment_count: paymentFlow === 'recurring' ? expectedPaymentCount : 1,
+          expected_total_compensation: expectedTotalCompensation,
+          expected_budget_saving_amount: savingAmount,
+          expected_budget_saving_percentage: savingPercentage,
+          payment_policy_status: policyStatus,
         })
         .select('id')
         .single();
@@ -576,6 +654,16 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
           end_date: endDate,
           budget_max: budget,
           status: statusDb,
+          payment_flow: paymentFlow,
+          remuneration_model: remunerationModel,
+          expected_rate: expectedRate,
+          expected_hours: remunerationModel === 'hourly' ? expectedHours : null,
+          expected_payment_day: paymentFlow === 'recurring' ? expectedPaymentDay : null,
+          expected_payment_count: paymentFlow === 'recurring' ? expectedPaymentCount : 1,
+          expected_total_compensation: expectedTotalCompensation,
+          expected_budget_saving_amount: savingAmount,
+          expected_budget_saving_percentage: savingPercentage,
+          payment_policy_status: policyStatus,
         })
         .select('*, jobs(*), freela_functions(*)')
         .single();
@@ -759,6 +847,184 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             onChange={e => setDeliverables(e.target.value)}
             className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan"
           />
+        </div>
+
+        {/* Fluxo de Pagamento da Alocação */}
+        <div className="bg-slate-50 border border-border-subtle rounded-2xl p-5 space-y-4">
+          <h4 className="font-bold text-text-primary text-sm flex items-center gap-1.5 border-b border-border-subtle pb-2">
+            <Scale className="w-4 h-4 text-action-cyan" />
+            <span>Fluxo de Pagamento da Alocação</span>
+          </h4>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="font-bold text-text-secondary block mb-1">Modelo de pagamento *</label>
+              <select
+                value={paymentFlow}
+                onChange={e => {
+                  const val = e.target.value as 'one_time' | 'recurring';
+                  setPaymentFlow(val);
+                  if (val === 'one_time') {
+                    setRemunerationModel('daily');
+                  } else {
+                    setRemunerationModel('monthly_salary');
+                  }
+                }}
+                className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white focus:outline-none focus:border-action-cyan"
+                required
+              >
+                <option value="one_time">Pagamento único</option>
+                <option value="recurring">Pagamento recorrente durante o período de alocação</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="font-bold text-text-secondary block mb-1">Modelo de remuneração *</label>
+              <select
+                value={remunerationModel}
+                onChange={e => setRemunerationModel(e.target.value as any)}
+                className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white focus:outline-none focus:border-action-cyan"
+                required
+              >
+                {paymentFlow === 'one_time' ? (
+                  <>
+                    <option value="daily">Diária</option>
+                    <option value="hourly">Hora</option>
+                    <option value="fixed_job">Job fechado</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="monthly_salary">Mensal / salário por período</option>
+                    <option value="daily">Diária</option>
+                    <option value="hourly">Hora</option>
+                  </>
+                )}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="font-bold text-text-secondary block mb-1">
+                {remunerationModel === 'daily' && 'Valor previsto por dia (R$) *'}
+                {remunerationModel === 'hourly' && 'Valor previsto por hora (R$) *'}
+                {remunerationModel === 'fixed_job' && 'Valor total fechado (R$) *'}
+                {remunerationModel === 'monthly_salary' && 'Valor previsto mensal (R$) *'}
+              </label>
+              <input
+                type="number"
+                value={expectedRate || ''}
+                placeholder="0"
+                onChange={e => setExpectedRate(Number(e.target.value))}
+                className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan font-semibold"
+                required
+                min={1}
+              />
+            </div>
+
+            {remunerationModel === 'hourly' && (
+              <div>
+                <label className="font-bold text-text-secondary block mb-1">Horas previstas *</label>
+                <input
+                  type="number"
+                  value={expectedHours || ''}
+                  placeholder="0"
+                  onChange={e => setExpectedHours(Number(e.target.value))}
+                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan"
+                  required
+                  min={1}
+                />
+              </div>
+            )}
+
+            {paymentFlow === 'recurring' && (
+              <>
+                <div>
+                  <label className="font-bold text-text-secondary block mb-1">Dia preferencial *</label>
+                  <select
+                    value={expectedPaymentDay}
+                    onChange={e => setExpectedPaymentDay(Number(e.target.value))}
+                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white focus:outline-none focus:border-action-cyan"
+                    required
+                  >
+                    <option value="5">Dia 5</option>
+                    <option value="10">Dia 10</option>
+                    <option value="15">Dia 15</option>
+                    <option value="20">Dia 20</option>
+                    <option value="30">Dia 30</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-text-secondary block mb-1">Qtd parcelas *</label>
+                  <input
+                    type="number"
+                    value={expectedPaymentCount}
+                    disabled={!canSelectNucleo}
+                    onChange={e => {
+                      setExpectedPaymentCount(Number(e.target.value));
+                      setIsCountManuallyAdjusted(true);
+                    }}
+                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white disabled:bg-gray-100 focus:outline-none focus:border-action-cyan font-semibold"
+                    required
+                    min={1}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Policy Reference Card */}
+          <div className="bg-white border border-border-subtle rounded-xl p-4 space-y-2">
+            <h5 className="font-bold text-text-secondary text-[11px] flex items-center gap-1.5">
+              <Scale className="w-3.5 h-3.5 text-[#B28900]" />
+              <span>Card de Política de Referência ({roleNeeded} - {seniorityNeeded})</span>
+            </h5>
+            {matchedPolicy ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-[11px] pt-1">
+                <div>
+                  <span className="text-text-secondary block">Valor de Referência</span>
+                  <span className="font-semibold text-text-primary">R$ {matchedPolicy.referenceValue.toLocaleString('pt-BR')}</span>
+                </div>
+                <div>
+                  <span className="text-text-secondary block">Teto Autorizado</span>
+                  <span className="font-bold text-text-primary text-[#B28900]">R$ {matchedPolicy.ceilingValue.toLocaleString('pt-BR')}</span>
+                </div>
+                <div>
+                  <span className="text-text-secondary block">Status da Regra</span>
+                  <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${policyStatus === 'within_policy' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                    {policyStatus === 'within_policy' ? 'Dentro da política' : 'Acima do teto (Requer Aprovação)'}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[10px] text-text-secondary italic">Nenhuma diretriz de política de valores cadastrada para esta combinação de cargo, nível e modelo.</p>
+            )}
+          </div>
+
+          {/* Comparison with budget */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3.5 bg-white border border-border-subtle rounded-xl text-[11px]">
+            <div>
+              <span className="text-text-secondary block">Budget do Job</span>
+              <span className="font-semibold text-text-primary">R$ {budget.toLocaleString('pt-BR')}</span>
+            </div>
+            <div>
+              <span className="text-text-secondary block">Total Previsto Freela</span>
+              <span className="font-bold text-text-primary">R$ {expectedTotalCompensation.toLocaleString('pt-BR')}</span>
+            </div>
+            <div>
+              <span className="text-text-secondary block">Diferença / Saving</span>
+              <span className={`font-extrabold ${savingAmount >= 0 ? 'text-status-success' : 'text-status-error'}`}>
+                {savingAmount >= 0 ? 'R$ ' + savingAmount.toLocaleString('pt-BR') : '- R$ ' + Math.abs(savingAmount).toLocaleString('pt-BR')}
+              </span>
+            </div>
+            <div>
+              <span className="text-text-secondary block">Percentual Saving</span>
+              <span className={`font-extrabold ${savingAmount >= 0 ? 'text-status-success' : 'text-status-error'}`}>
+                {savingAmount >= 0 ? Math.round(savingPercentage) + '%' : '+' + Math.round(Math.abs(savingPercentage)) + '% (Estouro)'}
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 pt-4">

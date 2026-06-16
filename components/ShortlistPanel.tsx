@@ -6,6 +6,8 @@ import { generateUniqueId } from '@/lib/utils';
 import { Job, Shortlist, Freelancer, ValuePolicy, Allocation, PaymentCode } from '@/lib/mockData';
 import { createApprovalRequestAction } from '@/app/actions/evaluation';
 import { supabase } from '@/lib/supabase';
+import ConsolidatedAllocation from '@/components/ConsolidatedAllocation';
+import { confirmAllocationAction } from '@/app/actions/admin';
 import { 
   calculateAllocationDays, 
   calculateNegotiatedTotal, 
@@ -114,9 +116,33 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   // Navigation / Stepper State
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedJobIdLocal, setSelectedJobIdLocal] = useState(db.selectedJobId || '');
+  const activeJob = db.jobs.find(j => j.id === selectedJobIdLocal);
   const [negotiatingFreelancerId, setNegotiatingFreelancerId] = useState<string>('');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [compareSortKey, setCompareSortKey] = useState<'default' | 'saving' | 'total' | 'status' | 'score'>('default');
+
+  // Faturamento configuration states
+  const [paymentModel, setPaymentModel] = useState<'one_time' | 'monthly_recurring' | 'milestone'>('one_time');
+  const [contractStartDate, setContractStartDate] = useState('');
+  const [contractEndDate, setContractEndDate] = useState('');
+  const [recurringAmount, setRecurringAmount] = useState(0);
+  const [preferredDueDay, setPreferredDueDay] = useState(5);
+  const [paymentTerms, setPaymentTerms] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+
+  useEffect(() => {
+    if (activeJob) {
+      setContractStartDate(activeJob.startDate || '');
+      setContractEndDate(activeJob.endDate || '');
+      setPaymentModel(activeJob.paymentFlow === 'recurring' ? 'monthly_recurring' : 'one_time');
+      if (activeJob.expectedPaymentDay) {
+        setPreferredDueDay(activeJob.expectedPaymentDay);
+      }
+      if (activeJob.expectedRate) {
+        setRecurringAmount(activeJob.expectedRate);
+      }
+    }
+  }, [activeJob?.id]);
 
   // State for Custom Approval Modal
   const [approvalModal, setApprovalModal] = useState<{
@@ -178,7 +204,6 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const [jobLimit, setJobLimit] = useState<number>(10);
 
   // --- CANDIDATE SEARCH & FILTERS STATE (Step 2) ---
-  const activeJob = db.jobs.find(j => j.id === selectedJobIdLocal);
 
   const [candidateSearch, setCandidateSearch] = useState('');
   const [candidateRole, setCandidateRole] = useState('');
@@ -703,7 +728,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     db.setSelectedJobId(jobId);
     
     const job = db.jobs.find(j => j.id === jobId);
-    if (job && (job.status === 'Bookado' || job.selectedFreelancerId)) {
+    if (job && (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId)) {
       setActiveStep(4);
     } else {
       setActiveStep(2); // Auto advance to Step 2
@@ -792,7 +817,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
   // Step navigation helper with validation checks
   const handleNavigateStep = (step: 1 | 2 | 3 | 4) => {
-    if (activeJob?.selectedFreelancerId && (step === 2 || step === 3)) {
+    if ((activeJob?.selectedFreelancerId || activeJob?.status === 'Bookado' || activeJob?.status === 'bookado') && (step === 2 || step === 3)) {
       alert('⚠️ Bloqueio de Fluxo:\nEste job já está bookado/alocado. A shortlist e negociação estão fechadas.');
       return;
     }
@@ -853,7 +878,17 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         
         let nextStatus = updates.negotiationStatus !== undefined ? updates.negotiationStatus : sl.candidateStatus;
         
-        const policy = db.policies.find(p => p.role === activeJob?.roleNeeded && p.seniority === activeJob?.seniorityNeeded);
+        const targetModel = model || activeJob?.remunerationModel || 'daily';
+        const billingTypeForMatch = 
+          ['daily', 'diaria', 'diária'].includes(targetModel.toLowerCase()) ? 'Diária' :
+          ['hourly', 'hora'].includes(targetModel.toLowerCase()) ? 'Hora' :
+          ['fixed_job', 'pacote', 'job fechado', 'projeto'].includes(targetModel.toLowerCase()) ? 'Job Fechado' : 'Mensal / Salário';
+
+        const policy = db.policies.find(p => 
+          p.role === activeJob?.roleNeeded && 
+          p.seniority === activeJob?.seniorityNeeded && 
+          p.billingType === billingTypeForMatch
+        );
         const ceilingValue = policy ? policy.ceilingValue : 99999;
         const currentRate = rate || 0;
         
@@ -966,7 +1001,17 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         return;
       }
 
-      const policy = db.policies.find(p => p.role === activeJob.roleNeeded && p.seniority === activeJob.seniorityNeeded);
+      const targetModel = activeJob.remunerationModel || 'daily';
+      const billingTypeForMatch = 
+        ['daily', 'diaria', 'diária'].includes(targetModel.toLowerCase()) ? 'Diária' :
+        ['hourly', 'hora'].includes(targetModel.toLowerCase()) ? 'Hora' :
+        ['fixed_job', 'pacote', 'job fechado', 'projeto'].includes(targetModel.toLowerCase()) ? 'Job Fechado' : 'Mensal / Salário';
+
+      const policy = db.policies.find(p => 
+        p.role === activeJob.roleNeeded && 
+        p.seniority === activeJob.seniorityNeeded && 
+        p.billingType === billingTypeForMatch
+      );
       const refVal = policy ? policy.referenceValue : 0;
       const ceiling = policy ? policy.ceilingValue : 99999;
 
@@ -1007,20 +1052,30 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     if (!activeJob) return;
 
     try {
-      const { data, error } = await supabase.rpc('confirm_allocation', {
-        p_request_id: activeJob.id,
-        p_freelancer_id: freelancerId,
-        p_user_id: db.currentUser.id,
-        p_negotiated_rate: rate,
-        p_remuneration_model: model,
-        p_scope: scopeText || 'Alocação homologada pelo núcleo'
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || '';
+      if (!token) {
+        alert('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      const res = await confirmAllocationAction(token, {
+        requestId: activeJob.id,
+        freelancerId,
+        negotiatedRate: rate,
+        remunerationModel: model,
+        scope: scopeText || 'Alocação homologada pelo núcleo',
+        paymentModel,
+        contractStartDate: contractStartDate || activeJob.startDate,
+        contractEndDate: contractEndDate || activeJob.endDate,
+        recurringAmount: paymentModel === 'monthly_recurring' ? (recurringAmount || rate) : undefined,
+        preferredDueDay,
+        paymentTerms,
+        paymentNotes
       });
 
-      if (error) throw error;
-
-      const result = typeof data === 'string' ? JSON.parse(data) : data;
-      if (!result.success) {
-        alert(`❌ Erro ao homologar alocação: ${result.error}`);
+      if (!res.success) {
+        alert(`❌ Erro ao homologar alocação: ${res.error}`);
         return;
       }
 
@@ -1093,7 +1148,18 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const sortedCompareList = useMemo(() => {
     const list = jobShortlists.map(sl => {
       const cand = db.freelancers.find(f => f.id === sl.freelancerId);
-      const policy = db.policies.find(p => p.role === activeJob?.roleNeeded && p.seniority === activeJob?.seniorityNeeded);
+      
+      const targetModel = sl.remunerationModel || activeJob?.remunerationModel || 'daily';
+      const billingTypeForMatch = 
+        ['daily', 'diaria', 'diária'].includes(targetModel.toLowerCase()) ? 'Diária' :
+        ['hourly', 'hora'].includes(targetModel.toLowerCase()) ? 'Hora' :
+        ['fixed_job', 'pacote', 'job fechado', 'projeto'].includes(targetModel.toLowerCase()) ? 'Job Fechado' : 'Mensal / Salário';
+
+      const policy = db.policies.find(p => 
+        p.role === activeJob?.roleNeeded && 
+        p.seniority === activeJob?.seniorityNeeded && 
+        p.billingType === billingTypeForMatch
+      );
       const ceilingValue = policy ? policy.ceilingValue : 99999;
       
       const rate = sl.negotiatedRate || cand?.referenceValue || 0;
@@ -1160,6 +1226,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     ...db.freelancers.map(f => f.mainRole),
     ...db.freelancers.flatMap(f => f.secondaryRoles)
   ])).filter(Boolean).sort();
+
+  const activeAllocation = selectedJobIdLocal
+    ? db.allocations.find(a => a.jobId === selectedJobIdLocal && a.status !== 'Cancelado')
+    : null;
+
+  if (activeAllocation) {
+    return <ConsolidatedAllocation db={db} jobId={selectedJobIdLocal} />;
+  }
 
   return (
     <div id="shortlist-workflow-panel" className="space-y-6">
@@ -1539,7 +1613,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                     : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy'
                                 }`}
                               >
-                                {isSelected ? 'Selecionado' : (job.status === 'Bookado' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
+                                {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
                               </button>
                             </td>
                           </tr>
@@ -1660,7 +1734,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy'
                           }`}
                         >
-                          {isSelected ? 'Selecionado' : (job.status === 'Bookado' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
+                          {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
                         </button>
                       </div>
                     </div>
@@ -2431,12 +2505,29 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 const cand = db.freelancers.find(f => f.id === sl.freelancerId);
                 if (!cand) return null;
 
-                const policy = db.policies.find(p => p.role === activeJob.roleNeeded && p.seniority === activeJob.seniorityNeeded);
+                const targetModel = (sl.remunerationModel || (activeJob?.remunerationModel === 'daily' ? 'Diária' : activeJob?.remunerationModel === 'hourly' ? 'Hora' : activeJob?.remunerationModel === 'fixed_job' ? 'Job Fechado' : activeJob?.remunerationModel === 'monthly_salary' ? 'Mensal / Salário' : 'Diária')) || 'daily';
+                const billingTypeForMatch = 
+                  ['daily', 'diaria', 'diária'].includes(targetModel.toLowerCase()) ? 'Diária' :
+                  ['hourly', 'hora'].includes(targetModel.toLowerCase()) ? 'Hora' :
+                  ['fixed_job', 'pacote', 'job fechado', 'projeto'].includes(targetModel.toLowerCase()) ? 'Job Fechado' : 'Mensal / Salário';
+
+                const policy = db.policies.find(p => 
+                  p.role === activeJob.roleNeeded && 
+                  p.seniority === activeJob.seniorityNeeded && 
+                  p.billingType === billingTypeForMatch
+                );
                 const ceilingValue = policy ? policy.ceilingValue : 99999;
                 const referenceValue = policy ? policy.referenceValue : 0;
                 
-                const rate = sl.negotiatedRate || cand.referenceValue;
-                const billing = sl.remunerationModel || 'Diária';
+                const defaultRate = activeJob?.expectedRate || cand.referenceValue || 0;
+                const rate = sl.negotiatedRate || defaultRate;
+                
+                const defaultBilling = 
+                  activeJob?.remunerationModel === 'daily' ? 'Diária' :
+                  activeJob?.remunerationModel === 'hourly' ? 'Hora' :
+                  activeJob?.remunerationModel === 'fixed_job' ? 'Job Fechado' :
+                  activeJob?.remunerationModel === 'monthly_salary' ? 'Mensal / Salário' : 'Diária';
+                const billing = sl.remunerationModel || defaultBilling;
                 
                 const hasConflict = hasScheduleConflict(cand.id, activeJob.startDate, activeJob.endDate);
                 const exceedsCeiling = rate > ceilingValue;
@@ -2563,6 +2654,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           <option value="Diária">Diária</option>
                           <option value="Hora">Hora</option>
                           <option value="Job Fechado">Job Fechado</option>
+                          <option value="Mensal / Salário">Mensal / Salário</option>
                         </select>
                       </div>
 
@@ -2852,13 +2944,34 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       const cand = db.freelancers.find(f => f.id === sl.freelancerId);
                       if (!cand) return null;
 
-                      const rate = sl.negotiatedRate || cand.referenceValue;
-                      const model = sl.remunerationModel || 'Diária';
+                      const defaultRate = activeJob?.expectedRate || cand.referenceValue || 0;
+                      const rate = sl.negotiatedRate || defaultRate;
+                      
+                      const defaultBilling = 
+                        activeJob?.remunerationModel === 'daily' ? 'Diária' :
+                        activeJob?.remunerationModel === 'hourly' ? 'Hora' :
+                        activeJob?.remunerationModel === 'fixed_job' ? 'Job Fechado' :
+                        activeJob?.remunerationModel === 'monthly_salary' ? 'Mensal / Salário' : 'Diária';
+                      const billing = sl.remunerationModel || defaultBilling;
+
+                      const targetModel = billing || activeJob.remunerationModel || 'daily';
+                      const billingTypeForMatch = 
+                        ['daily', 'diaria', 'diária'].includes(targetModel.toLowerCase()) ? 'Diária' :
+                        ['hourly', 'hora'].includes(targetModel.toLowerCase()) ? 'Hora' :
+                        ['fixed_job', 'pacote', 'job fechado', 'projeto'].includes(targetModel.toLowerCase()) ? 'Job Fechado' : 'Mensal / Salário';
+
+                      const policy = db.policies.find(p => 
+                        p.role === activeJob.roleNeeded && 
+                        p.seniority === activeJob.seniorityNeeded && 
+                        p.billingType === billingTypeForMatch
+                      );
+                      const ceilingValue = policy ? policy.ceilingValue : 99999;
+                      const referenceValue = policy ? policy.referenceValue : 0;
                       
                       const allocationDays = calculateAllocationDays(activeJob.startDate, activeJob.endDate);
                       const negotiatedTotal = calculateNegotiatedTotal({
                         negotiatedRate: rate,
-                        remunerationModel: model,
+                        remunerationModel: billing,
                         allocationDays,
                         estimatedHours: sl.estimatedHours
                       });
@@ -2866,7 +2979,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       const savingAmount = negotiatedTotal !== null ? activeJob.budget - negotiatedTotal : 0;
                       const savingPercentage = negotiatedTotal !== null && activeJob.budget > 0 ? (savingAmount / activeJob.budget) * 100 : 0;
 
-                      const isHoursMissing = model === 'Hora' && !sl.estimatedHours;
+                      const isHoursMissing = billing === 'Hora' && !sl.estimatedHours;
                       const isJustificationMissing = savingAmount < 0 && !sl.notes?.trim();
                       const isConflictPending = sl.requiresRhApproval;
                       const isBudgetPending = sl.requiresHeadApproval;
@@ -2895,7 +3008,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               startDate={activeJob.startDate}
                               endDate={activeJob.endDate}
                               negotiatedRate={rate}
-                              remunerationModel={model}
+                              remunerationModel={billing}
                               estimatedHours={sl.estimatedHours}
                               variant="compact"
                             />
@@ -2958,11 +3071,126 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             )}
                           </div>
 
+                          {/* CONFIGURAÇÃO FINANCEIRA */}
+                          <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 mt-4 text-left">
+                            <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
+                              Condições Comerciais & Faturamento
+                            </span>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Modelo de Pagamento *
+                                </label>
+                                <select
+                                  value={paymentModel}
+                                  onChange={(e) => {
+                                    const m = e.target.value as any;
+                                    setPaymentModel(m);
+                                    if (m === 'monthly_recurring') {
+                                      setRecurringAmount(rate);
+                                    }
+                                  }}
+                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                >
+                                  <option value="one_time">Pagamento Único</option>
+                                  <option value="monthly_recurring">Recorrente Mensal</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Início do Contrato
+                                </label>
+                                <input
+                                  type="date"
+                                  value={contractStartDate}
+                                  onChange={(e) => setContractStartDate(e.target.value)}
+                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Fim do Contrato
+                                </label>
+                                <input
+                                  type="date"
+                                  value={contractEndDate}
+                                  onChange={(e) => setContractEndDate(e.target.value)}
+                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                />
+                              </div>
+                            </div>
+
+                            {paymentModel === 'monthly_recurring' && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                    Valor Mensal (R$) *
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={recurringAmount}
+                                    onChange={(e) => setRecurringAmount(Number(e.target.value))}
+                                    className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                    Vencimento Preferencial *
+                                  </label>
+                                  <select
+                                    value={preferredDueDay}
+                                    onChange={(e) => setPreferredDueDay(Number(e.target.value))}
+                                    className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                  >
+                                    <option value="5">Dia 5</option>
+                                    <option value="10">Dia 10</option>
+                                    <option value="15">Dia 15</option>
+                                    <option value="20">Dia 20</option>
+                                    <option value="25">Dia 25</option>
+                                    <option value="30">Dia 30</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Condições de Pagamento
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Prazo NF, etc..."
+                                  value={paymentTerms}
+                                  onChange={(e) => setPaymentTerms(e.target.value)}
+                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Notas Administrativas
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Notas..."
+                                  value={paymentNotes}
+                                  onChange={(e) => setPaymentNotes(e.target.value)}
+                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
                           <div className="pt-3 border-t border-border-subtle flex justify-end">
                             <button
                               type="button"
                               disabled={isButtonDisabled}
-                              onClick={() => handleFinalAllocation(cand.id, sl.id, rate, model, sl.notes || '')}
+                              onClick={() => handleFinalAllocation(cand.id, sl.id, rate, billing, sl.notes || '')}
                               className={`font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
                                 isButtonDisabled 
                                   ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60' 

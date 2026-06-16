@@ -23,7 +23,9 @@ import {
   PaymentCode,
   Suggestion,
   Nucleo,
-  User
+  User,
+  AllocationPaymentSchedule,
+  PaymentRequest
 } from '@/lib/mockData';
 
 // Supabase and Server Actions
@@ -50,7 +52,9 @@ import {
   mapBillingTypeToUI,
   mapNegotiationStatusToUI,
   mapUrgencyToDB,
-  getRoleLabel
+  getRoleLabel,
+  mapAllocationPaymentScheduleToUI,
+  mapPaymentRequestToUI
 } from '@/lib/dbMapper';
 import { 
   createUserAction, 
@@ -138,6 +142,10 @@ export interface DatabaseProps {
   setApprovals: React.Dispatch<React.SetStateAction<any[]>>;
   reverseEvaluations: any[];
   setReverseEvaluations: React.Dispatch<React.SetStateAction<any[]>>;
+  paymentSchedules: AllocationPaymentSchedule[];
+  setPaymentSchedules: React.Dispatch<React.SetStateAction<AllocationPaymentSchedule[]>>;
+  paymentRequests: PaymentRequest[];
+  setPaymentRequests: React.Dispatch<React.SetStateAction<PaymentRequest[]>>;
   users: User[];
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   reloadDatabase: () => Promise<void>;
@@ -170,6 +178,8 @@ export default function Home() {
   const [nucleosState, setNucleosState] = useState<Nucleo[]>(initialNucleos);
   const [approvalsState, setApprovalsState] = useState<any[]>([]);
   const [reverseEvaluationsState, setReverseEvaluationsState] = useState<any[]>([]);
+  const [paymentSchedulesState, setPaymentSchedulesState] = useState<AllocationPaymentSchedule[]>([]);
+  const [paymentRequestsState, setPaymentRequestsState] = useState<PaymentRequest[]>([]);
 
   // Auth credential states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -434,6 +444,16 @@ export default function Home() {
             createdAt: re.created_at,
           }))
         );
+      }
+
+      const { data: dbSchedules } = await supabase.from('allocation_payment_schedules').select('*');
+      if (dbSchedules) {
+        setPaymentSchedulesState(dbSchedules.map(mapAllocationPaymentScheduleToUI));
+      }
+
+      const { data: dbPaymentRequests } = await supabase.from('payment_requests').select('*');
+      if (dbPaymentRequests) {
+        setPaymentRequestsState(dbPaymentRequests.map(mapPaymentRequestToUI));
       }
     } catch (error) {
       console.warn('Error loading data from Supabase:', error instanceof Error ? error.message : String(error));
@@ -1267,6 +1287,15 @@ export default function Home() {
   const handlePolicyInsert = async (p: ValuePolicy) => {
     if (isUuid(p.id)) return;
     const funcId = await getFunctionIdByName(p.role);
+    const getRemunerationModel = (bt: string) => {
+      switch (bt) {
+        case 'Diária': return 'daily';
+        case 'Hora': return 'hourly';
+        case 'Job Fechado': return 'fixed_job';
+        case 'Mensal / Salário': return 'monthly_salary';
+        default: return 'daily';
+      }
+    };
     const { data: created, error } = await supabase
       .from('rate_policies')
       .insert({
@@ -1275,6 +1304,10 @@ export default function Home() {
         billing_type: mapBillingTypeToDB(p.billingType),
         reference_value: p.referenceValue,
         ceiling_value: p.ceilingValue,
+        remuneration_model: getRemunerationModel(p.billingType),
+        approval_required_above: p.ceilingValue,
+        status: p.status === 'Inativo' ? 'inactive' : 'active',
+        notes: p.notes || null,
       })
       .select('id')
       .single();
@@ -1288,6 +1321,15 @@ export default function Home() {
 
   const handlePolicyUpdate = async (p: ValuePolicy, original: ValuePolicy) => {
     const funcId = await getFunctionIdByName(p.role);
+    const getRemunerationModel = (bt: string) => {
+      switch (bt) {
+        case 'Diária': return 'daily';
+        case 'Hora': return 'hourly';
+        case 'Job Fechado': return 'fixed_job';
+        case 'Mensal / Salário': return 'monthly_salary';
+        default: return 'daily';
+      }
+    };
     await supabase
       .from('rate_policies')
       .update({
@@ -1296,6 +1338,10 @@ export default function Home() {
         billing_type: mapBillingTypeToDB(p.billingType),
         reference_value: p.referenceValue,
         ceiling_value: p.ceilingValue,
+        remuneration_model: getRemunerationModel(p.billingType),
+        approval_required_above: p.ceilingValue,
+        status: p.status === 'Inativo' ? 'inactive' : 'active',
+        notes: p.notes || null,
       })
       .eq('id', p.id);
   };
@@ -1397,6 +1443,10 @@ export default function Home() {
     setApprovals: setApprovalsState,
     reverseEvaluations: reverseEvaluationsState,
     setReverseEvaluations: setReverseEvaluationsState,
+    paymentSchedules: paymentSchedulesState,
+    setPaymentSchedules: setPaymentSchedulesState,
+    paymentRequests: paymentRequestsState,
+    setPaymentRequests: setPaymentRequestsState,
     reloadDatabase,
     activeTab,
     setActiveTab,

@@ -1,4 +1,4 @@
-import { User, Nucleo, Freelancer, Job, Shortlist, Negotiation, ValuePolicy, Allocation, Evaluation, PaymentCode, Suggestion } from './mockData';
+import { User, Nucleo, Freelancer, Job, Shortlist, Negotiation, ValuePolicy, Allocation, Evaluation, PaymentCode, Suggestion, AllocationPaymentSchedule, PaymentRequest, ReverseEvaluationLink } from './mockData';
 
 // --- Seniority Mapping ---
 export function mapSeniorityToUI(seniority: string | null): 'Júnior' | 'Pleno' | 'Sênior' | 'Especialista' {
@@ -68,13 +68,16 @@ export function mapAvailabilityToDB(availability: string): 'disponivel' | 'confl
 }
 
 // --- Billing Type Mapping ---
-export function mapBillingTypeToUI(type: string | null): 'Diária' | 'Hora' | 'Job Fechado' {
+export function mapBillingTypeToUI(type: string | null): 'Diária' | 'Hora' | 'Job Fechado' | 'Mensal / Salário' {
   switch (type?.toLowerCase()) {
     case 'diaria': return 'Diária';
     case 'hora': return 'Hora';
     case 'pacote':
     case 'projeto':
       return 'Job Fechado';
+    case 'mensal':
+    case 'monthly_salary':
+      return 'Mensal / Salário';
     default: return 'Diária';
   }
 }
@@ -84,6 +87,7 @@ export function mapBillingTypeToDB(type: string): 'diaria' | 'hora' | 'pacote' |
     case 'Diária': return 'diaria';
     case 'Hora': return 'hora';
     case 'Job Fechado': return 'pacote';
+    case 'Mensal / Salário': return 'pacote';
     default: return 'diaria';
   }
 }
@@ -373,15 +377,26 @@ export function mapFreelancerToUI(f: any): Freelancer {
 
 // --- ValuePolicy Mapping ---
 export function mapValuePolicyToUI(pol: any): ValuePolicy {
+  let uiBillingType: 'Diária' | 'Hora' | 'Job Fechado' | 'Mensal / Salário' = 'Diária';
+  if (pol.remuneration_model === 'daily') uiBillingType = 'Diária';
+  else if (pol.remuneration_model === 'hourly') uiBillingType = 'Hora';
+  else if (pol.remuneration_model === 'fixed_job') uiBillingType = 'Job Fechado';
+  else if (pol.remuneration_model === 'monthly_salary') uiBillingType = 'Mensal / Salário';
+  else {
+    uiBillingType = mapBillingTypeToUI(pol.billing_type);
+  }
   return {
     id: pol.id,
     role: pol.function?.name || 'Designer 3D',
     seniority: mapSeniorityToUI(pol.seniority),
-    billingType: mapBillingTypeToUI(pol.billing_type),
+    billingType: uiBillingType,
     referenceValue: Number(pol.reference_value || 0),
     ceilingValue: Number(pol.ceiling_value || 0),
     status: pol.status === 'inactive' ? 'Inativo' : 'Ativo',
     updatedAt: pol.updated_at ? new Date(pol.updated_at).toLocaleDateString('pt-BR') : '—',
+    remunerationModel: pol.remuneration_model,
+    approvalRequiredAbove: pol.approval_required_above !== null && pol.approval_required_above !== undefined ? Number(pol.approval_required_above) : undefined,
+    notes: pol.notes || '',
   };
 }
 
@@ -404,6 +419,20 @@ export function mapAllocationToUI(alloc: any): Allocation {
     dailySavingAmount: alloc.daily_saving_amount !== null && alloc.daily_saving_amount !== undefined ? Number(alloc.daily_saving_amount) : undefined,
     budgetDeltaStatus: alloc.budget_delta_status || 'not_calculated',
     estimatedHours: alloc.estimated_hours !== null && alloc.estimated_hours !== undefined ? Number(alloc.estimated_hours) : undefined,
+    // Recurring & payment model fields
+    paymentModel: alloc.payment_model || 'one_time',
+    contractStartDate: alloc.contract_start_date || undefined,
+    contractEndDate: alloc.contract_end_date || undefined,
+    recurrenceFrequency: alloc.recurrence_frequency || 'none',
+    recurringAmount: alloc.recurring_amount !== null && alloc.recurring_amount !== undefined ? Number(alloc.recurring_amount) : undefined,
+    totalContractValue: alloc.total_contract_value !== null && alloc.total_contract_value !== undefined ? Number(alloc.total_contract_value) : undefined,
+    paymentTerms: alloc.payment_terms || '',
+    paymentNotes: alloc.payment_notes || '',
+    paymentRequestStatus: alloc.payment_request_status || 'not_requested',
+    evaluationStatus: alloc.evaluation_status || 'locked',
+    reverseEvaluationStatus: alloc.reverse_evaluation_status || 'not_generated',
+    evaluatedFreelancer: alloc.evaluated_freelancer || false,
+    evaluatedDelivery: alloc.evaluated_delivery || false,
   };
 }
 
@@ -431,6 +460,86 @@ export function mapEvaluationToUI(ev: any): Evaluation {
     reworkLevel: ev.rework_level || undefined,
     criticalProblem: ev.critical_problem || false,
     conditionalAnswers: ev.conditional_answers || undefined,
+    // New behavioral and quality criteria
+    reliability: ev.reliability !== null && ev.reliability !== undefined ? Number(ev.reliability) : undefined,
+    cultureProcesses: ev.culture_processes !== null && ev.culture_processes !== undefined ? Number(ev.culture_processes) : undefined,
+    rework: ev.rework !== null && ev.rework !== undefined ? Number(ev.rework) : undefined,
+    scopeAdherence: ev.scope_adherence !== null && ev.scope_adherence !== undefined ? Number(ev.scope_adherence) : undefined,
+    materialsQuality: ev.materials_quality !== null && ev.materials_quality !== undefined ? Number(ev.materials_quality) : undefined,
+  };
+}
+
+// --- Allocation Payment Schedule Mapping ---
+export function mapAllocationPaymentScheduleToUI(aps: any): AllocationPaymentSchedule {
+  return {
+    id: aps.id,
+    allocationId: aps.allocation_id,
+    jobId: aps.job_id,
+    freelancerId: aps.freelancer_id,
+    nucleoId: aps.nucleo_id,
+    installmentNumber: Number(aps.installment_number),
+    referencePeriodStart: aps.reference_period_start,
+    referencePeriodEnd: aps.reference_period_end,
+    dueDate: aps.due_date || undefined,
+    amount: Number(aps.amount || 0),
+    status: aps.status,
+    paymentRequestId: aps.payment_request_id || undefined,
+    financeCode: aps.finance_code || undefined,
+    notes: aps.notes || '',
+    createdAt: aps.created_at || undefined,
+    updatedAt: aps.updated_at || undefined,
+  };
+}
+
+// --- Payment Request Mapping ---
+export function mapPaymentRequestToUI(pr: any): PaymentRequest {
+  return {
+    id: pr.id,
+    requestCode: pr.request_code,
+    allocationId: pr.allocation_id,
+    paymentScheduleId: pr.payment_schedule_id || undefined,
+    jobId: pr.job_id,
+    freelancerId: pr.freelancer_id,
+    nucleoId: pr.nucleo_id,
+    issuedBy: pr.issued_by,
+    issuedByRole: pr.issued_by_role,
+    requestType: pr.request_type,
+    paymentNumber: pr.payment_number !== null && pr.payment_number !== undefined ? Number(pr.payment_number) : undefined,
+    totalPayments: pr.total_payments !== null && pr.total_payments !== undefined ? Number(pr.total_payments) : undefined,
+    referencePeriodStart: pr.reference_period_start || undefined,
+    referencePeriodEnd: pr.reference_period_end || undefined,
+    amount: Number(pr.amount || 0),
+    paymentDueDate: pr.payment_due_date || undefined,
+    paymentDescription: pr.payment_description || '',
+    paymentJustification: pr.payment_justification || '',
+    documentStatus: pr.document_status,
+    exportedAt: pr.exported_at || undefined,
+    exportedBy: pr.exported_by || undefined,
+    documentUrl: pr.document_url || undefined,
+    documentFileName: pr.document_file_name || undefined,
+    financeCode: pr.finance_code || undefined,
+    financeCodeRegisteredAt: pr.finance_code_registered_at || undefined,
+    financeCodeRegisteredBy: pr.finance_code_registered_by || undefined,
+    createdAt: pr.created_at || undefined,
+    updatedAt: pr.updated_at || undefined,
+  };
+}
+
+// --- Reverse Evaluation Link Mapping ---
+export function mapReverseEvaluationLinkToUI(rel: any): ReverseEvaluationLink {
+  return {
+    id: rel.id,
+    token: rel.token,
+    allocationId: rel.allocation_id,
+    jobId: rel.job_id,
+    freelancerId: rel.freelancer_id,
+    nucleoId: rel.nucleo_id,
+    status: rel.status,
+    expiresAt: rel.expires_at || undefined,
+    usedAt: rel.used_at || undefined,
+    createdBy: rel.created_by || undefined,
+    createdAt: rel.created_at || undefined,
+    updatedAt: rel.updated_at || undefined,
   };
 }
 
@@ -508,6 +617,16 @@ export function mapJobToUI(req: any): Job {
     closedAt: req.closed_at || null,
     closedBy: req.closed_by || null,
     closureReason: req.closure_reason || null,
+    paymentFlow: req.payment_flow,
+    remunerationModel: req.remuneration_model,
+    expectedRate: req.expected_rate !== null && req.expected_rate !== undefined ? Number(req.expected_rate) : undefined,
+    expectedHours: req.expected_hours !== null && req.expected_hours !== undefined ? Number(req.expected_hours) : undefined,
+    expectedPaymentDay: req.expected_payment_day !== null && req.expected_payment_day !== undefined ? Number(req.expected_payment_day) : undefined,
+    expectedPaymentCount: req.expected_payment_count !== null && req.expected_payment_count !== undefined ? Number(req.expected_payment_count) : undefined,
+    expectedTotalCompensation: req.expected_total_compensation !== null && req.expected_total_compensation !== undefined ? Number(req.expected_total_compensation) : undefined,
+    expectedBudgetSavingAmount: req.expected_budget_saving_amount !== null && req.expected_budget_saving_amount !== undefined ? Number(req.expected_budget_saving_amount) : undefined,
+    expectedBudgetSavingPercentage: req.expected_budget_saving_percentage !== null && req.expected_budget_saving_percentage !== undefined ? Number(req.expected_budget_saving_percentage) : undefined,
+    paymentPolicyStatus: req.payment_policy_status,
   };
 }
 

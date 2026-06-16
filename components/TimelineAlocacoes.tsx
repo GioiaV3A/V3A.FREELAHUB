@@ -162,11 +162,45 @@ interface TimelineJobBarProps {
   hasConflict: boolean;
   leftPercent: number;
   widthPercent: number;
+  paymentSchedules: any[];
 }
 
-function TimelineJobBar({ job, allocation, freelancer, onClick, onHover, status, hasConflict, leftPercent, widthPercent }: TimelineJobBarProps) {
+const getDotColorClass = (status: string) => {
+  switch (status) {
+    case 'paid':
+      return 'bg-emerald-550 border-emerald-300 dark:bg-emerald-600 dark:border-emerald-400';
+    case 'finance_code_received':
+    case 'sent_to_finance':
+    case 'payment_request_generated':
+      return 'bg-cyan-400 border-cyan-200 dark:bg-cyan-500 dark:border-cyan-300';
+    case 'pending':
+      return 'bg-amber-400 border-amber-200 dark:bg-amber-500 dark:border-amber-300';
+    case 'cancelled':
+      return 'bg-slate-500 border-slate-350';
+    default:
+      return 'bg-slate-400 border-slate-200';
+  }
+};
+
+const getInstallmentStatusLabel = (status: string) => {
+  switch (status) {
+    case 'pending': return 'Pendente';
+    case 'payment_request_generated': return 'Solicitação Gerada';
+    case 'sent_to_finance': return 'Enviado ao Financeiro';
+    case 'finance_code_received': return 'Código ERP Registrado';
+    case 'paid': return 'Pago';
+    case 'cancelled': return 'Cancelado';
+    default: return status;
+  }
+};
+
+function TimelineJobBar({ job, allocation, freelancer, onClick, onHover, status, hasConflict, leftPercent, widthPercent, paymentSchedules }: TimelineJobBarProps) {
   const colors = getJobStatusColors(status, hasConflict);
   const barText = job?.name || 'Job';
+
+  const allocStart = allocation?.startDate ? new Date(allocation.startDate).getTime() : 0;
+  const allocEnd = allocation?.endDate ? new Date(allocation.endDate).getTime() : 0;
+  const totalRange = allocEnd - allocStart;
 
   return (
     <div
@@ -188,7 +222,39 @@ function TimelineJobBar({ job, allocation, freelancer, onClick, onHover, status,
       onMouseEnter={(e) => onHover(e)}
       onMouseLeave={() => onHover(null)}
     >
-      <span className="truncate">{barText}</span>
+      <span className="truncate pr-4">{barText}</span>
+      
+      {/* Installment indicators/dots */}
+      {paymentSchedules && paymentSchedules.length > 0 && (
+        <div className="absolute inset-y-0 left-0 right-0 pointer-events-none flex items-center">
+          {paymentSchedules.map((sched, idx) => {
+            const dueDateStr = sched.dueDate || sched.referencePeriodEnd;
+            if (!dueDateStr) return null;
+            const scheduleDate = new Date(dueDateStr).getTime();
+            
+            let dotPercent = 50;
+            if (totalRange > 0) {
+              dotPercent = ((scheduleDate - allocStart) / totalRange) * 100;
+              dotPercent = Math.max(2, Math.min(98, dotPercent)); // stay inside borders
+            }
+            
+            const colorClass = getDotColorClass(sched.status);
+            const statusLabel = getInstallmentStatusLabel(sched.status);
+            
+            return (
+              <div
+                key={sched.id || idx}
+                className={`absolute w-2.5 h-2.5 rounded-full border border-white dark:border-slate-900 shadow-sm pointer-events-auto cursor-help ${colorClass}`}
+                style={{ left: `${dotPercent}%`, transform: 'translateX(-50%)' }}
+                title={`Parcela ${sched.installmentNumber}: ${safeFormatCurrency(sched.amount)} - Vencimento: ${safeFormatDate(dueDateStr)} (${statusLabel})`}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent trigger bar click redirect
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -207,9 +273,10 @@ interface TimelineAllocationRowProps {
   widthPercent: number;
   onJobClick: () => void;
   onJobHover: (e: React.MouseEvent<HTMLDivElement> | null) => void;
+  paymentSchedules: any[];
 }
 
-function TimelineAllocationRow({ alloc, freelancer, job, nucleo, hasConflict, overlaps, leftPercent, widthPercent, onJobClick, onJobHover }: TimelineAllocationRowProps) {
+function TimelineAllocationRow({ alloc, freelancer, job, nucleo, hasConflict, overlaps, leftPercent, widthPercent, onJobClick, onJobHover, paymentSchedules }: TimelineAllocationRowProps) {
   const allocationCode = alloc?.allocationCode || '—';
   const freelancerName = freelancer?.name || 'Incompleto';
   const mainRole = freelancer?.mainRole || '—';
@@ -271,6 +338,7 @@ function TimelineAllocationRow({ alloc, freelancer, job, nucleo, hasConflict, ov
               hasConflict={hasConflict}
               leftPercent={leftPercent}
               widthPercent={widthPercent}
+              paymentSchedules={paymentSchedules}
             />
           </div>
 
@@ -309,16 +377,64 @@ interface JobHoverCardProps {
   freelancer: any;
   targetRect: DOMRect;
   paymentCodes: any[];
+  paymentSchedules: any[];
 }
 
-function JobHoverCard({ job, allocation, freelancer, targetRect, paymentCodes }: JobHoverCardProps) {
+function JobHoverCard({ job, allocation, freelancer, targetRect, paymentCodes, paymentSchedules }: JobHoverCardProps) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
 
   const allocCode = allocation?.allocationCode || '—';
-  const paymentCodesArray = Array.isArray(paymentCodes) ? paymentCodes : [];
-  const paymentCode = paymentCodesArray.find(pc => pc?.allocationCode === allocCode);
-  const paymentStatus = paymentCode?.paymentStatus || 'Aguardando conclusão do job';
+
+  // Evaluation Status Text
+  const getEvaluationStatusText = (status?: string) => {
+    switch (status) {
+      case 'locked': return 'Bloqueada (Aguardando Faturamento)';
+      case 'available': return 'Liberada / Pendente';
+      case 'pending': return 'Em andamento';
+      case 'completed': return 'Concluída';
+      default: return 'Não iniciada';
+    }
+  };
+
+  const evalStatusText = getEvaluationStatusText(allocation?.evaluationStatus);
+
+  // Next tranche calculation
+  const nextTranche = useMemo(() => {
+    if (!paymentSchedules || paymentSchedules.length === 0) return null;
+    return [...paymentSchedules]
+      .filter(s => s.status !== 'paid' && s.status !== 'cancelled')
+      .sort((a, b) => {
+        const dateA = new Date(a.dueDate || a.referencePeriodEnd).getTime();
+        const dateB = new Date(b.dueDate || b.referencePeriodEnd).getTime();
+        return dateA - dateB;
+      })[0];
+  }, [paymentSchedules]);
+
+  const paymentModelText = useMemo(() => {
+    switch (allocation?.paymentModel) {
+      case 'monthly_recurring': return 'Recorrente Mensal';
+      case 'milestone': return 'Milestones';
+      case 'one_time': return 'Pagamento Único';
+      default: return 'Pagamento Único';
+    }
+  }, [allocation]);
+
+  const totalValue = useMemo(() => {
+    if (allocation?.totalContractValue) return allocation.totalContractValue;
+    if (allocation?.negotiatedTotal) return allocation.negotiatedTotal;
+    if (paymentSchedules && paymentSchedules.length > 0) {
+      return paymentSchedules.reduce((acc, s) => acc + s.amount, 0);
+    }
+    return (allocation?.approvedValue || 0);
+  }, [allocation, paymentSchedules]);
+
+  const nextTrancheText = useMemo(() => {
+    if (!nextTranche) return 'Nenhuma parcela pendente';
+    const dueDateStr = nextTranche.dueDate || nextTranche.referencePeriodEnd;
+    const statusText = getInstallmentStatusLabel(nextTranche.status);
+    return `${safeFormatCurrency(nextTranche.amount)} em ${safeFormatDate(dueDateStr)} (${statusText})`;
+  }, [nextTranche]);
 
   useEffect(() => {
     if (!tooltipRef.current) return;
@@ -354,7 +470,6 @@ function JobHoverCard({ job, allocation, freelancer, targetRect, paymentCodes }:
   const roleName = job?.roleNeeded || 'Não informado';
   const seniorityName = job?.seniorityNeeded || 'Não informado';
   const periodText = safeFormatPeriod(allocation?.startDate, allocation?.endDate);
-  const rateText = allocation?.approvedValue ? `${safeFormatCurrency(allocation.approvedValue)}/dia` : '—';
 
   return (
     <div
@@ -399,23 +514,31 @@ function JobHoverCard({ job, allocation, freelancer, targetRect, paymentCodes }:
           <span className="text-text-primary font-bold font-mono">{allocCode}</span>
         </div>
         <div>
-          <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Taxa Aprovada</span>
-          <span className="text-text-primary font-bold">{rateText}</span>
+          <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Valor Contrato</span>
+          <span className="text-text-primary font-bold">{safeFormatCurrency(totalValue)}</span>
+        </div>
+        <div>
+          <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Modelo Pagamento</span>
+          <span className="text-text-primary font-bold">{paymentModelText}</span>
+        </div>
+        <div className="col-span-2">
+          <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Status da Avaliação</span>
+          <span className={`font-bold ${allocation?.evaluationStatus === 'completed' ? 'text-emerald-500' : allocation?.evaluationStatus === 'locked' ? 'text-slate-450 dark:text-slate-400' : 'text-amber-500'}`}>
+            {evalStatusText}
+          </span>
+        </div>
+        <div className="col-span-2">
+          <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Próxima Parcela</span>
+          <span className="text-text-primary font-bold text-action-cyan">{nextTrancheText}</span>
         </div>
       </div>
 
-      <div className="border-t border-border-subtle pt-2 flex flex-col gap-1.5 text-[11px]">
-        <div>
-          <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Status Financeiro</span>
-          <span className="text-text-primary font-bold">{paymentStatus}</span>
+      {allocation?.observations && (
+        <div className="border-t border-border-subtle pt-2 text-[11px]">
+          <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Observações</span>
+          <p className="text-text-secondary italic truncate">{allocation.observations}</p>
         </div>
-        {allocation?.observations && (
-          <div>
-            <span className="text-text-muted block font-semibold text-[9px] uppercase tracking-wider">Observações</span>
-            <p className="text-text-secondary italic truncate">{allocation.observations}</p>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
@@ -430,9 +553,10 @@ interface JobDetailPopoverProps {
   onClose: () => void;
   onOpenDetails: () => void;
   paymentCodes: any[];
+  paymentSchedules: any[];
 }
 
-function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails, paymentCodes }: JobDetailPopoverProps) {
+function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails, paymentCodes, paymentSchedules }: JobDetailPopoverProps) {
   const allocCode = allocation?.allocationCode || '—';
   const paymentCodesArray = Array.isArray(paymentCodes) ? paymentCodes : [];
   const paymentCode = paymentCodesArray.find(pc => pc?.allocationCode === allocCode);
@@ -445,7 +569,54 @@ function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails,
   const roleName = job?.roleNeeded || 'Não informado';
   const seniorityName = job?.seniorityNeeded || 'Não informado';
   const periodText = safeFormatPeriod(allocation?.startDate, allocation?.endDate);
-  const rateText = allocation?.approvedValue ? safeFormatCurrency(allocation.approvedValue) : '—';
+
+  const nextTranche = useMemo(() => {
+    if (!paymentSchedules || paymentSchedules.length === 0) return null;
+    return [...paymentSchedules]
+      .filter(s => s.status !== 'paid' && s.status !== 'cancelled')
+      .sort((a, b) => {
+        const dateA = new Date(a.dueDate || a.referencePeriodEnd).getTime();
+        const dateB = new Date(b.dueDate || b.referencePeriodEnd).getTime();
+        return dateA - dateB;
+      })[0];
+  }, [paymentSchedules]);
+
+  const paymentModelText = useMemo(() => {
+    switch (allocation?.paymentModel) {
+      case 'monthly_recurring': return 'Recorrente Mensal';
+      case 'milestone': return 'Milestones';
+      case 'one_time': return 'Pagamento Único';
+      default: return 'Pagamento Único';
+    }
+  }, [allocation]);
+
+  const totalValue = useMemo(() => {
+    if (allocation?.totalContractValue) return allocation.totalContractValue;
+    if (allocation?.negotiatedTotal) return allocation.negotiatedTotal;
+    if (paymentSchedules && paymentSchedules.length > 0) {
+      return paymentSchedules.reduce((acc, s) => acc + s.amount, 0);
+    }
+    return (allocation?.approvedValue || 0);
+  }, [allocation, paymentSchedules]);
+
+  const getEvaluationStatusText = (status?: string) => {
+    switch (status) {
+      case 'locked': return 'Bloqueada (Aguardando Faturamento)';
+      case 'available': return 'Liberada / Pendente';
+      case 'pending': return 'Em andamento';
+      case 'completed': return 'Concluída';
+      default: return 'Não iniciada';
+    }
+  };
+
+  const evalStatusText = getEvaluationStatusText(allocation?.evaluationStatus);
+
+  const nextTrancheText = useMemo(() => {
+    if (!nextTranche) return 'Nenhuma parcela pendente';
+    const dueDateStr = nextTranche.dueDate || nextTranche.referencePeriodEnd;
+    const statusText = getInstallmentStatusLabel(nextTranche.status);
+    return `${safeFormatCurrency(nextTranche.amount)} em ${safeFormatDate(dueDateStr)} (${statusText})`;
+  }, [nextTranche]);
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-xs">
@@ -457,7 +628,7 @@ function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails,
         <div className="flex justify-between items-start border-b border-border-subtle pb-3">
           <div>
             <h3 className="font-extrabold text-text-primary text-base leading-snug">{jobName}</h3>
-            <p className="text-xs text-text-secondary">Cliente: {clientName}</p>
+            <p className="text-xs text-text-secondary font-medium">Cliente: {clientName}</p>
           </div>
           <button 
             onClick={onClose}
@@ -489,8 +660,22 @@ function JobDetailPopover({ job, allocation, freelancer, onClose, onOpenDetails,
             <span className="text-text-primary font-bold font-mono">{allocCode}</span>
           </div>
           <div>
-            <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Taxa Aprovada</span>
-            <span className="text-text-primary font-bold">{rateText}</span>
+            <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Valor Total Contrato</span>
+            <span className="text-text-primary font-bold">{safeFormatCurrency(totalValue)}</span>
+          </div>
+          <div>
+            <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Modelo Pagamento</span>
+            <span className="text-text-primary font-bold">{paymentModelText}</span>
+          </div>
+          <div>
+            <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Status da Avaliação</span>
+            <span className={`font-bold ${allocation?.evaluationStatus === 'completed' ? 'text-emerald-500' : allocation?.evaluationStatus === 'locked' ? 'text-slate-400' : 'text-amber-500'}`}>
+              {evalStatusText}
+            </span>
+          </div>
+          <div className="col-span-2">
+            <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Próxima Parcela</span>
+            <span className="text-text-primary font-bold text-action-cyan">{nextTrancheText}</span>
           </div>
           <div className="col-span-2">
             <span className="text-text-muted block font-semibold text-[10px] uppercase tracking-wider">Status Financeiro</span>
@@ -600,10 +785,15 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
       return;
     }
 
-    if (window.innerWidth < 768) {
-      setActiveMobileJob({ alloc, job, freelancer: fl });
+    if (db.setSelectedJobId && db.setActiveTab) {
+      db.setSelectedJobId(jobId);
+      db.setActiveTab('Shortlist');
     } else {
-      router.push(`/jobs/${jobId}`);
+      if (window.innerWidth < 768) {
+        setActiveMobileJob({ alloc, job, freelancer: fl });
+      } else {
+        router.push(`/jobs/${jobId}`);
+      }
     }
   };
 
@@ -731,6 +921,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
                   widthPercent={widthPercent}
                   onJobClick={() => handleJobClick(alloc, job, fl)}
                   onJobHover={(e) => handleJobHover(e, alloc, job, fl)}
+                  paymentSchedules={db.paymentSchedules?.filter(s => s.allocationId === alloc.id) || []}
                 />
               );
             })
@@ -746,6 +937,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
           freelancer={hoveredJob.freelancer}
           targetRect={hoveredJob.targetRect}
           paymentCodes={db.paymentCodes}
+          paymentSchedules={db.paymentSchedules?.filter(s => s.allocationId === hoveredJob.allocation.id) || []}
         />
       )}
 
@@ -756,12 +948,18 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
           allocation={activeMobileJob.alloc}
           freelancer={activeMobileJob.freelancer}
           paymentCodes={db.paymentCodes}
+          paymentSchedules={db.paymentSchedules?.filter(s => s.allocationId === activeMobileJob.alloc.id) || []}
           onClose={() => setActiveMobileJob(null)}
           onOpenDetails={() => {
             const jobId = activeMobileJob.job?.id;
             setActiveMobileJob(null);
             if (jobId) {
-              router.push(`/jobs/${jobId}`);
+              if (db.setSelectedJobId && db.setActiveTab) {
+                db.setSelectedJobId(jobId);
+                db.setActiveTab('Shortlist');
+              } else {
+                router.push(`/jobs/${jobId}`);
+              }
             }
           }}
         />

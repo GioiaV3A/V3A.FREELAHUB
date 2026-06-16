@@ -15,9 +15,9 @@ export async function validateEvaluationTokenAction(token: string) {
 
     const adminClient = getSupabaseAdmin();
 
-    // Fetch token details
+    // Fetch token details from reverse_evaluation_links
     const { data: tokenData, error: tokenErr } = await adminClient
-      .from('evaluation_tokens')
+      .from('reverse_evaluation_links')
       .select('*')
       .eq('token', token)
       .maybeSingle();
@@ -37,7 +37,7 @@ export async function validateEvaluationTokenAction(token: string) {
 
     if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
       await adminClient
-        .from('evaluation_tokens')
+        .from('reverse_evaluation_links')
         .update({ status: 'expired' })
         .eq('id', tokenData.id);
       return { success: false, error: 'Este link de avaliação expirou.' };
@@ -139,9 +139,9 @@ export async function submitReverseEvaluationAction(token: string, evaluationDat
 
     const adminClient = getSupabaseAdmin();
 
-    // 1. Verify token status and update to 'used' atomically
+    // 1. Verify token status and update to 'used' atomically on reverse_evaluation_links
     const { data: tokenData, error: tokenErr } = await adminClient
-      .from('evaluation_tokens')
+      .from('reverse_evaluation_links')
       .update({
         status: 'used',
         used_at: new Date().toISOString()
@@ -159,7 +159,7 @@ export async function submitReverseEvaluationAction(token: string, evaluationDat
     // 2. Fetch Leader ID and Client details from allocation
     const { data: alloc } = await adminClient
       .from('allocations')
-      .select('job_id, nucleo_id, jobs(requester_id, client_name)')
+      .select('job_id, request_id, nucleo_id, jobs(requester_id, client_name)')
       .eq('id', tokenData.allocation_id)
       .single();
 
@@ -172,7 +172,7 @@ export async function submitReverseEvaluationAction(token: string, evaluationDat
       .insert({
         allocation_id: tokenData.allocation_id,
         job_id: tokenData.job_id,
-        request_id: tokenData.request_id,
+        request_id: alloc?.request_id || null,
         freelancer_id: tokenData.freelancer_id,
         leader_id: leaderId,
         nucleo_id: alloc?.nucleo_id,
@@ -180,6 +180,7 @@ export async function submitReverseEvaluationAction(token: string, evaluationDat
         briefing_clarity: Number(evaluationData.briefingClarity),
         scope_alignment: Number(evaluationData.scopeAlignment),
         direct_leadership: Number(evaluationData.directLeadership),
+        leadership_quality: Number(evaluationData.leadershipQuality || evaluationData.directLeadership || 5),
         decision_speed: Number(evaluationData.decisionSpeed),
         communication: Number(evaluationData.communication),
         project_organization: Number(evaluationData.projectOrganization),
@@ -189,6 +190,7 @@ export async function submitReverseEvaluationAction(token: string, evaluationDat
         csat_project: Number(evaluationData.csatProject),
         ces_operational: Number(evaluationData.cesOperational),
         observations: evaluationData.observations || '',
+        reverse_evaluation_link_id: tokenData.id,
         status: 'completed'
       });
 
@@ -196,7 +198,7 @@ export async function submitReverseEvaluationAction(token: string, evaluationDat
       console.error('Error inserting reverse evaluation:', insertErr);
       // Rollback token state
       await adminClient
-        .from('evaluation_tokens')
+        .from('reverse_evaluation_links')
         .update({
           status: 'active',
           used_at: null
@@ -204,6 +206,14 @@ export async function submitReverseEvaluationAction(token: string, evaluationDat
         .eq('id', tokenData.id);
       return { success: false, error: 'Erro ao salvar avaliação. Tente novamente.' };
     }
+
+    // Update allocation reverse evaluation status to completed
+    await adminClient
+      .from('allocations')
+      .update({
+        reverse_evaluation_status: 'completed'
+      })
+      .eq('id', tokenData.allocation_id);
 
     return { success: true, message: 'Obrigado! Sua avaliação reversa foi enviada com sucesso.' };
   } catch (err: any) {
@@ -213,13 +223,35 @@ export async function submitReverseEvaluationAction(token: string, evaluationDat
 }
 
 /**
- * Submits leader's evaluation of a freelancer and releases their payment code.
- * Also generates a token for the reverse evaluation.
+ * Submits split freelancer and/or delivery evaluations.
+ * Unlocks faturamento / payment code and generates reverse evaluation token when both are completed.
  */
-export async function submitLeaderEvaluationAction(allocationId: string, evaluationData: any) {
+export async function submitFreelancerAndDeliveryEvaluationAction(
+  accessToken: string,
+  allocationId: string,
+  type: 'freelancer' | 'delivery',
+  payload: any
+) {
   try {
     const adminClient = getSupabaseAdmin();
 
+    // 1. Verify requester session
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    // 2. Fetch the allocation
     const { data: alloc, error: allocErr } = await adminClient
       .from('allocations')
       .select('*, jobs(*), job_freelancer_requests(*)')
@@ -230,100 +262,194 @@ export async function submitLeaderEvaluationAction(allocationId: string, evaluat
       return { success: false, error: 'Alocação associada não encontrada.' };
     }
 
-    // 1. Insert evaluation record
-    const { data: createdEval, error: evalErr } = await adminClient
+    // 3. Find or create an evaluation row for this allocation
+    const { data: existingEval } = await adminClient
       .from('evaluations')
-      .insert({
-        job_id: alloc.job_id,
-        request_id: alloc.request_id,
-        allocation_id: allocationId,
-        freelancer_id: alloc.freelancer_id,
-        nucleo_id: alloc.nucleo_id,
-        evaluator_id: evaluationData.evaluatorId,
-        evaluator_role: evaluationData.evaluatorRole || 'nucleo',
-        client: alloc.jobs?.client_name || '',
-        function_contracted: alloc.job_freelancer_requests?.function_name || '',
-        seniority_contracted: alloc.job_freelancer_requests?.seniority || 'Pleno',
-        agreed_rate: alloc.approved_value,
-        policy_status: alloc.policy_status || 'within_policy',
-        technical_quality: Number(evaluationData.technicalQuality),
-        deadline: Number(evaluationData.deadline),
-        briefing_adherence: Number(evaluationData.briefingAdherence),
-        communication: Number(evaluationData.communication),
-        autonomy: Number(evaluationData.autonomy),
-        behavior: Number(evaluationData.behavior),
-        collaboration: Number(evaluationData.collaboration || 5),
-        flexibility: Number(evaluationData.flexibility || 5),
-        cost_benefit: Number(evaluationData.costBenefit || 5),
-        comment: evaluationData.comment || '',
-        recommendation: evaluationData.recommendation === 'Sim' ? 'sim' : evaluationData.recommendation === 'Sim, com restrição' ? 'sim_com_restricao' : 'nao',
-        would_hire_again: evaluationData.wouldHireAgain || 'sim',
-        rework_level: evaluationData.reworkLevel || 'nao',
-        critical_problem: evaluationData.criticalProblem || false,
-        conditional_answers: evaluationData.conditionalAnswers || {},
-        status: 'submitted'
-      })
       .select('*')
-      .single();
+      .eq('allocation_id', allocationId)
+      .maybeSingle();
 
-    if (evalErr) {
-      console.error('Error saving evaluation:', evalErr);
-      return { success: false, error: 'Erro ao registrar avaliação.' };
+    const evalData: any = {};
+    if (type === 'delivery') {
+      evalData.technical_quality = Number(payload.technicalQuality);
+      evalData.briefing_adherence = Number(payload.briefingAdherence);
+      evalData.deadline = Number(payload.deadline);
+      evalData.rework = Number(payload.rework);
+      evalData.scope_adherence = Number(payload.scopeAdherence);
+      evalData.cost_benefit = Number(payload.costBenefit);
+      evalData.materials_quality = Number(payload.materialsQuality);
+      evalData.comment = payload.comment || existingEval?.comment || '';
+      evalData.would_hire_again = payload.wouldHireAgain || existingEval?.would_hire_again || 'sim';
+      evalData.rework_level = payload.reworkLevel || existingEval?.rework_level || 'nao';
+      evalData.critical_problem = payload.criticalProblem || existingEval?.critical_problem || false;
+    } else if (type === 'freelancer') {
+      evalData.communication = Number(payload.communication);
+      evalData.autonomy = Number(payload.autonomy);
+      evalData.reliability = Number(payload.reliability);
+      evalData.collaboration = Number(payload.collaboration);
+      evalData.flexibility = Number(payload.flexibility);
+      evalData.behavior = Number(payload.behavior);
+      evalData.culture_processes = Number(payload.cultureProcesses);
+      evalData.comment = payload.comment || existingEval?.comment || '';
     }
 
-    // 2. Mark allocation as completed
-    await adminClient
+    // General fields that are always needed
+    evalData.evaluator_id = requester.id;
+    evalData.evaluator_role = requesterProfile.role || 'nucleo';
+    evalData.client = alloc.jobs?.client_name || '';
+    evalData.function_contracted = alloc.job_freelancer_requests?.function_name || '';
+    evalData.seniority_contracted = alloc.job_freelancer_requests?.seniority || 'Pleno';
+    evalData.agreed_rate = alloc.approved_value;
+    evalData.policy_status = alloc.policy_status || 'within_policy';
+
+    let savedEval;
+    if (existingEval) {
+      const { data: updated, error: updateErr } = await adminClient
+        .from('evaluations')
+        .update(evalData)
+        .eq('id', existingEval.id)
+        .select('*')
+        .single();
+      if (updateErr) {
+        console.error('Error updating evaluation:', updateErr);
+        return { success: false, error: 'Erro ao atualizar a avaliação.' };
+      }
+      savedEval = updated;
+    } else {
+      evalData.job_id = alloc.job_id;
+      evalData.request_id = alloc.request_id;
+      evalData.allocation_id = allocationId;
+      evalData.freelancer_id = alloc.freelancer_id;
+      evalData.nucleo_id = alloc.nucleo_id;
+      evalData.status = 'submitted';
+
+      const { data: inserted, error: insertErr } = await adminClient
+        .from('evaluations')
+        .insert(evalData)
+        .select('*')
+        .single();
+      if (insertErr) {
+        console.error('Error inserting evaluation:', insertErr);
+        return { success: false, error: 'Erro ao criar a avaliação.' };
+      }
+      savedEval = inserted;
+    }
+
+    // 4. Update the flags on allocation
+    const allocUpdate: any = {};
+    if (type === 'delivery') {
+      allocUpdate.evaluated_delivery = true;
+    } else {
+      allocUpdate.evaluated_freelancer = true;
+    }
+
+    // Check if both parts are evaluated
+    const isDeliveryEvaluated = type === 'delivery' || alloc.evaluated_delivery;
+    const isFreelancerEvaluated = type === 'freelancer' || alloc.evaluated_freelancer;
+
+    if (isDeliveryEvaluated && isFreelancerEvaluated) {
+      allocUpdate.status = 'completed';
+      allocUpdate.evaluation_status = 'completed';
+      allocUpdate.completed_at = new Date().toISOString();
+      allocUpdate.released_for_payment_at = new Date().toISOString();
+      allocUpdate.reverse_evaluation_status = 'generated';
+    } else {
+      allocUpdate.evaluation_status = 'pending';
+    }
+
+    const { error: allocUpdateErr } = await adminClient
       .from('allocations')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        released_for_payment_at: new Date().toISOString()
-      })
+      .update(allocUpdate)
       .eq('id', allocationId);
 
-    // 3. Unlock payment status in payment_codes
-    await adminClient
-      .from('payment_codes')
-      .update({
-        payment_status: 'liberado_para_pagamento',
-        released_at: new Date().toISOString(),
-        released_by: evaluationData.evaluatorId
-      })
-      .eq('allocation_id', allocationId);
+    if (allocUpdateErr) {
+      console.error('Error updating allocation flags:', allocUpdateErr);
+    }
 
-    // 4. Update the job_freelancer_request status
-    await adminClient
-      .from('job_freelancer_requests')
-      .update({
-        status: 'concluido'
-      })
-      .eq('id', alloc.request_id);
+    // 5. If both are evaluated:
+    // - Generate reverse evaluation token link in `reverse_evaluation_links`
+    // - Update job freelancer request status
+    // - Update payment status in payment_codes to 'liberado_para_pagamento'
+    let reverseToken = null;
+    if (isDeliveryEvaluated && isFreelancerEvaluated) {
+      const token = randomUUID();
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 30); // 30 days validation
 
-    // 5. Generate reverse evaluation token for the freelancer
-    const token = randomUUID();
-    const expires = new Date();
-    expires.setDate(expires.getDate() + 30); // 30 days validation
+      const { data: linkData, error: linkErr } = await adminClient
+        .from('reverse_evaluation_links')
+        .insert({
+          allocation_id: allocationId,
+          job_id: alloc.job_id,
+          freelancer_id: alloc.freelancer_id,
+          nucleo_id: alloc.nucleo_id,
+          token,
+          status: 'active',
+          expires_at: expires.toISOString(),
+          created_by: requester.id
+        })
+        .select('token')
+        .single();
 
-    await adminClient
-      .from('evaluation_tokens')
-      .insert({
-        allocation_id: allocationId,
-        job_id: alloc.job_id,
-        request_id: alloc.request_id,
-        freelancer_id: alloc.freelancer_id,
-        token,
-        evaluation_type: 'freelancer_to_project',
-        expires_at: expires.toISOString(),
-        created_by: evaluationData.evaluatorId
-      });
+      if (!linkErr && linkData) {
+        reverseToken = linkData.token;
+      } else {
+        console.error('Error inserting reverse evaluation link:', linkErr);
+      }
+
+      // Update job request status
+      await adminClient
+        .from('job_freelancer_requests')
+        .update({ status: 'concluido' })
+        .eq('id', alloc.request_id);
+
+      // Unlock payment status in payment_codes
+      await adminClient
+        .from('payment_codes')
+        .update({
+          payment_status: 'liberado_para_pagamento',
+          released_at: new Date().toISOString(),
+          released_by: requester.id
+        })
+        .eq('allocation_id', allocationId);
+    }
 
     return {
       success: true,
-      token,
-      evaluation: createdEval
+      evaluation: savedEval,
+      bothCompleted: isDeliveryEvaluated && isFreelancerEvaluated,
+      reverseToken
     };
   } catch (err: any) {
-    console.error('submitLeaderEvaluationAction error:', err);
+    console.error('submitFreelancerAndDeliveryEvaluationAction error:', err);
+    return { success: false, error: 'Erro inesperado no servidor.' };
+  }
+}
+
+/**
+ * Submits leader's evaluation of a freelancer. (Deprecated / compatibility fallback)
+ */
+export async function submitLeaderEvaluationAction(allocationId: string, evaluationData: any) {
+  try {
+    const adminClient = getSupabaseAdmin();
+    // Simulate by submitting as 'delivery' then 'freelancer' to satisfy both parts
+    const res1 = await submitFreelancerAndDeliveryEvaluationAction(
+      evaluationData.accessToken || '', 
+      allocationId, 
+      'delivery', 
+      evaluationData
+    );
+    if (!res1.success) return res1;
+    
+    const res2 = await submitFreelancerAndDeliveryEvaluationAction(
+      evaluationData.accessToken || '', 
+      allocationId, 
+      'freelancer', 
+      evaluationData
+    );
+    return res2;
+  } catch (err: any) {
+    console.error('submitLeaderEvaluationAction fallback error:', err);
     return { success: false, error: 'Erro inesperado no servidor.' };
   }
 }

@@ -89,6 +89,16 @@ export interface Job {
   closedAt?: string | null;
   closedBy?: string | null;
   closureReason?: string | null;
+  paymentFlow?: 'one_time' | 'recurring';
+  remunerationModel?: 'daily' | 'hourly' | 'fixed_job' | 'monthly_salary';
+  expectedRate?: number;
+  expectedHours?: number;
+  expectedPaymentDay?: number;
+  expectedPaymentCount?: number;
+  expectedTotalCompensation?: number;
+  expectedBudgetSavingAmount?: number;
+  expectedBudgetSavingPercentage?: number;
+  paymentPolicyStatus?: 'within_policy' | 'above_policy_requires_approval' | 'no_policy_found';
 }
 
 export interface Shortlist {
@@ -126,7 +136,7 @@ export interface Negotiation {
   jobId: string;
   freelancerId: string;
   negotiatedValue: number;
-  billingType: 'Diária' | 'Hora' | 'Job Fechado';
+  billingType: 'Diária' | 'Hora' | 'Job Fechado' | 'Mensal / Salário';
   scope: string;
   status: string;
   justificationIfAbovePolicy?: string;
@@ -136,11 +146,14 @@ export interface ValuePolicy {
   id: string;
   role: string;
   seniority: 'Júnior' | 'Pleno' | 'Sênior' | 'Especialista';
-  billingType: 'Diária' | 'Hora' | 'Job Fechado';
+  billingType: 'Diária' | 'Hora' | 'Job Fechado' | 'Mensal / Salário';
   referenceValue: number;
   ceilingValue: number;
   status?: 'Ativo' | 'Inativo';
   updatedAt?: string;
+  remunerationModel?: 'daily' | 'hourly' | 'fixed_job' | 'monthly_salary';
+  approvalRequiredAbove?: number;
+  notes?: string;
 }
 
 export interface Allocation {
@@ -161,6 +174,85 @@ export interface Allocation {
   dailySavingAmount?: number;
   budgetDeltaStatus?: string;
   estimatedHours?: number;
+  // Recurrent and billing model fields
+  paymentModel?: 'one_time' | 'monthly_recurring' | 'milestone';
+  contractStartDate?: string;
+  contractEndDate?: string;
+  recurrenceFrequency?: 'none' | 'monthly' | 'custom';
+  recurringAmount?: number;
+  totalContractValue?: number;
+  paymentTerms?: string;
+  paymentNotes?: string;
+  paymentRequestStatus?: 'not_requested' | 'partially_requested' | 'requested' | 'completed' | 'cancelled';
+  evaluationStatus?: 'locked' | 'available' | 'pending' | 'completed';
+  reverseEvaluationStatus?: 'not_generated' | 'generated' | 'sent' | 'completed' | 'expired';
+  evaluatedFreelancer?: boolean;
+  evaluatedDelivery?: boolean;
+}
+
+export interface AllocationPaymentSchedule {
+  id: string;
+  allocationId: string;
+  jobId: string;
+  freelancerId: string;
+  nucleoId: string;
+  installmentNumber: number;
+  referencePeriodStart: string;
+  referencePeriodEnd: string;
+  dueDate?: string;
+  amount: number;
+  status: 'pending' | 'payment_request_generated' | 'exported' | 'sent_to_finance' | 'finance_code_received' | 'paid' | 'cancelled';
+  paymentRequestId?: string;
+  financeCode?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PaymentRequest {
+  id: string;
+  requestCode: string;
+  allocationId: string;
+  paymentScheduleId?: string;
+  jobId: string;
+  freelancerId: string;
+  nucleoId: string;
+  issuedBy: string;
+  issuedByRole: string;
+  requestType: 'one_time' | 'recurring_installment' | 'milestone';
+  paymentNumber?: number;
+  totalPayments?: number;
+  referencePeriodStart?: string;
+  referencePeriodEnd?: string;
+  amount: number;
+  paymentDueDate?: string;
+  paymentDescription?: string;
+  paymentJustification?: string;
+  documentStatus: 'generated' | 'exported' | 'sent_to_finance' | 'finance_code_registered' | 'paid' | 'cancelled';
+  exportedAt?: string;
+  exportedBy?: string;
+  documentUrl?: string;
+  documentFileName?: string;
+  financeCode?: string;
+  financeCodeRegisteredAt?: string;
+  financeCodeRegisteredBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ReverseEvaluationLink {
+  id: string;
+  token: string;
+  allocationId: string;
+  jobId: string;
+  freelancerId: string;
+  nucleoId: string;
+  status: 'active' | 'used' | 'expired' | 'cancelled';
+  expiresAt?: string;
+  usedAt?: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Evaluation {
@@ -185,6 +277,12 @@ export interface Evaluation {
   reworkLevel?: string;
   criticalProblem?: boolean;
   conditionalAnswers?: any;
+  // New behavioral and quality criteria
+  reliability?: number;
+  cultureProcesses?: number;
+  rework?: number;
+  scopeAdherence?: number;
+  materialsQuality?: number;
 }
 
 export interface PaymentCode {

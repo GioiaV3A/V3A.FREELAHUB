@@ -313,10 +313,10 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
     };
 
     try {
-      const result = await submitLeaderEvaluationAction(selectedAlloc.id, evaluationPayload);
+      const result = (await submitLeaderEvaluationAction(selectedAlloc.id, evaluationPayload)) as any;
 
-      if (result.success && result.token) {
-        setEvaluationToken(result.token);
+      if (result.success && result.reverseToken) {
+        setEvaluationToken(result.reverseToken);
         // Refresh global state so statuses update
         await db.reloadDatabase();
       } else {

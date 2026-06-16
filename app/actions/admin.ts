@@ -1022,3 +1022,687 @@ export async function updateThemePreferenceAction(accessToken: string, theme: st
   }
 }
 
+/**
+ * Helper to calculate allocation days on server side
+ */
+function calculateDays(startDateStr: string, endDateStr: string): number {
+  if (!startDateStr || !endDateStr) return 0;
+  const start = new Date(startDateStr + 'T12:00:00');
+  const end = new Date(endDateStr + 'T12:00:00');
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  return diffDays > 0 ? diffDays : 0;
+}
+
+/**
+ * Helper to generate monthly installments reference periods and due dates
+ */
+function generateMonthlyInstallmentsList(startDateStr: string, endDateStr: string, preferredDueDay: number, recurringAmount: number) {
+  const installments: Array<{
+    installment_number: number;
+    reference_period_start: string;
+    reference_period_end: string;
+    due_date: string;
+    amount: number;
+  }> = [];
+
+  const start = new Date(startDateStr + 'T12:00:00');
+  const end = new Date(endDateStr + 'T12:00:00');
+
+  let currentStart = new Date(start);
+  let installmentNum = 1;
+
+  while (currentStart < end) {
+    let idealEnd = new Date(currentStart);
+    idealEnd.setMonth(idealEnd.getMonth() + 1);
+    idealEnd.setDate(idealEnd.getDate() - 1);
+
+    let currentEnd = new Date(idealEnd);
+    if (currentEnd > end) {
+      currentEnd = new Date(end);
+    }
+
+    let nextMonthDate = new Date(currentEnd);
+    nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+    
+    let dueDay = preferredDueDay;
+    let tempDue = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), dueDay, 12, 0, 0);
+    if (tempDue.getMonth() !== nextMonthDate.getMonth()) {
+      tempDue = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1, 0, 12, 0, 0);
+    }
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const formatDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    installments.push({
+      installment_number: installmentNum++,
+      reference_period_start: formatDate(currentStart),
+      reference_period_end: formatDate(currentEnd),
+      due_date: formatDate(tempDue),
+      amount: recurringAmount
+    });
+
+    let nextStart = new Date(currentEnd);
+    nextStart.setDate(nextStart.getDate() + 1);
+    currentStart = nextStart;
+  }
+
+  return installments;
+}
+
+/**
+ * Helper to update payment_request_status on allocations table
+ */
+async function updateAllocationPaymentStatus(adminClient: any, allocationId: string) {
+  const { data: schedules } = await adminClient
+    .from('allocation_payment_schedules')
+    .select('status')
+    .eq('allocation_id', allocationId);
+
+  if (!schedules || schedules.length === 0) return;
+
+  const total = schedules.length;
+  const pending = schedules.filter((s: any) => s.status === 'pending').length;
+  const paid = schedules.filter((s: any) => s.status === 'paid').length;
+  const generated = schedules.filter((s: any) => s.status !== 'pending' && s.status !== 'cancelled').length;
+
+  let aggregatedStatus = 'not_requested';
+  if (paid === total) {
+    aggregatedStatus = 'completed';
+  } else if (generated === total) {
+    aggregatedStatus = 'requested';
+  } else if (generated > 0) {
+    aggregatedStatus = 'partially_requested';
+  }
+
+  await adminClient
+    .from('allocations')
+    .update({ payment_request_status: aggregatedStatus })
+    .eq('id', allocationId);
+}
+
+/**
+ * Action to confirm freelancer allocation to a job request, creating payment schedules.
+ */
+export async function confirmAllocationAction(
+  accessToken: string,
+  payload: {
+    requestId: string;
+    freelancerId: string;
+    negotiatedRate: number;
+    remunerationModel: string; // 'Diária', 'Hora', 'Job Fechado'
+    scope: string;
+    paymentModel: 'one_time' | 'monthly_recurring' | 'milestone';
+    contractStartDate?: string;
+    contractEndDate?: string;
+    recurringAmount?: number;
+    preferredDueDay?: number;
+    paymentTerms?: string;
+    paymentNotes?: string;
+  }
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // 1. Verify requester session
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    // Check requester profile permissions
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status, nucleo_id')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role === 'rh') {
+      return { success: false, error: 'Usuários do RH não podem homologar ou editar alocações.' };
+    }
+
+    // Fetch job request & job details
+    const { data: reqData, error: reqDataErr } = await adminClient
+      .from('job_freelancer_requests')
+      .select(`
+        id,
+        job_id,
+        budget_max,
+        calculated_days,
+        allocation_id,
+        jobs (
+          id,
+          nucleo_id,
+          start_date,
+          end_date
+        )
+      `)
+      .eq('id', payload.requestId)
+      .single();
+
+    if (reqDataErr || !reqData) {
+      return { success: false, error: 'Job request não encontrado.' };
+    }
+
+    const job = (reqData as any).jobs;
+    if (!job) {
+      return { success: false, error: 'Job correspondente não encontrado.' };
+    }
+
+    // Block if job already booked
+    if (reqData.allocation_id) {
+      return { success: false, error: 'Este job já possui uma alocação ativa.' };
+    }
+
+    // Check nucleus matching
+    if (requesterProfile.role === 'nucleo' && requesterProfile.nucleo_id !== job.nucleo_id) {
+      return { success: false, error: 'Você não tem permissão para homologar jobs de outro núcleo.' };
+    }
+
+    // Fetch candidate
+    const { data: candidate, error: candErr } = await adminClient
+      .from('shortlist_candidates')
+      .select('id, policy_status, schedule_conflict, requires_rh_approval, requires_head_approval, estimated_hours')
+      .eq('request_id', payload.requestId)
+      .eq('freelancer_id', payload.freelancerId)
+      .single();
+
+    if (candErr || !candidate) {
+      return { success: false, error: 'Candidato não encontrado na shortlist.' };
+    }
+
+    // Calculate dates
+    const start_date = payload.contractStartDate || job.start_date;
+    const end_date = payload.contractEndDate || job.end_date;
+
+    // Calculate negotiated total & savings
+    let negotiatedTotal = 0;
+    const model = payload.remunerationModel?.toLowerCase() || '';
+    if (model === 'diária' || model === 'diaria') {
+      const days = calculateDays(start_date, end_date);
+      negotiatedTotal = payload.negotiatedRate * (days || 1);
+    } else if (model === 'hora') {
+      negotiatedTotal = payload.negotiatedRate * (candidate.estimated_hours || 0);
+    } else {
+      negotiatedTotal = payload.negotiatedRate;
+    }
+
+    let totalContractValue = payload.paymentModel === 'monthly_recurring'
+      ? (payload.recurringAmount || payload.negotiatedRate) * generateMonthlyInstallmentsList(start_date, end_date, payload.preferredDueDay || 5, payload.recurringAmount || payload.negotiatedRate).length
+      : negotiatedTotal;
+
+    const budgetSavingAmount = Number(reqData.budget_max || 0) - totalContractValue;
+    const budgetSavingPercentage = reqData.budget_max > 0 ? (budgetSavingAmount / reqData.budget_max) * 100 : 0;
+    const budgetDeltaStatus = budgetSavingAmount > 0 ? 'saving' : budgetSavingAmount === 0 ? 'neutral' : 'over_budget';
+
+    // Insert Allocation
+    const { data: newAlloc, error: allocCreateErr } = await adminClient
+      .from('allocations')
+      .insert({
+        job_id: reqData.job_id,
+        request_id: payload.requestId,
+        freelancer_id: payload.freelancerId,
+        nucleo_id: job.nucleo_id,
+        start_date,
+        end_date,
+        approved_value: payload.negotiatedRate,
+        status: 'booked',
+        created_by: requester.id,
+        negotiated_total: negotiatedTotal,
+        budget_saving_amount: budgetSavingAmount,
+        budget_saving_percentage: budgetSavingPercentage,
+        budget_delta_status: budgetDeltaStatus,
+        payment_model: payload.paymentModel,
+        contract_start_date: start_date,
+        contract_end_date: end_date,
+        recurrence_frequency: payload.paymentModel === 'monthly_recurring' ? 'monthly' : 'none',
+        recurring_amount: payload.paymentModel === 'monthly_recurring' ? (payload.recurringAmount || payload.negotiatedRate) : null,
+        total_contract_value: totalContractValue,
+        payment_terms: payload.paymentTerms || '',
+        payment_notes: payload.paymentNotes || '',
+        payment_request_status: 'not_requested',
+        evaluation_status: 'locked',
+        reverse_evaluation_status: 'not_generated'
+      })
+      .select('id, allocation_code')
+      .single();
+
+    if (allocCreateErr || !newAlloc) {
+      console.error('Error inserting allocation:', allocCreateErr);
+      return { success: false, error: `Erro ao criar alocação: ${allocCreateErr?.message}` };
+    }
+
+    const modelDb = 
+      payload.remunerationModel?.toLowerCase() === 'diária' || payload.remunerationModel?.toLowerCase() === 'diaria' || payload.remunerationModel === 'daily' ? 'daily' :
+      payload.remunerationModel?.toLowerCase() === 'hora' || payload.remunerationModel === 'hourly' ? 'hourly' :
+      payload.remunerationModel?.toLowerCase() === 'job fechado' || payload.remunerationModel === 'fixed_job' ? 'fixed_job' : 'monthly_salary';
+
+    // Generate Payment Installments in schedule
+    if (payload.paymentModel === 'monthly_recurring') {
+      const preferredDueDay = payload.preferredDueDay || 5;
+      const recurringAmount = payload.recurringAmount || payload.negotiatedRate;
+      
+      const installments = generateMonthlyInstallmentsList(start_date, end_date, preferredDueDay, recurringAmount);
+      
+      for (const inst of installments) {
+        const { error: instErr } = await adminClient
+          .from('allocation_payment_schedules')
+          .insert({
+            allocation_id: newAlloc.id,
+            job_id: reqData.job_id,
+            freelancer_id: payload.freelancerId,
+            nucleo_id: job.nucleo_id,
+            installment_number: inst.installment_number,
+            payment_number: inst.installment_number,
+            total_payments: installments.length,
+            reference_period_start: inst.reference_period_start,
+            reference_period_end: inst.reference_period_end,
+            due_date: inst.due_date,
+            amount: inst.amount,
+            remuneration_model: modelDb,
+            status: 'pending'
+          });
+
+        if (instErr) {
+          console.error('Error generating installment schedule:', instErr);
+        }
+      }
+    } else {
+      const preferredDueDay = payload.preferredDueDay || 5;
+      let due_date = end_date;
+      if (end_date) {
+        const endD = new Date(end_date + 'T12:00:00');
+        endD.setMonth(endD.getMonth() + 1);
+        let tempDue = new Date(endD.getFullYear(), endD.getMonth(), preferredDueDay, 12, 0, 0);
+        if (tempDue.getMonth() !== endD.getMonth()) {
+          tempDue = new Date(endD.getFullYear(), endD.getMonth() + 1, 0, 12, 0, 0);
+        }
+        const pad = (n: number) => String(n).padStart(2, '0');
+        due_date = `${tempDue.getFullYear()}-${pad(tempDue.getMonth() + 1)}-${pad(tempDue.getDate())}`;
+      }
+
+      await adminClient
+        .from('allocation_payment_schedules')
+        .insert({
+          allocation_id: newAlloc.id,
+          job_id: reqData.job_id,
+          freelancer_id: payload.freelancerId,
+          nucleo_id: job.nucleo_id,
+          installment_number: 1,
+          payment_number: 1,
+          total_payments: 1,
+          reference_period_start: start_date,
+          reference_period_end: end_date,
+          due_date: due_date,
+          amount: totalContractValue,
+          remuneration_model: modelDb,
+          status: 'pending'
+        });
+    }
+
+    // Update job request
+    await adminClient
+      .from('job_freelancer_requests')
+      .update({
+        allocation_id: newAlloc.id,
+        selected_freelancer_id: payload.freelancerId,
+        locked_for_allocation: true,
+        status: 'bookado',
+        closed_at: new Date().toISOString(),
+        closed_by: requester.id,
+        closure_reason: 'Alocação homologada pelo núcleo'
+      })
+      .eq('id', payload.requestId);
+
+    // Update parent job status to 'bookado'
+    await adminClient
+      .from('jobs')
+      .update({ status: 'bookado' })
+      .eq('id', reqData.job_id);
+
+    // Update shortlist candidates
+    await adminClient
+      .from('shortlist_candidates')
+      .update({
+        selected_for_allocation: true,
+        candidate_status: 'aprovado_rh',
+        negotiation_status: 'aceitou'
+      })
+      .eq('id', candidate.id);
+
+    // Deselect other candidates
+    await adminClient
+      .from('shortlist_candidates')
+      .update({
+        candidate_status: 'indisponivel',
+        negotiation_status: 'nao_aceitou'
+      })
+      .eq('request_id', payload.requestId)
+      .neq('id', candidate.id);
+
+    // Record negotiation history
+    await adminClient
+      .from('negotiation_history')
+      .insert({
+        job_id: reqData.job_id,
+        request_id: payload.requestId,
+        shortlist_candidate_id: candidate.id,
+        freelancer_id: payload.freelancerId,
+        previous_status: 'em_negociacao',
+        new_status: 'aceitou',
+        previous_rate: payload.negotiatedRate,
+        new_rate: payload.negotiatedRate,
+        notes: payload.scope || 'Alocação confirmada no modelo ' + payload.paymentModel,
+        changed_by: requester.id,
+        changed_by_role: requesterProfile.role
+      });
+
+    return {
+      success: true,
+      allocation_id: newAlloc.id,
+      allocation_code: newAlloc.allocation_code
+    };
+  } catch (err: any) {
+    console.error('confirmAllocationAction error:', err);
+    return { success: false, error: err.message || 'Erro inesperado no servidor.' };
+  }
+}
+
+/**
+ * Generates a payment request (faturamento) for a scheduled installment.
+ */
+export async function generatePaymentRequestAction(
+  accessToken: string,
+  scheduleId: string,
+  payload: {
+    paymentDueDate?: string;
+    paymentDescription?: string;
+    paymentJustification?: string;
+  }
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // 1. Verify requester session
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status, nucleo_id')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role === 'rh') {
+      return { success: false, error: 'Usuários do RH não podem gerar solicitações de pagamento.' };
+    }
+
+    // 2. Fetch schedule
+    const { data: schedule, error: schedErr } = await adminClient
+      .from('allocation_payment_schedules')
+      .select('*')
+      .eq('id', scheduleId)
+      .single();
+
+    if (schedErr || !schedule) {
+      return { success: false, error: 'Parcela de faturamento não encontrada.' };
+    }
+
+    if (schedule.status !== 'pending') {
+      return { success: false, error: 'Esta parcela já possui faturamento emitido ou cancelado.' };
+    }
+
+    // Check permissions: NÚCLEO user can only generate requests for their own nucleo
+    if (requesterProfile.role === 'nucleo' && requesterProfile.nucleo_id !== schedule.nucleo_id) {
+      return { success: false, error: 'Você não tem permissão para emitir solicitação de pagamento desta alocação.' };
+    }
+
+    // 3. Generate Request Code: REQ-PAG-[NUCLEO_CODE]-[YYYY]-[INCREMENT]
+    const { data: nucleo } = await adminClient
+      .from('nucleos')
+      .select('name, code')
+      .eq('id', schedule.nucleo_id)
+      .single();
+
+    const nucPrefix = nucleo?.code || nucleo?.name?.substring(0, 3).toUpperCase() || 'NUC';
+    const year = new Date().getFullYear();
+
+    const { count } = await adminClient
+      .from('payment_requests')
+      .select('*', { count: 'exact', head: true });
+
+    const increment = String((count || 0) + 1).padStart(4, '0');
+    const requestCode = `REQ-PAG-${nucPrefix}-${year}-${increment}`;
+
+    // Get total installments
+    const { count: totalPayments } = await adminClient
+      .from('allocation_payment_schedules')
+      .select('*', { count: 'exact', head: true })
+      .eq('allocation_id', schedule.allocation_id);
+
+    // 4. Create request
+    const { data: request, error: insertErr } = await adminClient
+      .from('payment_requests')
+      .insert({
+        request_code: requestCode,
+        allocation_id: schedule.allocation_id,
+        payment_schedule_id: schedule.id,
+        job_id: schedule.job_id,
+        freelancer_id: schedule.freelancer_id,
+        nucleo_id: schedule.nucleo_id,
+        issued_by: requester.id,
+        issued_by_role: requesterProfile.role,
+        request_type: totalPayments && totalPayments > 1 ? 'recurring_installment' : 'one_time',
+        payment_number: schedule.installment_number,
+        total_payments: totalPayments || 1,
+        reference_period_start: schedule.reference_period_start,
+        reference_period_end: schedule.reference_period_end,
+        amount: schedule.amount,
+        payment_due_date: payload.paymentDueDate || schedule.due_date || null,
+        payment_description: payload.paymentDescription || `Faturamento Ref Parcela ${schedule.installment_number}`,
+        payment_justification: payload.paymentJustification || '',
+        document_status: 'generated'
+      })
+      .select('*')
+      .single();
+
+    if (insertErr || !request) {
+      console.error('Error inserting payment request:', insertErr);
+      return { success: false, error: `Erro ao criar solicitação de pagamento: ${insertErr?.message}` };
+    }
+
+    // 5. Update schedule status
+    await adminClient
+      .from('allocation_payment_schedules')
+      .update({
+        status: 'payment_request_generated',
+        payment_request_id: request.id
+      })
+      .eq('id', schedule.id);
+
+    // Update allocation faturamento aggregation status
+    await updateAllocationPaymentStatus(adminClient, schedule.allocation_id);
+
+    return { success: true, data: request };
+  } catch (err: any) {
+    console.error('generatePaymentRequestAction error:', err);
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
+/**
+ * Exports a payment request, marking it as exported and unlocking evaluation.
+ */
+export async function exportPaymentRequestAction(accessToken: string, requestId: string) {
+  try {
+    const adminClient = getSupabaseAdmin();
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status, nucleo_id')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role === 'rh') {
+      return { success: false, error: 'Usuários do RH não podem exportar faturamentos.' };
+    }
+
+    // Fetch request
+    const { data: request, error: reqErr } = await adminClient
+      .from('payment_requests')
+      .select('*')
+      .eq('id', requestId)
+      .single();
+
+    if (reqErr || !request) {
+      return { success: false, error: 'Solicitação de pagamento não encontrada.' };
+    }
+
+    // Check permissions: NÚCLEO user can only export requests belonging to their own nucleo
+    if (requesterProfile.role === 'nucleo' && requesterProfile.nucleo_id !== request.nucleo_id) {
+      return { success: false, error: 'Você não tem permissão para emitir solicitação de pagamento desta alocação.' };
+    }
+
+    // Update request
+    const { error: updateErr } = await adminClient
+      .from('payment_requests')
+      .update({
+        document_status: 'exported',
+        exported_at: new Date().toISOString(),
+        exported_by: requester.id
+      })
+      .eq('id', requestId);
+
+    if (updateErr) {
+      return { success: false, error: 'Erro ao atualizar faturamento para exportado.' };
+    }
+
+    // Update schedule to 'exported'
+    if (request.payment_schedule_id) {
+      await adminClient
+        .from('allocation_payment_schedules')
+        .update({ status: 'exported' })
+        .eq('id', request.payment_schedule_id);
+    }
+
+    // CRITICAL: Unlock evaluation status on allocation
+    const { data: allocation } = await adminClient
+      .from('allocations')
+      .select('evaluation_status')
+      .eq('id', request.allocation_id)
+      .single();
+
+    if (allocation && allocation.evaluation_status === 'locked') {
+      await adminClient
+        .from('allocations')
+        .update({ evaluation_status: 'available' })
+        .eq('id', request.allocation_id);
+    }
+
+    // Update allocation payment aggregates
+    await updateAllocationPaymentStatus(adminClient, request.allocation_id);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('exportPaymentRequestAction error:', err);
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
+/**
+ * Registers ERP finance code to a payment request.
+ */
+export async function registerFinanceCodeAction(accessToken: string, requestId: string, financeCode: string) {
+  try {
+    if (!financeCode || !financeCode.trim()) {
+      return { success: false, error: 'Código financeiro não pode estar vazio.' };
+    }
+
+    const adminClient = getSupabaseAdmin();
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status, nucleo_id')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    if (requesterProfile.role === 'rh') {
+      return { success: false, error: 'Usuários do RH não podem registrar códigos de pagamento.' };
+    }
+
+    // Fetch request
+    const { data: request, error: reqErr } = await adminClient
+      .from('payment_requests')
+      .select('*')
+      .eq('id', requestId)
+      .single();
+
+    if (reqErr || !request) {
+      return { success: false, error: 'Solicitação de pagamento não encontrada.' };
+    }
+
+    // Check permissions: NÚCLEO user can only register codes for their own nucleo
+    if (requesterProfile.role === 'nucleo' && requesterProfile.nucleo_id !== request.nucleo_id) {
+      return { success: false, error: 'Você não tem permissão para registrar códigos de pagamento desta alocação.' };
+    }
+
+    // Update request
+    const { error: updateErr } = await adminClient
+      .from('payment_requests')
+      .update({
+        document_status: 'finance_code_registered',
+        finance_code: financeCode.trim(),
+        finance_code_registered_at: new Date().toISOString(),
+        finance_code_registered_by: requester.id
+      })
+      .eq('id', requestId);
+
+    if (updateErr) {
+      return { success: false, error: 'Erro ao registrar código ERP financeiro.' };
+    }
+
+    // Update schedule
+    if (request.payment_schedule_id) {
+      await adminClient
+        .from('allocation_payment_schedules')
+        .update({
+          status: 'finance_code_received',
+          finance_code: financeCode.trim()
+        })
+        .eq('id', request.payment_schedule_id);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('registerFinanceCodeAction error:', err);
+    return { success: false, error: err.message || 'Erro interno no servidor.' };
+  }
+}
+
