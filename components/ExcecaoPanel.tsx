@@ -21,6 +21,7 @@ import {
 import { ValuePolicy } from '@/lib/mockData';
 import { useSortableTable } from '@/hooks/useSortableTable';
 import { SortableHeader } from '@/components/SortableHeader';
+import { StatusBadge } from './StatusBadge';
 
 export interface GroupedPolicy {
   key: string;
@@ -840,14 +841,14 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                               {group.isDailyDefined || group.isMonthlyDefined ? (
                                 <div className="flex flex-col gap-0.5 text-[9px] font-bold">
                                   {group.isDailyDefined && (
-                                    <span className="text-[#B28900] bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded w-max">
+                                    <StatusBadge variant="warning" className="text-[9px] px-1.5 py-0.5 rounded w-max">
                                       Diária &gt; {formatCurrencyBRL(group.dailyCeiling)}
-                                    </span>
+                                    </StatusBadge>
                                   )}
                                   {group.isMonthlyDefined && (
-                                    <span className="text-[#B28900] bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded w-max mt-0.5">
+                                    <StatusBadge variant="warning" className="text-[9px] px-1.5 py-0.5 rounded w-max mt-0.5">
                                       Mensal &gt; {formatCurrencyBRL(group.monthlyCeiling)}
-                                    </span>
+                                    </StatusBadge>
                                   )}
                                 </div>
                               ) : (
@@ -856,12 +857,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             </td>
 
                             <td className="px-6 py-3.5">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border 
-                                ${isAtivo ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900' : 
-                                  isIncompleta ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900' :
-                                  'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'}`}>
+                              <StatusBadge variant={isAtivo ? 'success' : isIncompleta ? 'warning' : 'neutral'} className="text-[10px] py-0.5 rounded-full uppercase">
                                 {group.status}
-                              </span>
+                              </StatusBadge>
                             </td>
                             <td className="px-6 py-3.5 text-text-secondary text-[11px] font-semibold">{group.updatedAt}</td>
                             
@@ -871,7 +869,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                                   {isIncompleta && (
                                     <button
                                       onClick={() => openEditModal(group)}
-                                      className="bg-amber-600 hover:bg-amber-700 text-white p-1 px-2 rounded-lg font-bold text-[10px] cursor-pointer shadow-xs"
+                                      className="btn-gov btn-gov-reset text-[10px]"
                                       title="Completar Política"
                                     >
                                       Completar política
@@ -879,24 +877,21 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                                   )}
                                   <button
                                     onClick={() => openEditModal(group)}
-                                    className="text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-blue-200 dark:border-blue-900 p-1 px-2 rounded-lg font-bold text-[10px] cursor-pointer"
+                                    className="btn-gov btn-gov-edit text-[10px]"
                                     title="Editar Parâmetros"
                                   >
                                     Editar
                                   </button>
                                   <button
                                     onClick={() => openDuplicateModal(group)}
-                                    className="text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 px-2 rounded-lg font-bold text-[10px] cursor-pointer"
+                                    className="btn-gov btn-gov-details text-[10px]"
                                     title="Duplicar Política"
                                   >
                                     Duplicar
                                   </button>
                                   <button
                                     onClick={() => handleToggleStatus(group)}
-                                    className={`p-1 px-2 rounded-lg font-bold text-[10px] border cursor-pointer
-                                      ${isAtivo || isIncompleta
-                                        ? 'text-red-700 bg-red-50 hover:bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/20 dark:border-red-900' 
-                                        : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900'}`}
+                                    className={`btn-gov text-[10px] ${isAtivo || isIncompleta ? 'btn-gov-inactive' : 'btn-gov-active'}`}
                                     title={isAtivo || isIncompleta ? 'Inativar Política' : 'Reativar Política'}
                                   >
                                     {isAtivo || isIncompleta ? 'Inativar' : 'Reativar'}
@@ -1006,19 +1001,19 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                                 <span className="text-text-secondary italic text-[10px]">Não definido</span>
                               )}
                             </td>
-
+                            
                             <td className="px-6 py-3.5 font-semibold text-text-secondary">
                               {group.isHourlyDefined || group.isFixedDefined ? (
                                 <div className="flex flex-col gap-0.5 text-[9px] font-bold">
                                   {group.isHourlyDefined && (
-                                    <span className="text-[#B28900] bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded w-max">
+                                    <StatusBadge variant="warning" className="text-[9px] px-1.5 py-0.5 rounded w-max">
                                       Hora &gt; {formatCurrencyBRL(group.hourlyCeiling)}
-                                    </span>
+                                    </StatusBadge>
                                   )}
                                   {group.isFixedDefined && (
-                                    <span className="text-[#B28900] bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded w-max mt-0.5">
+                                    <StatusBadge variant="warning" className="text-[9px] px-1.5 py-0.5 rounded w-max mt-0.5">
                                       Job &gt; {formatCurrencyBRL(group.fixedCeiling)}
-                                    </span>
+                                    </StatusBadge>
                                   )}
                                 </div>
                               ) : (
@@ -1027,11 +1022,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             </td>
 
                             <td className="px-6 py-3.5">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border 
-                                ${isAtivo ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900' : 
-                                  'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'}`}>
+                              <StatusBadge variant={isAtivo ? 'success' : 'neutral'} className="text-[10px] py-0.5 rounded-full uppercase">
                                 {isAtivo ? 'Ativo' : 'Inativo'}
-                              </span>
+                              </StatusBadge>
                             </td>
                             <td className="px-6 py-3.5 text-text-secondary text-[11px] font-semibold">{group.updatedAt}</td>
                             
@@ -1040,24 +1033,21 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                                 <div className="flex justify-end gap-1.5">
                                   <button
                                     onClick={() => openEditModal(group)}
-                                    className="text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-blue-200 dark:border-blue-900 p-1 px-2 rounded-lg font-bold text-[10px] cursor-pointer"
+                                    className="btn-gov btn-gov-edit text-[10px]"
                                     title="Editar Parâmetros"
                                   >
                                     Editar
                                   </button>
                                   <button
                                     onClick={() => openDuplicateModal(group)}
-                                    className="text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1 px-2 rounded-lg font-bold text-[10px] cursor-pointer"
+                                    className="btn-gov btn-gov-details text-[10px]"
                                     title="Duplicar Política"
                                   >
                                     Duplicar
                                   </button>
                                   <button
                                     onClick={() => handleToggleStatus(group)}
-                                    className={`p-1 px-2 rounded-lg font-bold text-[10px] border cursor-pointer
-                                      ${isAtivo
-                                        ? 'text-red-700 bg-red-50 hover:bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/20 dark:border-red-900' 
-                                        : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900'}`}
+                                    className={`btn-gov text-[10px] ${isAtivo ? 'btn-gov-inactive' : 'btn-gov-active'}`}
                                     title={isAtivo ? 'Inativar Política' : 'Reativar Política'}
                                   >
                                     {isAtivo ? 'Inativar' : 'Reativar'}

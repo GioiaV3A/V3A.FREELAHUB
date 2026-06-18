@@ -25,6 +25,7 @@ import {
   Instagram
 } from 'lucide-react';
 import ScoreStars from '@/components/ScoreStars';
+import { maskCurrencyBRL, parseCurrencyBR } from '@/lib/financial';
 
 export default function BancoFreelas({ db }: { db: any }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,6 +64,7 @@ export default function BancoFreelas({ db }: { db: any }) {
   const [editStatus, setEditStatus] = useState<'Elegível' | 'Em análise' | 'Em onboarding' | 'Em observação' | 'Bloqueado' | 'Inativo'>('Elegível');
   const [editAvailability, setEditAvailability] = useState<'Imediata' | '15 dias' | '30+ dias' | 'Indisponível'>('Imediata');
   const [editReferenceValue, setEditReferenceValue] = useState(0);
+  const [editReferenceValueVisual, setEditReferenceValueVisual] = useState('');
   const [editObservations, setEditObservations] = useState('');
   const [editLocationText, setEditLocationText] = useState('');
   const [editBrandsWorked, setEditBrandsWorked] = useState('');
@@ -284,6 +286,7 @@ export default function BancoFreelas({ db }: { db: any }) {
     setEditStatus(f.status || 'Elegível');
     setEditAvailability(f.availability || 'Imediata');
     setEditReferenceValue(f.referenceValue || 0);
+    setEditReferenceValueVisual(f.referenceValue ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(f.referenceValue) : '');
     setEditObservations(f.observations || '');
     setEditLocationText(f.locationText || '');
     setEditBrandsWorked(f.brandsWorked || '');
@@ -322,7 +325,7 @@ export default function BancoFreelas({ db }: { db: any }) {
             seniority: editSeniority,
             status: editStatus,
             availability: editAvailability,
-            referenceValue: Number(editReferenceValue),
+            referenceValue: parseCurrencyBR(editReferenceValueVisual),
             observations: editObservations,
             locationText: editLocationText,
             brandsWorked: editBrandsWorked,
@@ -1059,12 +1062,28 @@ export default function BancoFreelas({ db }: { db: any }) {
 
                 <div>
                   <label className="font-bold text-text-secondary block mb-1">Valor da Diária Referência (R$)</label>
-                  <input
-                    type="number"
-                    value={editReferenceValue}
-                    onChange={e => setEditReferenceValue(Number(e.target.value))}
-                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan bg-slate-50"
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-text-secondary select-none">R$</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={editReferenceValueVisual}
+                      onChange={e => {
+                        const rawVal = e.target.value;
+                        const masked = maskCurrencyBRL(rawVal);
+                        setEditReferenceValueVisual(masked);
+                        setEditReferenceValue(parseCurrencyBR(masked));
+                      }}
+                      onBlur={() => {
+                        const numeric = parseCurrencyBR(editReferenceValueVisual);
+                        if (numeric > 0) {
+                          const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numeric);
+                          setEditReferenceValueVisual(formatted);
+                        }
+                      }}
+                      className="w-full border border-border-subtle p-2 pl-8 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan bg-slate-50"
+                    />
+                  </div>
                 </div>
 
                 <div>

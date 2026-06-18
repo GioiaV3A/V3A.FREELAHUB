@@ -80,10 +80,34 @@
   --color-disabled-text: var(--disabled-text);
   --color-disabled-border: var(--disabled-border);
 
+  /* Brand and Semantic Surface Tokens */
+  --color-brand-navy-950: var(--brand-navy-950);
+  --color-brand-navy-900: var(--brand-navy-900);
+  --color-brand-navy-800: var(--brand-navy-800);
+  --color-brand-navy-700: var(--brand-navy-700);
+  --color-brand-cyan-500: var(--brand-cyan-500);
+  --color-brand-cyan-600: var(--brand-cyan-600);
+  --color-brand-cyan-700: var(--brand-cyan-700);
+  --color-brand-gold-400: var(--brand-gold-400);
+  --color-brand-gold-500: var(--brand-gold-500);
+  --color-success-500: var(--success-500);
+  --color-success-700: var(--success-700);
+  --color-warning-500: var(--warning-500);
+  --color-warning-700: var(--warning-700);
+  --color-danger-500: var(--danger-500);
+  --color-danger-700: var(--danger-700);
+  --color-info-500: var(--info-500);
+
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border-soft: var(--border-soft);
+
   /* ============================================================
      FONT SIZE SCALE — legível e confortável em desktop
      Mínimo absoluto: 12px. Nada menor que isso.
-  ============================================================ */
+     ============================================================ */
   --font-size-xs: 12.5px;
   --font-size-sm: 13.5px;
   --font-size-base: 14.5px;
@@ -99,282 +123,284 @@
    Paleta: brancos e azuis frios, contraste alto
 ============================================================ */
 :root, [data-theme="light"] {
+  /* Brand colors */
+  --brand-navy-950: #06111F;
+  --brand-navy-900: #0A1A2E;
+  --brand-navy-800: #102B45;
+  --brand-navy-700: #163955;
+  --brand-cyan-500: #13C8D8;
+  --brand-cyan-600: #08AFC0;
+  --brand-cyan-700: #078A99;
+  --brand-gold-400: #F2C94C;
+  --brand-gold-500: #DFAE22;
+  --success-500: #18C88A;
+  --success-700: #087A55;
+  --warning-500: #F5A524;
+  --warning-700: #A86200;
+  --danger-500: #FF4D4F;
+  --danger-700: #A51F2A;
+  --info-500: #3B82F6;
+
   /* Superfícies */
-  --bg-app: #f6f8fb;
+  --bg-app: #F4F7FB;
   --bg-page: var(--bg-app);
-  --bg-sidebar: #08172a;    /* Sidebar sempre navy — identidade V3A */
-  --bg-header: #ffffff;
+  --bg-shell: #FFFFFF;
+  --bg-sidebar: #08182A;
+  --bg-header: #FFFFFF;
   --bg-topbar: var(--bg-header);
   
-  --bg-card: #ffffff;
+  --bg-card: #FFFFFF;
   --bg-surface: var(--bg-card);
-  --bg-card-alt: #f8fafc;
+  --bg-card-alt: #F8FAFC;
   --bg-surface-elevated: var(--bg-card-alt);
   
-  --bg-panel: #f1f5f9;
+  --surface-1: #FFFFFF;
+  --surface-2: #F8FAFC;
+  --surface-3: #EEF4FA;
+  --surface-elevated: #FFFFFF;
+
+  --bg-panel: #EEF4FA;
   --bg-muted: var(--bg-panel);
   
-  --bg-input: #ffffff;
-  --bg-hover: #eef4fb;
+  --bg-input: #FFFFFF;
+  --bg-hover: #F1F7FC;
   --bg-selected: rgba(8, 158, 180, 0.10);
 
-  /* Texto — hierarquia clara e acessível */
-  --text-primary: #0f172a;
+  /* Texto */
+  --text-primary: #0B1626;
   --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-subtle: #718096;
-  --text-disabled: #94a3b8;
-  --text-on-accent: #ffffff;
-  --text-inverse: #ffffff;
+  --text-muted: #64748B;
+  --text-subtle: #64748B;
+  --text-disabled: #94A3B8;
+  --text-on-accent: #FFFFFF;
+  --text-inverse: #F8FAFC;
 
   /* Bordas */
-  --border-default: #d9e2ec;
-  --border-subtle: #e2e8f0;
-  --border-strong: #b8c7d9;
-  --border-focus: var(--accent-primary);
-  --divider: #e2e8f0;
+  --border-soft: #D8E2EC;
+  --border-strong: #AFC2D4;
+  --border-default: var(--border-soft);
+  --border-subtle: var(--border-soft);
+  --border-focus: var(--accent);
+  --divider: var(--border-soft);
 
-  /* Accent (cyan V3A) */
-  --accent-primary: #089eb4;
-  --accent-primary-hover: #067f92;
-  --accent-primary-soft: rgba(8, 158, 180, 0.10);
-  
-  --accent: var(--accent-primary);
-  --accent-hover: var(--accent-primary-hover);
-  --accent-soft: var(--accent-primary-soft);
-  --accent-contrast: var(--text-on-accent);
+  /* Accent */
+  --accent: var(--brand-cyan-600);
+  --accent-hover: var(--brand-cyan-700);
+  --accent-soft: rgba(19, 200, 216, 0.12);
+  --accent-contrast: #FFFFFF;
+  --accent-text: #042F3A;
 
-  /* Status — Light */
-  --success-bg: #ecfdf5;
-  --success-border: #059669;
-  --success-text: #065f46;
+  /* Status - Light */
+  --success-bg: #ECFDF5;
+  --success-border: #10B981;
+  --success-text: #065F46;
 
-  --warning-bg: #fffbeb;
-  --warning-border: #d97706;
-  --warning-text: #78350f;
+  --warning-bg: #FFFBEB;
+  --warning-border: #F59E0B;
+  --warning-text: #92400E;
 
-  --danger-bg: #fef2f2;
-  --danger-border: #dc2626;
-  --danger-text: #991b1b;
+  --danger-bg: #FFF1F2;
+  --danger-border: #FB7185;
+  --danger-text: #9F1239;
 
-  --info-bg: #eff6ff;
-  --info-border: #2563eb;
-  --info-text: #1e40af;
+  --info-bg: #EFF6FF;
+  --info-border: #3B82F6;
+  --info-text: #1D4ED8;
 
-  --neutral-bg: #f1f5f9;
-  --neutral-border: #b8c7d9;
+  --neutral-bg: #F1F5F9;
+  --neutral-border: #CBD5E1;
   --neutral-text: #334155;
 
-  /* Tabelas — Light */
-  --table-header-bg: #e8f0f9;
+  /* Tabelas */
+  --table-header-bg: #EAF2F9;
   --table-header-text: #334155;
-  --table-row-bg: #ffffff;
-  --table-row-alt: #f7fafd;
-  --table-row-hover: #eef4fb;
-  --table-border: #d0dcea;
+  --table-row-bg: #FFFFFF;
+  --table-row-alt: #F8FAFC;
+  --table-row-hover: #F1F7FC;
+  --table-border: #D8E2EC;
 
-  /* Chips / Badges */
-  --chip-bg: #e8f0f9;
-  --chip-text: #334155;
+  /* Card Finance */
+  --card-finance-bg: #FFFFFF;
+  --card-finance-border: #D8E2EC;
 
-  /* Botões */
-  --button-primary-bg: var(--accent);
-  --button-primary-text: var(--accent-contrast);
-  --button-secondary-bg: var(--bg-surface);
-  --button-secondary-text: var(--text-primary);
-
-  /* Inputs */
-  --input-bg: var(--bg-input);
-  --input-border: var(--border-default);
+  /* Form Inputs styling */
+  --input-bg: #FFFFFF;
+  --input-border: var(--border-soft);
   --input-text: var(--text-primary);
   --input-placeholder: var(--text-muted);
 
-  /* Disabled */
-  --disabled-bg: #f1f5f9;
-  --disabled-text: #94a3b8;
-  --disabled-border: #d9e2ec;
+  /* Outros */
+  --chip-bg: #EAF2F9;
+  --chip-text: #334155;
+  --button-primary-bg: var(--accent);
+  --button-primary-text: var(--text-inverse);
+  --button-secondary-bg: var(--bg-surface);
+  --button-secondary-text: var(--text-primary);
+  --disabled-bg: #F1F5F9;
+  --disabled-text: #94A3B8;
+  --disabled-border: #D8E2EC;
 
-  /* Design System Color Tokens (Visual/Semantico) */
+  /* Design System Color Tokens */
   --color-purple-bg: #faf5ff;
   --color-purple-border: #ddd6fe;
   --color-purple-text: #6d28d9;
-
   --color-blue-bg: #eff6ff;
   --color-blue-border: #bfdbfe;
   --color-blue-text: #1d4ed8;
-
   --color-cyan-bg: #ecfeff;
   --color-cyan-border: #cffafe;
   --color-cyan-text: #0e7490;
-
   --color-amber-bg: #fffbeb;
   --color-amber-border: #fef3c7;
   --color-amber-text: #b45309;
-
   --color-emerald-bg: #ecfdf5;
   --color-emerald-border: #d1fae5;
   --color-emerald-text: #047857;
-
   --color-slate-bg: #f8fafc;
   --color-slate-border: #e2e8f0;
   --color-slate-text: #475569;
-
   --color-master-bg: #0f172a;
   --color-master-border: #1e293b;
   --color-master-text: #ffffff;
-
   --color-rh-bg: #eff6ff;
   --color-rh-border: #bfdbfe;
   --color-rh-text: #1d4ed8;
-
   --color-c-level-bg: #faf5ff;
   --color-c-level-border: #ddd6fe;
   --color-c-level-text: #6d28d9;
-
   --color-nucleo-bg: #ecfeff;
   --color-nucleo-border: #cffafe;
   --color-nucleo-text: #0e7490;
 }
 
-
-/* ============================================================
-   DARK MODE — Tokens Visuais
-   Paleta: azul-marinho profundo, sem preto puro
-   Objetivo: elegante, confortável, alta legibilidade
-============================================================ */
 .dark, [data-theme="dark"] {
-  /* Superfícies — hierarquia clara com distinção entre camadas */
-  --bg-app: #071426;
+  /* Superfícies */
+  --bg-app: #06111F;
   --bg-page: var(--bg-app);
-  --bg-sidebar: #08172a;        /* sidebar mantém identidade navy */
-  --bg-header: #0d2035;
+  --bg-shell: #08182A;
+  --bg-sidebar: #071629;
+  --bg-header: #08182A;
   --bg-topbar: var(--bg-header);
   
-  --bg-card: #122942;
+  --bg-card: #0D2238;
   --bg-surface: var(--bg-card);
-  --bg-card-alt: #183653;
+  --bg-card-alt: #12304D;
   --bg-surface-elevated: var(--bg-card-alt);
   
-  --bg-panel: #142d49;
+  --surface-1: #0D2238;
+  --surface-2: #12304D;
+  --surface-3: #183B5C;
+  --surface-elevated: #102B45;
+
+  --bg-panel: #12304D;
   --bg-muted: var(--bg-panel);
   
-  --bg-input: #0b1f35;
-  --bg-hover: #1d4365;
-  --bg-selected: rgba(19, 191, 212, 0.20);
+  --bg-input: #0B1F35;
+  --bg-hover: #173A5A;
+  --bg-selected: rgba(19, 200, 216, 0.20);
 
-  /* Texto — hierarquia robusta, sem branco puro */
-  --text-primary: #f8fafc;
-  --text-secondary: #d7e4f2;
-  --text-muted: #afc0d4;
-  --text-subtle: #98abc1;
-  --text-disabled: #7f91a8;
-  --text-on-accent: #06131f;
-  --text-inverse: #08172a;
+  /* Texto */
+  --text-primary: #F8FAFC;
+  --text-secondary: #D6E3F0;
+  --text-muted: #AABBD0;
+  --text-subtle: #AABBD0;
+  --text-disabled: #7F91A8;
+  --text-on-accent: #021418;
+  --text-inverse: #08111F;
 
-  /* Bordas — claramente perceptíveis sem agressividade */
-  --border-default: #3a5877;
-  --border-subtle: #29435f;
-  --border-strong: #5d83a8;
-  --border-focus: var(--accent-primary);
-  --divider: rgba(174, 194, 216, 0.26);
+  /* Bordas */
+  --border-soft: #244765;
+  --border-strong: #3B6385;
+  --border-default: var(--border-soft);
+  --border-subtle: var(--border-soft);
+  --border-focus: var(--accent);
+  --divider: var(--border-soft);
 
   /* Accent */
-  --accent-primary: #13bfd4;
-  --accent-primary-hover: #22d3ee;
-  --accent-primary-soft: rgba(19, 191, 212, 0.16);
-  
-  --accent: var(--accent-primary);
-  --accent-hover: var(--accent-primary-hover);
-  --accent-soft: var(--accent-primary-soft);
-  --accent-contrast: var(--text-on-accent);
+  --accent: #13C8D8;
+  --accent-hover: #46D9E5;
+  --accent-soft: rgba(19, 200, 216, 0.16);
+  --accent-contrast: #021418;
+  --accent-text: #021418;
 
-  /* Status — Dark */
-  --success-bg: rgba(16, 185, 129, 0.20);
-  --success-border: #10b981;
-  --success-text: #8ff3c5;
+  /* Status - Dark */
+  --success-bg: rgba(16, 185, 129, 0.12);
+  --success-border: #10B981;
+  --success-text: #A7F3D0;
 
-  --warning-bg: rgba(245, 158, 11, 0.20);
-  --warning-border: #f59e0b;
-  --warning-text: #ffd166;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --warning-border: #F59E0B;
+  --warning-text: #FCD34D;
 
-  --danger-bg: rgba(239, 68, 68, 0.20);
-  --danger-border: #ef4444;
-  --danger-text: #ffb4b4;
+  --danger-bg: rgba(244, 63, 94, 0.13);
+  --danger-border: #FB7185;
+  --danger-text: #FDA4AF;
 
-  --info-bg: rgba(96, 165, 250, 0.20);
+  --info-bg: rgba(59, 130, 246, 0.18);
   --info-border: #60a5fa;
   --info-text: #bfdbfe;
 
-  --neutral-bg: rgba(148, 163, 184, 0.13);
-  --neutral-border: #34516f;
-  --neutral-text: #d6e2f0;
+  --neutral-bg: rgba(148, 163, 184, 0.14);
+  --neutral-border: rgba(148, 163, 184, 0.35);
+  --neutral-text: #CBD5E1;
 
-  /* Tabelas — Dark */
-  --table-header-bg: #091828;
-  --table-header-text: #d6e2f0;
-  --table-row-bg: #10243a;
-  --table-row-alt: #122942;
-  --table-row-hover: #1d4365;
-  --table-border: #29435f;
+  /* Tabelas */
+  --table-header-bg: #0B1E33;
+  --table-header-text: #D6E3F0;
+  --table-row-bg: #102B45;
+  --table-row-alt: #12304D;
+  --table-row-hover: #173A5A;
+  --table-border: #244765;
 
-  /* Chips / Badges */
-  --chip-bg: rgba(214, 226, 240, 0.13);
-  --chip-text: #d6e2f0;
+  /* Card Finance */
+  --card-finance-bg: #0D2238;
+  --card-finance-border: #2C5878;
 
-  /* Botões */
-  --button-primary-bg: var(--accent);
-  --button-primary-text: var(--accent-contrast);
-  --button-secondary-bg: #183653;
-  --button-secondary-text: var(--text-primary);
-
-  /* Inputs */
-  --input-bg: var(--bg-input);
-  --input-border: var(--border-subtle);
+  /* Form Inputs styling */
+  --input-bg: var(--surface-1);
+  --input-border: var(--border-soft);
   --input-text: var(--text-primary);
   --input-placeholder: var(--text-muted);
 
-  /* Disabled */
+  /* Outros */
+  --chip-bg: rgba(214, 226, 240, 0.13);
+  --chip-text: #d6e2f0;
+  --button-primary-bg: var(--accent);
+  --button-primary-text: var(--text-inverse);
+  --button-secondary-bg: #12304D;
+  --button-secondary-text: var(--text-primary);
   --disabled-bg: rgba(148, 163, 184, 0.10);
-  --disabled-text: #7f91a8;
-  --disabled-border: #29435f;
+  --disabled-text: #7F91A8;
+  --disabled-border: #244765;
 
-  /* Design System Color Tokens (Visual/Semantico) - Dark Mode overrides */
+  /* Design System Color Tokens - Dark overrides */
   --color-purple-bg: rgba(168, 85, 247, 0.15);
   --color-purple-border: rgba(168, 85, 247, 0.35);
   --color-purple-text: #e9d5ff;
-
   --color-blue-bg: rgba(59, 130, 246, 0.15);
   --color-blue-border: rgba(59, 130, 246, 0.35);
   --color-blue-text: #bfdbfe;
-
   --color-cyan-bg: rgba(6, 182, 212, 0.15);
   --color-cyan-border: rgba(6, 182, 212, 0.35);
   --color-cyan-text: #a5f3fc;
-
   --color-amber-bg: rgba(245, 158, 11, 0.15);
   --color-amber-border: rgba(245, 158, 11, 0.35);
   --color-amber-text: #fef08a;
-
   --color-emerald-bg: rgba(16, 185, 129, 0.15);
   --color-emerald-border: rgba(16, 185, 129, 0.35);
   --color-emerald-text: #a7f3d0;
-
   --color-slate-bg: rgba(148, 163, 184, 0.15);
   --color-slate-border: rgba(148, 163, 184, 0.35);
   --color-slate-text: #f1f5f9;
-
   --color-master-bg: rgba(30, 41, 59, 0.4);
   --color-master-border: rgba(148, 163, 184, 0.4);
   --color-master-text: #f8fafc;
-
   --color-rh-bg: rgba(59, 130, 246, 0.15);
   --color-rh-border: rgba(59, 130, 246, 0.35);
   --color-rh-text: #93c5fd;
-
   --color-c-level-bg: rgba(168, 85, 247, 0.15);
   --color-c-level-border: rgba(168, 85, 247, 0.35);
   --color-c-level-text: #d8b4fe;
-
   --color-nucleo-bg: rgba(6, 182, 212, 0.15);
   --color-nucleo-border: rgba(6, 182, 212, 0.35);
   --color-nucleo-text: #67e8f9;
@@ -1963,3 +1989,338 @@ aside { z-index: 50; }
 aside {
   transition: width 220ms ease-in-out, transform 220ms ease-in-out;
 }
+
+/* ============================================================
+   FREELA HUB DESIGN SYSTEM SEMANTIC CLASSES
+   ============================================================ */
+
+/* Policy Card Variants */
+.policy-card-within {
+  background-color: #ECFDF5 !important;
+  border-color: #10B981 !important;
+  color: #064E3B !important;
+}
+.policy-card-within .policy-title {
+  color: #065F46 !important;
+}
+.policy-card-within .policy-metric-bg {
+  background-color: #FFFFFF !important;
+  border-color: #B7E4D3 !important;
+  color: #0B1626 !important;
+}
+.policy-card-within .policy-badge {
+  background-color: #D1FAE5 !important;
+  color: #065F46 !important;
+  border: 1px solid #10B981 !important;
+}
+
+.dark .policy-card-within {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: #10B981 !important;
+  color: #D1FAE5 !important;
+}
+.dark .policy-card-within .policy-title {
+  color: #A7F3D0 !important;
+}
+.dark .policy-card-within .policy-metric-bg {
+  background-color: rgba(6, 17, 31, 0.45) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #F8FAFC !important;
+}
+.dark .policy-card-within .policy-badge {
+  background-color: rgba(16, 185, 129, 0.20) !important;
+  color: #A7F3D0 !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+}
+
+.policy-card-above {
+  background-color: #FFF1F2 !important;
+  border-color: #FB7185 !important;
+  color: #881337 !important;
+}
+.policy-card-above .policy-title {
+  color: #9F1239 !important;
+}
+.policy-card-above .policy-metric-bg {
+  background-color: #FFFFFF !important;
+  border-color: #FECDD3 !important;
+  color: #0B1626 !important;
+}
+.policy-card-above .policy-warning-bg {
+  background-color: #FFE4E6 !important;
+  color: #9F1239 !important;
+  border-color: #FB7185 !important;
+}
+.policy-card-above .policy-badge {
+  background-color: #FFE4E6 !important;
+  color: #BE123C !important;
+  border: 1px solid #FB7185 !important;
+}
+
+.dark .policy-card-above {
+  background-color: rgba(244, 63, 94, 0.13) !important;
+  border-color: #FB7185 !important;
+  color: #FFE4E6 !important;
+}
+.dark .policy-card-above .policy-title {
+  color: #FDA4AF !important;
+}
+.dark .policy-card-above .policy-metric-bg {
+  background-color: rgba(6, 17, 31, 0.50) !important;
+  border-color: rgba(251, 113, 133, 0.35) !important;
+  color: #F8FAFC !important;
+}
+.dark .policy-card-above .policy-warning-bg {
+  background-color: rgba(244, 63, 94, 0.20) !important;
+  color: #FFE4E6 !important;
+  border-color: rgba(251, 113, 133, 0.35) !important;
+}
+.dark .policy-card-above .policy-badge {
+  background-color: rgba(244, 63, 94, 0.25) !important;
+  color: #FDA4AF !important;
+  border: 1px solid rgba(251, 113, 133, 0.45) !important;
+}
+
+.policy-card-missing {
+  background-color: #FFFBEB !important;
+  border-color: #F59E0B !important;
+  color: #78350F !important;
+}
+.policy-card-missing .policy-title {
+  color: #92400E !important;
+}
+.policy-card-missing .policy-badge {
+  background-color: #FEF3C7 !important;
+  color: #92400E !important;
+  border: 1px solid #F59E0B !important;
+}
+
+.dark .policy-card-missing {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: #F59E0B !important;
+  color: #FEF3C7 !important;
+}
+.dark .policy-card-missing .policy-title {
+  color: #FCD34D !important;
+}
+.dark .policy-card-missing .policy-badge {
+  background-color: rgba(245, 158, 11, 0.20) !important;
+  color: #FCD34D !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+}
+
+/* Forecast Card (Resumo da Previsão) */
+.forecast-card {
+  background-color: #FFFFFF !important;
+  border: 1px solid #D8E2EC !important;
+  color: #0B1626 !important;
+}
+.forecast-card .forecast-title {
+  color: #334155 !important;
+}
+.forecast-card .forecast-value-positive {
+  color: #047857 !important;
+}
+.forecast-card .forecast-value-negative {
+  color: #DC2626 !important;
+}
+.forecast-card .forecast-status-above {
+  background-color: #FFE4E6 !important;
+  color: #BE123C !important;
+}
+.forecast-card .forecast-status-within {
+  background-color: #D1FAE5 !important;
+  color: #047857 !important;
+}
+
+.dark .forecast-card {
+  background-color: #0D2238 !important;
+  border: 1px solid #244765 !important;
+  color: #F8FAFC !important;
+}
+.dark .forecast-card .forecast-title {
+  color: #D6E3F0 !important;
+}
+.dark .forecast-card .forecast-value-positive {
+  color: #34D399 !important;
+}
+.dark .forecast-card .forecast-value-negative {
+  color: #F87171 !important;
+}
+.dark .forecast-card .forecast-status-above {
+  background-color: rgba(244, 63, 94, 0.22) !important;
+  color: #FDA4AF !important;
+}
+.dark .forecast-card .forecast-status-within {
+  background-color: rgba(16, 185, 129, 0.20) !important;
+  color: #A7F3D0 !important;
+}
+
+/* Custom Badges */
+.badge-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.badge-success {
+  background-color: #D1FAE5 !important;
+  color: #065F46 !important;
+  border-color: #10B981 !important;
+}
+.dark .badge-success {
+  background-color: rgba(16, 185, 129, 0.18) !important;
+  color: #A7F3D0 !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+}
+
+.badge-warning {
+  background-color: #FEF3C7 !important;
+  color: #92400E !important;
+  border-color: #F59E0B !important;
+}
+.dark .badge-warning {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+  color: #FCD34D !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+
+.badge-danger {
+  background-color: #FFE4E6 !important;
+  color: #BE123C !important;
+  border-color: #FB7185 !important;
+}
+.dark .badge-danger {
+  background-color: rgba(244, 63, 94, 0.18) !important;
+  color: #FDA4AF !important;
+  border-color: rgba(251, 113, 133, 0.45) !important;
+}
+
+.badge-info {
+  background-color: #DBEAFE !important;
+  color: #1D4ED8 !important;
+  border-color: #60A5FA !important;
+}
+.dark .badge-info {
+  background-color: rgba(59, 130, 246, 0.18) !important;
+  color: #BFDBFE !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+}
+
+.badge-neutral {
+  background-color: #F1F5F9 !important;
+  color: #334155 !important;
+  border-color: #CBD5E1 !important;
+}
+.dark .badge-neutral {
+  background-color: rgba(148, 163, 184, 0.14) !important;
+  color: #CBD5E1 !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+/* Custom Buttons System */
+.btn-custom {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding-left: 16px;
+  padding-right: 16px;
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+  outline: none;
+  border: 1px solid transparent;
+}
+.btn-custom:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+
+.btn-primary {
+  background-color: var(--accent) !important;
+  color: #021418 !important;
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover) !important;
+}
+
+.btn-secondary {
+  background-color: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #0B1626 !important;
+}
+.btn-secondary:hover:not(:disabled) {
+  background-color: #F8FAFC !important;
+}
+.dark .btn-secondary {
+  background-color: #12304D !important;
+  border-color: #3B6385 !important;
+  color: #F8FAFC !important;
+}
+.dark .btn-secondary:hover:not(:disabled) {
+  background-color: #183B5C !important;
+}
+
+.btn-danger {
+  background-color: #EF4444 !important;
+  color: #FFFFFF !important;
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: #DC2626 !important;
+}
+.dark .btn-danger {
+  background-color: #F87171 !important;
+  color: #0B1626 !important;
+}
+.dark .btn-danger:hover:not(:disabled) {
+  background-color: #FCA5A5 !important;
+}
+
+.btn-warning {
+  background-color: #F59E0B !important;
+  color: #111827 !important;
+}
+.btn-warning:hover:not(:disabled) {
+  background-color: #D97706 !important;
+}
+
+.btn-ghost {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+}
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--bg-hover) !important;
+}
+
+/* Custom Table Container */
+.table-container {
+  background-color: #FFFFFF !important;
+  border: 1px solid #D8E2EC !important;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.dark .table-container {
+  background-color: #0D2238 !important;
+  border-color: #244765 !important;
+}
+
+/* Semantic Cards */
+.card-primary {
+  background-color: var(--surface-1) !important;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: 12px;
+}
+.card-nested {
+  background-color: var(--surface-2) !important;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: 8px;
+}
+

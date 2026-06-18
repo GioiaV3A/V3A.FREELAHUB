@@ -259,45 +259,16 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
                               Negociar Valores
                             </button>
                           )}
-                          {job.status === 'Concluído' && (
+                          {['Bookado', 'Em andamento', 'Concluído', 'Avaliação pendente', 'Encerrado'].includes(job.status) && (
                             <button 
                               onClick={() => { 
                                 db.setSelectedJobId(job.id); 
-                                db.setActiveTab('Avaliar Freelancers'); 
+                                db.setActiveTab('Meus Bookings'); 
                               }}
-                              className="text-[11px] font-bold text-status-error bg-status-error/10 hover:bg-status-error/20 p-1 px-2.5 rounded-lg"
+                              className="text-[11px] font-bold text-action-cyan border border-action-cyan/35 hover:bg-action-cyan/10 p-1.5 px-3 rounded-lg"
                             >
-                              Avaliar Freelas *
+                              Ver Alocação
                             </button>
-                          )}
-                          {job.status === 'Avaliação pendente' && (
-                            <button 
-                              onClick={() => { 
-                                db.setSelectedJobId(job.id); 
-                                db.setActiveTab('Avaliar Freelancers'); 
-                              }}
-                              className="text-[11px] font-bold text-status-error border border-status-error/40 hover:bg-status-error/5 p-1.5 px-3 rounded-lg flex items-center gap-1"
-                            >
-                              <Star className="w-3.5 h-3.5 fill-status-error" /> Avaliar & Liberar Pgto
-                            </button>
-                          )}
-                          {job.status === 'Bookado' && (
-                            <span className="text-[10px] text-text-secondary font-medium">Bookado • Aguardando Execução</span>
-                          )}
-                          {job.status === 'Em andamento' && (
-                            <button 
-                              onClick={() => {
-                                // Transition to completed (Concluído) to prompt for evaluation
-                                db.setJobs(prev => prev.map(j => j.id === job.id ? { ...j, status: 'Avaliação pendente' } : j));
-                                alert(`Status de "${job.name}" atualizado para Avaliação Pendente.`);
-                              }}
-                              className="text-[11px] font-bold text-status-success border border-status-success/30 hover:bg-status-success/10 p-1.5 px-3 rounded-lg"
-                            >
-                              Concluir Execução
-                            </button>
-                          )}
-                          {job.status === 'Encerrado' && (
-                            <span className="text-text-secondary italic">Concluído e Avaliado</span>
                           )}
                         </td>
                       </tr>

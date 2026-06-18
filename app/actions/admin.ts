@@ -1706,3 +1706,178 @@ export async function registerFinanceCodeAction(accessToken: string, requestId: 
   }
 }
 
+/**
+ * Action to operate and mark an allocation/job as completed.
+ */
+export async function concludeAllocationAction(
+  accessToken: string,
+  allocationId: string,
+  completionNotes: string
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+
+    // 1. Verify requester session
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) {
+      return { success: false, error: 'Não autorizado. Sessão inválida.' };
+    }
+
+    // Check requester profile permissions
+    const { data: requesterProfile, error: profileErr } = await adminClient
+      .from('profiles')
+      .select('role, status, nucleo_id')
+      .eq('id', requester.id)
+      .single();
+
+    if (profileErr || !requesterProfile || requesterProfile.status !== 'active') {
+      return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
+    }
+
+    // Fetch allocation
+    const { data: allocation, error: allocErr } = await adminClient
+      .from('allocations')
+      .select('id, nucleo_id, job_id, status')
+      .eq('id', allocationId)
+      .single();
+
+    if (allocErr || !allocation) {
+      return { success: false, error: 'Alocação não encontrada.' };
+    }
+
+    // Check if requester belongs to same nucleo (unless master or c_level)
+    if (requesterProfile.role === 'nucleo' && requesterProfile.nucleo_id !== allocation.nucleo_id) {
+      return { success: false, error: 'Você não tem permissão para gerenciar alocações de outro núcleo.' };
+    }
+
+    if (requesterProfile.role === 'rh') {
+      return { success: false, error: 'RH não pode concluir alocações diretamente.' };
+    }
+
+    // Update allocation status to completed
+    const { error: updateAllocErr } = await adminClient
+      .from('allocations')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        completed_by_user_id: requester.id,
+        completion_notes: completionNotes || 'Conclusão operacional efetuada pelo núcleo.',
+        evaluation_status: 'available' // Unlock evaluations
+      })
+      .eq('id', allocationId);
+
+    if (updateAllocErr) {
+      return { success: false, error: `Erro ao concluir alocação: ${updateAllocErr.message}` };
+    }
+
+    // Update parent job status to completed/concluido
+    const { error: updateJobErr } = await adminClient
+      .from('jobs')
+      .update({ status: 'concluido' })
+      .eq('id', allocation.job_id);
+
+    if (updateJobErr) {
+      console.error('Failed to update job status to concluido:', updateJobErr);
+    }
+
+    // Update job request status too
+    const { error: updateRequestErr } = await adminClient
+      .from('job_freelancer_requests')
+      .update({ status: 'concluido' })
+      .eq('allocation_id', allocationId);
+
+    if (updateRequestErr) {
+      console.error('Failed to update request status to concluido:', updateRequestErr);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('concludeAllocationAction error:', err);
+    return { success: false, error: err.message || 'Erro inesperado no servidor.' };
+  }
+}
+
+/**
+ * Action to cancel an active allocation.
+ */
+export async function cancelAllocationAction(
+  accessToken: string,
+  allocationId: string
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+    // Verify requester
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) return { success: false, error: 'Sessão inválida.' };
+
+    const { data: requesterProfile } = await adminClient.from('profiles').select('role, nucleo_id').eq('id', requester.id).single();
+    if (!requesterProfile) return { success: false, error: 'Perfil não encontrado.' };
+
+    const { data: allocation } = await adminClient.from('allocations').select('*').eq('id', allocationId).single();
+    if (!allocation) return { success: false, error: 'Alocação não encontrada.' };
+
+    if (requesterProfile.role === 'nucleo' && requesterProfile.nucleo_id !== allocation.nucleo_id) {
+      return { success: false, error: 'Permissão negada.' };
+    }
+
+    if (requesterProfile.role === 'rh') {
+      return { success: false, error: 'RH não pode cancelar alocações diretamente.' };
+    }
+
+    // Update statuses to cancelled
+    await adminClient.from('allocations').update({ status: 'cancelled' }).eq('id', allocationId);
+    await adminClient.from('jobs').update({ status: 'cancelado' }).eq('id', allocation.job_id);
+    await adminClient.from('job_freelancer_requests').update({ status: 'cancelado' }).eq('allocation_id', allocationId);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('cancelAllocationAction error:', err);
+    return { success: false, error: err.message || 'Erro interno.' };
+  }
+}
+
+/**
+ * Action to reopen a completed/cancelled allocation.
+ */
+export async function reopenAllocationAction(
+  accessToken: string,
+  allocationId: string
+) {
+  try {
+    const adminClient = getSupabaseAdmin();
+    const { data: { user: requester }, error: authErr } = await adminClient.auth.getUser(accessToken);
+    if (authErr || !requester) return { success: false, error: 'Sessão inválida.' };
+
+    const { data: requesterProfile } = await adminClient.from('profiles').select('role, nucleo_id').eq('id', requester.id).single();
+    if (!requesterProfile) return { success: false, error: 'Perfil não encontrado.' };
+
+    const { data: allocation } = await adminClient.from('allocations').select('*').eq('id', allocationId).single();
+    if (!allocation) return { success: false, error: 'Alocação não encontrada.' };
+
+    if (requesterProfile.role === 'nucleo' && requesterProfile.nucleo_id !== allocation.nucleo_id) {
+      return { success: false, error: 'Permissão negada.' };
+    }
+
+    if (requesterProfile.role === 'rh') {
+      return { success: false, error: 'RH não pode reabrir alocações diretamente.' };
+    }
+
+    // Reopen to booked
+    await adminClient.from('allocations').update({ 
+      status: 'booked', 
+      completed_at: null, 
+      completed_by_user_id: null, 
+      completion_notes: null 
+    }).eq('id', allocationId);
+    
+    await adminClient.from('jobs').update({ status: 'bookado' }).eq('id', allocation.job_id);
+    await adminClient.from('job_freelancer_requests').update({ status: 'bookado' }).eq('allocation_id', allocationId);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('reopenAllocationAction error:', err);
+    return { success: false, error: err.message || 'Erro interno.' };
+  }
+}
+
+

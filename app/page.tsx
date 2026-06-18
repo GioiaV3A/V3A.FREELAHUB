@@ -25,7 +25,8 @@ import {
   Nucleo,
   User,
   AllocationPaymentSchedule,
-  PaymentRequest
+  PaymentRequest,
+  ValueExceptionApproval
 } from '@/lib/mockData';
 
 // Supabase and Server Actions
@@ -54,7 +55,8 @@ import {
   mapUrgencyToDB,
   getRoleLabel,
   mapAllocationPaymentScheduleToUI,
-  mapPaymentRequestToUI
+  mapPaymentRequestToUI,
+  mapValueExceptionApprovalToUI
 } from '@/lib/dbMapper';
 import { 
   createUserAction, 
@@ -83,6 +85,7 @@ import BrandLogo from '@/components/BrandLogo';
 import SidebarBrand from '@/components/SidebarBrand';
 import PublicLinksPanel from '@/components/PublicLinksPanel';
 import PublicSubmissionsPanel from '@/components/PublicSubmissionsPanel';
+import BookingsPanel from '@/components/BookingsPanel';
 
 // Icons for navigation
 import { 
@@ -140,6 +143,8 @@ export interface DatabaseProps {
   setNucleos: React.Dispatch<React.SetStateAction<Nucleo[]>>;
   approvals: any[];
   setApprovals: React.Dispatch<React.SetStateAction<any[]>>;
+  valueExceptionApprovals: ValueExceptionApproval[];
+  setValueExceptionApprovals: React.Dispatch<React.SetStateAction<ValueExceptionApproval[]>>;
   reverseEvaluations: any[];
   setReverseEvaluations: React.Dispatch<React.SetStateAction<any[]>>;
   paymentSchedules: AllocationPaymentSchedule[];
@@ -177,6 +182,7 @@ export default function Home() {
   const [suggestionsState, setSuggestionsState] = useState<Suggestion[]>(initialSuggestions);
   const [nucleosState, setNucleosState] = useState<Nucleo[]>(initialNucleos);
   const [approvalsState, setApprovalsState] = useState<any[]>([]);
+  const [valueExceptionApprovalsState, setValueExceptionApprovalsState] = useState<ValueExceptionApproval[]>([]);
   const [reverseEvaluationsState, setReverseEvaluationsState] = useState<any[]>([]);
   const [paymentSchedulesState, setPaymentSchedulesState] = useState<AllocationPaymentSchedule[]>([]);
   const [paymentRequestsState, setPaymentRequestsState] = useState<PaymentRequest[]>([]);
@@ -387,30 +393,13 @@ export default function Home() {
         setSuggestionsState(dbSuggestions.map(mapSuggestionToUI));
       }
 
-      const { data: dbApprovals } = await supabase.from('allocation_approvals').select('*');
+      const { data: dbApprovals } = await supabase
+        .from('allocation_approvals')
+        .select('*');
       if (dbApprovals) {
-        setApprovalsState(
-          dbApprovals.map((ap: any) => ({
-            id: ap.id,
-            jobId: ap.job_id,
-            requestId: ap.request_id,
-            shortlistCandidateId: ap.shortlist_candidate_id,
-            freelancerId: ap.freelancer_id,
-            approvalType: ap.approval_type,
-            status: ap.status,
-            requestedBy: ap.requested_by,
-            requestedTo: ap.requested_to,
-            approverId: ap.approver_id,
-            approverRole: ap.approver_role,
-            reason: ap.reason,
-            decisionNotes: ap.decision_notes,
-            policyReferenceValue: Number(ap.policy_reference_value || 0),
-            policyCeilingValue: Number(ap.policy_ceiling_value || 0),
-            negotiatedValue: Number(ap.negotiated_value || 0),
-            createdAt: ap.created_at,
-            decidedAt: ap.decided_at,
-          }))
-        );
+        const mappedApprovals = dbApprovals.map(mapValueExceptionApprovalToUI);
+        setApprovalsState(mappedApprovals as any[]);
+        setValueExceptionApprovalsState(mappedApprovals);
       }
 
       const { data: dbReverse } = await supabase.from('reverse_evaluations').select('*');
@@ -467,6 +456,15 @@ export default function Home() {
         const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
         if (sessionErr) {
           console.warn('Restore Session Error:', sessionErr.message);
+          // If we fail to restore the session (e.g. invalid refresh token), we call signOut
+          // to clear the invalid token from localStorage and prevent infinite console error loops.
+          try {
+            await supabase.auth.signOut();
+          } catch (signOutErr) {
+            console.error('Error during fallback signOut:', signOutErr);
+          }
+          setIsLoggedIn(false);
+          setCurrentUser(null);
           return;
         }
         if (session) {
@@ -478,7 +476,13 @@ export default function Home() {
 
           if (profileErr) {
             console.warn('Restore Session Profile Query Error:', `Stage: Restauração de Sessão - Consulta ao perfil (profiles), AuthUserId: ${session.user.id}, Message: ${profileErr.message}, Code: ${profileErr.code}, Details: ${profileErr.details}, Hint: ${profileErr.hint}`);
-            await supabase.auth.signOut();
+            try {
+              await supabase.auth.signOut();
+            } catch (signOutErr) {
+              console.error('Error during profile query failure signOut:', signOutErr);
+            }
+            setIsLoggedIn(false);
+            setCurrentUser(null);
             return;
           }
 
@@ -489,11 +493,22 @@ export default function Home() {
             setIsLoggedIn(true);
           } else {
             console.warn('Restore Session Profile not active or not found:', profile);
-            await supabase.auth.signOut();
+            try {
+              await supabase.auth.signOut();
+            } catch (signOutErr) {
+              console.error('Error during inactive profile signOut:', signOutErr);
+            }
+            setIsLoggedIn(false);
+            setCurrentUser(null);
           }
+        } else {
+          setIsLoggedIn(false);
+          setCurrentUser(null);
         }
       } catch (err) {
         console.warn('Unexpected error during session restoration:', err instanceof Error ? err.message : String(err));
+        setIsLoggedIn(false);
+        setCurrentUser(null);
       }
     };
     restoreSession();
@@ -1441,6 +1456,8 @@ export default function Home() {
     setNucleos: wrapStateSetter(nucleosState, setNucleosState, handleNucleoInsert, handleNucleoUpdate),
     approvals: approvalsState,
     setApprovals: setApprovalsState,
+    valueExceptionApprovals: valueExceptionApprovalsState,
+    setValueExceptionApprovals: setValueExceptionApprovalsState,
     reverseEvaluations: reverseEvaluationsState,
     setReverseEvaluations: setReverseEvaluationsState,
     paymentSchedules: paymentSchedulesState,
@@ -1477,6 +1494,7 @@ export default function Home() {
           { name: 'Criar Oportunidade', icon: Briefcase },
           { name: 'Shortlist & Negociação', icon: Briefcase },
           { name: 'Política de Valores', icon: Scale },
+          { name: 'Meus Bookings', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
           { name: 'Faturamento & Códigos', icon: Key },
           { name: 'Relatórios & Exportar', icon: TrendingUp },
@@ -1493,6 +1511,7 @@ export default function Home() {
           { name: 'Análise de Pré-cadastros', icon: FileCheck2 },
           { name: 'Shortlist & Negociação', icon: Briefcase },
           { name: 'Política de Valores', icon: Scale },
+          { name: 'Meus Bookings', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
           { name: 'Faturamento & Códigos', icon: Key },
           { name: 'Relatórios', icon: TrendingUp }
@@ -1505,6 +1524,7 @@ export default function Home() {
           { name: 'Sugestões de Freelas', icon: FileCheck2 },
           { name: 'Criar Oportunidade', icon: Briefcase },
           { name: 'Shortlist & Negociação', icon: SlidersHorizontal },
+          { name: 'Meus Bookings', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
           { name: 'Faturamento & Códigos', icon: Key },
           { name: 'Relatórios', icon: TrendingUp },
@@ -1518,7 +1538,6 @@ export default function Home() {
           { name: 'Shortlist & Negociação', icon: SlidersHorizontal },
           { name: 'Meus Bookings', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
-          { name: 'Concluir Job', icon: FileCheck2 },
           { name: 'Avaliar Freela', icon: Award },
           { name: 'Sugerir Novo Freela', icon: FileCheck2 }
         ];
@@ -1533,8 +1552,10 @@ export default function Home() {
 
   // Helper mapping function to handle correct activeTab routing cleanly
   const handleMenuClick = (menuName: string) => {
-    if (menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo' || menuName === 'Meus Bookings' || menuName === 'Concluir Job') {
+    if (menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo') {
       setActiveTab('Dashboard');
+    } else if (menuName === 'Meus Bookings' || menuName === 'Concluir Job') {
+      setActiveTab('Meus Bookings');
     } else if (menuName === 'Buscar Freelancers' || menuName === 'Banco de Freelancers') {
       setActiveTab('Banco de Freelancers');
     } else if (menuName === 'Shortlist & Negociação') {
@@ -1559,6 +1580,9 @@ export default function Home() {
   const isMenuSelected = (menuName: string) => {
     if (activeTab === 'Dashboard') {
       return menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo';
+    }
+    if (activeTab === 'Meus Bookings') {
+      return menuName === 'Meus Bookings' || menuName === 'Concluir Job';
     }
     if (activeTab === 'Banco de Freelancers') {
       return menuName === 'Banco de Freelancers' || menuName === 'Buscar Freelancers';
@@ -2043,6 +2067,10 @@ export default function Home() {
 
           {activeTab === 'Shortlist' && (
             <ShortlistPanel db={db} />
+          )}
+
+          {activeTab === 'Meus Bookings' && (
+            <BookingsPanel db={db} />
           )}
 
           {activeTab === 'Política de Valores' && (

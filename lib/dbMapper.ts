@@ -1,4 +1,4 @@
-import { User, Nucleo, Freelancer, Job, Shortlist, Negotiation, ValuePolicy, Allocation, Evaluation, PaymentCode, Suggestion, AllocationPaymentSchedule, PaymentRequest, ReverseEvaluationLink } from './mockData';
+import { User, Nucleo, Freelancer, Job, Shortlist, Negotiation, ValuePolicy, Allocation, Evaluation, PaymentCode, Suggestion, AllocationPaymentSchedule, PaymentRequest, ReverseEvaluationLink, ValueExceptionApproval } from './mockData';
 
 // --- Seniority Mapping ---
 export function mapSeniorityToUI(seniority: string | null): 'Júnior' | 'Pleno' | 'Sênior' | 'Especialista' {
@@ -314,6 +314,7 @@ export function mapProfileToUser(profile: any): User {
     firstAccessPending: profile.first_login_required,
     lastLogin: lastLoginStr,
     themePreference: profile.theme_preference || 'dark',
+    isNucleusHead: profile.is_nucleus_head || false,
   };
 }
 
@@ -627,6 +628,11 @@ export function mapJobToUI(req: any): Job {
     expectedBudgetSavingAmount: req.expected_budget_saving_amount !== null && req.expected_budget_saving_amount !== undefined ? Number(req.expected_budget_saving_amount) : undefined,
     expectedBudgetSavingPercentage: req.expected_budget_saving_percentage !== null && req.expected_budget_saving_percentage !== undefined ? Number(req.expected_budget_saving_percentage) : undefined,
     paymentPolicyStatus: req.payment_policy_status,
+    policyStatus: req.policy_status || (req.is_above_policy ? 'outside_policy' : 'inside_policy'),
+    policyExceededAtCreation: req.policy_exceeded_at_creation || req.is_above_policy || false,
+    policyLimitAmount: req.policy_ceiling_value !== null && req.policy_ceiling_value !== undefined ? Number(req.policy_ceiling_value) : undefined,
+    policyReferenceAmount: req.policy_reference_value !== null && req.policy_reference_value !== undefined ? Number(req.policy_reference_value) : undefined,
+    approvalRequired: req.approval_required || false,
   };
 }
 
@@ -644,4 +650,41 @@ export function mapNegotiationStatusToUI(status: string | null, isAbovePolicy?: 
     case 'aguardando_retorno': return 'Aguardando retorno';
     default: return status || 'Pendente';
   }
+}
+
+// --- ValueExceptionApproval Mapping ---
+export function mapValueExceptionApprovalToUI(row: any): ValueExceptionApproval {
+  return {
+    id: row.id,
+    jobId: row.job_id,
+    requestId: row.request_id || undefined,
+    shortlistCandidateId: row.shortlist_candidate_id || undefined,
+    freelancerId: row.freelancer_id || undefined,
+    nucleusId: row.nucleus_id || undefined,
+    approvalType: row.approval_type as 'value_exception' | 'schedule_conflict',
+    status: row.status as 'pending' | 'approved' | 'rejected',
+    requestedBy: row.requested_by || undefined,
+    requestedTo: row.requested_to || undefined,
+    approverId: row.approver_id || undefined,
+    approverRole: row.approver_role || undefined,
+    reason: row.reason || undefined,
+    decisionNotes: row.decision_notes || undefined,
+    policyReferenceValue: row.policy_reference_value !== null && row.policy_reference_value !== undefined ? Number(row.policy_reference_value) : undefined,
+    policyCeilingValue: row.policy_ceiling_value !== null && row.policy_ceiling_value !== undefined ? Number(row.policy_ceiling_value) : undefined,
+    negotiatedValue: row.negotiated_value !== null && row.negotiated_value !== undefined ? Number(row.negotiated_value) : undefined,
+    requestedAmount: row.requested_amount !== null && row.requested_amount !== undefined ? Number(row.requested_amount) : undefined,
+    remunerationModel: row.remuneration_model || undefined,
+    calculatedPolicyReference: row.calculated_policy_reference !== null && row.calculated_policy_reference !== undefined ? Number(row.calculated_policy_reference) : undefined,
+    calculatedPolicyLimit: row.calculated_policy_limit !== null && row.calculated_policy_limit !== undefined ? Number(row.calculated_policy_limit) : undefined,
+    excessAmount: row.excess_amount !== null && row.excess_amount !== undefined ? Number(row.excess_amount) : undefined,
+    excessPercent: row.excess_percent !== null && row.excess_percent !== undefined ? Number(row.excess_percent) : undefined,
+    approvedBy: row.approved_by || undefined,
+    approvedAt: row.approved_at || undefined,
+    approvalComment: row.approval_comment || undefined,
+    rejectedBy: row.rejected_by || undefined,
+    rejectedAt: row.rejected_at || undefined,
+    rejectionComment: row.rejection_comment || undefined,
+    createdAt: row.created_at || undefined,
+    decidedAt: row.decided_at || undefined,
+  };
 }

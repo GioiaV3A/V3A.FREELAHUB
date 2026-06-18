@@ -13,6 +13,8 @@ export interface User {
   lastLogin?: string;
   isSeedMaster?: boolean;
   themePreference?: 'dark' | 'light' | 'system';
+  /** Indica se este usuário é Head (responsável) do seu núcleo */
+  isNucleusHead?: boolean;
 }
 
 export interface Nucleo {
@@ -99,6 +101,16 @@ export interface Job {
   expectedBudgetSavingAmount?: number;
   expectedBudgetSavingPercentage?: number;
   paymentPolicyStatus?: 'within_policy' | 'above_policy_requires_approval' | 'no_policy_found';
+  /** Status de aderência à política de valores (calculado na criação/negociação) */
+  policyStatus?: 'inside_policy' | 'outside_policy' | 'policy_missing';
+  /** Indica se o job já ultrapassava a política na criação da oportunidade */
+  policyExceededAtCreation?: boolean;
+  /** Teto de política estimado para este job (calculado) */
+  policyLimitAmount?: number;
+  /** Referência de política estimada para este job (calculado) */
+  policyReferenceAmount?: number;
+  /** Indica se requer aprovação do Head antes de homologar */
+  approvalRequired?: boolean;
 }
 
 export interface Shortlist {
@@ -292,6 +304,40 @@ export interface PaymentCode {
   freelancerId: string;
   approvedValue: number;
   paymentStatus: 'Aguardando conclusão do job' | 'Aguardando avaliação' | 'Liberado para pagamento' | 'Bloqueado' | 'Encerrado';
+}
+
+export interface ValueExceptionApproval {
+  id: string;
+  jobId: string;
+  requestId?: string;
+  shortlistCandidateId?: string;
+  freelancerId?: string;
+  nucleusId?: string;
+  approvalType: 'value_exception' | 'schedule_conflict';
+  status: 'pending' | 'approved' | 'rejected';
+  requestedBy?: string;
+  requestedTo?: string;
+  approverId?: string;
+  approverRole?: string;
+  reason?: string;
+  decisionNotes?: string;
+  policyReferenceValue?: number;
+  policyCeilingValue?: number;
+  negotiatedValue?: number;
+  requestedAmount?: number;
+  remunerationModel?: string;
+  calculatedPolicyReference?: number;
+  calculatedPolicyLimit?: number;
+  excessAmount?: number;
+  excessPercent?: number;
+  approvedBy?: string;
+  approvedAt?: string;
+  approvalComment?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionComment?: string;
+  createdAt?: string;
+  decidedAt?: string;
 }
 
 export interface Suggestion {

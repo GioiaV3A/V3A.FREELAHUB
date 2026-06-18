@@ -14,7 +14,11 @@ import {
   calculateBudgetSaving, 
   getBudgetDeltaStatus,
   formatCurrencyBRL,
-  formatPercentage
+  formatCurrencyBR,
+  parseCurrencyBR,
+  maskCurrencyBRL,
+  formatPercentage,
+  calculatePolicyLimitForJob
 } from '@/lib/financial';
 import NegotiationFinancialSummary from '@/components/NegotiationFinancialSummary';
 import { 
@@ -126,6 +130,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const [contractStartDate, setContractStartDate] = useState('');
   const [contractEndDate, setContractEndDate] = useState('');
   const [recurringAmount, setRecurringAmount] = useState(0);
+  const [recurringAmountVisual, setRecurringAmountVisual] = useState('');
+  const [visualRates, setVisualRates] = useState<Record<string, string>>({});
   const [preferredDueDay, setPreferredDueDay] = useState(5);
   const [paymentTerms, setPaymentTerms] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
@@ -140,6 +146,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       }
       if (activeJob.expectedRate) {
         setRecurringAmount(activeJob.expectedRate);
+        setRecurringAmountVisual(new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(activeJob.expectedRate));
       }
     }
   }, [activeJob?.id]);
@@ -160,6 +167,25 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     freelancerId: '',
     type: 'schedule_conflict',
     reason: '',
+    loading: false,
+    error: null
+  });
+
+  // State for Head Decision Modal
+  const [headDecisionModal, setHeadDecisionModal] = useState<{
+    isOpen: boolean;
+    approvalId: string;
+    freelancerName: string;
+    decision: 'approve' | 'reject';
+    comment: string;
+    loading: boolean;
+    error: string | null;
+  }>({
+    isOpen: false,
+    approvalId: '',
+    freelancerName: '',
+    decision: 'approve',
+    comment: '',
     loading: false,
     error: null
   });
@@ -435,7 +461,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       const matchState = f.state.toLowerCase().includes(loc);
       if (!matchCity && !matchState) return false;
     }
-    if (candidateMaxRate && f.referenceValue > Number(candidateMaxRate)) return false;
+    if (candidateMaxRate && f.referenceValue > parseCurrencyBR(candidateMaxRate)) return false;
     if (candidateAvailability && f.availability !== candidateAvailability) return false;
     if (candidateBrands) {
       const q = candidateBrands.toLowerCase();
@@ -878,21 +904,22 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         
         let nextStatus = updates.negotiationStatus !== undefined ? updates.negotiationStatus : sl.candidateStatus;
         
-        const targetModel = model || activeJob?.remunerationModel || 'daily';
-        const billingTypeForMatch = 
-          ['daily', 'diaria', 'diária'].includes(targetModel.toLowerCase()) ? 'Diária' :
-          ['hourly', 'hora'].includes(targetModel.toLowerCase()) ? 'Hora' :
-          ['fixed_job', 'pacote', 'job fechado', 'projeto'].includes(targetModel.toLowerCase()) ? 'Job Fechado' : 'Mensal / Salário';
-
-        const policy = db.policies.find(p => 
-          p.role === activeJob?.roleNeeded && 
-          p.seniority === activeJob?.seniorityNeeded && 
-          p.billingType === billingTypeForMatch
-        );
-        const ceilingValue = policy ? policy.ceilingValue : 99999;
+        // Use calculatePolicyLimitForJob for precise policy check
         const currentRate = rate || 0;
+        const policyResult = activeJob ? calculatePolicyLimitForJob({
+          role: activeJob.roleNeeded,
+          seniority: activeJob.seniorityNeeded,
+          remunerationModel: model || activeJob.remunerationModel || 'daily',
+          startDate: activeJob.startDate,
+          endDate: activeJob.endDate,
+          proposedAmount: currentRate,
+          policies: db.policies,
+          installmentsCount: estHours ? undefined : undefined
+        }) : null;
+
+        const isAbovePolicy = policyResult ? policyResult.policyStatus === 'above_policy' : false;
         
-        if (currentRate > ceilingValue && nextStatus !== 'Pendente aprovação Head') {
+        if (isAbovePolicy && nextStatus !== 'Pendente aprovação Head') {
           nextStatus = 'Valor fora da política';
         }
 
@@ -1086,6 +1113,104 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     } catch (err: any) {
       console.error('[confirmAllocation] failed:', err);
       alert(`❌ Erro ao homologar alocação: ${err.message || err}`);
+    }
+  };
+
+  // Head do Núcleo: Aprovar ou Rejeitar exceção de valor
+  const handleHeadDecision = async (approvalId: string, decision: 'approve' | 'reject', comment: string) => {
+    if (!approvalId) {
+      showToast('ID da aprovação inválido.', 'error');
+      return;
+    }
+
+    // Um usuário é considerado Head se: tem isNucleusHead=true no perfil,
+    // OU se é perfil NÚCLEO e o nucleoId do approval coincide com o seu nucleoId
+    const approval = db.approvals?.find((ap: any) => ap.id === approvalId);
+    const isNucleusHead = db.currentUser.isNucleusHead ||
+      (db.currentUser.profile === 'NÚCLEO' &&
+        !!db.currentUser.nucleoId &&
+        !!approval?.nucleusId &&
+        db.currentUser.nucleoId === approval.nucleusId);
+    const isPrivileged = ['MASTER', 'RH', 'C-LEVEL'].includes(db.currentUser.profile);
+
+    if (!isNucleusHead && !isPrivileged) {
+      showToast('Permissão negada: apenas o Head do Núcleo, MASTER, RH ou C-LEVEL podem aprovar exceções.', 'error');
+      return;
+    }
+
+    const trimmedComment = comment.trim();
+    if (!trimmedComment || trimmedComment.length < 5) {
+      showToast('Comentário de decisão obrigatório (mínimo 5 caracteres).', 'error');
+      return;
+    }
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+
+      const updatePayload: any = {
+        status: decision === 'approve' ? 'approved' : 'rejected',
+        decided_at: new Date().toISOString(),
+        decision_notes: trimmedComment,
+      };
+
+      if (decision === 'approve') {
+        updatePayload.approved_by = userId;
+        updatePayload.approved_at = new Date().toISOString();
+        updatePayload.approval_comment = trimmedComment;
+      } else {
+        updatePayload.rejected_by = userId;
+        updatePayload.rejected_at = new Date().toISOString();
+        updatePayload.rejection_comment = trimmedComment;
+      }
+
+      const { error } = await supabase
+        .from('allocation_approvals')
+        .update(updatePayload)
+        .eq('id', approvalId);
+
+      if (error) {
+        console.error('[handleHeadDecision] supabase error:', error);
+        showToast(`Erro ao registrar decisão: ${error.message}`, 'error');
+        return;
+      }
+
+      // Update shortlist candidate status if approved
+      // 'approval' already fetched at top of function via db.approvals?.find(...)
+      if (decision === 'approve') {
+        if (approval?.shortlistCandidateId) {
+          const { error: scErr } = await supabase
+            .from('shortlist_candidates')
+            .update({
+              requires_head_approval: false,
+              requires_rh_approval: false,
+              negotiation_status: 'aceitou',
+              candidate_status: 'aceitou',
+            })
+            .eq('id', approval.shortlistCandidateId);
+          if (scErr) {
+            console.warn('[handleHeadDecision] shortlist update error:', scErr);
+          }
+        }
+      } else if (decision === 'reject') {
+        // On reject, move candidate back to negotiating so user can adjust the rate
+        if (approval?.shortlistCandidateId) {
+          await supabase
+            .from('shortlist_candidates')
+            .update({
+              requires_head_approval: false,
+              negotiation_status: 'em_negociacao',
+              candidate_status: 'em_negociacao',
+            })
+            .eq('id', approval.shortlistCandidateId);
+        }
+      }
+
+      showToast(decision === 'approve' ? 'Exceção aprovada com sucesso.' : 'Exceção rejeitada.', 'success');
+      await db.reloadDatabase();
+    } catch (err: any) {
+      console.error('[handleHeadDecision] error:', err);
+      showToast('Erro inesperado ao processar decisão.', 'error');
     }
   };
 
@@ -1925,13 +2050,23 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                     <div>
                       <label className="text-[11px] font-bold text-text-secondary block mb-1">Taxa Diária Máx (R$)</label>
-                      <input
-                        type="number"
-                        value={candidateMaxRate}
-                        onChange={(e) => setCandidateMaxRate(e.target.value)}
-                        placeholder="Valor máximo"
-                        className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-xs"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-text-secondary select-none">R$</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={candidateMaxRate}
+                          onChange={(e) => setCandidateMaxRate(maskCurrencyBRL(e.target.value))}
+                          onBlur={() => {
+                            const numeric = parseCurrencyBR(candidateMaxRate);
+                            if (numeric > 0) {
+                              setCandidateMaxRate(new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numeric));
+                            }
+                          }}
+                          placeholder="Valor máximo"
+                          className="w-full bg-white border border-border-subtle p-1.5 pl-6.5 rounded-lg text-xs text-text-primary"
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -2631,16 +2766,31 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="text-[11px] font-bold text-text-secondary block mb-1">Taxa Acordada (R$) *</label>
-                        <input
-                          type="number"
-                          disabled={isLocked}
-                          value={rate}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            handleUpdateNegotiation(cand.id, { negotiatedRate: val });
-                          }}
-                          className="w-full bg-[#F8FAFC] border border-border-subtle p-2.5 rounded-lg text-xs font-bold text-text-primary focus:outline-none focus:border-action-cyan disabled:opacity-60"
-                        />
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-text-secondary select-none">R$</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            disabled={isLocked}
+                            value={visualRates[cand.id] !== undefined ? visualRates[cand.id] : maskCurrencyBRL(rate.toString())}
+                            onChange={(e) => {
+                              const rawVal = e.target.value;
+                              const masked = maskCurrencyBRL(rawVal);
+                              setVisualRates(prev => ({ ...prev, [cand.id]: masked }));
+                              const numeric = parseCurrencyBR(masked);
+                              handleUpdateNegotiation(cand.id, { negotiatedRate: numeric });
+                            }}
+                            onBlur={() => {
+                              const currentVal = visualRates[cand.id] !== undefined ? visualRates[cand.id] : maskCurrencyBRL(rate.toString());
+                              const numeric = parseCurrencyBR(currentVal);
+                              if (numeric > 0) {
+                                const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numeric);
+                                setVisualRates(prev => ({ ...prev, [cand.id]: formatted }));
+                              }
+                            }}
+                            className="w-full bg-[#F8FAFC] border border-border-subtle p-2.5 pl-8 rounded-lg text-xs font-bold text-text-primary focus:outline-none focus:border-action-cyan disabled:opacity-60"
+                          />
+                        </div>
                       </div>
 
                       <div>
@@ -2786,6 +2936,120 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               </div>
             </div>
           </div>
+
+          {/* ===== PAINEL DE EXCEÇÕES PENDENTES (Head do Núcleo / MASTER / RH / C-LEVEL) ===== */}
+          {(() => {
+            const isPrivileged = ['MASTER', 'RH', 'C-LEVEL'].includes(db.currentUser.profile);
+            // Verifica se é Head por flag explícita OU por correspondência de núcleo
+            const jobNucleoId = activeJob.nucleoId;
+            const isNucleusHead = db.currentUser.isNucleusHead ||
+              (db.currentUser.profile === 'NÚCLEO' &&
+                !!db.currentUser.nucleoId &&
+                !!jobNucleoId &&
+                db.currentUser.nucleoId === jobNucleoId);
+            if (!isNucleusHead && !isPrivileged) return null;
+
+            // Filtrar exceções pendentes do núcleo do job ativo
+            const pendingExceptions = db.approvals?.filter((ap: any) => {
+              const isValueException = ap.approvalType === 'value_exception';
+              const isPending = ap.status === 'pending';
+              const isForThisJob = ap.jobId === activeJob.id;
+              // Head só vê seu próprio núcleo; MASTER/RH/C-LEVEL veem todos
+              if (isPrivileged) return isValueException && isPending && isForThisJob;
+              return isValueException && isPending && isForThisJob &&
+                (ap.nucleusId === db.currentUser.nucleoId || ap.nucleusId === jobNucleoId);
+            }) || [];
+
+            if (pendingExceptions.length === 0) return null;
+
+            return (
+              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-5 space-y-4 animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-amber-500 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-amber-900 text-sm">Exceções de Valor Pendentes de Aprovação</h4>
+                    <p className="text-[11px] text-amber-700">{pendingExceptions.length} solicitação(ões) aguardam sua decisão antes de liberar a homologação.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {pendingExceptions.map((ap: any) => {
+                    const freelancer = db.freelancers.find(f => f.id === ap.freelancerId);
+                    const exceedPct = ap.excessPercent ? Number(ap.excessPercent).toFixed(1) : '—';
+                    const excessAmt = ap.excessAmount ? Number(ap.excessAmount) : (ap.requestedAmount && ap.calculatedPolicyLimit ? Number(ap.requestedAmount) - Number(ap.calculatedPolicyLimit) : 0);
+                    const requestedAmt = ap.requestedAmount || ap.negotiatedValue;
+                    const limitAmt = ap.calculatedPolicyLimit || ap.policyCeilingValue;
+
+                    return (
+                      <div key={ap.id} className="bg-white border border-amber-200 rounded-xl p-4 space-y-3">
+                        <div className="flex justify-between items-start flex-wrap gap-2">
+                          <div>
+                            <strong className="text-sidebar-navy text-sm">{freelancer?.name || 'Freelancer'}</strong>
+                            <p className="text-[11px] text-text-secondary">{freelancer?.mainRole} ({freelancer?.seniority})</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[11px] text-red-700 font-bold">
+                              {requestedAmt ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(requestedAmt)) : '—'}
+                              {limitAmt && <span className="text-text-secondary font-normal"> (teto: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(limitAmt))})</span>}
+                            </div>
+                            <span className="text-[10px] bg-red-50 border border-red-200 text-red-700 font-bold px-1.5 py-0.5 rounded">
+                              +{exceedPct}% acima do teto
+                            </span>
+                          </div>
+                        </div>
+
+                        {ap.reason && (
+                          <div className="bg-slate-50 border border-border-subtle p-2.5 rounded-lg text-[11px] text-text-secondary leading-relaxed">
+                            <strong className="text-text-primary block text-[10px] uppercase tracking-wider mb-1">Justificativa do solicitante</strong>
+                            {ap.reason}
+                          </div>
+                        )}
+
+                        {/* Decision input + buttons */}
+                        <div className="flex flex-col gap-2">
+                          <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+                            Comentário da decisão <span className="text-red-500">*</span>
+                          </label>
+                          <textarea
+                            placeholder="Descreva o motivo da aprovação ou rejeição (mín. 5 caracteres)..."
+                            className="w-full bg-white border border-border-subtle p-2 rounded-lg text-xs focus:outline-none focus:border-action-cyan text-text-primary resize-none"
+                            rows={2}
+                            id={`head-comment-${ap.id}`}
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const el = document.getElementById(`head-comment-${ap.id}`) as HTMLTextAreaElement;
+                                handleHeadDecision(ap.id, 'reject', el?.value || '');
+                              }}
+                              className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              Rejeitar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const el = document.getElementById(`head-comment-${ap.id}`) as HTMLTextAreaElement;
+                                handleHeadDecision(ap.id, 'approve', el?.value || '');
+                              }}
+                              className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Aprovar Exceção
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* CHECK IF JOB IS ALREADY BOOKED (BOOKING HISTORY MODE) */}
           {activeJob.selectedFreelancerId ? (() => {
@@ -3129,12 +3393,29 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
                                     Valor Mensal (R$) *
                                   </label>
-                                  <input
-                                    type="number"
-                                    value={recurringAmount}
-                                    onChange={(e) => setRecurringAmount(Number(e.target.value))}
-                                    className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                  />
+                                  <div className="relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary select-none">R$</span>
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      value={recurringAmountVisual}
+                                      onChange={(e) => {
+                                        const rawVal = e.target.value;
+                                        const masked = maskCurrencyBRL(rawVal);
+                                        setRecurringAmountVisual(masked);
+                                        const numeric = parseCurrencyBR(masked);
+                                        setRecurringAmount(numeric);
+                                      }}
+                                      onBlur={() => {
+                                        if (recurringAmount > 0) {
+                                          setRecurringAmountVisual(new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(recurringAmount));
+                                        } else {
+                                          setRecurringAmountVisual('');
+                                        }
+                                      }}
+                                      className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-action-cyan text-text-primary"
+                                    />
+                                  </div>
                                 </div>
 
                                 <div>
