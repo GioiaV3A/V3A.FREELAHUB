@@ -16,31 +16,41 @@ export interface CalculateNegotiatedTotalArgs {
   remunerationModel: string | null | undefined;
   allocationDays: number;
   estimatedHours?: number | null | undefined;
+  installmentsCount?: number | null | undefined;
 }
 
 export function calculateNegotiatedTotal({
   negotiatedRate,
   remunerationModel,
   allocationDays,
-  estimatedHours
+  estimatedHours,
+  installmentsCount
 }: CalculateNegotiatedTotalArgs): number | null {
   if (negotiatedRate === null || negotiatedRate === undefined || isNaN(negotiatedRate)) return null;
   const model = remunerationModel?.toLowerCase() || '';
 
-  if (model === 'diária' || model === 'diaria') {
+  if (model === 'diária' || model === 'diaria' || model === 'daily') {
     return negotiatedRate * (allocationDays || 0);
   } else if (
     model === 'job fechado' ||
     model === 'valor fechado' ||
     model === 'pacote' ||
-    model === 'projeto'
+    model === 'projeto' ||
+    model === 'fixed_job'
   ) {
     return negotiatedRate;
-  } else if (model === 'hora') {
+  } else if (model === 'hora' || model === 'hourly') {
     if (estimatedHours === null || estimatedHours === undefined || isNaN(estimatedHours) || estimatedHours <= 0) {
       return null;
     }
     return negotiatedRate * estimatedHours;
+  } else if (
+    model === 'mensal / salário' ||
+    model === 'mensal' ||
+    model === 'monthly_salary' ||
+    model === 'monthly'
+  ) {
+    return negotiatedRate * (installmentsCount || 1);
   }
   return null;
 }

@@ -28,6 +28,7 @@ interface NegotiationFinancialSummaryProps {
   negotiatedRate: number | null | undefined;
   remunerationModel: string | null | undefined;
   estimatedHours?: number | null | undefined;
+  installmentsCount?: number | null | undefined;
   showDetailedBreakdown?: boolean;
   variant?: 'compact' | 'detailed';
 }
@@ -39,6 +40,7 @@ export default function NegotiationFinancialSummary({
   negotiatedRate,
   remunerationModel,
   estimatedHours,
+  installmentsCount,
   showDetailedBreakdown = true,
   variant = 'detailed'
 }: NegotiationFinancialSummaryProps) {
@@ -49,7 +51,8 @@ export default function NegotiationFinancialSummary({
     negotiatedRate,
     remunerationModel,
     allocationDays,
-    estimatedHours
+    estimatedHours,
+    installmentsCount
   });
 
   const { savingAmount, savingPercentage } = calculateBudgetSaving({

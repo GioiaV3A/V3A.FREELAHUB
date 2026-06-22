@@ -176,6 +176,12 @@ export function mapCandidateStatusToUI(status: string | null): Shortlist['candid
       return 'Pendente aprovação RH';
     case 'pendente_aprovacao_head':
       return 'Pendente aprovação Head';
+    case 'approved_by_head':
+    case 'aprovado_pelo_head':
+      return 'Aprovado pelo Head';
+    case 'rejected_by_head':
+    case 'reprovado_pelo_head':
+      return 'Reprovado pelo Head';
     case 'aprovado_para_alocacao':
       return 'Aprovado para alocação';
     case 'selecionado_para_alocacao':
@@ -195,6 +201,8 @@ export function mapCandidateStatusToDB(status: string): string {
     case 'Bloqueado por conflito de agenda': return 'bloqueado_conflito_agenda';
     case 'Pendente aprovação RH': return 'pendente_aprovacao_rh';
     case 'Pendente aprovação Head': return 'pendente_aprovacao_head';
+    case 'Aprovado pelo Head': return 'approved_by_head';
+    case 'Reprovado pelo Head': return 'rejected_by_head';
     case 'Aprovado para alocação': return 'aprovado_para_alocacao';
     case 'Selecionado para alocação': return 'selecionado_para_alocacao';
     default: return 'shortlisted';
@@ -224,9 +232,13 @@ export function mapCandidateStatusToDBEnum(status: string): 'selecionado' | 'em_
     case 'aprovado_para_alocacao':
     case 'Selecionado para alocação':
     case 'selecionado_para_alocacao':
+    case 'approved_by_head':
+    case 'Aprovado pelo Head':
       return 'aprovado_rh';
     case 'Não aceitou':
     case 'nao_aceitou':
+    case 'rejected_by_head':
+    case 'Reprovado pelo Head':
       return 'rejeitado';
     case 'Bloqueado por conflito de agenda':
     case 'bloqueado_conflito_agenda':
@@ -599,6 +611,15 @@ export function mapUrgencyToDB(urgency: string): 'alta' | 'media' | 'baixa' | 'c
 
 // --- Job Mapping ---
 export function mapJobToUI(req: any): Job {
+  let normRemun = req.remuneration_model;
+  if (normRemun) {
+    const r = normRemun.toLowerCase();
+    if (r === 'monthly' || r === 'monthly_salary' || r === 'mensal' || r === 'mensal / salário') normRemun = 'monthly_salary';
+    else if (r === 'closed_package' || r === 'fixed_job' || r === 'pacote' || r === 'projeto' || r === 'job fechado') normRemun = 'fixed_job';
+    else if (r === 'daily' || r === 'diaria' || r === 'diária') normRemun = 'daily';
+    else if (r === 'hourly' || r === 'hora') normRemun = 'hourly';
+  }
+
   return {
     id: req.id, // request_id represents the demand / UI Job ID
     name: req.jobs?.title || req.job_title || '',
@@ -619,7 +640,7 @@ export function mapJobToUI(req: any): Job {
     closedBy: req.closed_by || null,
     closureReason: req.closure_reason || null,
     paymentFlow: req.payment_flow,
-    remunerationModel: req.remuneration_model,
+    remunerationModel: normRemun,
     expectedRate: req.expected_rate !== null && req.expected_rate !== undefined ? Number(req.expected_rate) : undefined,
     expectedHours: req.expected_hours !== null && req.expected_hours !== undefined ? Number(req.expected_hours) : undefined,
     expectedPaymentDay: req.expected_payment_day !== null && req.expected_payment_day !== undefined ? Number(req.expected_payment_day) : undefined,
@@ -633,6 +654,9 @@ export function mapJobToUI(req: any): Job {
     policyLimitAmount: req.policy_ceiling_value !== null && req.policy_ceiling_value !== undefined ? Number(req.policy_ceiling_value) : undefined,
     policyReferenceAmount: req.policy_reference_value !== null && req.policy_reference_value !== undefined ? Number(req.policy_reference_value) : undefined,
     approvalRequired: req.approval_required || false,
+    paymentDatesGenerated: req.payment_dates_generated || [],
+    paymentDatesSelected: req.payment_dates_selected || [],
+    paymentDatesExcluded: req.payment_dates_excluded || [],
   };
 }
 

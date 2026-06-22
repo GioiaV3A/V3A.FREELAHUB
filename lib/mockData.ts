@@ -93,6 +93,9 @@ export interface Job {
   closureReason?: string | null;
   paymentFlow?: 'one_time' | 'recurring';
   remunerationModel?: 'daily' | 'hourly' | 'fixed_job' | 'monthly_salary';
+  paymentDatesGenerated?: string[];
+  paymentDatesSelected?: string[];
+  paymentDatesExcluded?: string[];
   expectedRate?: number;
   expectedHours?: number;
   expectedPaymentDay?: number;

@@ -449,6 +449,23 @@ export default function Home() {
     }
   };
 
+  const safeSignOut = async (localOnly = false) => {
+    try {
+      if (localOnly) {
+        await supabase.auth.signOut({ scope: 'local' });
+      } else {
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.warn('Standard signOut failed, falling back to local signOut:', err);
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch (localErr) {
+        console.error('Local signOut failed:', localErr);
+      }
+    }
+  };
+
   // Restore session on mount
   useEffect(() => {
     const restoreSession = async () => {
@@ -458,11 +475,7 @@ export default function Home() {
           console.warn('Restore Session Error:', sessionErr.message);
           // If we fail to restore the session (e.g. invalid refresh token), we call signOut
           // to clear the invalid token from localStorage and prevent infinite console error loops.
-          try {
-            await supabase.auth.signOut();
-          } catch (signOutErr) {
-            console.error('Error during fallback signOut:', signOutErr);
-          }
+          await safeSignOut(true);
           setIsLoggedIn(false);
           setCurrentUser(null);
           return;
@@ -476,11 +489,7 @@ export default function Home() {
 
           if (profileErr) {
             console.warn('Restore Session Profile Query Error:', `Stage: Restauração de Sessão - Consulta ao perfil (profiles), AuthUserId: ${session.user.id}, Message: ${profileErr.message}, Code: ${profileErr.code}, Details: ${profileErr.details}, Hint: ${profileErr.hint}`);
-            try {
-              await supabase.auth.signOut();
-            } catch (signOutErr) {
-              console.error('Error during profile query failure signOut:', signOutErr);
-            }
+            await safeSignOut(false);
             setIsLoggedIn(false);
             setCurrentUser(null);
             return;
@@ -493,11 +502,7 @@ export default function Home() {
             setIsLoggedIn(true);
           } else {
             console.warn('Restore Session Profile not active or not found:', profile);
-            try {
-              await supabase.auth.signOut();
-            } catch (signOutErr) {
-              console.error('Error during inactive profile signOut:', signOutErr);
-            }
+            await safeSignOut(false);
             setIsLoggedIn(false);
             setCurrentUser(null);
           }
@@ -530,7 +535,8 @@ export default function Home() {
     if (jobsState.length > 0 && (!selectedJobId || !jobsState.some(j => j.id === selectedJobId))) {
       setSelectedJobId(jobsState[0].id);
     }
-  }, [jobsState, selectedJobId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobsState]);
 
   const handleManualLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -578,7 +584,7 @@ export default function Home() {
       if (profileErr) {
         console.warn('Login Step Error:', `Stage: Consulta ao perfil (profiles), AuthUserId: ${session.user.id}, Message: ${profileErr.message}, Code: ${profileErr.code}, Details: ${profileErr.details}, Hint: ${profileErr.hint}`);
         setLoginError('Não foi possível carregar seu perfil. Tente novamente ou contate o administrador.');
-        await supabase.auth.signOut();
+        await safeSignOut(false);
         setIsLoggingIn(false);
         return;
       }
@@ -586,14 +592,14 @@ export default function Home() {
       if (!profile) {
         console.warn('Login Step Warning: Profile not found for authenticated user', session.user.id);
         setLoginError('Perfil não encontrado.');
-        await supabase.auth.signOut();
+        await safeSignOut(false);
         setIsLoggingIn(false);
         return;
       }
 
       if (profile.status === 'inactive') {
         setLoginError('Sua conta está inativa. Entre em contato com o Master/RH.');
-        await supabase.auth.signOut();
+        await safeSignOut(false);
         setIsLoggingIn(false);
         return;
       }
@@ -684,7 +690,7 @@ export default function Home() {
   };
 
   const handleLogOut = async () => {
-    await supabase.auth.signOut();
+    await safeSignOut(false);
     setIsLoggedIn(false);
     setCurrentUser(null);
     setEmailInput('');

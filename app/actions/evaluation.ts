@@ -524,7 +524,7 @@ export async function createApprovalRequestAction(accessToken: string, approvalD
       return { success: false, error: 'Este profissional não possui conflito de agenda registrado.' };
     }
 
-    // 5. Avoid duplicates
+    // 5. Avoid duplicates / Update existing pending request
     const { data: existingApproval } = await adminClient
       .from('allocation_approvals')
       .select('id')
@@ -535,33 +535,60 @@ export async function createApprovalRequestAction(accessToken: string, approvalD
       .eq('status', 'pending')
       .maybeSingle();
 
+    const excessAmount = approvalData.negotiatedValue && approvalData.policyCeilingValue
+      ? Number(approvalData.negotiatedValue) - Number(approvalData.policyCeilingValue)
+      : 0;
+    const excessPercent = approvalData.negotiatedValue && approvalData.policyCeilingValue && Number(approvalData.policyCeilingValue) > 0
+      ? (excessAmount / Number(approvalData.policyCeilingValue)) * 100
+      : 0;
+
+    const requestPayload: any = {
+      job_id: candidate.job_id,
+      request_id: candidate.request_id,
+      shortlist_candidate_id: approvalData.shortlistCandidateId,
+      freelancer_id: candidate.freelancer_id,
+      approval_type: approvalData.approvalType,
+      status: 'pending',
+      requested_by: requester.id,
+      requested_to: approvalData.requestedTo || null,
+      reason: approvalData.reason,
+      policy_reference_value: approvalData.policyReferenceValue || null,
+      policy_ceiling_value: approvalData.policyCeilingValue || null,
+      negotiated_value: approvalData.negotiatedValue || null,
+      nucleus_id: job.nucleo_id,
+      requested_amount: approvalData.negotiatedValue || null,
+      calculated_policy_reference: approvalData.policyReferenceValue || null,
+      calculated_policy_limit: approvalData.policyCeilingValue || null,
+      excess_amount: excessAmount > 0 ? excessAmount : null,
+      excess_percent: excessPercent > 0 ? excessPercent : null
+    };
+
+    let created;
     if (existingApproval) {
-      return { success: false, error: 'Já existe uma solicitação de aprovação pendente para este profissional neste job.' };
-    }
+      const { data: updated, error: updateErr } = await adminClient
+        .from('allocation_approvals')
+        .update(requestPayload)
+        .eq('id', existingApproval.id)
+        .select('*')
+        .single();
+      
+      if (updateErr) {
+        console.error('Error updating approval request:', updateErr);
+        return { success: false, error: 'Erro ao atualizar solicitação de aprovação no banco de dados.' };
+      }
+      created = updated;
+    } else {
+      const { data: inserted, error: insertErr } = await adminClient
+        .from('allocation_approvals')
+        .insert(requestPayload)
+        .select('*')
+        .single();
 
-    // 6. Insert new approval request
-    const { data: created, error } = await adminClient
-      .from('allocation_approvals')
-      .insert({
-        job_id: candidate.job_id,
-        request_id: candidate.request_id,
-        shortlist_candidate_id: approvalData.shortlistCandidateId,
-        freelancer_id: candidate.freelancer_id,
-        approval_type: approvalData.approvalType,
-        status: 'pending',
-        requested_by: requester.id,
-        requested_to: approvalData.requestedTo || null,
-        reason: approvalData.reason,
-        policy_reference_value: approvalData.policyReferenceValue || null,
-        policy_ceiling_value: approvalData.policyCeilingValue || null,
-        negotiated_value: approvalData.negotiatedValue || null
-      })
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Error creating approval request:', error);
-      return { success: false, error: 'Erro ao salvar solicitação de aprovação no banco de dados.' };
+      if (insertErr) {
+        console.error('Error creating approval request:', insertErr);
+        return { success: false, error: 'Erro ao salvar solicitação de aprovação no banco de dados.' };
+      }
+      created = inserted;
     }
 
     // 7. Update candidate negotiation status & reference ID
@@ -641,7 +668,7 @@ export async function decideApprovalAction(
     // Check requester profile permissions
     const { data: requesterProfile, error: profileErr } = await adminClient
       .from('profiles')
-      .select('role, status')
+      .select('role, status, nucleo_id, is_nucleus_head')
       .eq('id', requester.id)
       .single();
 
@@ -661,13 +688,31 @@ export async function decideApprovalAction(
       return { success: false, error: 'Solicitação de aprovação não encontrada.' };
     }
 
+    // Get the job's nucleo_id to verify head relationship
+    let targetNucleusId = appData.nucleus_id;
+    if (!targetNucleusId) {
+      const { data: jobObj } = await adminClient
+        .from('jobs')
+        .select('nucleo_id')
+        .eq('id', appData.job_id)
+        .single();
+      if (jobObj) {
+        targetNucleusId = jobObj.nucleo_id;
+      }
+    }
+
     // 3. Verify permissions based on approval type
     if (appData.approval_type === 'schedule_conflict') {
       if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
         return { success: false, error: 'Apenas MASTER e RH podem aprovar conflitos de agenda.' };
       }
     } else if (appData.approval_type === 'value_exception') {
-      if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh' && requesterProfile.role !== 'c_level') {
+      const isAuthorizedAdmin = requesterProfile.role === 'master' || requesterProfile.role === 'rh' || requesterProfile.role === 'c_level';
+      const isNucleusHead = requesterProfile.role === 'nucleo' &&
+        requesterProfile.is_nucleus_head === true &&
+        requesterProfile.nucleo_id === targetNucleusId;
+
+      if (!isAuthorizedAdmin && !isNucleusHead) {
         return { success: false, error: 'Perfil sem autorização para aprovar exceção de valor.' };
       }
     }
@@ -693,19 +738,30 @@ export async function decideApprovalAction(
 
     // 5. Determine the candidate's next status
     let nextStatus = 'em_negociacao';
+    let nextCandidateStatus: 'selecionado' | 'em_negociacao' | 'indisponivel' | 'valor_fora_politica' | 'aprovado_rh' | 'rejeitado' = 'em_negociacao';
+
     if (status === 'approved') {
       if (appData.approval_type === 'value_exception') {
-        nextStatus = 'valor_fora_politica';
+        nextStatus = 'approved_by_head';
+        nextCandidateStatus = 'aprovado_rh';
       } else {
-        nextStatus = 'aceitou'; // Agenda conflict approved, candidate accepted / ready to alloc
+        nextStatus = 'aceitou';
+        nextCandidateStatus = 'aprovado_rh';
       }
     } else {
-      nextStatus = 'nao_aceitou'; // Candidate rejected by RH or Head
+      if (appData.approval_type === 'value_exception') {
+        nextStatus = 'rejected_by_head';
+        nextCandidateStatus = 'rejeitado';
+      } else {
+        nextStatus = 'nao_aceitou';
+        nextCandidateStatus = 'rejeitado';
+      }
     }
 
     // 6. Update candidate status and flags
     const updatePayload: any = {
       negotiation_status: nextStatus,
+      candidate_status: nextCandidateStatus
     };
 
     if (appData.approval_type === 'schedule_conflict') {

@@ -100,11 +100,12 @@ Módulo usado para cadastrar e gerenciar núcleos operacionais da agência.
 
 #### **Regras**
 
-* Cada núcleo pode ter um Head responsável.  
+* Cada núcleo PRECISA ter um Head responsável.  
 * Usuários do tipo Núcleo ficam vinculados a um núcleo específico.  
-* Usuários C-Level não ficam vinculados a um único núcleo.  
-* MASTER e RH podem administrar núcleos.  
-* C-Level pode criar novos núcleos, conforme regra de permissão.
+* Usuários C-Level não ficam vinculados a um único núcleo.
+* Usuários OPERAÇÃO não ficam vinculados a um único núcleo.
+* MASTER, OPERAÇÃO, C-LEVEL e RH podem administrar núcleos.  
+* MASTER, RH eC-Level pode criar novos núcleos, conforme regra de permissão.
 
 ---
 
@@ -118,6 +119,7 @@ Módulo para administrar usuários internos da plataforma.
 * RH  
 * C-LEVEL  
 * NÚCLEO
+* OPERAÇÃO
 
 #### **Campos principais**
 
@@ -147,7 +149,7 @@ Módulo central da base de talentos.
 
 #### **Objetivo**
 
-Manter uma base única, limpa, atualizada e homologada de freelancers.
+Manter uma base única, limpa, atualizada e homologada de freelancers, trazendo TODOS os freelancers que já foram contratados pela agência e atualizando score de performance de cada um deles para melhor posicionamento de profissionais na V3A.
 
 #### **Fontes de entrada**
 
@@ -157,7 +159,8 @@ Manter uma base única, limpa, atualizada e homologada de freelancers.
 
 #### **Campos principais**
 
-* Nome completo.  
+* Nome completo.
+* CNPJ **PRECISAMOS INCLUIR ESTE CAMPO NOS FORUMULÁRIOS E PERFIS DO SISTEMA, ATUALMENTE ELE NÃO É MOSTADO NOS CADASTROS** 
 * E-mail.  
 * Telefone/WhatsApp.  
 * Cidade/UF/país.  
@@ -179,7 +182,7 @@ Manter uma base única, limpa, atualizada e homologada de freelancers.
 
 #### **Regras de qualidade da base**
 
-* O sistema deve impedir duplicidades por e-mail, telefone e nome normalizado.  
+* O sistema deve impedir duplicidades por CNPJ, e-mail, telefone e nome normalizado.  
 * Atualização cadastral não deve criar novo freelancer.  
 * Link de atualização deve alterar o registro existente.  
 * Duplicidades identificadas devem ser mescladas.  
@@ -255,6 +258,7 @@ Módulo usado para registrar uma nova demanda de freelancer.
 * MASTER.  
 * RH.  
 * C-Level.  
+* OPERAÇÃO.
 * Núcleo vinculado à demanda.
 
 #### **Campos principais**
@@ -267,6 +271,7 @@ Módulo usado para registrar uma nova demanda de freelancer.
 * Regime de urgência.  
 * Data de início estimada.  
 * Data de fim estimada.  
+* Total de dias.
 * Budget previsto máximo.  
 * Descrição técnica/escopo.  
 * Entregáveis ou milestones.  
@@ -478,6 +483,7 @@ O sistema sugere freelancers com base em critérios de compatibilidade.
 * Histórico de avaliações.  
 * Agenda livre no período.  
 * Aderência ao perfil solicitado.
+* Bônus por preenchimento das avaliações NPS de jobs anteriores com a V3A.
 
 #### **Regra importante**
 
@@ -553,7 +559,7 @@ Quando o valor negociado excede o teto da política, o sistema deve gerar uma so
 
 * Head do núcleo contratante.  
 * MASTER, se houver regra de override.  
-* C-Level, se permitido por governança.
+* C-Level.
 
 #### **O que deve aparecer para o Head**
 
@@ -613,6 +619,7 @@ A homologação é a confirmação final da negociação aceita.
 
 ```
 Confirmar Homologação e Criar Alocação
+Após confirmada a Homologação, o sistema deve disponibilizar a opção de ir para o módulo **10. Solicitação de Pagamento**.
 ```
 
 #### **Resultado**
@@ -626,6 +633,7 @@ Ao confirmar:
 * Atualizar histórico do freelancer.  
 * Atualizar dashboard.  
 * Liberar acompanhamento do booking.
+* Disponibilizar a opção de ver a alocação no Módulo **10. Solicitação de Pagamento**
 
 ---
 
@@ -675,11 +683,11 @@ A Timeline apresenta a visão operacional de agenda dos freelancers.
 
 ### **9.1 Objetivo**
 
-Permitir visibilidade sobre alocações, conflitos e disponibilidade.
+Permitir visibilidade sobre alocações, conflitos, durações e disponibilidade.
 
 ### **9.2 Funcionalidades**
 
-* Visualizar alocações por semana.  
+* Visualizar alocações por mês, semana e por dia.  
 * Visualizar freelancers alocados.  
 * Identificar conflitos de agenda.  
 * Filtrar apenas alocações ativas.  
@@ -710,6 +718,7 @@ A plataforma deve gerar um documento de solicitação de pagamento para envio ao
 * Núcleo contratante.  
 * MASTER.  
 * C-Level.
+* Operação.
 
 ### **10.2 Quando pode emitir**
 
@@ -721,9 +730,7 @@ Para pagamento único:
 
 Para pagamento recorrente:
 
-* Pode ser emitido por parcela.  
-* Pode ser emitido por período.  
-* Pode gerar documentos separados para cada pagamento previsto.
+* Gera um documento único com o detalhamento de todas as parcelas, assim como as datas de pagamento de cada parcela.
 
 ### **10.3 Informações do documento**
 
@@ -760,8 +767,8 @@ Para pagamento recorrente:
 * Modelo de remuneração.  
 * Valor contratado.  
 * Valor da parcela, se recorrente.  
-* Número da parcela.  
-* Data prevista de pagamento.  
+* Quantidade de parcelas.  
+* Datas de pagamento das parcelas.  
 * Total contratado.  
 * Centro de custo, se aplicável.  
 * Código financeiro, se aplicável.  
@@ -792,7 +799,7 @@ A avaliação é dividida em três camadas:
 
 1. Avaliação do freelancer pelo núcleo.  
 2. Avaliação da entrega do freelancer.  
-3. Avaliação reversa feita pelo freelancer.
+3. Avaliação reversa feita pelo freelancer, sobre o Núcleo e sobre a entrega.
 
 ---
 
@@ -884,7 +891,7 @@ Após a conclusão das avaliações:
 
 ## **12\. Score do Freelancer**
 
-O score consolidado deve considerar histórico e contexto.
+O score consolidado deve considerar histórico e contexto, além de trazer uma nota bônus que é atribuída ao freelancer quando ele responde à avaliação reversa.
 
 ### **12.1 Componentes do score**
 
@@ -896,6 +903,7 @@ O score consolidado deve considerar histórico e contexto.
 * Bônus por avaliações excelentes.  
 * Experiência anterior com V3A.  
 * Aderência a segmentos/marcas relevantes.
+* Avaliações reversas preenchidas.
 
 ### **12.2 Regra recomendada**
 
@@ -973,29 +981,43 @@ Pode:
 * Atuar em qualquer núcleo.  
 * Criar oportunidades.  
 * Participar de shortlist e negociação.  
+* Gerar links públicos para inclusão de novo freelancer.
 * Criar núcleos, se autorizado.  
 * Exportar solicitação de pagamento.  
 * Visualizar indicadores estratégicos.
 
-### **14.4 NÚCLEO**
+### **14.4 OPERAÇÃO**
+
+Pode:
+
+* Atuar em qualquer núcleo.  
+* Criar oportunidades.  
+* Participar de shortlist e negociação.  
+* Gerar links públicos para inclusão de novo freelancer.
+* Exportar solicitação de pagamento.  
+* Visualizar indicadores estratégicos.
+
+### **14.5 NÚCLEO**
 
 Pode:
 
 * Criar oportunidades para seu núcleo.  
 * Montar shortlist.  
 * Negociar com freelancers.  
+* Gerar links públicos para inclusão de novo freelancer.
 * Acompanhar bookings.  
 * Emitir solicitação de pagamento.  
 * Avaliar freelancer.  
 * Avaliar entrega.
 
-### **14.5 HEAD DO NÚCLEO**
+### **14.6 HEAD DO NÚCLEO**
 
 Pode adicionalmente:
 
 * Aprovar exceções de valor do próprio núcleo.  
 * Reprovar exceções de valor do próprio núcleo.  
-* Validar contratações fora da política.
+* Validar contratações fora da política.  
+* Gerar links públicos para inclusão de novo freelancer.  
 
 ---
 
@@ -1242,7 +1264,7 @@ A plataforma será considerada funcional quando:
 | ----- | ----- |
 | Freelancer | Profissional externo cadastrado na base |
 | Núcleo | Área ou célula contratante da V3A |
-| Head do Núcleo | Responsável por aprovações do núcleo |
+| Head do Núcleo | Responsável pelo núcleo |
 | Job | Demanda ou oportunidade de contratação |
 | Shortlist | Lista oficial de freelancers considerados para uma demanda |
 | Negociação | Etapa de definição de valor, modelo de pagamento e aceite |

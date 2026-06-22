@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DatabaseProps } from '@/app/page';
 import { generateUniqueId } from '@/lib/utils';
 import { Job, Shortlist, Freelancer, ValuePolicy, Allocation, PaymentCode } from '@/lib/mockData';
-import { createApprovalRequestAction } from '@/app/actions/evaluation';
+import { createApprovalRequestAction, decideApprovalAction } from '@/app/actions/evaluation';
 import { supabase } from '@/lib/supabase';
 import ConsolidatedAllocation from '@/components/ConsolidatedAllocation';
 import { confirmAllocationAction } from '@/app/actions/admin';
@@ -18,7 +18,8 @@ import {
   parseCurrencyBR,
   maskCurrencyBRL,
   formatPercentage,
-  calculatePolicyLimitForJob
+  calculatePolicyLimitForJob,
+  calculateMonthlyPaymentSchedule
 } from '@/lib/financial';
 import NegotiationFinancialSummary from '@/components/NegotiationFinancialSummary';
 import { 
@@ -125,31 +126,77 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [compareSortKey, setCompareSortKey] = useState<'default' | 'saving' | 'total' | 'status' | 'score'>('default');
 
-  // Faturamento configuration states
-  const [paymentModel, setPaymentModel] = useState<'one_time' | 'monthly_recurring' | 'milestone'>('one_time');
-  const [contractStartDate, setContractStartDate] = useState('');
-  const [contractEndDate, setContractEndDate] = useState('');
-  const [recurringAmount, setRecurringAmount] = useState(0);
-  const [recurringAmountVisual, setRecurringAmountVisual] = useState('');
-  const [visualRates, setVisualRates] = useState<Record<string, string>>({});
-  const [preferredDueDay, setPreferredDueDay] = useState(5);
-  const [paymentTerms, setPaymentTerms] = useState('');
-  const [paymentNotes, setPaymentNotes] = useState('');
+  // Faturamento configuration states per candidate
+  const [candidateNegotiations, setCandidateNegotiations] = useState<Record<string, {
+    paymentModel: 'one_time' | 'monthly_recurring' | 'milestone';
+    contractStartDate: string;
+    contractEndDate: string;
+    recurringAmount: number;
+    recurringAmountVisual: string;
+    preferredDueDay: number;
+    paymentTerms: string;
+    paymentNotes: string;
+  }>>({});
 
-  useEffect(() => {
-    if (activeJob) {
-      setContractStartDate(activeJob.startDate || '');
-      setContractEndDate(activeJob.endDate || '');
-      setPaymentModel(activeJob.paymentFlow === 'recurring' ? 'monthly_recurring' : 'one_time');
-      if (activeJob.expectedPaymentDay) {
-        setPreferredDueDay(activeJob.expectedPaymentDay);
-      }
-      if (activeJob.expectedRate) {
-        setRecurringAmount(activeJob.expectedRate);
-        setRecurringAmountVisual(new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(activeJob.expectedRate));
-      }
+  const [excludedDates, setExcludedDates] = useState<Record<string, string[]>>({});
+  const [visualRates, setVisualRates] = useState<Record<string, string>>({});
+
+  const getCandidateNeg = (freelancerId: string, sl?: any) => {
+    if (candidateNegotiations[freelancerId]) {
+      return candidateNegotiations[freelancerId];
     }
-  }, [activeJob?.id]);
+    const defaultModel = activeJob?.paymentFlow === 'recurring' ? 'monthly_recurring' : 'one_time';
+    const defaultStart = activeJob?.startDate || '';
+    const defaultEnd = activeJob?.endDate || '';
+    const defaultDue = activeJob?.expectedPaymentDay || 5;
+    const defaultRate = sl?.negotiatedRate || activeJob?.expectedRate || 0;
+    
+    return {
+      paymentModel: defaultModel as 'one_time' | 'monthly_recurring' | 'milestone',
+      contractStartDate: defaultStart,
+      contractEndDate: defaultEnd,
+      recurringAmount: defaultRate,
+      recurringAmountVisual: new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(defaultRate),
+      preferredDueDay: defaultDue,
+      paymentTerms: '',
+      paymentNotes: ''
+    };
+  };
+
+  const updateCandidateNeg = (freelancerId: string, updates: Partial<{
+    paymentModel: 'one_time' | 'monthly_recurring' | 'milestone';
+    contractStartDate: string;
+    contractEndDate: string;
+    recurringAmount: number;
+    recurringAmountVisual: string;
+    preferredDueDay: number;
+    paymentTerms: string;
+    paymentNotes: string;
+  }>) => {
+    setCandidateNegotiations(prev => {
+      const current = prev[freelancerId] || getCandidateNeg(freelancerId);
+      return {
+        ...prev,
+        [freelancerId]: {
+          ...current,
+          ...updates
+        }
+      };
+    });
+  };
+
+  const toggleExcludedDate = (freelancerId: string, dateStr: string) => {
+    setExcludedDates(prev => {
+      const current = prev[freelancerId] || [];
+      const updated = current.includes(dateStr)
+        ? current.filter(d => d !== dateStr)
+        : [...current, dateStr];
+      return {
+        ...prev,
+        [freelancerId]: updated
+      };
+    });
+  };
 
   // State for Custom Approval Modal
   const [approvalModal, setApprovalModal] = useState<{
@@ -1075,8 +1122,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     }
   };
 
-  const handleFinalAllocation = async (freelancerId: string, slId: string, rate: number, model: string, scopeText: string) => {
+  const handleFinalAllocation = async (freelancerId: string, slId: string, rate: number, model: string, scopeText: string, sl?: Shortlist) => {
     if (!activeJob) return;
+
+    const candNeg = getCandidateNeg(freelancerId, sl);
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -1092,13 +1141,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         negotiatedRate: rate,
         remunerationModel: model,
         scope: scopeText || 'Alocação homologada pelo núcleo',
-        paymentModel,
-        contractStartDate: contractStartDate || activeJob.startDate,
-        contractEndDate: contractEndDate || activeJob.endDate,
-        recurringAmount: paymentModel === 'monthly_recurring' ? (recurringAmount || rate) : undefined,
-        preferredDueDay,
-        paymentTerms,
-        paymentNotes
+        paymentModel: candNeg.paymentModel,
+        contractStartDate: candNeg.contractStartDate || activeJob.startDate,
+        contractEndDate: candNeg.contractEndDate || activeJob.endDate,
+        recurringAmount: candNeg.paymentModel === 'monthly_recurring' ? (candNeg.recurringAmount || rate) : undefined,
+        preferredDueDay: candNeg.preferredDueDay,
+        paymentTerms: candNeg.paymentTerms,
+        paymentNotes: candNeg.paymentNotes
       });
 
       if (!res.success) {
@@ -1123,8 +1172,6 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       return;
     }
 
-    // Um usuário é considerado Head se: tem isNucleusHead=true no perfil,
-    // OU se é perfil NÚCLEO e o nucleoId do approval coincide com o seu nucleoId
     const approval = db.approvals?.find((ap: any) => ap.id === approvalId);
     const isNucleusHead = db.currentUser.isNucleusHead ||
       (db.currentUser.profile === 'NÚCLEO' &&
@@ -1146,71 +1193,77 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || '';
       const userId = sessionData?.session?.user?.id;
-
-      const updatePayload: any = {
-        status: decision === 'approve' ? 'approved' : 'rejected',
-        decided_at: new Date().toISOString(),
-        decision_notes: trimmedComment,
-      };
-
-      if (decision === 'approve') {
-        updatePayload.approved_by = userId;
-        updatePayload.approved_at = new Date().toISOString();
-        updatePayload.approval_comment = trimmedComment;
-      } else {
-        updatePayload.rejected_by = userId;
-        updatePayload.rejected_at = new Date().toISOString();
-        updatePayload.rejection_comment = trimmedComment;
-      }
-
-      const { error } = await supabase
-        .from('allocation_approvals')
-        .update(updatePayload)
-        .eq('id', approvalId);
-
-      if (error) {
-        console.error('[handleHeadDecision] supabase error:', error);
-        showToast(`Erro ao registrar decisão: ${error.message}`, 'error');
+      if (!token || !userId) {
+        showToast('Sessão expirada. Faça login novamente.', 'error');
         return;
       }
 
-      // Update shortlist candidate status if approved
-      // 'approval' already fetched at top of function via db.approvals?.find(...)
-      if (decision === 'approve') {
-        if (approval?.shortlistCandidateId) {
-          const { error: scErr } = await supabase
-            .from('shortlist_candidates')
-            .update({
-              requires_head_approval: false,
-              requires_rh_approval: false,
-              negotiation_status: 'aceitou',
-              candidate_status: 'aceitou',
-            })
-            .eq('id', approval.shortlistCandidateId);
-          if (scErr) {
-            console.warn('[handleHeadDecision] shortlist update error:', scErr);
-          }
-        }
-      } else if (decision === 'reject') {
-        // On reject, move candidate back to negotiating so user can adjust the rate
-        if (approval?.shortlistCandidateId) {
-          await supabase
-            .from('shortlist_candidates')
-            .update({
-              requires_head_approval: false,
-              negotiation_status: 'em_negociacao',
-              candidate_status: 'em_negociacao',
-            })
-            .eq('id', approval.shortlistCandidateId);
-        }
+      const res = await decideApprovalAction(
+        token,
+        approvalId,
+        decision === 'approve' ? 'approved' : 'rejected',
+        userId,
+        db.currentUser.profile,
+        trimmedComment
+      );
+
+      if (!res.success) {
+        showToast(`Erro ao registrar decisão: ${res.error}`, 'error');
+        return;
       }
 
       showToast(decision === 'approve' ? 'Exceção aprovada com sucesso.' : 'Exceção rejeitada.', 'success');
       await db.reloadDatabase();
     } catch (err: any) {
       console.error('[handleHeadDecision] error:', err);
-      showToast('Erro inesperado ao processar decisão.', 'error');
+      showToast('Erro inesperado ao registrar decisão.', 'error');
+    }
+  };
+
+  const handleSubmitHeadDecision = async () => {
+    if (!headDecisionModal.comment || headDecisionModal.comment.trim().length < 5) {
+      setHeadDecisionModal(prev => ({ ...prev, error: 'Comentário de decisão obrigatório (mínimo 5 caracteres).' }));
+      return;
+    }
+
+    setHeadDecisionModal(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || '';
+      const userId = sessionData?.session?.user?.id;
+      if (!token || !userId) {
+        setHeadDecisionModal(prev => ({ ...prev, loading: false, error: 'Sessão expirada. Faça login novamente.' }));
+        return;
+      }
+
+      const res = await decideApprovalAction(
+        token,
+        headDecisionModal.approvalId,
+        headDecisionModal.decision === 'approve' ? 'approved' : 'rejected',
+        userId,
+        db.currentUser.profile,
+        headDecisionModal.comment
+      );
+
+      if (!res.success) {
+        setHeadDecisionModal(prev => ({ ...prev, loading: false, error: res.error || 'Erro ao registrar decisão.' }));
+        return;
+      }
+
+      showToast(
+        headDecisionModal.decision === 'approve' 
+          ? 'Exceção aprovada com sucesso.' 
+          : 'Exceção rejeitada.', 
+        'success'
+      );
+      
+      setHeadDecisionModal(prev => ({ ...prev, isOpen: false, comment: '', loading: false }));
+      await db.reloadDatabase();
+    } catch (err: any) {
+      console.error('[handleSubmitHeadDecision] failed:', err);
+      setHeadDecisionModal(prev => ({ ...prev, loading: false, error: 'Erro inesperado no servidor.' }));
     }
   };
 
@@ -1313,7 +1366,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       );
       const isBudgetApproved = budgetApproval?.status === 'approved';
 
-      const isEligible = sl.candidateStatus === 'Aceitou' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
+      const isEligible = sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
 
       return {
         sl,
@@ -1426,7 +1479,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               className={`flex items-center gap-2 p-2 px-3.5 rounded-xl border transition-all ${
                 activeStep === 3 
                   ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs' 
-                  : jobShortlists.some(sl => ['Aceitou', 'Valor fora da política'].includes(sl.candidateStatus))
+                  : jobShortlists.some(sl => ['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus))
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
                     : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
               }`}
@@ -1434,7 +1487,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] ${
                 activeStep === 3 ? 'bg-action-cyan text-sidebar-navy font-bold' : 'bg-slate-200 text-text-secondary'
               }`}>
-                {jobShortlists.some(sl => ['Aceitou', 'Valor fora da política'].includes(sl.candidateStatus)) ? <Check className="w-3 h-3" /> : '3'}
+                {jobShortlists.some(sl => ['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus)) ? <Check className="w-3 h-3" /> : '3'}
               </span>
               <span>3. Negociação</span>
             </button>
@@ -2494,9 +2547,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         </td>
                         <td className="p-3.5">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            sl.candidateStatus === 'Aceitou'
+                            sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head'
                               ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50'
-                              : sl.candidateStatus === 'Valor fora da política'
+                              : sl.candidateStatus === 'Valor fora da política' || sl.candidateStatus === 'Reprovado pelo Head'
                                 ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
                                 : sl.candidateStatus === 'Bloqueado por conflito de agenda'
                                   ? 'bg-red-950 text-red-400 border border-red-800/50'
@@ -2575,7 +2628,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         <div className="text-[10px] text-slate-400">{cand?.seniority} &bull; {cand?.mainRole}</div>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                        sl.candidateStatus === 'Aceitou'
+                        sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head'
                           ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
                           : 'bg-slate-800 text-slate-350'
                       }`}>
@@ -2743,7 +2796,48 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               {isBudgetApproved ? (
                                 <p className="text-[10px] text-emerald-700">Aprovado pelo Head: {budgetApproval.decisionNotes}</p>
                               ) : isBudgetPending ? (
-                                <p className="text-[10px] text-red-700">Aguardando aprovação do Head do Núcleo.</p>
+                                <div className="space-y-2">
+                                  <p className="text-[10px] text-red-700">Aguardando aprovação do Head do Núcleo.</p>
+                                  {(db.currentUser.profile === 'MASTER' || 
+                                    db.currentUser.profile === 'RH' || 
+                                    db.currentUser.profile === 'C-LEVEL' || 
+                                    (db.currentUser.profile === 'NÚCLEO' && 
+                                     db.currentUser.isNucleusHead === true && 
+                                     db.currentUser.nucleoId === activeJob.nucleoId)) && (
+                                    <div className="flex gap-1.5 mt-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => setHeadDecisionModal({
+                                          isOpen: true,
+                                          approvalId: budgetApproval?.id || '',
+                                          freelancerName: cand.name,
+                                          decision: 'approve',
+                                          comment: '',
+                                          loading: false,
+                                          error: null
+                                        })}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
+                                      >
+                                        Aprovar
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setHeadDecisionModal({
+                                          isOpen: true,
+                                          approvalId: budgetApproval?.id || '',
+                                          freelancerName: cand.name,
+                                          decision: 'reject',
+                                          comment: '',
+                                          loading: false,
+                                          error: null
+                                        })}
+                                        className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
+                                      >
+                                        Reprovar
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
                                 <div className="mt-1">
                                   <p className="text-[10px] text-red-700">O teto comercial é de R$ {ceilingValue}.</p>
@@ -2857,6 +2951,196 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         />
                       </div>
 
+                      {/* Faturamento e Condições Comerciais per Candidate */}
+                      {(() => {
+                        const candNeg = getCandidateNeg(cand.id, sl);
+                        const schedule = calculateMonthlyPaymentSchedule(
+                          candNeg.contractStartDate,
+                          candNeg.contractEndDate,
+                          candNeg.preferredDueDay,
+                          candNeg.recurringAmount
+                        );
+
+                        return (
+                          <div className="sm:col-span-2 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 mt-2 text-left">
+                            <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
+                              Condições Comerciais & Faturamento
+                            </span>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Modelo de Pagamento *
+                                </label>
+                                <select
+                                  disabled={isLocked}
+                                  value={candNeg.paymentModel}
+                                  onChange={(e) => {
+                                    const m = e.target.value as any;
+                                    updateCandidateNeg(cand.id, { 
+                                      paymentModel: m,
+                                      recurringAmount: m === 'monthly_recurring' ? rate : candNeg.recurringAmount
+                                    });
+                                  }}
+                                  className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                >
+                                  <option value="one_time">Pagamento Único</option>
+                                  <option value="monthly_recurring">Recorrente Mensal</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Início do Contrato
+                                </label>
+                                <input
+                                  type="date"
+                                  disabled={isLocked}
+                                  value={candNeg.contractStartDate}
+                                  onChange={(e) => updateCandidateNeg(cand.id, { contractStartDate: e.target.value })}
+                                  className="w-full bg-white border border-border-subtle p-1 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Fim do Contrato
+                                </label>
+                                <input
+                                  type="date"
+                                  disabled={isLocked}
+                                  value={candNeg.contractEndDate}
+                                  onChange={(e) => updateCandidateNeg(cand.id, { contractEndDate: e.target.value })}
+                                  className="w-full bg-white border border-border-subtle p-1 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                />
+                              </div>
+                            </div>
+
+                            {candNeg.paymentModel === 'monthly_recurring' && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                    Valor Mensal (R$) *
+                                  </label>
+                                  <div className="relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary select-none">R$</span>
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      disabled={isLocked}
+                                      value={candNeg.recurringAmountVisual}
+                                      onChange={(e) => {
+                                        const rawVal = e.target.value;
+                                        const masked = maskCurrencyBRL(rawVal);
+                                        const numeric = parseCurrencyBR(masked);
+                                        updateCandidateNeg(cand.id, { 
+                                          recurringAmountVisual: masked,
+                                          recurringAmount: numeric
+                                        });
+                                      }}
+                                      onBlur={() => {
+                                        if (candNeg.recurringAmount > 0) {
+                                          updateCandidateNeg(cand.id, {
+                                            recurringAmountVisual: new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(candNeg.recurringAmount)
+                                          });
+                                        } else {
+                                          updateCandidateNeg(cand.id, { recurringAmountVisual: '' });
+                                        }
+                                      }}
+                                      className="w-full bg-white border border-border-subtle p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-action-cyan text-text-primary"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                    Vencimento Preferencial *
+                                  </label>
+                                  <select
+                                    disabled={isLocked}
+                                    value={candNeg.preferredDueDay}
+                                    onChange={(e) => updateCandidateNeg(cand.id, { preferredDueDay: Number(e.target.value) })}
+                                    className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                  >
+                                    <option value="5">Dia 5</option>
+                                    <option value="10">Dia 10</option>
+                                    <option value="15">Dia 15</option>
+                                    <option value="20">Dia 20</option>
+                                    <option value="25">Dia 25</option>
+                                    <option value="30">Dia 30</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Render interactive toggleable date chips if monthly_recurring */}
+                            {candNeg.paymentModel === 'monthly_recurring' && schedule.paymentDates.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block">
+                                    Cronograma de Pagamento Previsto ({schedule.installmentsCount} parcelas)
+                                  </label>
+                                  <span className="text-[10px] text-text-secondary">
+                                    Total sugerido: <strong>{formatCurrencyBRL(schedule.totalSuggestedAmount)}</strong>
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {schedule.paymentDates.map((dateObj: Date, idx: number) => {
+                                    const dateStr = dateObj.toISOString().split('T')[0];
+                                    const isExcluded = (excludedDates[cand.id] || []).includes(dateStr);
+                                    return (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => toggleExcludedDate(cand.id, dateStr)}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-mono transition-all cursor-pointer ${
+                                          !isExcluded
+                                            ? 'bg-action-cyan/15 border-action-cyan/50 text-action-cyan hover:bg-action-cyan/25'
+                                            : 'bg-slate-200 border-slate-350 text-slate-500 line-through decoration-slate-400 hover:bg-slate-300'
+                                        }`}
+                                      >
+                                        <Calendar className="w-3.5 h-3.5" />
+                                        <span>Parcela {idx + 1}: {dateObj.toLocaleDateString('pt-BR')}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Condições de Pagamento
+                                </label>
+                                <input
+                                  type="text"
+                                  disabled={isLocked}
+                                  placeholder="Prazo NF, etc..."
+                                  value={candNeg.paymentTerms}
+                                  onChange={(e) => updateCandidateNeg(cand.id, { paymentTerms: e.target.value })}
+                                  className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                  Notas Administrativas
+                                </label>
+                                <input
+                                  type="text"
+                                  disabled={isLocked}
+                                  placeholder="Notas..."
+                                  value={candNeg.paymentNotes}
+                                  onChange={(e) => updateCandidateNeg(cand.id, { paymentNotes: e.target.value })}
+                                  className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       <div className="sm:col-span-2 pt-2 text-left">
                         <NegotiationFinancialSummary
                           budget={activeJob.budget}
@@ -2865,6 +3149,16 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           negotiatedRate={rate}
                           remunerationModel={billing}
                           estimatedHours={sl.estimatedHours}
+                          installmentsCount={
+                            getCandidateNeg(cand.id, sl).paymentModel === 'monthly_recurring'
+                              ? calculateMonthlyPaymentSchedule(
+                                  getCandidateNeg(cand.id, sl).contractStartDate,
+                                  getCandidateNeg(cand.id, sl).contractEndDate,
+                                  getCandidateNeg(cand.id, sl).preferredDueDay,
+                                  getCandidateNeg(cand.id, sl).recurringAmount
+                                ).installmentsCount
+                              : undefined
+                          }
                           variant="detailed"
                         />
                       </div>
@@ -2883,7 +3177,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               Voltar para Shortlist
             </button>
 
-            {jobShortlists.some(sl => ['Aceitou', 'Valor fora da política'].includes(sl.candidateStatus)) && (
+            {jobShortlists.some(sl => ['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus)) && (
               <button
                 onClick={() => handleNavigateStep(4)}
                 className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
@@ -3192,7 +3486,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       );
                       const isBudgetApproved = budgetApproval?.status === 'approved';
 
-                      return sl.candidateStatus === 'Aceitou' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
+                      return sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
                     });
 
                     if (eligibleCandidates.length === 0) {
@@ -3274,6 +3568,16 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               negotiatedRate={rate}
                               remunerationModel={billing}
                               estimatedHours={sl.estimatedHours}
+                              installmentsCount={
+                                getCandidateNeg(cand.id, sl).paymentModel === 'monthly_recurring'
+                                  ? calculateMonthlyPaymentSchedule(
+                                      getCandidateNeg(cand.id, sl).contractStartDate,
+                                      getCandidateNeg(cand.id, sl).contractEndDate,
+                                      getCandidateNeg(cand.id, sl).preferredDueDay,
+                                      getCandidateNeg(cand.id, sl).recurringAmount
+                                    ).installmentsCount
+                                  : undefined
+                              }
                               variant="compact"
                             />
 
@@ -3335,143 +3639,124 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             )}
                           </div>
 
-                          {/* CONFIGURAÇÃO FINANCEIRA */}
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 mt-4 text-left">
-                            <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
-                              Condições Comerciais & Faturamento
-                            </span>
+                          {/* READ-ONLY FINAL COMMERCIAL & BILLING CONDITIONS */}
+                          {(() => {
+                            const candNeg = getCandidateNeg(cand.id, sl);
+                            const schedule = calculateMonthlyPaymentSchedule(
+                              candNeg.contractStartDate,
+                              candNeg.contractEndDate,
+                              candNeg.preferredDueDay,
+                              candNeg.recurringAmount
+                            );
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Modelo de Pagamento *
-                                </label>
-                                <select
-                                  value={paymentModel}
-                                  onChange={(e) => {
-                                    const m = e.target.value as any;
-                                    setPaymentModel(m);
-                                    if (m === 'monthly_recurring') {
-                                      setRecurringAmount(rate);
-                                    }
-                                  }}
-                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                >
-                                  <option value="one_time">Pagamento Único</option>
-                                  <option value="monthly_recurring">Recorrente Mensal</option>
-                                </select>
-                              </div>
+                            return (
+                              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 mt-4 text-left">
+                                <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
+                                  Condições Comerciais & Faturamento (Confirmado)
+                                </span>
 
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Início do Contrato
-                                </label>
-                                <input
-                                  type="date"
-                                  value={contractStartDate}
-                                  onChange={(e) => setContractStartDate(e.target.value)}
-                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                />
-                              </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                                  <div>
+                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                      Modelo de Pagamento
+                                    </span>
+                                    <strong className="text-sidebar-navy dark:text-white">
+                                      {candNeg.paymentModel === 'monthly_recurring' ? 'Recorrente Mensal' : 'Pagamento Único'}
+                                    </strong>
+                                  </div>
 
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Fim do Contrato
-                                </label>
-                                <input
-                                  type="date"
-                                  value={contractEndDate}
-                                  onChange={(e) => setContractEndDate(e.target.value)}
-                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                />
-                              </div>
-                            </div>
+                                  <div>
+                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                      Início do Contrato
+                                    </span>
+                                    <strong className="text-sidebar-navy dark:text-white">
+                                      {candNeg.contractStartDate ? new Date(candNeg.contractStartDate).toLocaleDateString('pt-BR') : 'A definir'}
+                                    </strong>
+                                  </div>
 
-                            {paymentModel === 'monthly_recurring' && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                  <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                    Valor Mensal (R$) *
-                                  </label>
-                                  <div className="relative">
-                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary select-none">R$</span>
-                                    <input
-                                      type="text"
-                                      inputMode="decimal"
-                                      value={recurringAmountVisual}
-                                      onChange={(e) => {
-                                        const rawVal = e.target.value;
-                                        const masked = maskCurrencyBRL(rawVal);
-                                        setRecurringAmountVisual(masked);
-                                        const numeric = parseCurrencyBR(masked);
-                                        setRecurringAmount(numeric);
-                                      }}
-                                      onBlur={() => {
-                                        if (recurringAmount > 0) {
-                                          setRecurringAmountVisual(new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(recurringAmount));
-                                        } else {
-                                          setRecurringAmountVisual('');
-                                        }
-                                      }}
-                                      className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-action-cyan text-text-primary"
-                                    />
+                                  <div>
+                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                      Fim do Contrato
+                                    </span>
+                                    <strong className="text-sidebar-navy dark:text-white">
+                                      {candNeg.contractEndDate ? new Date(candNeg.contractEndDate).toLocaleDateString('pt-BR') : 'A definir'}
+                                    </strong>
+                                  </div>
+
+                                  {candNeg.paymentModel === 'monthly_recurring' && (
+                                    <>
+                                      <div>
+                                        <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                          Valor Mensal
+                                        </span>
+                                        <strong className="text-sidebar-navy dark:text-white">
+                                          {formatCurrencyBRL(candNeg.recurringAmount)}
+                                        </strong>
+                                      </div>
+
+                                      <div>
+                                        <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                          Vencimento Preferencial
+                                        </span>
+                                        <strong className="text-sidebar-navy dark:text-white">
+                                          Dia {candNeg.preferredDueDay}
+                                        </strong>
+                                      </div>
+
+                                      <div className="sm:col-span-3 space-y-1.5 pt-1">
+                                        <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                          Datas das Parcelas
+                                        </span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {schedule.paymentDates.map((dateObj, idx) => {
+                                            const dateStr = dateObj.toISOString().split('T')[0];
+                                            const isExcluded = (excludedDates[cand.id] || []).includes(dateStr);
+                                            return (
+                                              <span 
+                                                key={idx}
+                                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-mono ${
+                                                  !isExcluded
+                                                    ? 'bg-action-cyan/10 border-action-cyan/30 text-action-cyan'
+                                                    : 'bg-slate-200 border-slate-350 text-slate-400 line-through'
+                                                }`}
+                                              >
+                                                <Calendar className="w-3 h-3" />
+                                                <span>Parcela {idx + 1}: {dateObj.toLocaleDateString('pt-BR')}</span>
+                                              </span>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+
+                                  <div>
+                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                      Condições de Pagamento
+                                    </span>
+                                    <strong className="text-sidebar-navy dark:text-white">
+                                      {candNeg.paymentTerms || '—'}
+                                    </strong>
+                                  </div>
+
+                                  <div>
+                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                      Notas Administrativas
+                                    </span>
+                                    <strong className="text-sidebar-navy dark:text-white">
+                                      {candNeg.paymentNotes || '—'}
+                                    </strong>
                                   </div>
                                 </div>
-
-                                <div>
-                                  <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                    Vencimento Preferencial *
-                                  </label>
-                                  <select
-                                    value={preferredDueDay}
-                                    onChange={(e) => setPreferredDueDay(Number(e.target.value))}
-                                    className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                  >
-                                    <option value="5">Dia 5</option>
-                                    <option value="10">Dia 10</option>
-                                    <option value="15">Dia 15</option>
-                                    <option value="20">Dia 20</option>
-                                    <option value="25">Dia 25</option>
-                                    <option value="30">Dia 30</option>
-                                  </select>
-                                </div>
                               </div>
-                            )}
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Condições de Pagamento
-                                </label>
-                                <input
-                                  type="text"
-                                  placeholder="Prazo NF, etc..."
-                                  value={paymentTerms}
-                                  onChange={(e) => setPaymentTerms(e.target.value)}
-                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Notas Administrativas
-                                </label>
-                                <input
-                                  type="text"
-                                  placeholder="Notas..."
-                                  value={paymentNotes}
-                                  onChange={(e) => setPaymentNotes(e.target.value)}
-                                  className="w-full bg-white dark:bg-slate-850 border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                />
-                              </div>
-                            </div>
-                          </div>
+                            );
+                          })()}
 
                           <div className="pt-3 border-t border-border-subtle flex justify-end">
                             <button
                               type="button"
                               disabled={isButtonDisabled}
-                              onClick={() => handleFinalAllocation(cand.id, sl.id, rate, billing, sl.notes || '')}
+                              onClick={() => handleFinalAllocation(cand.id, sl.id, rate, billing, sl.notes || '', sl)}
                               className={`font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
                                 isButtonDisabled 
                                   ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60' 
@@ -3582,6 +3867,99 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   </>
                 ) : (
                   'Enviar solicitação'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Head Decision Modal */}
+      {headDecisionModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/70 backdrop-blur-xs font-sans">
+          <div className="bg-[#0b1329] border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-[#0e172e]">
+              <div>
+                <h3 className="font-extrabold text-white text-sm">
+                  {headDecisionModal.decision === 'approve' 
+                    ? 'Aprovar Exceção de Valor' 
+                    : 'Reprovar Exceção de Valor'}
+                </h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                  Decisão do Head do Núcleo &bull; {headDecisionModal.freelancerName}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHeadDecisionModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition cursor-pointer"
+                disabled={headDecisionModal.loading}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 flex flex-col gap-4 text-xs font-sans">
+              <p className="text-slate-300 leading-relaxed">
+                {headDecisionModal.decision === 'approve'
+                  ? 'Você está aprovando esta contratação com taxas comerciais fora da política padrão. Justifique detalhadamente por que esta exceção é válida.'
+                  : 'Descreva a justificativa para reprovar a solicitação de exceção de valor para esta contratação.'}
+              </p>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+                  Comentários / Justificativa da decisão <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={headDecisionModal.comment}
+                  onChange={(e) => setHeadDecisionModal(prev => ({ ...prev, comment: e.target.value, error: null }))}
+                  placeholder="Informe os detalhes da sua decisão (mínimo 5 caracteres)..."
+                  className="w-full h-32 px-3 py-2 text-xs bg-[#121c38] border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-action-cyan placeholder-slate-500 resize-none transition-all"
+                  maxLength={1000}
+                  disabled={headDecisionModal.loading}
+                />
+                <div className="flex justify-between items-center text-[10px] text-slate-400 font-medium px-1">
+                  <span>Mínimo 5, máx. 1000 caracteres</span>
+                  <span>{headDecisionModal.comment.length}/1000</span>
+                </div>
+              </div>
+
+              {headDecisionModal.error && (
+                <div className="p-3 rounded-lg bg-red-955/40 border border-red-800/80 text-[11px] text-red-400 font-semibold">
+                  ⚠️ {headDecisionModal.error}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-[#0e172e] border-t border-slate-800 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setHeadDecisionModal(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
+                disabled={headDecisionModal.loading}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitHeadDecision}
+                className={`px-4 py-2 text-xs font-bold text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  headDecisionModal.decision === 'approve'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+                disabled={headDecisionModal.loading}
+              >
+                {headDecisionModal.loading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Registrando...
+                  </>
+                ) : (
+                  'Confirmar Decisão'
                 )}
               </button>
             </div>
