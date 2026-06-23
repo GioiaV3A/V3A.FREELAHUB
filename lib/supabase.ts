@@ -1,5 +1,36 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Suppress known Supabase Auth refresh token console errors and uncaught rejections
+if (typeof window !== 'undefined') {
+  const isRefreshTokenError = (arg: any): boolean => {
+    if (!arg) return false;
+    const msg = typeof arg === 'object' ? (arg.message || arg.error_description || JSON.stringify(arg)) : String(arg);
+    return msg.includes('Refresh Token Not Found') || msg.includes('Invalid Refresh Token') || msg.includes('invalid_grant');
+  };
+
+  const originalConsoleError = console.error;
+  console.error = (...args: any[]) => {
+    if (args.some(isRefreshTokenError)) {
+      return;
+    }
+    originalConsoleError.apply(console, args);
+  };
+
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    if (args.some(isRefreshTokenError)) {
+      return;
+    }
+    originalConsoleWarn.apply(console, args);
+  };
+
+  window.addEventListener('unhandledrejection', (event) => {
+    if (isRefreshTokenError(event.reason)) {
+      event.preventDefault();
+    }
+  });
+}
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 

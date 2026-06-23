@@ -1684,6 +1684,14 @@ aside { z-index: 50; }
   background-color: rgba(6, 182, 212, 0.22);
   color: #67e8f9;
 }
+.role-avatar-operacao {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+.dark .role-avatar-operacao {
+  background-color: rgba(245, 158, 11, 0.22);
+  color: #fbbf24;
+}
 
 
 /* ============================================================
@@ -1743,6 +1751,16 @@ aside { z-index: 50; }
   color: #67e8f9;
   border-color: rgba(6, 182, 212, 0.55);
 }
+.role-badge-operacao {
+  background-color: #fef3c7;
+  color: #d97706;
+  border-color: #fcd34d;
+}
+.dark .role-badge-operacao {
+  background-color: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.55);
+}
 
 
 /* ============================================================
@@ -1789,6 +1807,16 @@ aside { z-index: 50; }
   background-color: rgba(6, 182, 212, 0.15);
   color: #67e8f9;
   border-color: rgba(6, 182, 212, 0.50);
+}
+.nucleo-chip-operacao {
+  background-color: #fef3c7;
+  color: #d97706;
+  border-color: #fcd34d;
+}
+.dark .nucleo-chip-operacao {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.50);
 }
 
 

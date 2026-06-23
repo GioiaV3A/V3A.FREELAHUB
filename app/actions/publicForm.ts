@@ -385,3 +385,34 @@ export async function uploadPublicPortfolioAction(
     return { success: false, error: 'Erro inesperado no upload.' };
   }
 }
+
+/**
+ * Public action to check if a CNPJ already exists in the database.
+ * Returns only a boolean to protect personal data.
+ */
+export async function checkPublicDuplicateAction(cnpj: string) {
+  try {
+    if (!cnpj) return { hasDuplicate: false };
+    const clean = cnpj.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (clean.length !== 14) return { hasDuplicate: false };
+
+    const adminClient = getSupabaseAdmin();
+    const { data, error } = await adminClient
+      .from('freelancers')
+      .select('id')
+      .eq('cnpj_normalized', clean)
+      .is('merged_into_freelancer_id', null)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking public CNPJ duplicate:', error);
+      return { hasDuplicate: false };
+    }
+
+    return { hasDuplicate: !!data };
+  } catch (err) {
+    console.error('checkPublicDuplicateAction error:', err);
+    return { hasDuplicate: false };
+  }
+}
+

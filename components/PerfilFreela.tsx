@@ -6,6 +6,8 @@ import { ChevronLeft, Star, Phone, Mail, MapPin, Briefcase, ExternalLink, Calend
 import ScoreStars from '@/components/ScoreStars';
 import QRCodeModal from './QRCodeModal';
 import { generatePublicFormLinkAction } from '@/app/actions/adminPublicForm';
+import { formatCnpj } from '@/lib/cnpj';
+
 
 export default function PerfilFreela({ db }: { db: DatabaseProps }) {
   const [activeTab, setActiveTab2] = useState<'geral' | 'portfolio' | 'alocacoes' | 'avaliacoes'>('geral');
@@ -260,8 +262,28 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                   <p className="text-text-secondary">Valor sugerido de diária (Ref): <strong className="text-text-primary">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(f.referenceValue)}
                   </strong></p>
-                  <p className="text-text-secondary">E-mail de convocação: <strong className="text-text-primary">{f.email}</strong></p>
-                  <p className="text-text-secondary">Celular WA: <strong className="text-text-primary">{f.whatsapp}</strong></p>
+                   <p className="text-text-secondary">E-mail de convocação: <strong className="text-text-primary">{f.email}</strong></p>
+                   <p className="text-text-secondary">Celular WA: <strong className="text-text-primary">{f.whatsapp}</strong></p>
+                   {f.cnpj_normalized ? (
+                     <div className="text-text-secondary flex flex-col gap-0.5 mt-1 bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                       <span>CNPJ do Prestador:</span>
+                       <strong className="text-text-primary text-xs">{formatCnpj(f.cnpj_normalized)}</strong>
+                       {f.cnpj_is_mock && (
+                         <span className="text-[10px] text-amber-600 font-semibold mt-0.5">
+                           ⚠️ Dado temporário de teste (CNPJ Mock)
+                         </span>
+                       )}
+                     </div>
+                   ) : f.foreign_tax_id ? (
+                     <div className="text-text-secondary flex flex-col gap-0.5 mt-1 bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                       <span>Identificador Fiscal Estrangeiro ({f.tax_country_code}):</span>
+                       <strong className="text-text-primary text-xs">{f.foreign_tax_id}</strong>
+                     </div>
+                   ) : (
+                     <div className="text-rose-500 font-semibold text-[10px] mt-1 bg-rose-50 border border-rose-100 p-2.5 rounded-xl uppercase tracking-wider">
+                       ⚠️ Pendência Cadastral: CNPJ não cadastrado
+                     </div>
+                   )}
                 </div>
               </div>
 

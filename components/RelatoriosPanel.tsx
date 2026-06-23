@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { DatabaseProps } from '@/app/page';
-import { FileDown, TrendingUp, DollarSign, Award, ThumbsUp, AlertTriangle, Layers } from 'lucide-react';
+import { FileDown, TrendingUp, DollarSign, Award, ThumbsUp, AlertTriangle, Layers, Users } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
 export default function RelatoriosPanel({ db }: { db: DatabaseProps }) {
@@ -16,10 +16,7 @@ export default function RelatoriosPanel({ db }: { db: DatabaseProps }) {
     return { name: n.name, amount };
   }).sort((a, b) => b.amount - a.amount);
 
-  // Suggested vs Approved Suggestions count
-  const suggestedCount = db.suggestions.length;
-  const approvedCount = db.suggestions.filter(s => s.status === 'Aprovada').length;
-  const duplicateCount = db.suggestions.filter(s => s.status === 'Duplicada').length;
+
 
   // Most used freelancers in live marketing
   const freelaAllocMap: { [key: string]: number } = {};
@@ -88,14 +85,14 @@ export default function RelatoriosPanel({ db }: { db: DatabaseProps }) {
         {/* KPI 3 */}
         <div className="bg-white border border-border-subtle p-5 rounded-2xl shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-text-secondary text-xs font-semibold block mb-1">Indicações Homologadas</span>
-            <span className="text-2xl font-bold text-text-primary">{approvedCount} / {suggestedCount}</span>
+            <span className="text-text-secondary text-xs font-semibold block mb-1">Freelancers no Banco</span>
+            <span className="text-2xl font-bold text-text-primary">{db.freelancers.length} Cadastrados</span>
             <p className="text-[10px] text-text-secondary mt-1">
-              Descartados por duplicidade: <strong className="text-text-primary font-bold">{duplicateCount}</strong>
+              Prontos para contratação: <strong className="text-status-success font-bold">{db.freelancers.filter((f: any) => f.status === 'Elegível').length}</strong>
             </p>
           </div>
           <div className="w-12 h-12 bg-action-cyan/15 text-action-cyan rounded-xl flex items-center justify-center">
-            <ThumbsUp className="w-6 h-6" />
+            <Users className="w-6 h-6" />
           </div>
         </div>
       </div>

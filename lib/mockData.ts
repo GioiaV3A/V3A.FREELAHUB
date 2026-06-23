@@ -1,4 +1,4 @@
-export type ProfileType = 'MASTER' | 'RH' | 'NÚCLEO' | 'C-LEVEL';
+export type ProfileType = 'MASTER' | 'RH' | 'NÚCLEO' | 'C-LEVEL' | 'OPERAÇÃO' | 'OPERAÇÕES';
 
 export interface User {
   id: string;
@@ -68,6 +68,12 @@ export interface Freelancer {
   consolidatedScore?: number;
   recommendationRate?: number;
   operationalStatus?: string;
+  cnpj_normalized?: string;
+  cnpj_is_mock?: boolean;
+  cnpj_mock_batch?: string;
+  foreign_tax_id?: string;
+  tax_country_code?: string;
+  cnpj_source?: string;
 }
 
 export type JobStatus = string;

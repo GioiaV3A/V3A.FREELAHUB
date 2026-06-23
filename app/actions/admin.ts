@@ -11,7 +11,7 @@ export async function createUserAction(
   userData: {
     full_name: string;
     email: string;
-    role: 'master' | 'rh' | 'nucleo' | 'c_level';
+    role: 'master' | 'rh' | 'nucleo' | 'c_level' | 'operacao' | 'operations';
     nucleo_id?: string | null;
     job_title?: string | null;
     password?: string;
@@ -37,33 +37,50 @@ export async function createUserAction(
       return { success: false, error: 'Perfil do solicitante inativo ou inexistente.' };
     }
 
-    if (requesterProfile.role === 'nucleo') {
-      return { success: false, error: 'Você não tem permissão para cadastrar usuários.' };
+    // Validar role recebido e normalizar
+    let normalizedRole = userData.role?.toLowerCase() as string;
+    if (normalizedRole === 'operacao') {
+      normalizedRole = 'operations';
     }
 
-    if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
-      return { success: false, error: 'Você não tem permissão para cadastrar usuários.' };
+    if (!['master', 'rh', 'nucleo', 'c_level', 'operations'].includes(normalizedRole)) {
+      return { success: false, code: 'ROLE_NOT_AVAILABLE', error: 'O perfil selecionado não está disponível para seleção.' };
     }
 
-    // Validar role recebido
-    const normalizedRole = userData.role?.toLowerCase();
-    if (normalizedRole !== 'master' && normalizedRole !== 'rh' && normalizedRole !== 'nucleo' && normalizedRole !== 'c_level') {
-      return { success: false, error: 'Perfil de acesso inválido. Use apenas MASTER, RH, NÚCLEO ou C-LEVEL.' };
-    }
-
-    // Validar permissão por perfil (RH só cria nucleo, MASTER cria rh ou nucleo)
-    if (requesterProfile.role === 'rh' && normalizedRole !== 'nucleo') {
-      return { success: false, error: 'RH pode cadastrar apenas usuários com perfil de acesso NÚCLEO.' };
+    // Validar permissão por perfil de quem cria quem
+    if (normalizedRole === 'operations') {
+      if (!['master', 'rh', 'c_level'].includes(requesterProfile.role)) {
+        return {
+          success: false,
+          code: 'ROLE_ASSIGNMENT_NOT_ALLOWED',
+          error: 'Seu perfil não possui permissão para cadastrar usuários com o perfil OPERAÇÕES.'
+        };
+      }
+    } else {
+      if (requesterProfile.role !== 'master' && requesterProfile.role !== 'rh') {
+        return { success: false, error: 'Você não tem permissão para cadastrar usuários.' };
+      }
+      if (requesterProfile.role === 'rh' && normalizedRole !== 'nucleo') {
+        return { success: false, error: 'RH pode cadastrar apenas usuários com perfil de acesso NÚCLEO.' };
+      }
     }
 
     // Se cargo vier vazio
     if (!userData.job_title || !userData.job_title.trim()) {
-      return { success: false, error: 'Informe o cargo/função do usuário no núcleo.' };
+      return { success: false, error: 'Informe o cargo/função do usuário.' };
     }
 
-    // Se núcleo não for informado
-    if (normalizedRole === 'nucleo' && !userData.nucleo_id) {
-      return { success: false, error: 'Selecione o núcleo vinculado ao usuário.' };
+    // Validar nucleus_id baseado no role
+    if (normalizedRole === 'operations' && userData.nucleo_id !== null && userData.nucleo_id !== undefined && userData.nucleo_id !== '') {
+      return {
+        success: false,
+        code: 'OPERATIONS_USER_CANNOT_HAVE_NUCLEUS',
+        error: 'O perfil OPERAÇÕES não deve possuir núcleo vinculado.'
+      };
+    }
+
+    if (normalizedRole === 'nucleo' && (!userData.nucleo_id || userData.nucleo_id === '')) {
+      return { success: false, error: 'Usuários do perfil NÚCLEO devem possuir núcleo vinculado.' };
     }
 
     // Normalizar e-mail para lowercase
@@ -1575,6 +1592,26 @@ export async function exportPaymentRequestAction(accessToken: string, requestId:
 
     if (reqErr || !request) {
       return { success: false, error: 'Solicitação de pagamento não encontrada.' };
+    }
+
+    // Fetch freelancer details for CNPJ validation
+    const { data: freelancer, error: freelaErr } = await adminClient
+      .from('freelancers')
+      .select('cnpj_normalized, cnpj_is_mock, tax_country_code')
+      .eq('id', request.freelancer_id)
+      .single();
+
+    if (freelaErr || !freelancer) {
+      return { success: false, error: 'Freelancer associado à solicitação de pagamento não encontrado.' };
+    }
+
+    if (freelancer.tax_country_code === 'BR') {
+      if (!freelancer.cnpj_normalized || freelancer.cnpj_normalized.trim() === '') {
+        return { success: false, error: 'Não é possível emitir a Solicitação de Pagamento porque o freelancer não possui CNPJ cadastrado.' };
+      }
+      if (freelancer.cnpj_is_mock) {
+        return { success: false, error: 'O freelancer possui CNPJ de teste. Confirme o CNPJ real antes de emitir a Solicitação de Pagamento.' };
+      }
     }
 
     // Check permissions: NÚCLEO user can only export requests belonging to their own nucleo

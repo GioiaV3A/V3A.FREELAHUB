@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { 
   validatePublicLinkAction, 
   submitPublicFormAction, 
-  uploadPublicPortfolioAction 
+  uploadPublicPortfolioAction,
+  checkPublicDuplicateAction 
 } from '@/app/actions/publicForm';
 import { 
   UserSquare2, 
@@ -26,6 +27,9 @@ import {
 import { countries } from '@/lib/countries';
 import PhoneInputWithCountryCode from './PhoneInputWithCountryCode';
 import CityAutocomplete from './CityAutocomplete';
+import CnpjInput from './CnpjInput';
+import { validateCnpj } from '@/lib/cnpj';
+
 
 interface PublicFreelancerFormProps {
   token: string;
@@ -95,6 +99,9 @@ export default function PublicFreelancerForm({
     whatsapp_dial_code: initialData?.whatsapp_dial_code || initialCountry.dial_code,
     whatsapp_formatted: initialData?.whatsapp_formatted || '',
     whatsapp_country_code: initialData?.whatsapp_country_code || initialCountry.iso2,
+    cnpj_normalized: initialData?.cnpj_normalized || '',
+    foreign_tax_id: initialData?.foreign_tax_id || '',
+    tax_country_code: initialData?.tax_country_code || initialCountry.iso2,
   });
 
   // Consent checkbox
@@ -114,6 +121,7 @@ export default function PublicFreelancerForm({
         whatsapp: selected.dial_code + ' ', // Pre-fill dial code
         whatsapp_dial_code: selected.dial_code,
         whatsapp_country_code: selected.iso2,
+        tax_country_code: selected.iso2,
         // Reset city/state on country change to avoid mismatch
         city: '',
         state: ''
@@ -199,6 +207,18 @@ export default function PublicFreelancerForm({
       }
 
       if (!formData.country_code) return 'País de residência é obrigatório.';
+
+      if (formData.country_code === 'BR') {
+        const cnpjVal = validateCnpj(formData.cnpj_normalized);
+        if (!cnpjVal.valid) {
+          return cnpjVal.errorMessage || 'CNPJ inválido.';
+        }
+      } else {
+        if (!formData.foreign_tax_id || !formData.foreign_tax_id.trim()) {
+          return 'Identificador Fiscal Estrangeiro é obrigatório para residentes fora do Brasil.';
+        }
+      }
+
       if (!formData.city.trim() || !formData.state.trim()) return 'Cidade e Estado/UF são obrigatórios.';
     }
     if (s === 2) {
@@ -210,12 +230,29 @@ export default function PublicFreelancerForm({
   };
 
   // Go to next step
-  const handleNext = () => {
+  const handleNext = async () => {
     const validationError = validateStep(step);
     if (validationError) {
       setErrorMsg(validationError);
       return;
     }
+
+    if (step === 1 && formData.country_code === 'BR') {
+      setIsSubmitting(true);
+      try {
+        const result = await checkPublicDuplicateAction(formData.cnpj_normalized);
+        if (result && result.hasDuplicate) {
+          setErrorMsg('Este CNPJ já está associado a um profissional em nossa base. O RH analisará os registros antes da aprovação.');
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Error checking duplicate CNPJ:', err);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
     setStep(prev => prev + 1);
   };
 
@@ -349,6 +386,31 @@ export default function PublicFreelancerForm({
                 />
               </div>
             </div>
+
+            {/* CNPJ / Foreign Tax ID */}
+            {formData.country_code === 'BR' ? (
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">CNPJ *</label>
+                <CnpjInput
+                  value={formData.cnpj_normalized}
+                  onChange={(val) => setFormData(prev => ({ ...prev, cnpj_normalized: val }))}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Identificador Fiscal Estrangeiro *</label>
+                <input
+                  type="text"
+                  name="foreign_tax_id"
+                  required
+                  value={formData.foreign_tax_id}
+                  onChange={handleInputChange}
+                  className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan transition-colors"
+                  placeholder="ID fiscal ou equivalente estrangeiro"
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 space-y-1">

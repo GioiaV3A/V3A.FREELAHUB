@@ -12,7 +12,6 @@ import {
   initialAllocations, 
   initialEvaluations, 
   initialPaymentCodes, 
-  initialSuggestions,
   Freelancer,
   Job,
   Shortlist,
@@ -21,7 +20,6 @@ import {
   Allocation,
   Evaluation,
   PaymentCode,
-  Suggestion,
   Nucleo,
   User,
   AllocationPaymentSchedule,
@@ -39,7 +37,6 @@ import {
   mapAllocationToUI, 
   mapEvaluationToUI, 
   mapPaymentCodeToUI, 
-  mapSuggestionToUI, 
   mapJobToUI,
   mapSeniorityToDB,
   mapFreelancerStatusToDB,
@@ -63,15 +60,17 @@ import {
   resetUserPasswordAction, 
   updateOwnPasswordAction 
 } from '@/app/actions/admin';
+import { can, hasDataScope } from '@/lib/permissions';
 
 // Import subcomponents
 import DashboardMaster from '@/components/DashboardMaster';
 import DashboardRh from '@/components/DashboardRh';
 import DashboardNucleo from '@/components/DashboardNucleo';
+import DashboardOperacao from '@/components/DashboardOperacao';
 import BancoFreelas from '@/components/BancoFreelas';
 import PerfilFreela from '@/components/PerfilFreela';
 import TimelineAlocacoes from '@/components/TimelineAlocacoes';
-import { FormFreela, FormSugerir, FormOportunidade } from '@/components/Formularios';
+import { FormFreela, FormOportunidade } from '@/components/Formularios';
 import ShortlistPanel from '@/components/ShortlistPanel';
 import ExcecaoPanel from '@/components/ExcecaoPanel';
 import PaymentCodesPanel from '@/components/PaymentCodesPanel';
@@ -79,7 +78,6 @@ import EvaluationForm from '@/components/EvaluationForm';
 import RelatoriosPanel from '@/components/RelatoriosPanel';
 import NucleosPanel from '@/components/NucleosPanel';
 import UserManagement from '@/components/UserManagement';
-import SugestoesPanel from '@/components/SugestoesPanel';
 import PerfilUsuario from '@/components/PerfilUsuario';
 import BrandLogo from '@/components/BrandLogo';
 import SidebarBrand from '@/components/SidebarBrand';
@@ -137,8 +135,7 @@ export interface DatabaseProps {
   setEvaluations: React.Dispatch<React.SetStateAction<Evaluation[]>>;
   paymentCodes: PaymentCode[];
   setPaymentCodes: React.Dispatch<React.SetStateAction<PaymentCode[]>>;
-  suggestions: Suggestion[];
-  setSuggestions: React.Dispatch<React.SetStateAction<Suggestion[]>>;
+
   nucleos: Nucleo[];
   setNucleos: React.Dispatch<React.SetStateAction<Nucleo[]>>;
   approvals: any[];
@@ -179,7 +176,7 @@ export default function Home() {
   const [allocationsState, setAllocationsState] = useState<Allocation[]>(initialAllocations);
   const [evaluationsState, setEvaluationsState] = useState<Evaluation[]>(initialEvaluations);
   const [paymentCodesState, setPaymentCodesState] = useState<PaymentCode[]>(initialPaymentCodes);
-  const [suggestionsState, setSuggestionsState] = useState<Suggestion[]>(initialSuggestions);
+
   const [nucleosState, setNucleosState] = useState<Nucleo[]>(initialNucleos);
   const [approvalsState, setApprovalsState] = useState<any[]>([]);
   const [valueExceptionApprovalsState, setValueExceptionApprovalsState] = useState<ValueExceptionApproval[]>([]);
@@ -220,7 +217,7 @@ export default function Home() {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
       if (tabParam) {
-        setActiveTab2(tabParam);
+        setActiveTab(tabParam);
       }
     }
   }, []);
@@ -246,6 +243,22 @@ export default function Home() {
   };
 
   const setActiveTab = (tab: string) => {
+    // Reload database on tab navigation to avoid stale data
+    reloadDatabase().catch(err => console.error('Database reload error on tab switch:', err));
+
+    if (tab === 'Sugerir Freelancer' || tab === 'Sugestões de Freelas') {
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', 'Links Públicos / QR Codes');
+        window.history.replaceState({}, '', url.toString());
+        alert('As indicações e sugestões de freelancers agora são realizadas através de Links Públicos / QR Codes.');
+      }
+      setActiveTab2('Links Públicos / QR Codes');
+      setSelectedFreelancerId(null);
+      setIsHeaderMenuOpen(false);
+      setIsMobileMenuOpen(false);
+      return;
+    }
     setActiveTab2(tab);
     if (tab !== 'Perfil do Freelancer') {
       setSelectedFreelancerId(null);
@@ -388,10 +401,7 @@ export default function Home() {
         setPaymentCodesState(dbPaymentCodes.map(mapPaymentCodeToUI));
       }
 
-      const { data: dbSuggestions } = await supabase.from('suggestions').select('*');
-      if (dbSuggestions) {
-        setSuggestionsState(dbSuggestions.map(mapSuggestionToUI));
-      }
+
 
       const { data: dbApprovals } = await supabase
         .from('allocation_approvals')
@@ -463,6 +473,20 @@ export default function Home() {
       } catch (localErr) {
         console.error('Local signOut failed:', localErr);
       }
+    } finally {
+      // Forcefully clear all local storage tokens to prevent infinite auth error loops
+      if (typeof window !== 'undefined') {
+        try {
+          for (let i = window.localStorage.length - 1; i >= 0; i--) {
+            const key = window.localStorage.key(i);
+            if (key && (key.startsWith('sb-') || key.includes('supabase.auth.token'))) {
+              window.localStorage.removeItem(key);
+            }
+          }
+        } catch (e) {
+          console.error('Manual localStorage clear failed:', e);
+        }
+      }
     }
   };
 
@@ -472,7 +496,11 @@ export default function Home() {
       try {
         const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
         if (sessionErr) {
-          console.warn('Restore Session Error:', sessionErr.message);
+          // If it is a known refresh token not found/invalid error (due to rotation/expiration/revocation),
+          // handle it silently to avoid flooding the console with AuthApiError warnings.
+          if (!sessionErr.message.includes('Refresh Token Not Found') && !sessionErr.message.includes('invalid refresh token')) {
+            console.warn('Restore Session Error:', sessionErr.message);
+          }
           // If we fail to restore the session (e.g. invalid refresh token), we call signOut
           // to clear the invalid token from localStorage and prevent infinite console error loops.
           await safeSignOut(true);
@@ -772,6 +800,11 @@ export default function Home() {
         availability: mapAvailabilityToDB(f.availability),
         reference_daily_rate: f.referenceValue,
         observations: f.observations,
+        cnpj_normalized: f.cnpj_normalized || null,
+        foreign_tax_id: f.foreign_tax_id || null,
+        tax_country_code: f.tax_country_code || 'BR',
+        cnpj_source: f.cnpj_source || 'manual_rh',
+        cnpj_is_mock: f.cnpj_is_mock || false,
       })
       .select('id')
       .single();
@@ -828,6 +861,11 @@ export default function Home() {
         portfolio_file_url: f.portfolioFileUrl || null,
         portfolio_file_path: f.portfolioFilePath || null,
         portfolio_file_name: f.portfolioFileName || null,
+        cnpj_normalized: f.cnpj_normalized || null,
+        foreign_tax_id: f.foreign_tax_id || null,
+        tax_country_code: f.tax_country_code || 'BR',
+        cnpj_source: f.cnpj_source || null,
+        cnpj_is_mock: f.cnpj_is_mock || false,
       })
       .eq('id', f.id);
 
@@ -1231,42 +1269,7 @@ export default function Home() {
       .eq('id', p.id);
   };
 
-  const handleSuggestionInsert = async (s: Suggestion) => {
-    if (isUuid(s.id)) return;
-    const { data: created, error } = await supabase
-      .from('suggestions')
-      .insert({
-        freelancer_name: s.freelancerName,
-        email: s.email,
-        whatsapp: s.whatsapp,
-        suggested_role: s.suggestedRole,
-        portfolio_url: s.portfolioUrl,
-        reason: s.reason,
-        related_project: s.relatedProject,
-        observations: s.observations,
-        nucleo_id: s.nucleoId || currentUser?.nucleoId || '55d9d7c0-d3cb-4f1e-84ad-e77ff961805b',
-        suggested_by: s.suggestedBy || currentUser?.name,
-        status: s.status,
-      })
-      .select('id')
-      .single();
 
-    if (error) throw error;
-
-    if (created && s.id !== created.id) {
-      setSuggestionsState(prev => prev.map(item => item.id === s.id ? { ...item, id: created.id } : item));
-    }
-  };
-
-  const handleSuggestionUpdate = async (s: Suggestion, original: Suggestion) => {
-    await supabase
-      .from('suggestions')
-      .update({
-        status: s.status,
-        observations: s.observations,
-      })
-      .eq('id', s.id);
-  };
 
   const handleNucleoInsert = async (n: Nucleo) => {
     if (isUuid(n.id)) return;
@@ -1376,7 +1379,12 @@ export default function Home() {
       const res = await createUserAction(token, {
         full_name: u.name,
         email: u.email,
-        role: ((u.profile as string) === 'NÚCLEO' || (u.profile as string) === 'NUCLEO' ? 'nucleo' : (u.profile === 'C-LEVEL' ? 'c_level' : u.profile.toLowerCase())) as any,
+        role: (
+          (u.profile as string) === 'NÚCLEO' || (u.profile as string) === 'NUCLEO' ? 'nucleo' :
+          u.profile === 'C-LEVEL' ? 'c_level' :
+          u.profile === 'OPERAÇÕES' || u.profile === 'OPERAÇÃO' ? 'operations' :
+          u.profile.toLowerCase()
+        ) as any,
         nucleo_id: u.nucleoId || null,
         job_title: u.role,
         password: u.password,
@@ -1456,8 +1464,7 @@ export default function Home() {
     setEvaluations: wrapStateSetter(evaluationsState, setEvaluationsState, handleEvaluationInsert, handleEvaluationUpdate, handleEvaluationDelete),
     paymentCodes: paymentCodesState,
     setPaymentCodes: wrapStateSetter(paymentCodesState, setPaymentCodesState, async () => {}, handlePaymentCodeUpdate),
-    suggestions: suggestionsState,
-    setSuggestions: wrapStateSetter(suggestionsState, setSuggestionsState, handleSuggestionInsert, handleSuggestionUpdate),
+
     nucleos: nucleosState,
     setNucleos: wrapStateSetter(nucleosState, setNucleosState, handleNucleoInsert, handleNucleoUpdate),
     approvals: approvalsState,
@@ -1494,7 +1501,6 @@ export default function Home() {
           { name: 'Cadastro de Núcleos', icon: Building },
           { name: 'Gestão de Usuários', icon: Users },
           { name: 'Banco de Freelancers', icon: Users },
-          { name: 'Sugestões de Freelas', icon: FileCheck2 },
           { name: 'Links Públicos / QR Codes', icon: QrCode },
           { name: 'Análise de Pré-cadastros', icon: FileCheck2 },
           { name: 'Criar Oportunidade', icon: Briefcase },
@@ -1512,7 +1518,6 @@ export default function Home() {
           { name: 'Cadastro de Núcleos', icon: Building },
           { name: 'Gestão de Usuários dos Núcleos', icon: Users },
           { name: 'Banco de Freelancers', icon: Users },
-          { name: 'Sugestões de Freelas', icon: FileCheck2 },
           { name: 'Links Públicos / QR Codes', icon: QrCode },
           { name: 'Análise de Pré-cadastros', icon: FileCheck2 },
           { name: 'Shortlist & Negociação', icon: Briefcase },
@@ -1527,7 +1532,7 @@ export default function Home() {
           { name: 'Dashboard C-LEVEL', icon: LayoutDashboard },
           { name: 'Cadastro de Núcleos', icon: Building },
           { name: 'Banco de Freelancers', icon: Users },
-          { name: 'Sugestões de Freelas', icon: FileCheck2 },
+          { name: 'Links Públicos / QR Codes', icon: QrCode },
           { name: 'Criar Oportunidade', icon: Briefcase },
           { name: 'Shortlist & Negociação', icon: SlidersHorizontal },
           { name: 'Meus Bookings', icon: CalendarDays },
@@ -1536,16 +1541,30 @@ export default function Home() {
           { name: 'Relatórios', icon: TrendingUp },
           { name: 'Configurações', icon: SlidersHorizontal }
         ];
+      case 'OPERAÇÕES':
+      case 'OPERAÇÃO':
+        return [
+          { name: 'Dashboard Operações', icon: LayoutDashboard },
+          { name: 'Cadastro de Núcleos', icon: Building },
+          { name: 'Banco de Freelancers', icon: Users },
+          { name: 'Links Públicos / QR Codes', icon: QrCode },
+          { name: 'Criar Oportunidade', icon: Briefcase },
+          { name: 'Shortlist & Negociação', icon: Briefcase },
+          { name: 'Meus Bookings / Alocações', icon: CalendarDays },
+          { name: 'Timeline de Alocações', icon: CalendarDays },
+          { name: 'Faturamento & Códigos', icon: Key },
+          { name: 'Relatórios & Exportar', icon: TrendingUp }
+        ];
       case 'NÚCLEO':
         return [
           { name: 'Meu Núcleo', icon: LayoutDashboard },
           { name: 'Buscar Freelancers', icon: Users },
+          { name: 'Links Públicos / QR Codes', icon: QrCode },
           { name: 'Criar Oportunidade', icon: Briefcase },
           { name: 'Shortlist & Negociação', icon: SlidersHorizontal },
           { name: 'Meus Bookings', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
-          { name: 'Avaliar Freela', icon: Award },
-          { name: 'Sugerir Novo Freela', icon: FileCheck2 }
+          { name: 'Avaliar Freela', icon: Award }
         ];
       default:
         return [
@@ -1558,9 +1577,9 @@ export default function Home() {
 
   // Helper mapping function to handle correct activeTab routing cleanly
   const handleMenuClick = (menuName: string) => {
-    if (menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo') {
+    if (menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo' || menuName === 'Dashboard Operações') {
       setActiveTab('Dashboard');
-    } else if (menuName === 'Meus Bookings' || menuName === 'Concluir Job') {
+    } else if (menuName === 'Meus Bookings' || menuName === 'Concluir Job' || menuName === 'Meus Bookings / Alocações') {
       setActiveTab('Meus Bookings');
     } else if (menuName === 'Buscar Freelancers' || menuName === 'Banco de Freelancers') {
       setActiveTab('Banco de Freelancers');
@@ -1585,10 +1604,10 @@ export default function Home() {
 
   const isMenuSelected = (menuName: string) => {
     if (activeTab === 'Dashboard') {
-      return menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo';
+      return menuName === 'Dashboard Geral' || menuName === 'Dashboard RH' || menuName === 'Dashboard C-LEVEL' || menuName === 'Meu Núcleo' || menuName === 'Dashboard Operações';
     }
     if (activeTab === 'Meus Bookings') {
-      return menuName === 'Meus Bookings' || menuName === 'Concluir Job';
+      return menuName === 'Meus Bookings' || menuName === 'Concluir Job' || menuName === 'Meus Bookings / Alocações';
     }
     if (activeTab === 'Banco de Freelancers') {
       return menuName === 'Banco de Freelancers' || menuName === 'Buscar Freelancers';
@@ -2021,13 +2040,29 @@ export default function Home() {
             <DashboardRh db={db} />
           )}
 
+          {activeTab === 'Dashboard' && (getRoleLabel(currentUser.profile) === 'OPERAÇÕES' || getRoleLabel(currentUser.profile) === 'OPERAÇÃO') && (
+            <DashboardOperacao db={db} />
+          )}
+
           {activeTab === 'Dashboard' && (getRoleLabel(currentUser.profile) === 'NÚCLEO' || getRoleLabel(currentUser.profile) === 'C-LEVEL') && (
             <DashboardNucleo db={db} />
           )}
 
           {/* New Custom Router Tabs */}
           {activeTab === 'Gestão de Usuários' && (
-            <UserManagement db={db} />
+            can(currentUser, 'users.view') ? (
+              <UserManagement db={db} />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-border-subtle shadow-xs max-w-md mx-auto my-12 text-center animate-fade-in">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                  <Lock className="w-8 h-8 text-red-500 animate-pulse" />
+                </div>
+                <h3 className="text-base font-bold text-text-primary mb-2">Acesso Restrito</h3>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  O perfil {getRoleLabel(currentUser?.profile)} não possui permissão para acessar este módulo.
+                </p>
+              </div>
+            )
           )}
 
           {activeTab === 'Meu Perfil' && (
@@ -2039,12 +2074,36 @@ export default function Home() {
           )}
 
           {activeTab === 'Análise de Pré-cadastros' && (
-            <PublicSubmissionsPanel db={db} />
+            can(currentUser, 'preRegistrations.view') ? (
+              <PublicSubmissionsPanel db={db} />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-border-subtle shadow-xs max-w-md mx-auto my-12 text-center animate-fade-in">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                  <Lock className="w-8 h-8 text-red-500 animate-pulse" />
+                </div>
+                <h3 className="text-base font-bold text-text-primary mb-2">Acesso Restrito</h3>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  O perfil {getRoleLabel(currentUser?.profile)} não possui permissão para acessar este módulo.
+                </p>
+              </div>
+            )
           )}
 
           {/* Existing Operational Router Tabs */}
           {activeTab === 'Cadastro de Núcleos' && (
-            <NucleosPanel db={db} />
+            can(currentUser, 'nuclei.view') ? (
+              <NucleosPanel db={db} />
+            ) : (
+              <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-border-subtle shadow-xs max-w-md mx-auto my-12 text-center animate-fade-in">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                  <Lock className="w-8 h-8 text-red-500 animate-pulse" />
+                </div>
+                <h3 className="text-base font-bold text-text-primary mb-2">Acesso Restrito</h3>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  O perfil {getRoleLabel(currentUser?.profile)} não possui permissão para acessar este módulo.
+                </p>
+              </div>
+            )
           )}
 
           {activeTab === 'Banco de Freelancers' && (
@@ -2059,13 +2118,7 @@ export default function Home() {
             <FormFreela db={db} onCancel={() => setActiveTab('Banco de Freelancers')} />
           )}
 
-          {activeTab === 'Sugerir Freelancer' && (
-            <FormSugerir db={db} onCancel={() => setActiveTab('Dashboard')} />
-          )}
-
-          {activeTab === 'Sugestões de Freelas' && (
-            <SugestoesPanel db={db} />
-          )}
+          {/* Retired suggestions tabs */}
 
           {activeTab === 'Criar Oportunidade' && (
             <FormOportunidade db={db} onCancel={() => setActiveTab('Dashboard')} />

@@ -39,6 +39,28 @@ async function verifyAdminRequester(adminClient: any, accessToken: string) {
 }
 
 /**
+ * Verifies if the requester has an active account of any backend role.
+ */
+async function verifyActiveRequester(adminClient: any, accessToken: string) {
+  const { data: { user }, error: authErr } = await adminClient.auth.getUser(accessToken);
+  if (authErr || !user) {
+    throw new Error('Não autorizado. Sessão inválida.');
+  }
+
+  const { data: profile, error: profileErr } = await adminClient
+    .from('profiles')
+    .select('role, status, nucleo_id, is_nucleus_head')
+    .eq('id', user.id)
+    .single();
+
+  if (profileErr || !profile || profile.status !== 'active') {
+    throw new Error('Perfil do solicitante inativo ou inexistente.');
+  }
+
+  return { user, profile };
+}
+
+/**
  * Generates a public form link (token) and saves its hash in the database.
  */
 export async function generatePublicFormLinkAction(
@@ -51,9 +73,15 @@ export async function generatePublicFormLinkAction(
 ) {
   try {
     const adminClient = getSupabaseAdmin();
-    const requester = await verifyAdminRequester(adminClient, accessToken);
+    const { user: requester, profile: requesterProfile } = await verifyActiveRequester(adminClient, accessToken);
+
+    const roleLower = requesterProfile.role?.toLowerCase();
+    const isMasterOrRh = roleLower === 'master' || roleLower === 'rh';
 
     if (payload.type === 'update_freelancer') {
+      if (!isMasterOrRh) {
+        return { success: false, error: 'Você não tem permissão para gerar links de atualização cadastral.' };
+      }
       if (!payload.freelancerId) {
         return { success: false, error: 'Freelancer é obrigatório para links de atualização.' };
       }
@@ -165,9 +193,12 @@ export async function revokePublicFormLinkAction(accessToken: string, linkId: st
 export async function listPublicFormLinksAction(accessToken: string) {
   try {
     const adminClient = getSupabaseAdmin();
-    await verifyAdminRequester(adminClient, accessToken);
+    const { user: requester, profile: requesterProfile } = await verifyActiveRequester(adminClient, accessToken);
 
-    const { data: links, error: fetchErr } = await adminClient
+    const roleLower = requesterProfile.role?.toLowerCase();
+    const isMasterOrRh = roleLower === 'master' || roleLower === 'rh';
+
+    let query = adminClient
       .from('public_form_links')
       .select(`
         *, 
@@ -184,8 +215,25 @@ export async function listPublicFormLinksAction(accessToken: string) {
           converted_freelancer_id,
           reviewer:profiles!freelancer_public_submissions_reviewed_by_fkey(id, full_name)
         )
-      `)
-      .order('created_at', { ascending: false });
+      `);
+
+    if (!isMasterOrRh) {
+      if (roleLower === 'nucleo') {
+        const { data: profilesInNucleus } = await adminClient
+          .from('profiles')
+          .select('id')
+          .eq('nucleo_id', requesterProfile.nucleo_id);
+        const profileIds = profilesInNucleus?.map((p: any) => p.id) || [];
+        if (!profileIds.includes(requester.id)) {
+          profileIds.push(requester.id);
+        }
+        query = query.in('created_by', profileIds);
+      } else {
+        query = query.eq('created_by', requester.id);
+      }
+    }
+
+    const { data: links, error: fetchErr } = await query.order('created_at', { ascending: false });
 
     if (fetchErr) {
       console.error('Error fetching links:', fetchErr);

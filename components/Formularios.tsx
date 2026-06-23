@@ -12,6 +12,10 @@ import {
   RefreshCw, Check, X, ChevronDown, ChevronUp, HelpCircle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { countries } from '@/lib/countries';
+import CnpjInput from './CnpjInput';
+import { validateCnpj, normalizeCnpj } from '@/lib/cnpj';
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,6 +134,10 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
   const [referenceValue, setReferenceValue] = useState(500);
   const [referenceValueVisual, setReferenceValueVisual] = useState(() => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(500));
   const [observations, setObservations] = useState('');
+  const [countryCode, setCountryCode] = useState('BR');
+  const [cnpjNormalized, setCnpjNormalized] = useState('');
+  const [foreignTaxId, setForeignTaxId] = useState('');
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +145,63 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
       alert('Por favor preencha os campos obrigatórios (Nome, E-mail, Celular, Cidade e Estado).');
       return;
     }
+
+    if (countryCode === 'BR') {
+      const cnpjVal = validateCnpj(cnpjNormalized);
+      if (!cnpjVal.valid) {
+        alert(cnpjVal.errorMessage || 'CNPJ inválido.');
+        return;
+      }
+    } else {
+      if (!foreignTaxId.trim()) {
+        alert('Identificador Fiscal Estrangeiro é obrigatório para residentes fora do Brasil.');
+        return;
+      }
+    }
+
     try {
+      // Check CNPJ duplicate manually
+      if (countryCode === 'BR') {
+        const { data: dupCnpj } = await supabase
+          .from('freelancers')
+          .select('id, full_name, email, whatsapp, status, created_at, main_function:freela_functions(name)')
+          .eq('cnpj_normalized', cnpjNormalized)
+          .is('merged_into_freelancer_id', null)
+          .maybeSingle();
+
+        if (dupCnpj) {
+          const roleName = (dupCnpj.main_function as any)?.name || 'N/A';
+          const confirmCreate = window.confirm(
+            `Possível duplicidade por CNPJ!\n\n` +
+            `Já existe um freelancer com este CNPJ:\n` +
+            `- Nome: ${dupCnpj.full_name}\n` +
+            `- E-mail: ${dupCnpj.email}\n` +
+            `- Celular: ${dupCnpj.whatsapp}\n` +
+            `- Função: ${roleName}\n` +
+            `- Status: ${dupCnpj.status}\n` +
+            `- Data de cadastro: ${new Date(dupCnpj.created_at).toLocaleDateString('pt-BR')}\n\n` +
+            `Deseja cadastrar o mesmo CNPJ mesmo assim? Esta ação exige justificativa administrativa.`
+          );
+
+          if (!confirmCreate) {
+            return;
+          }
+
+          const justification = window.prompt('Informe a justificativa administrativa para criação forçada com CNPJ duplicado:');
+          if (!justification || !justification.trim()) {
+            alert('Justificativa obrigatória. Cadastro cancelado.');
+            return;
+          }
+
+          // Insert audit log
+          await supabase.from('audit_logs').insert({
+            action: 'manual_rh_duplicate_override',
+            entity: 'freelancers',
+            new_data: { cnpj: cnpjNormalized, name, justification }
+          });
+        }
+      }
+
       const { data: funcData } = await supabase.from('freela_functions').select('id').eq('name', mainRole).maybeSingle();
       let funcId = funcData?.id;
       if (!funcId) {
@@ -159,6 +223,11 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
           availability: mapAvailabilityToDB('Imediata'),
           reference_daily_rate: parseCurrencyBR(referenceValueVisual),
           observations: observations || 'Onboarding inicial efetuado no banco.',
+          cnpj_normalized: countryCode === 'BR' ? cnpjNormalized : null,
+          foreign_tax_id: countryCode !== 'BR' ? foreignTaxId : null,
+          tax_country_code: countryCode,
+          cnpj_source: 'manual_rh',
+          cnpj_is_mock: false,
         })
         .select('*, main_function:freela_functions(name), freelancer_industries(industry:industries(name))')
         .single();
@@ -208,6 +277,43 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
             <input type="email" placeholder="Ex: pedro@outlook.com" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan" required />
           </div>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="font-bold text-text-secondary block mb-1">País de Residência *</label>
+            <select value={countryCode} onChange={e => {
+              setCountryCode(e.target.value);
+              if (e.target.value !== 'BR') {
+                setCnpjNormalized('');
+              } else {
+                setForeignTaxId('');
+              }
+            }} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan bg-white">
+              {countries.map(c => (
+                <option key={c.iso2} value={c.iso2}>{c.name_pt}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            {countryCode === 'BR' ? (
+              <div className="flex flex-col">
+                <label className="font-bold text-text-secondary block mb-1">CNPJ *</label>
+                <CnpjInput
+                  value={cnpjNormalized}
+                  onChange={setCnpjNormalized}
+                  required
+                  showValidationStatus={true}
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="font-bold text-text-secondary block mb-1">Identificador Fiscal Estrangeiro *</label>
+                <input type="text" placeholder="ID Fiscal ou equivalente" value={foreignTaxId} onChange={e => setForeignTaxId(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan" required />
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="font-bold text-text-secondary block mb-1">Celular / WhatsApp *</label>
@@ -297,99 +403,7 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
   );
 }
 
-// ─── Form 2: Sugerir Freelancer pelos Núcleos (NÚCLEO) ───────────────────────
-export function FormSugerir({ db, onCancel }: { db: DatabaseProps; onCancel: () => void }) {
-  const [freelancerName, setFreelancerName] = useState('');
-  const [email, setEmail] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [suggestedRole, setSuggestedRole] = useState('Designer 3D');
-  const [portfolioUrl, setPortfolioUrl] = useState('');
-  const [relatedProject, setRelatedProject] = useState('');
-  const [reason, setReason] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!freelancerName || !email || !reason || !relatedProject) {
-      alert('Por favor, preencha os dados de indicação obrigatórios (Nome, E-mail, Projeto Relacionado e Justificativa).');
-      return;
-    }
-    const nextId = `sug-${Date.now()}`;
-    const newSug = {
-      id: nextId, freelancerName, email,
-      whatsapp: whatsapp || '(Indisponível)',
-      suggestedRole, portfolioUrl, reason, relatedProject,
-      nucleoId: db.currentUser.nucleoId || '55d9d7c0-d3cb-4f1e-84ad-e77ff961805b',
-      suggestedBy: db.currentUser.name,
-      status: 'Pendente de análise RH' as const,
-    };
-    db.setSuggestions(prev => [newSug, ...prev]);
-    alert(`Sucesso! Indicação de ${freelancerName} gravada e enviada para triagem do RH no painel organizacional.`);
-    db.setActiveTab('Dashboard');
-  };
-
-  return (
-    <div className="bg-white border border-border-subtle p-6 rounded-2xl shadow-xs max-w-2xl mx-auto space-y-6">
-      <div className="flex gap-2.5 items-center">
-        <Sparkles className="w-5 h-5 text-action-cyan fill-action-cyan animate-pulse shrink-0" />
-        <div>
-          <h3 className="font-bold text-text-primary text-base">Pré-cadastro de Freela</h3>
-          <p className="text-xs text-text-secondary mt-0.5">Indique um profissional externo para ser analisado e homologado pelo RH da agência.</p>
-        </div>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="font-bold text-text-secondary block mb-1">Nome Completo do Indicado *</label>
-            <input type="text" placeholder="Ex: Carlos Costa" value={freelancerName} onChange={e => setFreelancerName(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan" required />
-          </div>
-          <div>
-            <label className="font-bold text-text-secondary block mb-1">E-mail do profissional *</label>
-            <input type="email" placeholder="Ex: carlos.creative@gmail.com" value={email} onChange={e => setEmail(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan" required />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="font-bold text-text-secondary block mb-1">Whatsapp</label>
-            <input type="text" placeholder="Ex: (21) 98111-9988" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan" />
-          </div>
-          <div>
-            <label className="font-bold text-text-secondary block mb-1">Função Recomendada</label>
-            <select value={suggestedRole} onChange={e => setSuggestedRole(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan bg-white">
-              <option value="Diretor de Arte">Diretor de Arte</option>
-              <option value="Designer 3D">Designer 3D</option>
-              <option value="Planejamento">Planejamento</option>
-              <option value="Produtor Executivo">Produtor Executivo</option>
-              <option value="Produtor de Campo">Produtor de Campo</option>
-              <option value="Atendimento">Atendimento</option>
-              <option value="Redator">Redator</option>
-              <option value="Motion Designer">Motion Designer</option>
-              <option value="Cenógrafo">Cenógrafo</option>
-              <option value="Conteúdo">Conteúdo</option>
-            </select>
-          </div>
-          <div>
-            <label className="font-bold text-text-secondary block mb-1">Projeto / Job Vinculado *</label>
-            <input type="text" placeholder="Ex: Ativação Coca-Cola" value={relatedProject} onChange={e => setRelatedProject(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan" required />
-          </div>
-        </div>
-        <div>
-          <label className="font-bold text-text-secondary block mb-1">Link de Portfólio relevante</label>
-          <input type="text" placeholder="Ex: behance.net/carlos" value={portfolioUrl} onChange={e => setPortfolioUrl(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan" />
-        </div>
-        <div>
-          <label className="font-bold text-text-secondary block mb-1">Por que este profissional é necessário? (Justificativa técnica) *</label>
-          <textarea rows={3} placeholder="Descreva as qualificações diferenciais dele para o projeto..." value={reason} onChange={e => setReason(e.target.value)} className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan" required />
-        </div>
-        <div className="flex justify-end gap-2 pt-4">
-          <button type="button" onClick={onCancel} className="border border-border-subtle p-2 px-4 rounded-xl hover:bg-surface font-semibold text-text-primary">Cancelar</button>
-          <button type="submit" className="bg-action-cyan hover:bg-action-cyan-dark text-white font-bold p-2 px-5 rounded-xl flex items-center gap-1.5 shadow-sm">
-            <Save className="w-4 h-4" /> Enviar Sugestão à Triagem do RH
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
 
 // ─── Form 3: Criar Oportunidade (Job) ────────────────────────────────────────
 export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel: () => void }) {

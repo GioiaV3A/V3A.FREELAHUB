@@ -514,7 +514,9 @@ export async function createApprovalRequestAction(accessToken: string, approvalD
     } else if (
       requesterProfile.role !== 'master' &&
       requesterProfile.role !== 'rh' &&
-      requesterProfile.role !== 'c_level'
+      requesterProfile.role !== 'c_level' &&
+      requesterProfile.role !== 'operations' &&
+      requesterProfile.role !== 'operacao'
     ) {
       return { success: false, error: 'Seu perfil de acesso não tem permissão para solicitar aprovações.' };
     }

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { exportPaymentRequestAction } from '@/app/actions/admin';
 import { formatCurrencyBRL, formatISODateToBR } from '@/lib/financial';
 import { Printer, Download, ArrowLeft, Loader2, FileText, CheckCircle2 } from 'lucide-react';
+import { formatCnpj } from '@/lib/cnpj';
 
 export default function PrintPaymentRequestPage() {
   const params = useParams();
@@ -118,7 +119,14 @@ export default function PrintPaymentRequestPage() {
       </div>
 
       {/* 2. Print Document (Premium A4 Layout) */}
-      <div className="max-w-4xl mx-auto bg-white p-12 mt-6 border border-slate-200 shadow-sm print-doc min-h-[297mm] flex flex-col justify-between">
+      <div className="relative max-w-4xl mx-auto bg-white p-12 mt-6 border border-slate-200 shadow-sm print-doc min-h-[297mm] flex flex-col justify-between overflow-hidden">
+        {freelancer?.cnpj_is_mock && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-[100] opacity-[0.08]">
+            <div className="watermark-text text-red-600 text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-widest whitespace-nowrap rotate-[-30deg] text-center leading-none">
+              DOCUMENTO DE TESTE — CNPJ MOCK — NÃO PROCESSAR PAGAMENTO
+            </div>
+          </div>
+        )}
         
         {/* Document Header */}
         <div className="space-y-6">
@@ -182,11 +190,11 @@ export default function PrintPaymentRequestPage() {
               2. Informações Cadastrais do Profissional
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl text-[11px] border border-slate-150">
-              <div>
+              <div className="sm:col-span-2">
                 <span className="text-slate-500 block">Nome Completo:</span>
                 <strong className="text-slate-900">{freelancer?.full_name}</strong>
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <span className="text-slate-500 block">E-mail:</span>
                 <strong className="text-slate-900">{freelancer?.email}</strong>
               </div>
@@ -197,6 +205,32 @@ export default function PrintPaymentRequestPage() {
               <div>
                 <span className="text-slate-500 block">Cidade / Estado:</span>
                 <strong className="text-slate-900">{freelancer?.city} - {freelancer?.state}</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block">País de Residência:</span>
+                <strong className="text-slate-900 uppercase">{freelancer?.tax_country_code || 'BR'}</strong>
+              </div>
+              <div>
+                {(!freelancer?.tax_country_code || freelancer?.tax_country_code === 'BR') ? (
+                  <>
+                    <span className="text-slate-500 block">CNPJ:</span>
+                    <strong className="text-slate-900 font-mono">
+                      {freelancer?.cnpj_normalized ? formatCnpj(freelancer.cnpj_normalized) : 'Não informado'}
+                      {freelancer?.cnpj_is_mock && (
+                        <span className="ml-1 text-[9px] bg-red-100 text-red-800 px-1 py-0.5 rounded font-sans font-bold">
+                          MOCK
+                        </span>
+                      )}
+                    </strong>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-slate-500 block">Tax ID Estrangeiro:</span>
+                    <strong className="text-slate-900 font-mono">
+                      {freelancer?.foreign_tax_id || 'Não informado'}
+                    </strong>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -297,6 +331,11 @@ export default function PrintPaymentRequestPage() {
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
+          }
+          .watermark-text {
+            color: rgba(220, 38, 38, 0.12) !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         }
       `}</style>

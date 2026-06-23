@@ -350,15 +350,15 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                       {/* Payment Status Check */}
                       <td className="px-4 py-3.5 text-center">
                         <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border ${
-                          alloc.paymentRequestStatus === 'paid'
+                          (alloc.paymentRequestStatus as any) === 'paid'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400'
-                            : alloc.paymentRequestStatus === 'exported'
+                            : (alloc.paymentRequestStatus as any) === 'exported'
                               ? 'bg-blue-50 text-blue-700 border-blue-200'
                               : 'bg-slate-150 text-slate-700 border-slate-200'
                         }`}>
                           <CreditCard className="w-3 h-3" />
-                          {alloc.paymentRequestStatus === 'paid' ? 'Pago' :
-                           alloc.paymentRequestStatus === 'exported' ? 'Exportado' : 'Aguardando'}
+                          {(alloc.paymentRequestStatus as any) === 'paid' ? 'Pago' :
+                           (alloc.paymentRequestStatus as any) === 'exported' ? 'Exportado' : 'Aguardando'}
                         </span>
                       </td>
 

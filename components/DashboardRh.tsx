@@ -23,56 +23,30 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
   const analysisCount = db.freelancers.filter(f => f.status === 'Em análise').length;
   const observationCount = db.freelancers.filter(f => f.status === 'Em observação').length;
 
-  const pendingSuggestions = db.suggestions.filter(s => s.status === 'Pendente de análise RH');
-  
   // Pending approvals from allocation_approvals table
   const pendingApprovals = db.approvals.filter(ap => ap.status === 'pending');
 
-  // Handle Suggestion Approval
-  const handleApproveSuggestion = (sugId: string) => {
-    const sug = db.suggestions.find(s => s.id === sugId);
-    if (!sug) return;
+  const [pendingSubmissionsCount, setPendingSubmissionsCount] = useState<number>(0);
+  const [loadingSubmissionsCount, setLoadingSubmissionsCount] = useState(true);
 
-    db.setSuggestions(prev => prev.map(s => s.id === sugId ? { ...s, status: 'Aprovada' } : s));
-
-    const isRedundant = db.freelancers.some(f => f.email.toLowerCase() === sug.email.toLowerCase());
-    if (isRedundant) {
-      alert(`O e-mail ${sug.email} já está cadastrado no banco ativo. Marcado como duplicado!`);
-      db.setSuggestions(prev => prev.map(s => s.id === sugId ? { ...s, status: 'Duplicada' } : s));
-      return;
-    }
-
-    const newFreela = {
-      id: generateUniqueId('free'),
-      name: sug.freelancerName,
-      email: sug.email,
-      whatsapp: sug.whatsapp,
-      city: 'São Paulo',
-      state: 'SP',
-      mainRole: sug.suggestedRole,
-      secondaryRoles: [],
-      seniority: 'Pleno' as any,
-      industries: ['Tecnologia'],
-      portfolioUrl: sug.portfolioUrl,
-      status: 'Elegível' as any,
-      availability: 'Imediata' as any,
-      referenceValue: 450,
-      averageScore: 0,
-      consolidatedScore: 0,
-      recommendationRate: 0,
-      operationalStatus: 'Elegível',
-      observations: `Aprovado via indicação do núcleo para projeto "${sug.relatedProject}". Justificativa: ${sug.reason}`,
-      experienceWithV3A: false
+  React.useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('freelancer_public_submissions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending_review');
+        if (!error && count !== null) {
+          setPendingSubmissionsCount(count);
+        }
+      } catch (err) {
+        console.error('Error fetching submissions count:', err);
+      } finally {
+        setLoadingSubmissionsCount(false);
+      }
     };
-
-    db.setFreelancers(prev => [newFreela, ...prev]);
-    alert(`Sugestão de ${sug.freelancerName} aprovada! Perfil criado com sucesso como 'Elegível'.`);
-  };
-
-  const handleRejectSuggestion = (sugId: string) => {
-    db.setSuggestions(prev => prev.map(s => s.id === sugId ? { ...s, status: 'Rejeitada' } : s));
-    alert('Indicação rejeitada.');
-  };
+    fetchCount();
+  }, []);
 
   // Handle Approval decisions calling Server Actions
   const handleDecideApproval = async (approvalId: string, status: 'approved' | 'rejected') => {
@@ -245,73 +219,45 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
-        {/* LEFT: Suggested Freelancers from Nuclei */}
-        <div id="rh-suggested-panel" className="bg-white dark:bg-[#0d1627] rounded-2xl shadow-xs border border-slate-150 dark:border-slate-850 overflow-hidden">
+        {/* LEFT: Pre-registration submissions */}
+        <div id="rh-suggested-panel" className="bg-white dark:bg-[#0d1627] rounded-2xl shadow-xs border border-slate-150 dark:border-slate-850 overflow-hidden flex flex-col justify-between min-h-[300px]">
           <div className="p-4 border-b border-slate-150 dark:border-slate-850 bg-slate-50 dark:bg-slate-900/40 flex justify-between items-center">
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
               <ClipboardCheck className="w-4 h-4 text-action-cyan" />
-              <span>Indicações Pendentes de Análise ({pendingSuggestions.length})</span>
+              <span>Análise de Pré-cadastros</span>
             </h3>
-            <span className="text-[10px] text-slate-500">Enviado pelos Heads de Núcleo</span>
+            <span className="text-[10px] bg-action-cyan/15 text-action-cyan border border-action-cyan/20 px-2 py-0.5 rounded-full font-bold uppercase">
+              Fila Pública
+            </span>
           </div>
 
-          <div className="divide-y divide-slate-100 dark:divide-slate-850/60 max-h-[420px] overflow-y-auto">
-            {pendingSuggestions.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 italic">
-                Nenhuma sugestão enviada no momento. Bom trabalho!
+          <div className="p-6 flex flex-col items-center justify-center text-center flex-1 space-y-4">
+            <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+              <Users className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+            </div>
+            {loadingSubmissionsCount ? (
+              <div className="flex items-center gap-2 text-slate-500 font-semibold text-xs">
+                <Loader2 className="w-4 h-4 animate-spin text-action-cyan" /> Carregando fila...
               </div>
             ) : (
-              pendingSuggestions.map((sug) => (
-                <div key={sug.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900/10 transition-colors space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-xs flex items-center gap-1.5">
-                        {sug.freelancerName}
-                        <span className="bg-action-cyan/15 text-action-cyan px-2 py-0.5 rounded-full text-[9px] font-bold">
-                          {sug.suggestedRole}
-                        </span>
-                      </h4>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Indicado por {sug.suggestedBy}</p>
-                    </div>
-                    <div className="flex gap-1.5">
-                      <button
-                        onClick={() => handleApproveSuggestion(sug.id)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white p-1 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
-                      >
-                        <Check className="w-3 h-3" /> Aprovar
-                      </button>
-                      <button
-                        onClick={() => handleRejectSuggestion(sug.id)}
-                        className="bg-rose-600 hover:bg-rose-700 text-white p-1 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
-                      >
-                        <X className="w-3 h-3" /> Rejeitar
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 dark:bg-slate-900/50 text-[11px] p-2.5 rounded-xl border border-slate-150 dark:border-slate-850/80 space-y-1.5">
-                    <p className="text-slate-700 dark:text-slate-350">
-                      <span className="font-bold text-slate-500">Justificativa:</span> &ldquo;{sug.reason}&rdquo;
-                    </p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-slate-500 pt-1.5 border-t border-dashed border-slate-200 dark:border-slate-800">
-                      <span className="flex items-center gap-1 font-medium">
-                        <Building className="w-3 h-3" /> Projeto: {sug.relatedProject}
-                      </span>
-                      <span className="flex items-center gap-1 font-medium">
-                        <PhoneCall className="w-3 h-3" /> {sug.whatsapp}
-                      </span>
-                      {sug.portfolioUrl && (
-                        <span>
-                          <a href={sug.portfolioUrl.startsWith('http') ? sug.portfolioUrl : `https://${sug.portfolioUrl}`} target="_blank" rel="noreferrer" className="text-action-cyan hover:underline font-bold">
-                            💼 Ver Portfólio
-                          </a>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
+              <div className="space-y-1">
+                <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
+                  {pendingSubmissionsCount} {pendingSubmissionsCount === 1 ? 'Pré-cadastro' : 'Pré-cadastros'}
+                </p>
+                <p className="text-xs text-slate-500 max-w-sm">
+                  {pendingSubmissionsCount === 0 
+                    ? 'Todos os cadastros e atualizações públicas foram revisados. Excelente!' 
+                    : 'Há novos candidatos e solicitações de atualização aguardando validação do RH.'}
+                </p>
+              </div>
             )}
+            
+            <button
+              onClick={() => db.setActiveTab('Análise de Pré-cadastros')}
+              className="bg-[#0F2342] hover:bg-slate-800 text-white font-extrabold px-4 py-2 rounded-xl transition text-[11px] uppercase tracking-wider shadow-sm cursor-pointer inline-flex items-center gap-1.5"
+            >
+              Acessar Fila de Análise
+            </button>
           </div>
         </div>
 

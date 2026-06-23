@@ -67,8 +67,8 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
   };
 
   // Check access permissions
-  // Master sees all users. RH sees RH under operational rules + Nucleo users.
-  const hasEditPermission = getRoleLabel(currentUser.profile) === 'MASTER' || getRoleLabel(currentUser.profile) === 'RH';
+  // Master sees all users. RH sees RH under operational rules + Nucleo users. C-LEVEL can also manage operations.
+  const hasEditPermission = ['MASTER', 'RH', 'C-LEVEL'].includes(getRoleLabel(currentUser.profile));
 
   const filteredUsers = users.filter(usr => {
     // 1. Search filter
@@ -105,6 +105,8 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       } else if (userProfile === 'RH') {
         nucName = 'Estratégico / Geral';
       } else if (userProfile === 'C-LEVEL') {
+        nucName = 'Multi-núcleo';
+      } else if (userProfile === 'OPERAÇÕES' || userProfile === 'OPERAÇÃO') {
         nucName = 'Multi-núcleo';
       } else {
         nucName = linkedNucleo ? linkedNucleo.name : 'Não vinculado';
@@ -148,8 +150,13 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       return;
     }
 
+    if ((getRoleLabel(formProfile) === 'OPERAÇÕES' || getRoleLabel(formProfile) === 'OPERAÇÃO') && formNucleoId) {
+      showToast('O perfil OPERAÇÕES não deve possuir núcleo vinculado.', 'error');
+      return;
+    }
+
     if (getRoleLabel(formProfile) === 'NÚCLEO' && !formNucleoId) {
-      showToast('Vínculo com núcleo é obrigatório para perfil NÚCLEO.', 'error');
+      showToast('Usuários do perfil NÚCLEO devem possuir núcleo vinculado.', 'error');
       return;
     }
 
@@ -200,8 +207,13 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       return;
     }
 
+    if ((getRoleLabel(formProfile) === 'OPERAÇÕES' || getRoleLabel(formProfile) === 'OPERAÇÃO') && formNucleoId) {
+      showToast('O perfil OPERAÇÕES não deve possuir núcleo vinculado.', 'error');
+      return;
+    }
+
     if (getRoleLabel(formProfile) === 'NÚCLEO' && !formNucleoId) {
-      showToast('Vínculo com núcleo é obrigatório para perfil NÚCLEO.', 'error');
+      showToast('Usuários do perfil NÚCLEO devem possuir núcleo vinculado.', 'error');
       return;
     }
 
@@ -356,6 +368,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               {getRoleLabel(currentUser.profile) === 'MASTER' && <option value="master">MASTER</option>}
               <option value="rh">RH</option>
               <option value="c_level">C-LEVEL</option>
+              <option value="operacao">OPERAÇÕES</option>
               <option value="nucleo">NÚCLEO</option>
             </select>
           </div>
@@ -430,7 +443,10 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               ) : (
                 sortedUsers.map((usr) => {
                   const linkedNucleo = nucleos.find(n => n.id === usr.nucleoId);
-                  const canModifyThisUser = getRoleLabel(currentUser.profile) === 'MASTER' || (getRoleLabel(currentUser.profile) === 'RH' && getRoleLabel(usr.profile) === 'NÚCLEO' && !usr.isSeedMaster);
+                  const canModifyThisUser = 
+                    getRoleLabel(currentUser.profile) === 'MASTER' || 
+                    (getRoleLabel(currentUser.profile) === 'RH' && ['NÚCLEO', 'OPERAÇÕES', 'OPERAÇÃO'].includes(getRoleLabel(usr.profile)) && !usr.isSeedMaster) ||
+                    (getRoleLabel(currentUser.profile) === 'C-LEVEL' && (getRoleLabel(usr.profile) === 'OPERAÇÕES' || getRoleLabel(usr.profile) === 'OPERAÇÃO'));
 
                   return (
                     <tr 
@@ -443,6 +459,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                             getRoleLabel(usr.profile) === 'MASTER' ? 'role-avatar-master' :
                             getRoleLabel(usr.profile) === 'RH' ? 'role-avatar-rh' :
                             getRoleLabel(usr.profile) === 'C-LEVEL' ? 'role-avatar-clevel' :
+                            (getRoleLabel(usr.profile) === 'OPERAÇÕES' || getRoleLabel(usr.profile) === 'OPERAÇÃO') ? 'role-avatar-operacao' :
                             'role-avatar-nucleo'
                           }`}>
                             {usr.name.slice(0, 2)}
@@ -464,6 +481,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                           getRoleLabel(usr.profile) === 'MASTER' ? 'role-badge-master' :
                           getRoleLabel(usr.profile) === 'RH' ? 'role-badge-rh' :
                           getRoleLabel(usr.profile) === 'C-LEVEL' ? 'role-badge-clevel' :
+                          (getRoleLabel(usr.profile) === 'OPERAÇÕES' || getRoleLabel(usr.profile) === 'OPERAÇÃO') ? 'role-badge-operacao' :
                           'role-badge-nucleo'
                         }`}>
                           {getRoleLabel(usr.profile)}
@@ -483,6 +501,10 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                         ) : getRoleLabel(usr.profile) === 'C-LEVEL' ? (
                           <span className="nucleo-chip nucleo-chip-clevel">
                             🌐 Multi-núcleo
+                          </span>
+                        ) : (getRoleLabel(usr.profile) === 'OPERAÇÕES' || getRoleLabel(usr.profile) === 'OPERAÇÃO') ? (
+                          <span className="nucleo-chip nucleo-chip-operacao">
+                            ⚙️ Multi-núcleo
                           </span>
                         ) : getRoleLabel(usr.profile) === 'MASTER' ? (
                           <span className="nucleo-chip nucleo-chip-master">
@@ -609,29 +631,36 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-text-secondary block mb-1">Perfil de Acesso *</label>
-                  {getRoleLabel(currentUser.profile) === 'RH' ? (
-                    <input
-                      type="text"
-                      readOnly
-                      value="NÚCLEO"
-                      className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-slate-100 font-semibold"
-                    />
-                  ) : (
-                    <select
-                      value={formProfile}
-                      onChange={(e) => {
-                        const prof = e.target.value as ProfileType;
-                        setFormProfile(prof);
-                        if (getRoleLabel(prof) === 'RH' || getRoleLabel(prof) === 'C-LEVEL') setFormNucleoId('');
-                        else if (!formNucleoId && nucleos.length > 0) setFormNucleoId(nucleos[0].id);
-                      }}
-                      className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white focus:outline-none focus:border-action-cyan font-semibold"
-                    >
-                      <option value="RH">RH</option>
-                      <option value="NÚCLEO">NÚCLEO</option>
-                      <option value="C-LEVEL">C-LEVEL</option>
-                    </select>
-                  )}
+                  <select
+                    value={formProfile}
+                    onChange={(e) => {
+                      const prof = e.target.value as ProfileType;
+                      setFormProfile(prof);
+                      if (getRoleLabel(prof) === 'RH' || getRoleLabel(prof) === 'C-LEVEL' || getRoleLabel(prof) === 'OPERAÇÕES' || getRoleLabel(prof) === 'OPERAÇÃO') setFormNucleoId('');
+                      else if (!formNucleoId && nucleos.length > 0) setFormNucleoId(nucleos[0].id);
+                    }}
+                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white focus:outline-none focus:border-action-cyan font-semibold"
+                  >
+                    {getRoleLabel(currentUser.profile) === 'MASTER' && (
+                      <>
+                        <option value="RH">RH</option>
+                        <option value="NÚCLEO">NÚCLEO</option>
+                        <option value="C-LEVEL">C-LEVEL</option>
+                        <option value="OPERAÇÃO">OPERAÇÕES</option>
+                      </>
+                    )}
+                    {getRoleLabel(currentUser.profile) === 'RH' && (
+                      <>
+                        <option value="NÚCLEO">NÚCLEO</option>
+                        <option value="OPERAÇÃO">OPERAÇÕES</option>
+                      </>
+                    )}
+                    {getRoleLabel(currentUser.profile) === 'C-LEVEL' && (
+                      <>
+                        <option value="OPERAÇÃO">OPERAÇÕES</option>
+                      </>
+                    )}
+                  </select>
                 </div>
 
                 <div>
@@ -704,6 +733,12 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 <div className="bg-purple-50/50 border border-purple-100 p-3 rounded-xl">
                   <p className="text-[10px] text-purple-900 leading-relaxed font-semibold">
                     💡 Usuários C-LEVEL possuem atuação multi-núcleo e podem operar oportunidades de qualquer núcleo.
+                  </p>
+                </div>
+              ) : (getRoleLabel(formProfile) === 'OPERAÇÕES' || getRoleLabel(formProfile) === 'OPERAÇÃO') ? (
+                <div className="bg-amber-50/50 border border-amber-100 p-3 rounded-xl">
+                  <p className="text-[10px] text-amber-900 leading-relaxed font-semibold">
+                    💡 O perfil OPERAÇÕES possui atuação multi-núcleo e poderá operar demandas de qualquer núcleo cadastrado.
                   </p>
                 </div>
               ) : getRoleLabel(formProfile) === 'RH' ? (
@@ -828,23 +863,33 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 <div>
                   <label className="font-bold text-text-secondary block mb-1">Perfil de Acesso *</label>
                   <select
-                    disabled={getRoleLabel(selectedUser.profile) === 'MASTER' || getRoleLabel(currentUser.profile) === 'RH'}
+                    disabled={getRoleLabel(selectedUser.profile) === 'MASTER' || (!['MASTER', 'RH'].includes(getRoleLabel(currentUser.profile)) && getRoleLabel(currentUser.profile) !== getRoleLabel(selectedUser.profile))}
                     value={formProfile}
                     onChange={(e) => {
                       const prof = e.target.value as ProfileType;
                       setFormProfile(prof);
-                      if (getRoleLabel(prof) === 'RH' || getRoleLabel(prof) === 'C-LEVEL') setFormNucleoId('');
+                      if (getRoleLabel(prof) === 'RH' || getRoleLabel(prof) === 'C-LEVEL' || getRoleLabel(prof) === 'OPERAÇÕES' || getRoleLabel(prof) === 'OPERAÇÃO') setFormNucleoId('');
                       else if (!formNucleoId && nucleos.length > 0) setFormNucleoId(nucleos[0].id);
                     }}
                     className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white focus:outline-none focus:border-action-cyan disabled:bg-slate-100 disabled:text-slate-500 font-semibold"
                   >
-                    {getRoleLabel(selectedUser.profile) === 'MASTER' ? (
-                      <option value="MASTER">MASTER</option>
-                    ) : (
+                    {getRoleLabel(currentUser.profile) === 'MASTER' && (
                       <>
                         <option value="RH">RH</option>
                         <option value="NÚCLEO">NÚCLEO</option>
                         <option value="C-LEVEL">C-LEVEL</option>
+                        <option value="OPERAÇÃO">OPERAÇÕES</option>
+                      </>
+                    )}
+                    {getRoleLabel(currentUser.profile) === 'RH' && (
+                      <>
+                        <option value="NÚCLEO">NÚCLEO</option>
+                        <option value="OPERAÇÃO">OPERAÇÕES</option>
+                      </>
+                    )}
+                    {getRoleLabel(currentUser.profile) === 'C-LEVEL' && (
+                      <>
+                        <option value="OPERAÇÃO">OPERAÇÕES</option>
                       </>
                     )}
                   </select>
@@ -920,6 +965,12 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 <div className="bg-purple-50/50 border border-purple-100 p-3 rounded-xl">
                   <p className="text-[10px] text-purple-900 leading-relaxed font-semibold">
                     💡 Usuários C-LEVEL possuem atuação multi-núcleo e podem operar oportunidades de qualquer núcleo.
+                  </p>
+                </div>
+              ) : (getRoleLabel(formProfile) === 'OPERAÇÕES' || getRoleLabel(formProfile) === 'OPERAÇÃO') ? (
+                <div className="bg-amber-50/50 border border-amber-100 p-3 rounded-xl">
+                  <p className="text-[10px] text-amber-900 leading-relaxed font-semibold">
+                    💡 O perfil OPERAÇÕES possui atuação multi-núcleo e poderá operar demandas de qualquer núcleo cadastrado.
                   </p>
                 </div>
               ) : getRoleLabel(formProfile) === 'RH' ? (
@@ -1113,6 +1164,15 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                     <span className="text-purple-800 font-bold">Núcleo Autorizado:</span>
                     <span className="text-purple-950 font-extrabold uppercase">
                       🌐 Multi-núcleo
+                    </span>
+                  </div>
+                )}
+
+                {(getRoleLabel(selectedUser.profile) === 'OPERAÇÕES' || getRoleLabel(selectedUser.profile) === 'OPERAÇÃO') && (
+                  <div className="flex justify-between items-center bg-amber-50 border border-amber-150 p-2.5 rounded-lg">
+                    <span className="text-amber-800 font-bold">Núcleo Autorizado:</span>
+                    <span className="text-amber-950 font-extrabold uppercase">
+                      ⚙️ Multi-núcleo
                     </span>
                   </div>
                 )}

@@ -26,6 +26,10 @@ import {
 } from 'lucide-react';
 import ScoreStars from '@/components/ScoreStars';
 import { maskCurrencyBRL, parseCurrencyBR } from '@/lib/financial';
+import { supabase } from '@/lib/supabase';
+import { countries } from '@/lib/countries';
+import CnpjInput from './CnpjInput';
+import { validateCnpj, formatCnpj } from '@/lib/cnpj';
 
 export default function BancoFreelas({ db }: { db: any }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,6 +81,12 @@ export default function BancoFreelas({ db }: { db: any }) {
   const [editPortfolioFileName, setEditPortfolioFileName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [editCountryCode, setEditCountryCode] = useState('BR');
+  const [editCnpjNormalized, setEditCnpjNormalized] = useState('');
+  const [editForeignTaxId, setEditForeignTaxId] = useState('');
+  const [editCnpjIsMock, setEditCnpjIsMock] = useState(false);
+  const [editCnpjSource, setEditCnpjSource] = useState('');
+
 
   // Trigger loading skeleton simulation on mount / data loads
   useEffect(() => {
@@ -101,6 +111,7 @@ export default function BancoFreelas({ db }: { db: any }) {
   // Filter freelancers array
   const filteredFreelancers = db.freelancers.filter((f: any) => {
     const term = searchTerm.toLowerCase().trim();
+    const cleanSearch = term.replace(/[^A-Za-z0-9]/g, '');
     const matchesSearch = !term ? true : (
       f.name.toLowerCase().includes(term) ||
       f.email.toLowerCase().includes(term) ||
@@ -112,7 +123,9 @@ export default function BancoFreelas({ db }: { db: any }) {
       (f.locationText && f.locationText.toLowerCase().includes(term)) ||
       (f.brandsWorked && f.brandsWorked.toLowerCase().includes(term)) ||
       f.industries.some((i: string) => i.toLowerCase().includes(term)) ||
-      (f.hasWorkedWithV3a && f.hasWorkedWithV3a.toLowerCase().includes(term))
+      (f.hasWorkedWithV3a && f.hasWorkedWithV3a.toLowerCase().includes(term)) ||
+      (f.cnpj_normalized && f.cnpj_normalized.includes(cleanSearch)) ||
+      (f.foreign_tax_id && f.foreign_tax_id.toLowerCase().includes(term))
     );
     
     const matchesRole = selectedRole ? f.mainRole === selectedRole : true;
@@ -297,6 +310,11 @@ export default function BancoFreelas({ db }: { db: any }) {
     setEditPortfolioFileUrl(f.portfolioFileUrl || '');
     setEditPortfolioFilePath(f.portfolioFilePath || '');
     setEditPortfolioFileName(f.portfolioFileName || '');
+    setEditCountryCode(f.tax_country_code || 'BR');
+    setEditCnpjNormalized(f.cnpj_normalized || '');
+    setEditForeignTaxId(f.foreign_tax_id || '');
+    setEditCnpjIsMock(f.cnpj_is_mock || false);
+    setEditCnpjSource(f.cnpj_source || '');
     setIsEditModalOpen(true);
   };
 
@@ -310,8 +328,58 @@ export default function BancoFreelas({ db }: { db: any }) {
       return;
     }
 
+    if (editCountryCode === 'BR') {
+      const cnpjVal = validateCnpj(editCnpjNormalized);
+      if (!cnpjVal.valid) {
+        alert(cnpjVal.errorMessage || 'CNPJ inválido.');
+        return;
+      }
+    } else {
+      if (!editForeignTaxId.trim()) {
+        alert('Identificador Fiscal Estrangeiro é obrigatório para residentes fora do Brasil.');
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
+      // Check CNPJ duplicate
+      if (editCountryCode === 'BR') {
+        const { data: dupCnpj } = await supabase
+          .from('freelancers')
+          .select('id, full_name')
+          .eq('cnpj_normalized', editCnpjNormalized)
+          .neq('id', editingFreelancer.id)
+          .is('merged_into_freelancer_id', null)
+          .maybeSingle();
+
+        if (dupCnpj) {
+          const confirmOverride = window.confirm(
+            `Possível duplicidade por CNPJ!\n\n` +
+            `O CNPJ informado já está associado ao freelancer "${dupCnpj.full_name}".\n` +
+            `Deseja salvar esta duplicidade mesmo assim?`
+          );
+          if (!confirmOverride) {
+            setIsSaving(false);
+            return;
+          }
+
+          const justification = window.prompt('Informe a justificativa administrativa para CNPJ duplicado:');
+          if (!justification || !justification.trim()) {
+            alert('Justificativa obrigatória.');
+            setIsSaving(false);
+            return;
+          }
+
+          // audit log
+          await supabase.from('audit_logs').insert({
+            action: 'manual_rh_duplicate_override',
+            entity: 'freelancers',
+            new_data: { cnpj: editCnpjNormalized, name: editName, justification, freelancer_id: editingFreelancer.id }
+          });
+        }
+      }
+
       db.setFreelancers((prev: any[]) => prev.map(f => {
         if (f.id === editingFreelancer.id) {
           return {
@@ -336,6 +404,11 @@ export default function BancoFreelas({ db }: { db: any }) {
             portfolioFileUrl: editPortfolioFileUrl,
             portfolioFilePath: editPortfolioFilePath,
             portfolioFileName: editPortfolioFileName,
+            cnpj_normalized: editCountryCode === 'BR' ? editCnpjNormalized : '',
+            foreign_tax_id: editCountryCode !== 'BR' ? editForeignTaxId : '',
+            tax_country_code: editCountryCode,
+            cnpj_is_mock: editCnpjIsMock,
+            cnpj_source: editCnpjSource || 'manual_rh',
           };
         }
         return f;
@@ -641,6 +714,15 @@ export default function BancoFreelas({ db }: { db: any }) {
                             <p className="text-[10px] text-text-secondary truncate mt-0.5" title={`${f.email} • ${f.whatsapp}`}>
                               {f.email} • {f.whatsapp}
                             </p>
+                            {f.cnpj_normalized ? (
+                              <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                CNPJ: {formatCnpj(f.cnpj_normalized)} {f.cnpj_is_mock && <span className="bg-amber-100 text-amber-800 text-[8px] font-bold px-1 rounded-sm ml-1 select-none">CNPJ de teste</span>}
+                              </p>
+                            ) : f.foreign_tax_id ? (
+                              <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                Tax ID: {f.foreign_tax_id} ({f.tax_country_code})
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       </td>
@@ -809,6 +891,15 @@ export default function BancoFreelas({ db }: { db: any }) {
                         {f.name}
                       </h4>
                       <p className="text-[10px] text-text-secondary mt-0.5">{f.email} • {f.whatsapp}</p>
+                      {f.cnpj_normalized ? (
+                        <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                          CNPJ: {formatCnpj(f.cnpj_normalized)} {f.cnpj_is_mock && <span className="bg-amber-100 text-amber-800 text-[8px] font-bold px-1 rounded-sm ml-1 select-none">CNPJ de teste</span>}
+                        </p>
+                      ) : f.foreign_tax_id ? (
+                        <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                          Tax ID: {f.foreign_tax_id} ({f.tax_country_code})
+                        </p>
+                      ) : null}
                     </div>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 border
                       ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150' : ''}
@@ -980,6 +1071,52 @@ export default function BancoFreelas({ db }: { db: any }) {
                     placeholder="Ex: RJ Capital, SP Capital, Fora do Brasil"
                     className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan bg-slate-50"
                   />
+                </div>
+
+                <div>
+                  <label className="font-bold text-text-secondary block mb-1">País de Residência *</label>
+                  <select
+                    value={editCountryCode}
+                    onChange={e => {
+                      setEditCountryCode(e.target.value);
+                      if (e.target.value !== 'BR') {
+                        setEditCnpjNormalized('');
+                      } else {
+                        setEditForeignTaxId('');
+                      }
+                    }}
+                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan bg-white"
+                  >
+                    {countries.map(c => (
+                      <option key={c.iso2} value={c.iso2}>{c.name_pt}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  {editCountryCode === 'BR' ? (
+                    <div className="flex flex-col">
+                      <label className="font-bold text-text-secondary block mb-1">CNPJ *</label>
+                      <CnpjInput
+                        value={editCnpjNormalized}
+                        onChange={setEditCnpjNormalized}
+                        required
+                        showValidationStatus={true}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="font-bold text-text-secondary block mb-1">Identificador Fiscal Estrangeiro *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editForeignTaxId}
+                        onChange={e => setEditForeignTaxId(e.target.value)}
+                        className="w-full border border-border-subtle p-2 rounded-lg text-text-primary focus:outline-none focus:border-action-cyan bg-slate-50"
+                        placeholder="ID Fiscal ou equivalente"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>

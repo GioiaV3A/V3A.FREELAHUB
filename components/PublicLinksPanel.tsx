@@ -119,8 +119,11 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
   useEffect(() => {
     fetchLinks();
     loadSupportData();
+    if (!isMasterOrRh) {
+      setLinkFormType('new_freelancer');
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [db.currentUser]);
 
   // Copy Link Helper
   const handleCopyLink = (linkToken: string, linkType: string, linkId: string) => {
@@ -454,31 +457,33 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
           )}
 
           <form onSubmit={handleGenerateLink} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Finalidade do Form</label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setLinkFormType('new_freelancer')}
-                  className={`flex-1 p-2.5 rounded-xl border text-center font-bold transition select-none cursor-pointer
-                    ${linkFormType === 'new_freelancer'
-                      ? 'bg-[#0F2342] text-white border-[#0F2342]'
-                      : 'bg-white text-text-secondary border-border-subtle hover:bg-slate-50'}`}
-                >
-                  Novo Cadastro
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLinkFormType('update_freelancer')}
-                  className={`flex-1 p-2.5 rounded-xl border text-center font-bold transition select-none cursor-pointer
-                    ${linkFormType === 'update_freelancer'
-                      ? 'bg-[#0F2342] text-white border-[#0F2342]'
-                      : 'bg-white text-text-secondary border-border-subtle hover:bg-slate-50'}`}
-                >
-                  Atualização
-                </button>
+            {isMasterOrRh && (
+              <div className="space-y-2">
+                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Finalidade do Form</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLinkFormType('new_freelancer')}
+                    className={`flex-1 p-2.5 rounded-xl border text-center font-bold transition select-none cursor-pointer
+                      ${linkFormType === 'new_freelancer'
+                        ? 'bg-[#0F2342] text-white border-[#0F2342]'
+                        : 'bg-white text-text-secondary border-border-subtle hover:bg-slate-50'}`}
+                  >
+                    Novo Cadastro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLinkFormType('update_freelancer')}
+                    className={`flex-1 p-2.5 rounded-xl border text-center font-bold transition select-none cursor-pointer
+                      ${linkFormType === 'update_freelancer'
+                        ? 'bg-[#0F2342] text-white border-[#0F2342]'
+                        : 'bg-white text-text-secondary border-border-subtle hover:bg-slate-50'}`}
+                  >
+                    Atualização
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {linkFormType === 'update_freelancer' && (
               <div className="space-y-1">
@@ -728,7 +733,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                                   <QrCode className="w-3.5 h-3.5" />
                                 </button>
                               )}
-                              {link.status === 'active' && (
+                              {isMasterOrRh && link.status === 'active' && (
                                 <button
                                   onClick={() => handleRevokeLink(link.id)}
                                   className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer"
@@ -913,7 +918,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                 </div>
                 {/* Quick link buttons based on status */}
                 <div className="flex gap-2">
-                  {(selectedSubmissionForView.status === 'pending_review' || selectedSubmissionForView.status === 'under_review') && (
+                  {isMasterOrRh && (selectedSubmissionForView.status === 'pending_review' || selectedSubmissionForView.status === 'under_review') && (
                     <button
                       onClick={() => {
                         setSelectedSubmissionForView(null);

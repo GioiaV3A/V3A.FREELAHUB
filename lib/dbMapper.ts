@@ -304,6 +304,7 @@ export function getRoleLabel(role: string | null | undefined): string {
   if (cleaned === 'rh') return 'RH';
   if (cleaned === 'nucleo' || cleaned === 'núcleo') return 'NÚCLEO';
   if (cleaned === 'c-level' || cleaned === 'c_level') return 'C-LEVEL';
+  if (cleaned === 'operacao' || cleaned === 'operação' || cleaned === 'operations') return 'OPERAÇÕES';
   return role.toUpperCase();
 }
 
@@ -385,6 +386,12 @@ export function mapFreelancerToUI(f: any): Freelancer {
     consolidatedScore: Number(f.consolidated_score || 0),
     recommendationRate: Number(f.recommendation_rate || 0),
     operationalStatus: f.operational_status || 'Elegível',
+    cnpj_normalized: f.cnpj_normalized || '',
+    cnpj_is_mock: f.cnpj_is_mock || false,
+    cnpj_mock_batch: f.cnpj_mock_batch || '',
+    foreign_tax_id: f.foreign_tax_id || '',
+    tax_country_code: f.tax_country_code || 'BR',
+    cnpj_source: f.cnpj_source || '',
   };
 }
 
