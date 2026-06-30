@@ -41,6 +41,25 @@ export default function JobDetailPage() {
   const [paymentCodes, setPaymentCodes] = useState<any[]>([]);
   const [evaluations, setEvaluations] = useState<any[]>([]);
 
+  const [origin, setOrigin] = useState<string>('');
+  const [allocationId, setAllocationId] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      setOrigin(searchParams.get('origin') || '');
+      setAllocationId(searchParams.get('allocationId') || '');
+    }
+  }, []);
+
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/?tab=Timeline de Alocações');
+    }
+  };
+
   useEffect(() => {
     if (!id) return;
 
@@ -50,7 +69,7 @@ export default function JobDetailPage() {
         setError(null);
 
         // 1. Fetch freelancer request (Job Opportunity)
-        const { data: reqData, error: reqErr } = await supabase
+        let { data: reqData, error: reqErr } = await supabase
           .from('job_freelancer_requests')
           .select(`
             *,
@@ -61,7 +80,25 @@ export default function JobDetailPage() {
             freela_functions (*)
           `)
           .eq('id', id)
-          .single();
+          .maybeSingle();
+
+        // If not found by request_id, try by job_id (e.g. when navigated from timeline alloc.job_id)
+        if (!reqData && !reqErr) {
+          const { data: altData, error: altErr } = await supabase
+            .from('job_freelancer_requests')
+            .select(`
+              *,
+              jobs (
+                *,
+                nucleos (*)
+              ),
+              freela_functions (*)
+            `)
+            .eq('job_id', id)
+            .maybeSingle();
+          reqData = altData;
+          reqErr = altErr;
+        }
 
         if (reqErr) {
           console.error('Error fetching request:', reqErr);
@@ -70,57 +107,61 @@ export default function JobDetailPage() {
           return;
         }
 
-        if (reqData) {
-          const mappedJob = mapJobToUI(reqData);
-          setJob({
-            ...mappedJob,
-            nucleoName: reqData.jobs?.nucleos?.name || 'Sem núcleo',
-            jobCode: reqData.jobs?.job_code || 'JOB-—',
-            requestCode: reqData.request_code || 'REQ-—',
-          });
+        if (!reqData) {
+          setError('Oportunidade não encontrada.');
+          setLoading(false);
+          return;
         }
 
-        // 2. Fetch Shortlist Candidates
+        const mappedJob = mapJobToUI(reqData);
+        setJob({
+          ...mappedJob,
+          nucleoName: reqData.jobs?.nucleos?.name || 'Sem núcleo',
+          jobCode: reqData.jobs?.job_code || 'JOB-—',
+          requestCode: reqData.request_code || 'REQ-—',
+        });
+
+        // 2. Fetch Shortlist Candidates using resolved request_id
         const { data: dbShortlist, error: slErr } = await supabase
           .from('shortlist_candidates')
           .select('*, freelancers(*)')
-          .eq('request_id', id);
+          .eq('request_id', reqData.id);
 
         if (slErr) console.error('Error fetching shortlist:', slErr);
         else setShortlist(dbShortlist || []);
 
-        // 3. Fetch Negotiations
+        // 3. Fetch Negotiations using resolved request_id
         const { data: dbNegs, error: negErr } = await supabase
           .from('negotiations')
           .select('*, freelancers(*)')
-          .eq('request_id', id);
+          .eq('request_id', reqData.id);
 
         if (negErr) console.error('Error fetching negotiations:', negErr);
         else setNegotiations(dbNegs || []);
 
-        // 4. Fetch Allocations
+        // 4. Fetch Allocations using resolved job_id
         const { data: dbAllocs, error: allocErr } = await supabase
           .from('allocations')
           .select('*, freelancers(*)')
-          .eq('job_id', id);
+          .eq('job_id', reqData.job_id);
 
         if (allocErr) console.error('Error fetching allocations:', allocErr);
         else setAllocations(dbAllocs || []);
 
-        // 5. Fetch Payment Codes
+        // 5. Fetch Payment Codes using resolved job_id
         const { data: dbPayments, error: payErr } = await supabase
           .from('payment_codes')
           .select('*, freelancers(*)')
-          .eq('job_id', id);
+          .eq('job_id', reqData.job_id);
 
         if (payErr) console.error('Error fetching payment codes:', payErr);
         else setPaymentCodes(dbPayments || []);
 
-        // 6. Fetch Evaluations
+        // 6. Fetch Evaluations using resolved job_id
         const { data: dbEvals, error: evalErr } = await supabase
           .from('evaluations')
           .select('*, freelancers(*)')
-          .eq('job_id', id);
+          .eq('job_id', reqData.job_id);
 
         if (evalErr) console.error('Error fetching evaluations:', evalErr);
         else setEvaluations(dbEvals || []);
@@ -191,14 +232,52 @@ export default function JobDetailPage() {
     <div className="min-h-screen bg-bg-app text-text-primary p-4 md:p-8 space-y-6">
       
       {/* HEADER CONTROLS */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <button
-          onClick={() => router.push('/?tab=Timeline de Alocações')}
-          className="flex items-center gap-2 bg-bg-surface hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-border-subtle p-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Voltar para a Timeline</span>
-        </button>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          {origin === 'timeline' && allocationId ? (
+            <button
+              onClick={() => router.push(`/?tab=Timeline de Alocações&highlightAllocationId=${allocationId}`)}
+              className="flex items-center gap-2 bg-bg-surface hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-border-subtle p-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Voltar para a Alocação</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-2 bg-bg-surface hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-border-subtle p-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Voltar para a Timeline</span>
+            </button>
+          )}
+
+          {allocations.length > 0 && (
+            <button
+              onClick={() => {
+                const targetCode = allocations[0]?.allocation_code;
+                router.push(`/?tab=Timeline de Alocações&highlightAllocationId=${targetCode}`);
+              }}
+              className="flex items-center gap-2 bg-bg-surface hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-border-subtle p-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <span>Ver Alocação</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => router.push('/?tab=Timeline de Alocações')}
+            className="flex items-center gap-2 bg-bg-surface hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-border-subtle p-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+          >
+            <span>Ver na Timeline</span>
+          </button>
+
+          <button
+            onClick={() => router.push(`/shortlist/${id}`)}
+            className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white p-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+          >
+            <span>Visualizar histórico do Workflow</span>
+          </button>
+        </div>
 
         <div className="text-xs text-text-secondary">
           Plataforma &bull; Timeline de Alocações &bull; <strong className="text-text-primary uppercase font-extrabold">Detalhes do Job</strong>

@@ -211,18 +211,23 @@ export default function Home() {
 
   // App Layout States
   const [activeTab, setActiveTab2] = useState('Dashboard');
+  const [selectedFreelancerId, setSelectedFreelancerId] = useState<string | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
+      const jobIdParam = params.get('jobId');
       if (tabParam) {
         setActiveTab(tabParam);
       }
+      if (jobIdParam) {
+        setSelectedJobId(jobIdParam);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const [selectedFreelancerId, setSelectedFreelancerId] = useState<string | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -2029,7 +2034,8 @@ export default function Home() {
         </header>
 
         {/* 3. SCROLLABLE ROUTE VIEWPORT */}
-        <div className="flex-1 overflow-y-auto p-6 focus:outline-none bg-bg-app">
+        <div className="flex-1 overflow-y-auto px-6 pb-6 focus:outline-none bg-bg-app">
+          <div className="pt-6">
           
           {/* Dashboard router dependent on selected profile */}
           {activeTab === 'Dashboard' && getRoleLabel(currentUser.profile) === 'MASTER' && (
@@ -2152,6 +2158,7 @@ export default function Home() {
             <RelatoriosPanel db={db} />
           )}
 
+          </div>
         </div>
       </main>
     </div>

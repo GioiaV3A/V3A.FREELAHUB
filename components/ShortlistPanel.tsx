@@ -60,6 +60,7 @@ import {
 import ScoreStars from '@/components/ScoreStars';
 import { useSortableTable } from '@/hooks/useSortableTable';
 import { SortableHeader } from '@/components/SortableHeader';
+import { ResponsiveDataTable, Column } from './ResponsiveDataTable';
 
 const SENIORITY_RANK: Record<string, number> = {
   'Júnior': 1,
@@ -447,6 +448,226 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const totalJobs = sortedJobs.length;
   const totalPages = Math.ceil(totalJobs / jobLimit) || 1;
   const paginatedJobs = sortedJobs.slice((jobPage - 1) * jobLimit, jobPage * jobLimit);
+
+  const columns = useMemo<Column<any>[]>(() => [
+    {
+      key: 'name',
+      label: 'Job',
+      sortKey: 'name',
+      width: '30%',
+      render: (job: any) => {
+        const code = job.id.slice(0, 8).toUpperCase();
+        return (
+          <div className="flex flex-col min-w-0">
+            <span className="font-mono font-bold text-text-secondary text-xs">{code}</span>
+            <span className="font-bold text-sidebar-navy dark:text-text-primary text-sm mt-0.5 hover:underline cursor-pointer" onClick={() => handleSelectJob(job.id)}>
+              {job.name}
+            </span>
+            <span className="text-xs text-text-muted mt-0.5">{job.client}</span>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'nucleo',
+      label: 'Núcleo',
+      sortKey: 'nucleoName',
+      width: '13%',
+      render: (job: any) => {
+        const nucleo = db.nucleos.find((n: any) => n.id === job.nucleoId);
+        return (
+          <span className="font-semibold text-text-secondary">
+            {nucleo ? nucleo.name : '—'}
+          </span>
+        );
+      }
+    },
+    {
+      key: 'role',
+      label: 'Perfil requerido',
+      sortKey: 'roleNeeded',
+      width: '18%',
+      render: (job: any) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-text-primary text-sm">{job.roleNeeded}</span>
+          <span className="text-xs text-text-secondary mt-0.5 font-medium">{job.seniorityNeeded}</span>
+        </div>
+      )
+    },
+    {
+      key: 'period',
+      label: 'Período',
+      sortKey: 'startDate',
+      width: '15%',
+      render: (job: any) => (
+        <span className="text-text-secondary font-medium block">
+          {job.startDate ? new Date(job.startDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
+          {job.endDate ? new Date(job.endDate).toLocaleDateString('pt-BR') : 'A definir'}
+        </span>
+      )
+    },
+    {
+      key: 'financial',
+      label: 'Financeiro',
+      sortKey: 'budget',
+      width: '14%',
+      align: 'right',
+      render: (job: any) => {
+        const dailyAvg = calculateDailyAverage(job);
+        return (
+          <div className="flex flex-col text-right">
+            <span className="font-bold text-sidebar-navy dark:text-text-primary text-sm">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(job.budget)}
+            </span>
+            <span className="text-xs text-text-muted mt-0.5">
+              Diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(dailyAvg)}
+            </span>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'progress',
+      label: 'Andamento',
+      sortKey: 'status',
+      width: '10%',
+      align: 'center',
+      render: (job: any) => {
+        const shCount = db.shortlists.filter((sl: any) => sl.jobId === job.id).length;
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+              job.status === 'Bookado' 
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' 
+                : job.status === 'Aguardando RH'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30'
+                  : job.status === 'Encerrado'
+                    ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/30'
+                    : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30'
+            }`}>
+              {job.status}
+            </span>
+            <span className="bg-slate-100 dark:bg-slate-800 text-text-secondary font-bold px-2 py-0.5 rounded-full text-[9px]">
+              {shCount} freelas
+            </span>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'actions',
+      label: 'Ação',
+      width: '100px',
+      align: 'center',
+      render: (job: any) => {
+        const isSelected = selectedJobIdLocal === job.id;
+        return (
+          <button
+            onClick={() => handleSelectJob(job.id)}
+            className={`font-bold px-3 py-1.5 rounded-lg text-[11px] border transition-all cursor-pointer ${
+              isSelected 
+                ? 'bg-emerald-600 border-emerald-600 text-white' 
+                : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
+            }`}
+          >
+            {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
+          </button>
+        );
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [selectedJobIdLocal, db.shortlists]);
+
+  const mobileJobRenderer = (job: any) => {
+    const code = job.id.slice(0, 8).toUpperCase();
+    const nucleo = db.nucleos.find((n: any) => n.id === job.nucleoId);
+    const shCount = db.shortlists.filter((sl: any) => sl.jobId === job.id).length;
+    const dailyAvg = calculateDailyAverage(job);
+    const isSelected = selectedJobIdLocal === job.id;
+
+    return (
+      <div 
+        className="rounded-2xl border p-4 space-y-3.5 bg-white dark:bg-bg-card transition-shadow hover:shadow-xs"
+        style={{ borderColor: 'var(--border-soft)' }}
+      >
+        <div className="flex justify-between items-start gap-2">
+          <div>
+            <h4 
+              onClick={() => handleSelectJob(job.id)} 
+              className="font-bold text-text-primary text-base hover:underline cursor-pointer"
+            >
+              {job.name}
+            </h4>
+            <p className="text-[11px] text-text-secondary mt-0.5 font-medium">{code} • {job.client}</p>
+          </div>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+            job.status === 'Bookado' 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' 
+              : job.status === 'Aguardando RH'
+                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30'
+                : job.status === 'Encerrado'
+                  ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/30'
+                  : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30'
+          }`}>
+            {job.status}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3" style={{ borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Perfil Requerido</p>
+            <p className="font-bold text-text-primary mt-0.5">{job.roleNeeded} • {job.seniorityNeeded}</p>
+          </div>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Período</p>
+            <p className="font-semibold text-text-primary mt-0.5">
+              {job.startDate ? new Date(job.startDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
+              {job.endDate ? new Date(job.endDate).toLocaleDateString('pt-BR') : 'A definir'}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3" style={{ borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Núcleo</p>
+            <p className="font-semibold text-text-primary mt-0.5">{nucleo ? nucleo.name : '—'}</p>
+          </div>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Shortlist</p>
+            <p className="font-semibold text-text-primary mt-0.5">{shCount} freelas alocados</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3" style={{ borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Orçamento</p>
+            <p className="font-bold text-text-primary mt-0.5">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(job.budget)}
+            </p>
+          </div>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Diária Média</p>
+            <p className="font-bold text-text-primary mt-0.5">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(dailyAvg)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
+          <button
+            onClick={() => handleSelectJob(job.id)}
+            className={`font-bold px-4 py-2 rounded-xl text-xs border transition-all cursor-pointer w-full text-center ${
+              isSelected 
+                ? 'bg-emerald-600 border-emerald-600 text-white' 
+                : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
+            }`}
+          >
+            {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar Oportunidade'}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // --- CANDIDATE MATCHING & FILTERING ---
   const compatibleFreelancers = db.freelancers.filter(f => {
@@ -1711,96 +1932,18 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
           {/* LIST/TABLE OF JOBS */}
           {layoutMode === 'table' ? (
-            <div className="bg-white rounded-2xl border border-border-subtle overflow-hidden shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-border-subtle text-[11px] font-bold text-text-secondary uppercase tracking-wider">
-                      <SortableHeader label="Código" sortKey="id" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} className="p-4" />
-                      <SortableHeader label="Nome do Job" sortKey="name" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} className="p-4" />
-                      <SortableHeader label="Cliente" sortKey="client" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} className="p-4" />
-                      <SortableHeader label="Núcleo" sortKey="nucleoName" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} className="p-4" />
-                      <SortableHeader label="Função / Senioridade" sortKey="roleNeeded" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} className="p-4" />
-                      <SortableHeader label="Período" sortKey="startDate" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} className="p-4" />
-                      <SortableHeader label="Budget" sortKey="budget" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} align="right" className="p-4" />
-                      <SortableHeader label="Diária Média" sortKey="dailyAvgValue" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} align="right" className="p-4" />
-                      <SortableHeader label="Status" sortKey="status" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} align="center" className="p-4" />
-                      <SortableHeader label="Shortlist" sortKey="shCount" activeSortKey={jobSortKey} direction={jobSortDirection} onSort={requestJobSort} align="center" className="p-4" />
-                      <th className="p-4 text-center">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-subtle">
-                    {paginatedJobs.length === 0 ? (
-                      <tr>
-                        <td colSpan={11} className="p-12 text-center text-text-secondary italic">
-                          Nenhum job localizado com os critérios selecionados.
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedJobs.map((job) => {
-                        const nucleo = db.nucleos.find(n => n.id === job.nucleoId);
-                        const code = job.id.slice(0, 8).toUpperCase();
-                        const shCount = db.shortlists.filter(sl => sl.jobId === job.id).length;
-                        const dailyAvg = calculateDailyAverage(job);
-                        const isSelected = selectedJobIdLocal === job.id;
-
-                        return (
-                          <tr key={job.id} className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}>
-                            <td className="p-4 font-mono font-bold text-text-secondary">{code}</td>
-                            <td className="p-4 font-bold text-sidebar-navy">{job.name}</td>
-                            <td className="p-4 text-text-secondary">{job.client}</td>
-                            <td className="p-4 font-semibold text-text-secondary">{nucleo ? nucleo.name : '—'}</td>
-                            <td className="p-4">
-                              <span className="font-semibold text-text-primary">{job.roleNeeded}</span>
-                              <span className="text-text-secondary font-medium"> ({job.seniorityNeeded})</span>
-                            </td>
-                            <td className="p-4 whitespace-nowrap text-text-secondary">
-                              {job.startDate ? new Date(job.startDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
-                              {job.endDate ? new Date(job.endDate).toLocaleDateString('pt-BR') : 'A definir'}
-                            </td>
-                            <td className="p-4 text-right font-bold text-sidebar-navy">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(job.budget)}
-                            </td>
-                            <td className="p-4 text-right text-text-secondary">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(dailyAvg)}
-                            </td>
-                            <td className="p-4 text-center whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
-                                job.status === 'Bookado' 
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                  : job.status === 'Aguardando RH'
-                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                    : job.status === 'Encerrado'
-                                      ? 'bg-red-50 text-red-700 border-red-200'
-                                      : 'bg-blue-50 text-blue-700 border-blue-200'
-                              }`}>
-                                {job.status}
-                              </span>
-                            </td>
-                            <td className="p-4 text-center">
-                              <span className="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-full text-[10px]">
-                                {shCount} freelas
-                              </span>
-                            </td>
-                            <td className="p-4 text-center">
-                              <button
-                                onClick={() => handleSelectJob(job.id)}
-                                className={`font-bold px-3 py-1.5 rounded-lg text-[11px] border transition-all ${
-                                  isSelected 
-                                    ? 'bg-emerald-600 border-emerald-600 text-white' 
-                                    : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy'
-                                }`}
-                              >
-                                {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
+            <div className="bg-white rounded-2xl border border-border-subtle shadow-xs p-6">
+              <ResponsiveDataTable
+                columns={columns}
+                data={paginatedJobs}
+                rowKey={(job) => job.id}
+                isLoading={false}
+                activeSortKey={jobSortKey}
+                sortDirection={jobSortDirection}
+                onSort={requestJobSort}
+                mobileRenderer={mobileJobRenderer}
+                emptyState="Nenhum job localizado com os critérios selecionados."
+              />
 
               {/* Pagination */}
               {totalPages > 1 && (
@@ -2523,8 +2666,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               </div>
 
               {/* Table Wrapper for Desktop */}
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-750">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="hidden md:block rounded-xl border border-slate-750 overflow-visible">
+                <table className="w-full text-left text-xs border-collapse sticky-table-header">
                   <thead>
                     <tr className="bg-slate-800 border-b border-slate-750 text-slate-200">
                       <th className="p-3.5 font-bold uppercase tracking-wider">Freelancer</th>

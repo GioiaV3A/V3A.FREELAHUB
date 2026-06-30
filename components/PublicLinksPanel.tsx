@@ -5,38 +5,231 @@ import { supabase } from '@/lib/supabase';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSortableTable } from '@/hooks/useSortableTable';
 import { SortableHeader } from '@/components/SortableHeader';
-import { 
-  generatePublicFormLinkAction, 
-  revokePublicFormLinkAction, 
+import {
+  generatePublicFormLinkAction,
+  revokePublicFormLinkAction,
   listPublicFormLinksAction,
   clearPublicFormLinksHistoryAction
 } from '@/app/actions/adminPublicForm';
 import QRCodeModal from './QRCodeModal';
 import SubmissionDiffViewer from './SubmissionDiffViewer';
-import { 
-  Plus, 
-  QrCode, 
-  Trash2, 
-  Copy, 
-  Check, 
-  Clock, 
+import {
+  Plus,
+  QrCode,
+  Trash2,
+  Copy,
+  Check,
+  Clock,
   AlertTriangle,
   RotateCcw,
   Loader2,
   Calendar,
   Eye,
   Trash,
+  X,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Link2,
+  User,
 } from 'lucide-react';
+import { ResponsiveDataTable, Column } from './ResponsiveDataTable';
 
 const isValidUUID = (id: string): boolean => {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 };
 
 interface PublicLinksPanelProps {
-  db: any; // Allow full access to db tabs/setters
+  db: any;
+}
+
+// ─── Inline Toast ─────────────────────────────────────────────────────────────
+type ToastType = 'success' | 'error' | 'info';
+interface Toast {
+  id: number;
+  type: ToastType;
+  message: string;
+}
+
+function useToasts() {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const counter = React.useRef(0);
+
+  const addToast = (type: ToastType, message: string) => {
+    const id = ++counter.current;
+    setToasts(prev => [...prev, { id, type, message }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+  };
+
+  const removeToast = (id: number) => setToasts(prev => prev.filter(t => t.id !== id));
+
+  return { toasts, addToast, removeToast };
+}
+
+// ─── Inline Confirmation Modal ─────────────────────────────────────────────────
+interface ConfirmModalState {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+}
+
+// ─── FiltersBar — must live at MODULE level (not inside PublicLinksPanel) ─────
+// Declaring it inside the parent causes React to create a NEW component type on
+// every render, which unmounts and remounts the input on each keystroke.
+interface FiltersBarProps {
+  searchQuery: string;
+  filterType: string;
+  filterStatus: string;
+  filterRhStatus: string;
+  sortBy: string;
+  onSearchChange: (v: string) => void;
+  onFilterTypeChange: (v: string) => void;
+  onFilterStatusChange: (v: string) => void;
+  onFilterRhStatusChange: (v: string) => void;
+  onSortByChange: (v: string) => void;
+}
+
+function FiltersBar({
+  searchQuery,
+  filterType,
+  filterStatus,
+  filterRhStatus,
+  sortBy,
+  onSearchChange,
+  onFilterTypeChange,
+  onFilterStatusChange,
+  onFilterRhStatusChange,
+  onSortByChange,
+}: FiltersBarProps) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      {/* Search */}
+      <div className="lg:col-span-2 space-y-1">
+        <label
+          htmlFor="pl-search"
+          className="text-xs font-bold uppercase tracking-wider"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Busca rápida
+        </label>
+        <input
+          id="pl-search"
+          name="pl-search"
+          type="text"
+          autoComplete="off"
+          value={searchQuery}
+          onChange={e => onSearchChange(e.target.value)}
+          className="w-full border rounded-xl p-2.5 outline-none text-sm"
+          style={{
+            background: 'var(--bg-input)',
+            borderColor: 'var(--border-soft)',
+            color: 'var(--text-primary)',
+          }}
+          placeholder="Nome, e-mail, token, criador..."
+        />
+      </div>
+      {/* Finalidade */}
+      <div className="space-y-1">
+        <label
+          htmlFor="pl-filter-type"
+          className="text-xs font-bold uppercase tracking-wider"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Finalidade
+        </label>
+        <select
+          id="pl-filter-type"
+          value={filterType}
+          onChange={e => onFilterTypeChange(e.target.value)}
+          className="w-full border rounded-xl p-2.5 outline-none text-sm cursor-pointer"
+          style={{ background: 'var(--bg-input)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+        >
+          <option value="all">Todos os tipos</option>
+          <option value="new_freelancer">Novo Cadastro</option>
+          <option value="update_freelancer">Atualização</option>
+        </select>
+      </div>
+      {/* Status Link */}
+      <div className="space-y-1">
+        <label
+          htmlFor="pl-filter-status"
+          className="text-xs font-bold uppercase tracking-wider"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Status do Link
+        </label>
+        <select
+          id="pl-filter-status"
+          value={filterStatus}
+          onChange={e => onFilterStatusChange(e.target.value)}
+          className="w-full border rounded-xl p-2.5 outline-none text-sm cursor-pointer"
+          style={{ background: 'var(--bg-input)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+        >
+          <option value="all">Todos os status</option>
+          <option value="active">Ativo</option>
+          <option value="used">Utilizado</option>
+          <option value="expired">Expirado</option>
+          <option value="revoked">Revogado</option>
+        </select>
+      </div>
+      {/* Status RH + Sort stacked */}
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <label
+            htmlFor="pl-filter-rh"
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Status RH
+          </label>
+          <select
+            id="pl-filter-rh"
+            value={filterRhStatus}
+            onChange={e => onFilterRhStatusChange(e.target.value)}
+            className="w-full border rounded-xl p-2.5 outline-none text-sm cursor-pointer"
+            style={{ background: 'var(--bg-input)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+          >
+            <option value="all">Todos os status</option>
+            <option value="waiting_fill">Aguardando preenchimento</option>
+            <option value="pending_review">Aguardando aprovação</option>
+            <option value="under_review">Em análise</option>
+            <option value="converted">Convertido em freela</option>
+            <option value="approved">Atualização aplicada</option>
+            <option value="rejected">Rejeitado</option>
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor="pl-sort"
+            className="text-xs font-bold uppercase tracking-wider"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Ordenação
+          </label>
+          <select
+            id="pl-sort"
+            value={sortBy}
+            onChange={e => onSortByChange(e.target.value)}
+            className="w-full border rounded-xl p-2.5 outline-none text-sm cursor-pointer"
+            style={{ background: 'var(--bg-input)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+          >
+            <option value="recent">Mais recentes</option>
+            <option value="oldest">Mais antigos</option>
+            <option value="used_recent">Preenchidos recentemente</option>
+            <option value="pending_first">Aguardando aprovação primeiro</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
+
+  const { toasts, addToast, removeToast } = useToasts();
+
   const [links, setLinks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -51,7 +244,10 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Modal State
+  // Mobile filter drawer
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  // QR Code Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState<{
     token: string;
@@ -61,12 +257,19 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     status: string;
   } | null>(null);
 
+  // Confirm modal state (replaces native confirm())
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({
+    open: false,
+    title: '',
+    description: '',
+    confirmLabel: 'Confirmar',
+    onConfirm: () => {},
+  });
+
   // Generate Link Form States
   const [linkFormType, setLinkFormType] = useState<'new_freelancer' | 'update_freelancer'>('new_freelancer');
   const [selectedFreelaId, setSelectedFreelaId] = useState('');
   const [expiresDays, setExpiresDays] = useState('7');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Administrative clean-up states
   const [cleanupModalOpen, setCleanupModalOpen] = useState(false);
@@ -75,9 +278,14 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
   // Selected submission details drawer
   const [selectedSubmissionForView, setSelectedSubmissionForView] = useState<any | null>(null);
 
+  // Mobile link details drawer
+  const [selectedLinkForDetails, setSelectedLinkForDetails] = useState<any | null>(null);
+
   // Support lists for industries and functions mapping in diff view
   const [functions, setFunctions] = useState<any[]>([]);
   const [industries, setIndustries] = useState<any[]>([]);
+
+  const isMasterOrRh = db.currentUser?.profile === 'MASTER' || db.currentUser?.profile === 'RH';
 
   const getSessionToken = async (): Promise<string> => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -125,6 +333,21 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db.currentUser]);
 
+  // Keyboard: close drawers/modals on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (confirmModal.open) setConfirmModal(prev => ({ ...prev, open: false }));
+        else if (cleanupModalOpen) setCleanupModalOpen(false);
+        else if (selectedSubmissionForView) setSelectedSubmissionForView(null);
+        else if (selectedLinkForDetails) setSelectedLinkForDetails(null);
+        else if (mobileFiltersOpen) setMobileFiltersOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirmModal.open, cleanupModalOpen, selectedSubmissionForView, selectedLinkForDetails, mobileFiltersOpen]);
+
   // Copy Link Helper
   const handleCopyLink = (linkToken: string, linkType: string, linkId: string) => {
     if (typeof window !== 'undefined') {
@@ -153,27 +376,25 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
   // Generate public link
   const handleGenerateLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
-    setSuccessMsg(null);
 
     if (linkFormType === 'update_freelancer') {
       if (!selectedFreelaId) {
-        setErrorMsg('Selecione um freelancer para gerar o link de atualização.');
+        addToast('error', 'Selecione um freelancer para gerar o link de atualização.');
         return;
       }
       if (!isValidUUID(selectedFreelaId)) {
         const targetFreela = db.freelancers?.find((f: any) => f.id === selectedFreelaId);
         const freelaName = targetFreela ? targetFreela.name : 'Desconhecido';
         const userEmail = db.currentUser?.email || 'Desconhecido';
-        
+
         console.error('[Technical Error] Invalid UUID for public form update link generation:', {
           selectedFreelaId,
           freelancerName: freelaName,
           user: userEmail,
           timestamp: new Date().toISOString()
         });
-        
-        setErrorMsg('ID inválido do freelancer. Atualize a página e selecione novamente o freelancer a partir da base oficial.');
+
+        addToast('error', 'ID inválido do freelancer. Atualize a página e selecione novamente o freelancer a partir da base oficial.');
         return;
       }
     }
@@ -182,7 +403,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     try {
       const token = await getSessionToken();
       if (!token) {
-        setErrorMsg('Sessão expirada. Faça login novamente.');
+        addToast('error', 'Sessão expirada. Faça login novamente.');
         return;
       }
 
@@ -193,11 +414,11 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
       });
 
       if (!res.success) {
-        setErrorMsg(res.error || 'Erro ao gerar o link.');
+        addToast('error', res.error || 'Erro ao gerar o link.');
       } else {
-        setSuccessMsg('Link gerado com sucesso!');
+        addToast('success', 'Link gerado com sucesso!');
         setSelectedFreelaId('');
-        
+
         const targetFreela = db.freelancers.find((f: any) => f.id === selectedFreelaId);
         setModalData({
           token: res.token || '',
@@ -210,54 +431,61 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
         fetchLinks();
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro inesperado no servidor.');
+      addToast('error', err.message || 'Erro inesperado no servidor.');
     } finally {
       setIsActionLoading(false);
     }
   };
 
-  // Revoke public link
-  const handleRevokeLink = async (linkId: string) => {
-    if (!confirm('Tem certeza de que deseja desativar/revogar este link?')) return;
-
-    setIsActionLoading(true);
-    try {
-      const token = await getSessionToken();
-      if (!token) return;
-      const res = await revokePublicFormLinkAction(token, linkId);
-      if (res.success) {
-        fetchLinks();
-      } else {
-        alert(res.error || 'Erro ao revogar o link.');
-      }
-    } catch (err) {
-      console.error('Error revoking link:', err);
-    } finally {
-      setIsActionLoading(false);
-    }
+  // Revoke public link — uses inline confirmation modal
+  const handleRevokeLink = (linkId: string) => {
+    setConfirmModal({
+      open: true,
+      title: 'Revogar link',
+      description: 'Tem certeza de que deseja desativar/revogar este link? Esta ação não pode ser desfeita.',
+      confirmLabel: 'Revogar',
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, open: false }));
+        setIsActionLoading(true);
+        try {
+          const token = await getSessionToken();
+          if (!token) return;
+          const res = await revokePublicFormLinkAction(token, linkId);
+          if (res.success) {
+            fetchLinks();
+            addToast('success', 'Link revogado com sucesso.');
+          } else {
+            addToast('error', res.error || 'Erro ao revogar o link.');
+          }
+        } catch (err) {
+          console.error('Error revoking link:', err);
+          addToast('error', 'Erro inesperado ao revogar o link.');
+        } finally {
+          setIsActionLoading(false);
+        }
+      },
+    });
   };
 
   // Administrative clean-up handler
   const handleCleanupHistory = async () => {
     setIsActionLoading(true);
-    setErrorMsg(null);
-    setSuccessMsg(null);
     try {
       const token = await getSessionToken();
       if (!token) {
-        setErrorMsg('Sessão expirada. Faça login novamente.');
+        addToast('error', 'Sessão expirada. Faça login novamente.');
         return;
       }
       const res = await clearPublicFormLinksHistoryAction(token, cleanupOption);
       if (res.success) {
-        setSuccessMsg(res.message || 'Histórico limpo com sucesso.');
+        addToast('success', res.message || 'Histórico limpo com sucesso.');
         setCleanupModalOpen(false);
         fetchLinks();
       } else {
-        setErrorMsg(res.error || 'Erro ao limpar histórico.');
+        addToast('error', res.error || 'Erro ao limpar histórico.');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro inesperado ao limpar histórico.');
+      addToast('error', err.message || 'Erro inesperado ao limpar histórico.');
     } finally {
       setIsActionLoading(false);
     }
@@ -267,7 +495,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
   const getLinkDisplayName = (link: any) => {
     const freelancer = link.freelancer;
     const submission = link.submission;
-    
+
     if (link.link_type === 'update_freelancer' && freelancer) {
       return freelancer.full_name;
     }
@@ -278,15 +506,15 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
       if (sData.name) return sData.name;
     }
     if (link.link_type === 'new_freelancer') {
-      return "Candidato Geral";
+      return 'Candidato Geral';
     }
-    return "—";
+    return '—';
   };
 
   // Helper `getLinkRhStatus(link)`
   const getLinkRhStatus = (link: any) => {
     const submission = link.submission;
-    
+
     if (link.status === 'revoked') {
       return { label: 'Link revogado', status: 'revoked' };
     }
@@ -316,42 +544,45 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     return { label: 'Sem submissão', status: 'none' };
   };
 
-  // Render Link Status Chip
-  const renderStatusChip = (status: string) => {
-    const styles: Record<string, string> = {
-      active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      used: 'bg-blue-50 text-blue-700 border-blue-200',
-      expired: 'bg-slate-100 text-slate-600 border-slate-200',
-      revoked: 'bg-rose-50 text-rose-700 border-rose-200',
+  // Render Link Status Badge — uses CSS vars for dark mode support
+  const renderStatusBadge = (status: string) => {
+    const map: Record<string, { bg: string; text: string; border: string; label: string }> = {
+      active:  { bg: 'var(--success-bg)',  text: 'var(--success-text)',  border: 'var(--success-border)',  label: 'Ativo' },
+      used:    { bg: 'var(--info-bg)',     text: 'var(--info-text)',     border: 'var(--info-border)',     label: 'Utilizado' },
+      expired: { bg: 'var(--neutral-bg)',  text: 'var(--neutral-text)',  border: 'var(--neutral-border)',  label: 'Expirado' },
+      revoked: { bg: 'var(--danger-bg)',   text: 'var(--danger-text)',   border: 'var(--danger-border)',   label: 'Revogado' },
     };
-    const labels: Record<string, string> = {
-      active: 'Ativo',
-      used: 'Utilizado',
-      expired: 'Expirado',
-      revoked: 'Revogado',
-    };
+    const s = map[status] || map.expired;
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border uppercase tracking-wider select-none ${styles[status] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-        {labels[status] || status}
+      <span
+        style={{ background: s.bg, color: s.text, borderColor: s.border }}
+        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-extrabold border uppercase tracking-wider select-none"
+      >
+        {s.label}
       </span>
     );
   };
 
-  // Render RH Status Chip
-  const renderRhStatusChip = (link: any) => {
+  // Render RH Status Badge — uses CSS vars
+  const renderRhStatusBadge = (link: any) => {
     const info = getLinkRhStatus(link);
-    const styles: Record<string, string> = {
-      waiting_fill: 'bg-slate-50 text-slate-600 border-slate-200',
-      pending_review: 'bg-amber-50 text-amber-700 border-amber-200',
-      under_review: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      converted: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      rejected: 'bg-rose-50 text-rose-700 border-rose-200',
-      revoked: 'bg-rose-50/50 text-rose-600 border-rose-100',
-      expired_unused: 'bg-slate-100 text-slate-500 border-slate-200',
+    const map: Record<string, { bg: string; text: string; border: string }> = {
+      waiting_fill:   { bg: 'var(--neutral-bg)',  text: 'var(--neutral-text)',  border: 'var(--neutral-border)' },
+      pending_review: { bg: 'var(--warning-bg)',  text: 'var(--warning-text)',  border: 'var(--warning-border)' },
+      under_review:   { bg: 'var(--info-bg)',     text: 'var(--info-text)',     border: 'var(--info-border)' },
+      converted:      { bg: 'var(--success-bg)',  text: 'var(--success-text)',  border: 'var(--success-border)' },
+      approved:       { bg: 'var(--success-bg)',  text: 'var(--success-text)',  border: 'var(--success-border)' },
+      rejected:       { bg: 'var(--danger-bg)',   text: 'var(--danger-text)',   border: 'var(--danger-border)' },
+      revoked:        { bg: 'var(--danger-bg)',   text: 'var(--danger-text)',   border: 'var(--danger-border)' },
+      expired_unused: { bg: 'var(--neutral-bg)',  text: 'var(--neutral-text)',  border: 'var(--neutral-border)' },
+      none:           { bg: 'var(--neutral-bg)',  text: 'var(--neutral-text)',  border: 'var(--neutral-border)' },
     };
+    const s = map[info.status] || map.none;
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold border uppercase tracking-wider select-none ${styles[info.status] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+      <span
+        style={{ background: s.bg, color: s.text, borderColor: s.border }}
+        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-extrabold border uppercase tracking-wider select-none"
+      >
         {info.label}
       </span>
     );
@@ -369,7 +600,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
         const whatsapp = (link.submission?.submitted_data?.whatsapp || link.freelancer?.whatsapp || '').toLowerCase();
         const tokenVal = (link.metadata?.token || link.token_hash || '').toLowerCase();
         const creator = (link.creator?.full_name || '').toLowerCase();
-        
+
         return displayName.includes(q) || email.includes(q) || whatsapp.includes(q) || tokenVal.includes(q) || creator.includes(q);
       });
     }
@@ -409,6 +640,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     });
 
     return result;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [links, searchQuery, filterType, filterStatus, filterRhStatus, sortBy]);
 
   const linksWithCalculated = useMemo(() => {
@@ -418,6 +650,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
       rhStatusLabel: getLinkRhStatus(link).label,
       creatorName: link.creator?.full_name || '',
     }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredLinks]);
 
   const { data: sortedLinks, sortKey, sortDirection, requestSort } = useSortableTable(
@@ -426,58 +659,434 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     'desc'
   );
 
+  const columns = useMemo<Column<any>[]>(() => [
+    {
+      key: 'display',
+      label: 'Link / Candidato',
+      sortKey: 'displayName',
+      width: '32%',
+      render: (link: any) => {
+        const displayName = getLinkDisplayName(link);
+        const emailVal = link.submission?.submitted_data?.email || link.freelancer?.email || '';
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0 bg-slate-100 dark:bg-slate-800">
+              {link.link_type === 'new_freelancer' ? (
+                <Plus className="w-4 h-4 text-info-500" />
+              ) : (
+                <RotateCcw className="w-4 h-4 text-purple-650 dark:text-purple-400" />
+              )}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold text-sm truncate text-text-primary" title={displayName}>
+                {displayName}
+              </span>
+              {emailVal && (
+                <span className="text-xs truncate mt-0.5 text-text-muted" title={emailVal}>
+                  {emailVal}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      width: '18%',
+      render: (link: any) => (
+        <div className="flex flex-col gap-1 items-start">
+          {renderStatusBadge(link.status)}
+          {renderRhStatusBadge(link)}
+        </div>
+      )
+    },
+    {
+      key: 'created',
+      label: 'Criação',
+      sortKey: 'creatorName',
+      width: '20%',
+      render: (link: any) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-sm truncate text-text-primary" title={link.creator?.full_name || ''}>
+            {link.creator?.full_name || '—'}
+          </span>
+          <span className="text-xs mt-0.5 text-text-muted">
+            {new Date(link.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'used_at',
+      label: 'Preenchimento',
+      sortKey: 'used_at',
+      width: '16%',
+      render: (link: any) => link.used_at ? (
+        <span className="font-semibold text-sm text-info-500">
+          {new Date(link.used_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+        </span>
+      ) : (
+        <span className="text-sm italic text-text-disabled">
+          Ainda não preenchido
+        </span>
+      )
+    },
+    {
+      key: 'expires_at',
+      label: 'Expira em',
+      sortKey: 'expires_at',
+      width: '14%',
+      render: (link: any) => {
+        const isExpired = link.expires_at && new Date(link.expires_at) < new Date();
+        return link.expires_at ? (
+          <span className={`flex items-center gap-1.5 text-sm font-semibold ${isExpired ? 'text-status-error' : 'text-text-secondary'}`}>
+            <Clock className="w-3.5 h-3.5 shrink-0 text-text-muted" />
+            {new Date(link.expires_at).toLocaleDateString('pt-BR')}
+            {isExpired && <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30">EXPIRADO</span>}
+          </span>
+        ) : (
+          <span className="text-sm italic text-text-disabled">
+            Sem expiração
+          </span>
+        );
+      }
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      width: '88px',
+      align: 'right',
+      render: (link: any) => {
+        const isCopied = copiedLinkId === link.id;
+        const clearToken = link.metadata?.token;
+        return (
+          <div className="flex items-center justify-end gap-1.5">
+            {clearToken && link.status === 'active' && (
+              <button
+                onClick={() => handleCopyLink(clearToken, link.link_type, link.id)}
+                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                style={{ background: 'var(--neutral-bg)', color: 'var(--neutral-text)' }}
+                title="Copiar URL"
+                aria-label="Copiar link"
+              >
+                {isCopied ? <Check className="w-3.5 h-3.5 text-success-500" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            )}
+            {link.status === 'active' && (
+              <button
+                onClick={() => handleOpenQRModal(link)}
+                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                title="Ver QR Code"
+                aria-label="Ver QR Code"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {isMasterOrRh && link.status === 'active' && (
+              <button
+                onClick={() => handleRevokeLink(link.id)}
+                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-950/20"
+                style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)' }}
+                title="Revogar link"
+                aria-label="Revogar link"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {link.submission && (
+              <button
+                onClick={() => setSelectedSubmissionForView(link.submission)}
+                className="p-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 text-xs font-extrabold"
+                style={{ background: 'var(--info-bg)', color: 'var(--info-text)' }}
+                title="Ver submissão"
+                aria-label="Ver submissão"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        );
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [copiedLinkId, isMasterOrRh]);
+
+  const mobileLinkRenderer = (link: any) => {
+    const isCopied = copiedLinkId === link.id;
+    const clearToken = link.metadata?.token;
+    const displayName = getLinkDisplayName(link);
+    const emailVal = link.submission?.submitted_data?.email || link.freelancer?.email || '';
+    return (
+      <div
+        className="rounded-2xl border p-4 space-y-3.5 transition-shadow hover:shadow-xs"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)' }}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              {link.link_type === 'new_freelancer' ? (
+                <Plus className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--info-text)' }} />
+              ) : (
+                <RotateCcw className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--color-purple-text, #7c3aed)' }} />
+              )}
+              <span className="font-bold text-xs uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+                {link.link_type === 'new_freelancer' ? 'Novo Cadastro' : 'Atualização'}
+              </span>
+            </div>
+            <p className="font-bold text-base text-text-primary truncate">{displayName}</p>
+            {emailVal && <p className="text-xs text-text-muted truncate mt-0.5">{emailVal}</p>}
+          </div>
+          <div className="flex flex-col gap-1 shrink-0">
+            {renderStatusBadge(link.status)}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {renderRhStatusBadge(link)}
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3 text-xs border-t pt-3" style={{ borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}>
+          <div>
+            <span className="font-bold uppercase tracking-wider text-[10px] text-text-muted">Criado por</span>
+            <p className="mt-0.5 font-bold text-text-primary truncate">{link.creator?.full_name || '—'}</p>
+            <p className="mt-0.5 text-[11px] text-text-muted">
+              {new Date(link.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+            </p>
+          </div>
+          <div>
+            <span className="font-bold uppercase tracking-wider text-[10px] text-text-muted">
+              {link.used_at ? 'Preenchido em' : 'Expira em'}
+            </span>
+            <p className="mt-0.5 font-bold text-text-primary">
+              {link.used_at
+                ? new Date(link.used_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+                : link.expires_at
+                  ? new Date(link.expires_at).toLocaleDateString('pt-BR')
+                  : 'Sem expiração'}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
+          <div className="flex items-center gap-1.5">
+            {clearToken && link.status === 'active' && (
+              <button
+                onClick={() => handleCopyLink(clearToken, link.link_type, link.id)}
+                className="p-2 rounded-xl transition cursor-pointer"
+                style={{ background: 'var(--neutral-bg)', color: 'var(--neutral-text)' }}
+                aria-label="Copiar link"
+              >
+                {isCopied ? <Check className="w-4 h-4" style={{ color: 'var(--success-text)' }} /> : <Copy className="w-4 h-4" />}
+              </button>
+            )}
+            {link.status === 'active' && (
+              <button
+                onClick={() => handleOpenQRModal(link)}
+                className="p-2 rounded-xl transition cursor-pointer"
+                style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                aria-label="Ver QR Code"
+              >
+                <QrCode className="w-4 h-4" />
+              </button>
+            )}
+            {isMasterOrRh && link.status === 'active' && (
+              <button
+                onClick={() => handleRevokeLink(link.id)}
+                className="p-2 rounded-xl transition cursor-pointer"
+                style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)' }}
+                aria-label="Revogar"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          {link.submission && (
+            <button
+              onClick={() => setSelectedSubmissionForView(link.submission)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-bold text-xs cursor-pointer"
+              style={{ background: 'var(--info-bg)', color: 'var(--info-text)' }}
+            >
+              <Eye className="w-3.5 h-3.5" /> Ver Submissão
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const totalItems = filteredLinks.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const paginatedLinks = sortedLinks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const isMasterOrRh = db.currentUser?.profile === 'MASTER' || db.currentUser?.profile === 'RH';
+  const hasActiveFilters = searchQuery || filterType !== 'all' || filterStatus !== 'all' || filterRhStatus !== 'all';
 
   return (
-    <div className="space-y-6 font-sans text-xs">
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Left Form: Generate Link */}
-        <div className="w-full md:w-1/3 bg-white border border-border-subtle rounded-3xl p-6 shadow-sm space-y-4">
-          <div>
-            <h3 className="text-sm font-extrabold text-text-primary">Gerar Novo Acesso Temporário</h3>
-            <p className="text-[10px] text-text-secondary mt-0.5">RH gera links ou QR Codes seguros de uso único.</p>
+    <div className="space-y-5 w-full min-w-0">
+
+      {/* ── Toast Stack ──────────────────────────────────────────────────────── */}
+      <div className="fixed top-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            className="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-2xl shadow-lg border text-sm font-semibold animate-fade-in"
+            style={{
+              minWidth: 280,
+              background: t.type === 'success' ? 'var(--success-bg)' : t.type === 'error' ? 'var(--danger-bg)' : 'var(--info-bg)',
+              borderColor: t.type === 'success' ? 'var(--success-border)' : t.type === 'error' ? 'var(--danger-border)' : 'var(--info-border)',
+              color: t.type === 'success' ? 'var(--success-text)' : t.type === 'error' ? 'var(--danger-text)' : 'var(--info-text)',
+            }}
+          >
+            {t.type === 'success' ? <Check className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
+            <span className="flex-1">{t.message}</span>
+            <button
+              onClick={() => removeToast(t.id)}
+              className="shrink-0 opacity-60 hover:opacity-100 transition"
+              aria-label="Fechar notificação"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
+        ))}
+      </div>
 
-          {errorMsg && (
-            <div className="bg-red-500/10 border border-red-500/20 text-rose-800 p-3 rounded-xl flex gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
-              <span>{errorMsg}</span>
+      {/* ── Inline Confirmation Modal ─────────────────────────────────────────── */}
+      {confirmModal.open && (
+        <div
+          className="fixed inset-0 z-[150] flex items-center justify-center p-4 animate-fade-in"
+          style={{ background: 'rgba(6,17,31,0.72)', backdropFilter: 'blur(4px)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-modal-title"
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)' }}
+          >
+            <div className="p-5 flex items-start gap-3">
+              <div
+                className="p-2 rounded-xl shrink-0"
+                style={{ background: 'var(--danger-bg)' }}
+              >
+                <AlertTriangle className="w-5 h-5" style={{ color: 'var(--danger-text)' }} />
+              </div>
+              <div>
+                <h3
+                  id="confirm-modal-title"
+                  className="font-extrabold text-sm"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {confirmModal.title}
+                </h3>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                  {confirmModal.description}
+                </p>
+              </div>
             </div>
-          )}
-
-          {successMsg && (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 p-3 rounded-xl flex gap-2">
-              <Check className="w-4 h-4 shrink-0 text-emerald-500" />
-              <span>{successMsg}</span>
+            <div
+              className="flex gap-2 px-5 pb-5"
+            >
+              <button
+                onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+                className="flex-1 py-2.5 rounded-xl border font-bold text-sm transition cursor-pointer"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                className="flex-1 py-2.5 rounded-xl font-black text-sm transition cursor-pointer"
+                style={{ background: 'var(--danger-bg)', borderColor: 'var(--danger-border)', color: 'var(--danger-text)', border: '1px solid' }}
+              >
+                {confirmModal.confirmLabel}
+              </button>
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-          <form onSubmit={handleGenerateLink} className="space-y-4">
+      {/* ── Page Header ──────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-extrabold" style={{ color: 'var(--text-primary)' }}>
+            Links Públicos / QR Codes
+          </h2>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+            Gere acessos temporários e acompanhe cadastros, atualizações e avaliações externas.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {isMasterOrRh && (
+            <button
+              onClick={() => setCleanupModalOpen(true)}
+              className="px-3 py-2 rounded-xl border font-bold text-sm transition flex items-center gap-1.5 cursor-pointer"
+              style={{ background: 'var(--danger-bg)', borderColor: 'var(--danger-border)', color: 'var(--danger-text)' }}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Limpar histórico de testes</span>
+              <span className="sm:hidden">Limpar</span>
+            </button>
+          )}
+          <button
+            onClick={fetchLinks}
+            disabled={isLoading}
+            className="px-3 py-2 rounded-xl border font-bold text-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}
+            aria-label="Atualizar lista de links"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      {/* ── Generate Link Panel (horizontal, full-width) ──────────────────────── */}
+      <div
+        className="w-full rounded-3xl border shadow-sm p-5"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)' }}
+      >
+        <div className="mb-4">
+          <h3 className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>
+            Gerar Novo Acesso Temporário
+          </h3>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+            Crie links ou QR Codes seguros, individuais e com prazo de expiração.
+          </p>
+        </div>
+
+        <form onSubmit={handleGenerateLink}>
+          {/* Desktop: horizontal grid — Mobile: stacked */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
+
+            {/* Finalidade */}
             {isMasterOrRh && (
-              <div className="space-y-2">
-                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Finalidade do Form</label>
-                <div className="flex gap-2">
+              <div className={`space-y-1 ${linkFormType === 'update_freelancer' ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
+                <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
+                  Finalidade do Form
+                </label>
+                <div className="flex gap-2 h-[42px]">
                   <button
                     type="button"
                     onClick={() => setLinkFormType('new_freelancer')}
-                    className={`flex-1 p-2.5 rounded-xl border text-center font-bold transition select-none cursor-pointer
-                      ${linkFormType === 'new_freelancer'
-                        ? 'bg-[#0F2342] text-white border-[#0F2342]'
-                        : 'bg-white text-text-secondary border-border-subtle hover:bg-slate-50'}`}
+                    className="flex-1 rounded-xl border text-center font-bold text-sm transition select-none cursor-pointer"
+                    style={
+                      linkFormType === 'new_freelancer'
+                        ? { background: '#0F2342', color: '#fff', borderColor: '#0F2342' }
+                        : { background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border-soft)' }
+                    }
                   >
                     Novo Cadastro
                   </button>
                   <button
                     type="button"
                     onClick={() => setLinkFormType('update_freelancer')}
-                    className={`flex-1 p-2.5 rounded-xl border text-center font-bold transition select-none cursor-pointer
-                      ${linkFormType === 'update_freelancer'
-                        ? 'bg-[#0F2342] text-white border-[#0F2342]'
-                        : 'bg-white text-text-secondary border-border-subtle hover:bg-slate-50'}`}
+                    className="flex-1 rounded-xl border text-center font-bold text-sm transition select-none cursor-pointer"
+                    style={
+                      linkFormType === 'update_freelancer'
+                        ? { background: '#0F2342', color: '#fff', borderColor: '#0F2342' }
+                        : { background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border-soft)' }
+                    }
                   >
                     Atualização
                   </button>
@@ -485,20 +1094,25 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
               </div>
             )}
 
+            {/* Freelancer selector — only when update_freelancer */}
             {linkFormType === 'update_freelancer' && (
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Selecionar Freelancer *</label>
+              <div className="space-y-1 lg:col-span-4 sm:col-span-2">
+                <label htmlFor="pl-freela-select" className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
+                  Selecionar Freelancer *
+                </label>
                 <select
+                  id="pl-freela-select"
                   required
                   value={selectedFreelaId}
-                  onChange={(e) => setSelectedFreelaId(e.target.value)}
-                  className="w-full bg-slate-50 border border-border-subtle p-3 rounded-xl text-slate-700 outline-none focus:border-slate-400 cursor-pointer"
+                  onChange={e => setSelectedFreelaId(e.target.value)}
+                  className="w-full border rounded-xl p-2.5 outline-none text-sm cursor-pointer h-[42px]"
+                  style={{ background: 'var(--bg-input)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
                 >
                   <option value="">Escolha da base geral...</option>
                   {[...db.freelancers]
-                    .filter(f => !f.mergedIntoFreelancerId && f.status !== 'Inativo' && f.status !== 'Bloqueado')
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map(f => {
+                    .filter((f: any) => !f.mergedIntoFreelancerId && f.status !== 'Inativo' && f.status !== 'Bloqueado')
+                    .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                    .map((f: any) => {
                       const contactInfo = f.email || f.whatsapp || '';
                       const contactPart = contactInfo ? ` — ${contactInfo}` : '';
                       return (
@@ -511,12 +1125,17 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
               </div>
             )}
 
-            <div className="space-y-1">
-              <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Prazo de Expiração</label>
+            {/* Prazo de Expiração */}
+            <div className={`space-y-1 ${linkFormType === 'update_freelancer' ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+              <label htmlFor="pl-expires" className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
+                Prazo de Expiração
+              </label>
               <select
+                id="pl-expires"
                 value={expiresDays}
-                onChange={(e) => setExpiresDays(e.target.value)}
-                className="w-full bg-slate-50 border border-border-subtle p-3 rounded-xl text-slate-700 outline-none focus:border-slate-400 cursor-pointer"
+                onChange={e => setExpiresDays(e.target.value)}
+                className="w-full border rounded-xl p-2.5 outline-none text-sm cursor-pointer h-[42px]"
+                style={{ background: 'var(--bg-input)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
               >
                 <option value="7">7 dias (Recomendado)</option>
                 <option value="15">15 dias</option>
@@ -525,398 +1144,351 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
               </select>
             </div>
 
-            <button
-              type="submit"
-              disabled={isActionLoading}
-              className="w-full bg-action-cyan hover:bg-[#0ea5e9] text-[#0F2342] font-black py-3 rounded-xl flex items-center justify-center gap-1.5 transition select-none cursor-pointer disabled:opacity-50 shadow-xs"
-            >
-              {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Gerar QR Code &amp; Link
-            </button>
-          </form>
-        </div>
+            {/* Spacer when no freelancer select */}
+            {!isMasterOrRh && <div className="hidden lg:block lg:col-span-4" />}
+            {isMasterOrRh && linkFormType === 'new_freelancer' && <div className="hidden lg:block lg:col-span-2" />}
 
-        {/* Right Table: Links */}
-        <div className="flex-1 bg-white border border-border-subtle rounded-3xl p-6 shadow-sm flex flex-col min-w-0">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <div>
-              <h3 className="text-sm font-extrabold text-text-primary">Histórico de Links de Cadastro</h3>
-              <p className="text-[10px] text-text-secondary mt-0.5">Lista de links criados temporariamente para preenchimento público.</p>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              {isMasterOrRh && (
-                <button
-                  onClick={() => setCleanupModalOpen(true)}
-                  className="px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 rounded-xl font-bold transition flex items-center gap-1.5 cursor-pointer text-[10px]"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Limpar histórico de testes
-                </button>
-              )}
+            {/* Generate Button */}
+            <div className={`${linkFormType === 'update_freelancer' ? 'lg:col-span-3' : 'lg:col-span-3'} sm:col-span-2`}>
               <button
-                onClick={fetchLinks}
-                disabled={isLoading}
-                className="p-2 bg-slate-50 hover:bg-slate-100 border border-border-subtle rounded-xl text-text-secondary transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                type="submit"
+                disabled={isActionLoading}
+                className="w-full font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition select-none cursor-pointer disabled:opacity-50 shadow-sm h-[42px] text-sm"
+                style={{ background: '#00BCD4', color: '#0F2342' }}
               >
-                <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} /> Atualizar
+                {isActionLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <QrCode className="w-4 h-4" />}
+                Gerar QR Code &amp; Link
               </button>
             </div>
           </div>
+        </form>
+      </div>
 
-          {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 select-none">
-            <div className="space-y-1">
-              <label className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Busca rápida</label>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                className="w-full bg-white border border-border-subtle p-2 rounded-xl outline-none focus:border-slate-400 text-[11px]"
-                placeholder="Nome, e-mail, token, criador..."
+      {/* ── History Block — full width ────────────────────────────────────────── */}
+      <div
+        className="w-full rounded-3xl border shadow-sm"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)' }}
+      >
+        {/* Block header */}
+        <div
+          className="px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-t-3xl"
+          style={{ borderColor: 'var(--border-soft)', background: 'var(--table-header-bg)' }}
+        >
+          <div>
+            <h3 className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>
+              Histórico de Links de Cadastro
+            </h3>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              Lista de links criados temporariamente para preenchimento público.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Mobile filter toggle */}
+            <button
+              onClick={() => setMobileFiltersOpen(true)}
+              className="lg:hidden px-3 py-2 rounded-xl border font-bold text-sm flex items-center gap-1.5 cursor-pointer"
+              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}
+              aria-label="Abrir filtros"
+            >
+              <Filter className="w-3.5 h-3.5" />
+              Filtros
+              {hasActiveFilters && (
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: 'var(--accent)' }}
+                />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop filters */}
+        <div
+          className="hidden lg:block px-6 py-4 border-b"
+          style={{ borderColor: 'var(--border-soft)', background: 'var(--bg-surface-elevated)' }}
+        >
+          <FiltersBar
+            searchQuery={searchQuery}
+            filterType={filterType}
+            filterStatus={filterStatus}
+            filterRhStatus={filterRhStatus}
+            sortBy={sortBy}
+            onSearchChange={v => { setSearchQuery(v); setCurrentPage(1); }}
+            onFilterTypeChange={v => { setFilterType(v); setCurrentPage(1); }}
+            onFilterStatusChange={v => { setFilterStatus(v); setCurrentPage(1); }}
+            onFilterRhStatusChange={v => { setFilterRhStatus(v); setCurrentPage(1); }}
+            onSortByChange={v => { setSortBy(v); setCurrentPage(1); }}
+          />
+        </div>
+
+        {/* Mobile filter drawer */}
+        {mobileFiltersOpen && (
+          <div
+            className="fixed inset-0 z-[100] flex flex-col justify-end lg:hidden animate-fade-in"
+            style={{ background: 'rgba(6,17,31,0.6)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setMobileFiltersOpen(false)}
+          >
+            <div
+              className="rounded-t-3xl p-5 space-y-4 max-h-[85vh] overflow-y-auto"
+              style={{ background: 'var(--bg-surface)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>Filtros</h3>
+                <button
+                  onClick={() => setMobileFiltersOpen(false)}
+                  className="p-2 rounded-xl"
+                  style={{ color: 'var(--text-muted)' }}
+                  aria-label="Fechar filtros"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <FiltersBar
+                searchQuery={searchQuery}
+                filterType={filterType}
+                filterStatus={filterStatus}
+                filterRhStatus={filterRhStatus}
+                sortBy={sortBy}
+                onSearchChange={v => { setSearchQuery(v); setCurrentPage(1); }}
+                onFilterTypeChange={v => { setFilterType(v); setCurrentPage(1); }}
+                onFilterStatusChange={v => { setFilterStatus(v); setCurrentPage(1); }}
+                onFilterRhStatusChange={v => { setFilterRhStatus(v); setCurrentPage(1); }}
+                onSortByChange={v => { setSortBy(v); setCurrentPage(1); }}
               />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Finalidade</label>
-              <select
-                value={filterType}
-                onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1); }}
-                className="w-full bg-white border border-border-subtle p-2 rounded-xl outline-none focus:border-slate-400 text-[11px] cursor-pointer"
+              <button
+                onClick={() => setMobileFiltersOpen(false)}
+                className="w-full py-3 rounded-xl font-extrabold text-sm"
+                style={{ background: '#00BCD4', color: '#0F2342' }}
               >
-                <option value="all">Todos os tipos</option>
-                <option value="new_freelancer">Novo Cadastro</option>
-                <option value="update_freelancer">Atualização</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Status do Link</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-                className="w-full bg-white border border-border-subtle p-2 rounded-xl outline-none focus:border-slate-400 text-[11px] cursor-pointer"
-              >
-                <option value="all">Todos os status</option>
-                <option value="active">Ativo</option>
-                <option value="used">Utilizado</option>
-                <option value="expired">Expirado</option>
-                <option value="revoked">Revogado</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Status RH</label>
-              <select
-                value={filterRhStatus}
-                onChange={(e) => { setFilterRhStatus(e.target.value); setCurrentPage(1); }}
-                className="w-full bg-white border border-border-subtle p-2 rounded-xl outline-none focus:border-slate-400 text-[11px] cursor-pointer"
-              >
-                <option value="all">Todos os status</option>
-                <option value="waiting_fill">Aguardando preenchimento</option>
-                <option value="pending_review">Aguardando aprovação</option>
-                <option value="under_review">Em análise</option>
-                <option value="converted">Convertido em freela</option>
-                <option value="approved">Atualização aplicada</option>
-                <option value="rejected">Rejeitado</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] text-slate-500 font-extrabold uppercase tracking-wider block">Ordenação</label>
-              <select
-                value={sortBy}
-                onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
-                className="w-full bg-white border border-border-subtle p-2 rounded-xl outline-none focus:border-slate-400 text-[11px] cursor-pointer"
-              >
-                <option value="recent">Mais recentes</option>
-                <option value="oldest">Mais antigos</option>
-                <option value="used_recent">Preenchidos recentemente</option>
-                <option value="pending_first">Aguardando aprovação primeiro</option>
-              </select>
+                Aplicar filtros
+              </button>
             </div>
           </div>
+        )}
 
-          {/* Table Content */}
-          <div className="flex-1 overflow-x-auto min-h-64">
-            {isLoading ? (
-              <div className="h-64 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-action-cyan animate-spin" />
-              </div>
-            ) : links.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-center text-text-secondary select-none">
-                <Calendar className="w-10 h-10 text-slate-300 mb-2" />
-                <p className="font-bold">Nenhum link gerado ainda.</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Use o formulário ao lado para criar o primeiro.</p>
-              </div>
-            ) : paginatedLinks.length === 0 ? (
-              <div className="h-64 flex flex-col items-center justify-center text-center text-text-secondary select-none">
-                <Calendar className="w-10 h-10 text-slate-300 mb-2" />
-                <p className="font-bold">Nenhum link encontrado com os filtros aplicados.</p>
-              </div>
-            ) : (
-              <>
-                <table className="w-full text-left border-collapse min-w-[900px]">
-                  <thead>
-                    <tr className="border-b border-border-subtle bg-slate-50 select-none">
-                      <SortableHeader label="Tipo" sortKey="link_type" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                      <SortableHeader label="Freela/Candidato" sortKey="displayName" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                      <SortableHeader label="Status do Link" sortKey="status" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                      <SortableHeader label="Status RH" sortKey="rhStatusLabel" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                      <SortableHeader label="Criado por" sortKey="creatorName" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                      <SortableHeader label="Criado em" sortKey="created_at" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                      <SortableHeader label="Preenchido em" sortKey="used_at" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                      <SortableHeader label="Expira em" sortKey="expires_at" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                      <th className="p-3 text-[9px] text-slate-500 font-extrabold uppercase tracking-wider text-left">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {paginatedLinks.map((link) => {
-                      const isCopied = copiedLinkId === link.id;
-                      const clearToken = link.metadata?.token;
-                      const displayName = getLinkDisplayName(link);
-                      
-                      // Resolve emails for subtitle rendering
-                      const emailVal = link.submission?.submitted_data?.email || link.freelancer?.email || '';
+        {/* Table Content */}
+        <div className="p-6">
+          {isLoading ? (
+            <div className="h-64 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--accent)' }} />
+            </div>
+          ) : links.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center text-center select-none" style={{ color: 'var(--text-secondary)' }}>
+              <Calendar className="w-10 h-10 mb-3" style={{ color: 'var(--text-disabled)' }} />
+              <p className="font-bold text-base">Nenhum link gerado ainda.</p>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                Use o painel acima para criar o primeiro acesso temporário.
+              </p>
+            </div>
+          ) : paginatedLinks.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center text-center select-none" style={{ color: 'var(--text-secondary)' }}>
+              <Calendar className="w-10 h-10 mb-3" style={{ color: 'var(--text-disabled)' }} />
+              <p className="font-bold text-base">Nenhum link encontrado com os filtros aplicados.</p>
+              <button
+                onClick={() => { setSearchQuery(''); setFilterType('all'); setFilterStatus('all'); setFilterRhStatus('all'); setCurrentPage(1); }}
+                className="mt-3 px-4 py-2 rounded-xl border text-sm font-bold cursor-pointer"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+              >
+                Limpar filtros
+              </button>
+            </div>
+          ) : (
+            <>
+              <ResponsiveDataTable
+                columns={columns}
+                data={paginatedLinks}
+                rowKey={(link) => link.id}
+                isLoading={isLoading}
+                activeSortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={requestSort}
+                mobileRenderer={mobileLinkRenderer}
+              />
 
-                      return (
-                        <tr key={link.id} className="hover:bg-slate-50/50">
-                          <td className="p-3 font-bold truncate">
-                            {link.link_type === 'new_freelancer' ? (
-                              <span className="flex items-center gap-1.5 text-[#0F2342]">
-                                <Plus className="w-3.5 h-3.5 text-blue-500 shrink-0" /> Novo Cadastro
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1.5 text-slate-700">
-                                <RotateCcw className="w-3.5 h-3.5 text-indigo-500 shrink-0" /> Atualização
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 truncate max-w-xs">
-                            <div className="flex flex-col">
-                              <span className="font-bold text-slate-800">{displayName}</span>
-                              {emailVal && <span className="text-[9px] text-slate-400 mt-0.5">{emailVal}</span>}
-                            </div>
-                          </td>
-                          <td className="p-3">{renderStatusChip(link.status)}</td>
-                          <td className="p-3">{renderRhStatusChip(link)}</td>
-                          <td className="p-3 truncate max-w-xs">{link.creator?.full_name || '—'}</td>
-                          <td className="p-3 whitespace-nowrap">{new Date(link.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                          <td className="p-3 whitespace-nowrap">
-                            {link.used_at ? (
-                              <span className="text-blue-600 font-semibold">{new Date(link.used_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                            ) : (
-                              <span className="text-slate-400 italic">—</span>
-                            )}
-                          </td>
-                          <td className="p-3 whitespace-nowrap">
-                            {link.expires_at ? (
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-slate-400" />
-                                {new Date(link.expires_at).toLocaleDateString('pt-BR')}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 italic">Sem expiração</span>
-                            )}
-                          </td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              {clearToken && link.status === 'active' && (
-                                <button
-                                  onClick={() => handleCopyLink(clearToken, link.link_type, link.id)}
-                                  className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition cursor-pointer"
-                                  title="Copiar URL"
-                                >
-                                  {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                                </button>
-                              )}
-                              {link.status === 'active' && (
-                                <button
-                                  onClick={() => handleOpenQRModal(link)}
-                                  className="p-1.5 bg-[#0F2342]/10 hover:bg-[#0F2342]/20 text-[#0F2342] rounded-lg transition cursor-pointer"
-                                  title="Ver QR Code"
-                                >
-                                  <QrCode className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              {isMasterOrRh && link.status === 'active' && (
-                                <button
-                                  onClick={() => handleRevokeLink(link.id)}
-                                  className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition cursor-pointer"
-                                  title="Desativar Link"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              
-                              {/* Ver submissão action */}
-                              {link.submission && (
-                                <button
-                                  onClick={() => setSelectedSubmissionForView(link.submission)}
-                                  className="p-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition cursor-pointer flex items-center gap-1 text-[10px] font-extrabold"
-                                  title="Ver Submissão"
-                                >
-                                  <Eye className="w-3.5 h-3.5" /> Ver Submissão
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-
-                {/* Pagination */}
-                <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 pt-4 mt-4 select-none text-[11px] text-slate-500 font-bold gap-3">
-                  <div className="flex items-center gap-3">
-                    <span>
-                      {totalItems === 0 ? '0 itens' : `${((currentPage - 1) * pageSize) + 1}–${Math.min(currentPage * pageSize, totalItems)} de ${totalItems} itens`}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <span>Itens por página:</span>
-                      <select
-                        value={pageSize}
-                        onChange={(e) => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }}
-                        className="bg-white border border-border-subtle p-1 rounded-md outline-none text-[10px] font-bold cursor-pointer"
-                      >
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                      </select>
-                    </div>
+              {/* ── Pagination ─────────────────────────────────────────────────── */}
+              <div
+                className="flex flex-col sm:flex-row items-center justify-between border-t pt-4 mt-4 select-none text-sm gap-3"
+                style={{ borderColor: 'var(--border-soft)', color: 'var(--text-muted)' }}
+              >
+                <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    {totalItems === 0 ? '0 itens' : `${((currentPage - 1) * pageSize) + 1}–${Math.min(currentPage * pageSize, totalItems)} de ${totalItems} itens`}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Itens por página:</span>
+                    <select
+                      value={pageSize}
+                      onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }}
+                      className="border rounded-lg p-1 outline-none text-sm font-bold cursor-pointer"
+                      style={{ background: 'var(--bg-input)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+                      aria-label="Itens por página"
+                    >
+                      <option value="10">10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                    </select>
                   </div>
-                  {totalPages > 1 && (
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg disabled:opacity-50 transition cursor-pointer"
-                      >
-                        Anterior
-                      </button>
-                      <button
-                        type="button"
-                        disabled={currentPage === totalPages}
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg disabled:opacity-50 transition cursor-pointer"
-                      >
-                        Próximo
-                      </button>
-                    </div>
-                  )}
                 </div>
-              </>
-            )}
-          </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      className="p-2 rounded-xl border transition cursor-pointer disabled:opacity-40"
+                      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+                      aria-label="Página anterior"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm font-bold px-1" style={{ color: 'var(--text-primary)' }}>
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      className="p-2 rounded-xl border transition cursor-pointer disabled:opacity-40"
+                      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+                      aria-label="Próxima página"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Cleanup Modal */}
+      {/* ── Cleanup Modal ─────────────────────────────────────────────────────── */}
       {cleanupModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fade-in p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+          style={{ background: 'rgba(6,17,31,0.72)', backdropFilter: 'blur(4px)' }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)' }}
+          >
             <div>
-              <h3 className="text-sm font-extrabold text-[#0F2342] flex items-center gap-2">
-                <Trash2 className="w-5 h-5 text-red-500" /> Limpar histórico de links
+              <h3 className="text-base font-extrabold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                <Trash2 className="w-5 h-5" style={{ color: 'var(--danger-text)' }} />
+                Limpar histórico de links
               </h3>
-              <p className="text-[10px] text-slate-500 mt-1">
+              <p className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                 Esta ação removerá links públicos de teste e seus registros associados. Não serão apagados freelancers oficiais já aprovados.
               </p>
             </div>
 
-            <div className="space-y-2.5">
-              <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Opções de Limpeza</label>
-              
-              <label className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition select-none">
-                <input
-                  type="radio"
-                  name="cleanup_option"
-                  checked={cleanupOption === 1}
-                  onChange={() => setCleanupOption(1)}
-                  className="mt-0.5"
-                />
-                <div>
-                  <p className="font-extrabold text-slate-800 text-[11px]">1. Limpar apenas links sem submissão</p>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Remove apenas links ativos, expirados ou revogados que nunca foram acessados ou preenchidos.</p>
-                </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
+                Opções de Limpeza
               </label>
 
-              <label className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition select-none">
-                <input
-                  type="radio"
-                  name="cleanup_option"
-                  checked={cleanupOption === 2}
-                  onChange={() => setCleanupOption(2)}
-                  className="mt-0.5"
-                />
-                <div>
-                  <p className="font-extrabold text-slate-800 text-[11px]">2. Limpar links usados e submissões pendentes</p>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Remove submissões ainda pendentes de análise RH de teste e seus respectivos links usados.</p>
-                </div>
-              </label>
-
-              <label className="flex items-start gap-2.5 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition select-none">
-                <input
-                  type="radio"
-                  name="cleanup_option"
-                  checked={cleanupOption === 3}
-                  onChange={() => setCleanupOption(3)}
-                  className="mt-0.5"
-                />
-                <div>
-                  <p className="font-extrabold text-slate-800 text-[11px]">3. Limpar todo o histórico de links e submissões</p>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Limpa absolutamente todo o histórico e submissões da tela, mas mantém os freelancers oficiais na base do banco.</p>
-                </div>
-              </label>
+              {[
+                { value: 1, title: '1. Limpar apenas links sem submissão', desc: 'Remove apenas links ativos, expirados ou revogados que nunca foram acessados ou preenchidos.' },
+                { value: 2, title: '2. Limpar links usados e submissões pendentes', desc: 'Remove submissões ainda pendentes de análise RH de teste e seus respectivos links usados.' },
+                { value: 3, title: '3. Limpar todo o histórico de links e submissões', desc: 'Limpa absolutamente todo o histórico e submissões da tela, mas mantém os freelancers oficiais na base do banco.' },
+              ].map(opt => (
+                <label
+                  key={opt.value}
+                  className="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition select-none"
+                  style={{ borderColor: cleanupOption === opt.value ? 'var(--accent)' : 'var(--border-soft)', background: 'var(--bg-surface-elevated)' }}
+                >
+                  <input
+                    type="radio"
+                    name="cleanup_option"
+                    checked={cleanupOption === opt.value}
+                    onChange={() => setCleanupOption(opt.value)}
+                    className="mt-0.5 accent-cyan-500"
+                  />
+                  <div>
+                    <p className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>{opt.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{opt.desc}</p>
+                  </div>
+                </label>
+              ))}
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setCleanupModalOpen(false)}
-                className="flex-1 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-extrabold transition cursor-pointer text-center text-xs"
+                className="flex-1 py-2.5 rounded-xl border font-extrabold text-sm transition cursor-pointer"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleCleanupHistory}
                 disabled={isActionLoading}
-                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl transition cursor-pointer flex items-center justify-center gap-1 shadow-sm disabled:opacity-50 text-xs"
+                className="flex-1 py-2.5 rounded-xl font-black text-sm transition cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50 border"
+                style={{ background: 'var(--danger-bg)', borderColor: 'var(--danger-border)', color: 'var(--danger-text)' }}
               >
-                {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash className="w-3.5 h-3.5" />} Confirmar Limpeza
+                {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash className="w-3.5 h-3.5" />}
+                Confirmar Limpeza
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Submission Details Drawer */}
+      {/* ── Submission Details Drawer ─────────────────────────────────────────── */}
       {selectedSubmissionForView && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex justify-end" onClick={() => setSelectedSubmissionForView(null)}>
-          <div 
-            className="w-full md:w-[500px] bg-white h-full shadow-2xl flex flex-col animate-slide-in"
-            onClick={(e) => e.stopPropagation()}
+        <div
+          className="fixed inset-0 z-50 flex justify-end animate-fade-in"
+          style={{ background: 'rgba(6,17,31,0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setSelectedSubmissionForView(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full md:w-[500px] h-full shadow-2xl flex flex-col animate-slide-in"
+            style={{ background: 'var(--bg-surface)' }}
+            onClick={e => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center select-none bg-slate-50">
+            <div
+              className="p-6 border-b flex justify-between items-center select-none"
+              style={{ borderColor: 'var(--border-soft)', background: 'var(--bg-surface-elevated)' }}
+            >
               <div>
-                <h3 className="text-sm font-extrabold text-[#0F2342]">Submissão do Candidato</h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">
+                <h3 className="text-base font-extrabold" style={{ color: 'var(--text-primary)' }}>
+                  Submissão do Candidato
+                </h3>
+                <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   Enviada em {new Date(selectedSubmissionForView.created_at).toLocaleString('pt-BR')}
                 </p>
               </div>
               <button
                 onClick={() => setSelectedSubmissionForView(null)}
-                className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition cursor-pointer"
+                className="p-2 rounded-xl transition cursor-pointer"
+                style={{ color: 'var(--text-muted)' }}
+                aria-label="Fechar drawer"
               >
-                Fechar
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 text-slate-700">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6" style={{ color: 'var(--text-primary)' }}>
               {/* Status Section */}
-              <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl flex justify-between items-center select-none">
+              <div
+                className="p-4 rounded-2xl border flex justify-between items-center select-none"
+                style={{ background: 'var(--bg-surface-elevated)', borderColor: 'var(--border-soft)' }}
+              >
                 <div className="space-y-1">
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Status da Análise RH</span>
-                  <span className="font-extrabold text-slate-800 text-xs">
+                  <span className="text-xs font-bold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
+                    Status da Análise RH
+                  </span>
+                  <span className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
                     {getLinkRhStatus({ submission: selectedSubmissionForView }).label}
                   </span>
                 </div>
-                {/* Quick link buttons based on status */}
                 <div className="flex gap-2">
                   {isMasterOrRh && (selectedSubmissionForView.status === 'pending_review' || selectedSubmissionForView.status === 'under_review') && (
                     <button
@@ -924,7 +1496,8 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                         setSelectedSubmissionForView(null);
                         db.setActiveTab('Análise de Pré-cadastros');
                       }}
-                      className="bg-action-cyan hover:bg-[#0ea5e9] text-[#0F2342] font-black px-3.5 py-2 rounded-xl transition text-[10px] uppercase tracking-wider shadow-xs cursor-pointer"
+                      className="px-3.5 py-2 rounded-xl font-black text-xs uppercase tracking-wider shadow-sm cursor-pointer"
+                      style={{ background: '#00BCD4', color: '#0F2342' }}
                     >
                       Ir para Aprovação
                     </button>
@@ -936,7 +1509,8 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                         db.setActiveTab('Perfil do Freelancer');
                         setSelectedSubmissionForView(null);
                       }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 rounded-xl transition text-[10px] uppercase tracking-wider shadow-xs cursor-pointer"
+                      className="px-3.5 py-2 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-sm cursor-pointer"
+                      style={{ background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}
                     >
                       Ver Freela
                     </button>
@@ -948,7 +1522,8 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                         db.setActiveTab('Perfil do Freelancer');
                         setSelectedSubmissionForView(null);
                       }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3.5 py-2 rounded-xl transition text-[10px] uppercase tracking-wider shadow-xs cursor-pointer"
+                      className="px-3.5 py-2 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-sm cursor-pointer"
+                      style={{ background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' }}
                     >
                       Ver Freela
                     </button>
@@ -958,19 +1533,26 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
 
               {/* Notes Section if reviewed */}
               {selectedSubmissionForView.reviewed_at && (
-                <div className="bg-amber-500/10 border border-amber-500/25 p-4 rounded-2xl space-y-2 select-none">
-                  <div className="flex justify-between items-center text-[10px] font-bold text-amber-900">
+                <div
+                  className="p-4 rounded-2xl border space-y-2 select-none"
+                  style={{ background: 'var(--warning-bg)', borderColor: 'var(--warning-border)' }}
+                >
+                  <div className="flex justify-between items-center text-xs font-bold" style={{ color: 'var(--warning-text)' }}>
                     <span>Revisado em {new Date(selectedSubmissionForView.reviewed_at).toLocaleDateString('pt-BR')}</span>
                     <span>Por: {selectedSubmissionForView.reviewer?.full_name || 'Sistema'}</span>
                   </div>
-                  <p className="text-slate-700 text-[11px] leading-relaxed italic">{selectedSubmissionForView.review_notes || 'Sem observações.'}</p>
+                  <p className="text-sm leading-relaxed italic" style={{ color: 'var(--text-primary)' }}>
+                    {selectedSubmissionForView.review_notes || 'Sem observações.'}
+                  </p>
                 </div>
               )}
 
               {/* Submission Details */}
               {selectedSubmissionForView.submission_type === 'update_freelancer' ? (
                 <div className="space-y-3">
-                  <h4 className="font-extrabold text-slate-800 text-[10px] uppercase tracking-wider">Alterações Solicitadas</h4>
+                  <h4 className="font-extrabold text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                    Alterações Solicitadas
+                  </h4>
                   <SubmissionDiffViewer
                     currentData={selectedSubmissionForView.current_data_snapshot}
                     submittedData={selectedSubmissionForView.submitted_data}
@@ -981,11 +1563,11 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
               ) : (
                 <div className="space-y-4">
                   {/* Dados Pessoais */}
-                  <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-3">
-                    <h4 className="font-extrabold text-slate-800 pb-1 border-b border-slate-200 uppercase tracking-wider text-[9px]">
+                  <div className="p-4 rounded-2xl border space-y-3" style={{ background: 'var(--bg-surface-elevated)', borderColor: 'var(--border-soft)' }}>
+                    <h4 className="font-extrabold pb-1 border-b uppercase tracking-wider text-xs" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-soft)' }}>
                       Dados Pessoais &amp; Contato
                     </h4>
-                    <div className="space-y-2 text-slate-750">
+                    <div className="space-y-2 text-sm">
                       <p><strong>Nome Completo:</strong> {selectedSubmissionForView.submitted_data.full_name}</p>
                       <p><strong>E-mail:</strong> {selectedSubmissionForView.submitted_data.email || '—'}</p>
                       <p><strong>WhatsApp:</strong> {selectedSubmissionForView.submitted_data.whatsapp || '—'}</p>
@@ -994,16 +1576,24 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                   </div>
 
                   {/* Perfil Profissional */}
-                  <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-3">
-                    <h4 className="font-extrabold text-slate-800 pb-1 border-b border-slate-200 uppercase tracking-wider text-[9px]">
+                  <div className="p-4 rounded-2xl border space-y-3" style={{ background: 'var(--bg-surface-elevated)', borderColor: 'var(--border-soft)' }}>
+                    <h4 className="font-extrabold pb-1 border-b uppercase tracking-wider text-xs" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-soft)' }}>
                       Perfil Profissional
                     </h4>
-                    <div className="space-y-2 text-slate-750">
+                    <div className="space-y-2 text-sm">
                       <p>
                         <strong>Função Principal:</strong>{' '}
                         {functions.find(f => f.id === selectedSubmissionForView.submitted_data.main_function_id)?.name || selectedSubmissionForView.submitted_data.main_function_id || '—'}
                       </p>
-                      <p><strong>Senioridade:</strong> <span className="bg-blue-50 border border-blue-100 text-blue-800 px-1.5 py-0.5 rounded uppercase font-bold text-[9px]">{selectedSubmissionForView.submitted_data.seniority || '—'}</span></p>
+                      <p>
+                        <strong>Senioridade:</strong>{' '}
+                        <span
+                          className="px-1.5 py-0.5 rounded uppercase font-bold text-xs border"
+                          style={{ background: 'var(--info-bg)', color: 'var(--info-text)', borderColor: 'var(--info-border)' }}
+                        >
+                          {selectedSubmissionForView.submitted_data.seniority || '—'}
+                        </span>
+                      </p>
                       <p><strong>Situação Atual:</strong> {selectedSubmissionForView.submitted_data.current_situation || '—'}</p>
                       <p><strong>Disponibilidade:</strong> {selectedSubmissionForView.submitted_data.availability || '—'}</p>
                       <div>
@@ -1012,7 +1602,11 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                           {selectedSubmissionForView.submitted_data.industries?.map((id: string) => {
                             const name = industries.find(i => i.id === id)?.name || id;
                             return (
-                              <span key={id} className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-[9px] font-bold">
+                              <span
+                                key={id}
+                                className="px-2 py-0.5 rounded-md text-xs font-bold"
+                                style={{ background: 'var(--neutral-bg)', color: 'var(--neutral-text)', border: '1px solid var(--neutral-border)' }}
+                              >
                                 {name}
                               </span>
                             );
@@ -1023,25 +1617,48 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                   </div>
 
                   {/* Portfólio */}
-                  <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-3">
-                    <h4 className="font-extrabold text-slate-800 pb-1 border-b border-slate-200 uppercase tracking-wider text-[9px]">
+                  <div className="p-4 rounded-2xl border space-y-3" style={{ background: 'var(--bg-surface-elevated)', borderColor: 'var(--border-soft)' }}>
+                    <h4 className="font-extrabold pb-1 border-b uppercase tracking-wider text-xs" style={{ color: 'var(--text-primary)', borderColor: 'var(--border-soft)' }}>
                       Portfólio &amp; Links
                     </h4>
-                    <div className="space-y-2 text-slate-755">
+                    <div className="space-y-2 text-sm">
                       {selectedSubmissionForView.submitted_data.portfolio_url && (
-                        <p><strong>Portfólio URL:</strong> <a href={selectedSubmissionForView.submitted_data.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-bold hover:underline inline-flex items-center gap-0.5">{selectedSubmissionForView.submitted_data.portfolio_url}</a></p>
+                        <p>
+                          <strong>Portfólio URL:</strong>{' '}
+                          <a
+                            href={selectedSubmissionForView.submitted_data.portfolio_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold hover:underline inline-flex items-center gap-0.5"
+                            style={{ color: 'var(--info-text)' }}
+                          >
+                            {selectedSubmissionForView.submitted_data.portfolio_url}
+                          </a>
+                        </p>
                       )}
                       {selectedSubmissionForView.submitted_data.linkedin_url && (
-                        <p><strong>LinkedIn:</strong> <a href={selectedSubmissionForView.submitted_data.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-bold hover:underline inline-flex items-center gap-0.5">{selectedSubmissionForView.submitted_data.linkedin_url}</a></p>
+                        <p>
+                          <strong>LinkedIn:</strong>{' '}
+                          <a
+                            href={selectedSubmissionForView.submitted_data.linkedin_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold hover:underline inline-flex items-center gap-0.5"
+                            style={{ color: 'var(--info-text)' }}
+                          >
+                            {selectedSubmissionForView.submitted_data.linkedin_url}
+                          </a>
+                        </p>
                       )}
                       {selectedSubmissionForView.submitted_data.portfolio_file_url && (
-                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                        <div className="pt-2 border-t flex items-center justify-between" style={{ borderColor: 'var(--border-soft)' }}>
                           <span className="font-bold">Portfólio Anexo:</span>
-                          <a 
-                            href={selectedSubmissionForView.submitted_data.portfolio_file_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="bg-[#0F2342] text-white hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-1 transition text-[10px] font-extrabold"
+                          <a
+                            href={selectedSubmissionForView.submitted_data.portfolio_file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 rounded-lg flex items-center gap-1 transition text-xs font-extrabold"
+                            style={{ background: '#0F2342', color: '#fff' }}
                           >
                             Baixar Anexo
                           </a>
@@ -1056,7 +1673,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
         </div>
       )}
 
-      {/* QR Code Viewer Modal */}
+      {/* ── QR Code Viewer Modal ─────────────────────────────────────────────── */}
       {modalOpen && modalData && (
         <QRCodeModal
           isOpen={modalOpen}
@@ -1074,4 +1691,3 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     </div>
   );
 }
-

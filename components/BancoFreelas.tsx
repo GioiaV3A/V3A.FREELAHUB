@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DatabaseProps } from '@/app/page';
 import { 
   Search, 
@@ -30,6 +30,7 @@ import { supabase } from '@/lib/supabase';
 import { countries } from '@/lib/countries';
 import CnpjInput from './CnpjInput';
 import { validateCnpj, formatCnpj } from '@/lib/cnpj';
+import { ResponsiveDataTable, Column } from './ResponsiveDataTable';
 
 export default function BancoFreelas({ db }: { db: any }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -475,21 +476,314 @@ export default function BancoFreelas({ db }: { db: any }) {
     );
   };
 
-  // Skeleton rows loader
-  const SkeletonRow = () => (
-    <tr className="animate-pulse">
-      <td className="px-6 py-4"><div className="bg-slate-200 h-10 w-48 rounded-lg"></div></td>
-      <td className="px-6 py-4"><div className="bg-slate-200 h-8 w-32 rounded-lg"></div></td>
-      <td className="px-6 py-4"><div className="bg-slate-200 h-6 w-20 rounded-lg"></div></td>
-      <td className="px-6 py-4"><div className="bg-slate-200 h-6 w-24 rounded-lg"></div></td>
-      <td className="px-6 py-4"><div className="bg-slate-200 h-6 w-24 rounded-lg"></div></td>
-      <td className="px-6 py-4"><div className="bg-slate-200 h-6 w-16 rounded-lg"></div></td>
-      <td className="px-6 py-4"><div className="bg-slate-200 h-6 w-32 rounded-lg"></div></td>
-      <td className="px-6 py-4"><div className="bg-slate-200 h-6 w-32 rounded-lg"></div></td>
-      <td className="px-6 py-4"><div className="bg-slate-200 h-6 w-20 rounded-lg"></div></td>
-      <td className="px-6 py-4 text-center"><div className="bg-slate-200 h-8 w-20 rounded-lg mx-auto"></div></td>
-    </tr>
-  );
+  const columns = useMemo<Column<any>[]>(() => [
+    {
+      key: 'name',
+      label: 'Freelancer',
+      sortKey: 'name',
+      width: '26%',
+      render: (f: any) => {
+        const isBlocked = f.status === 'Bloqueado';
+        const initials = f.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white uppercase text-[10px] shrink-0
+              ${isBlocked ? 'bg-rose-600/40' : 'bg-sidebar-navy'}`}>
+              {initials}
+            </div>
+            <div className="truncate">
+              <p 
+                onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }} 
+                className="font-bold text-text-primary hover:text-action-cyan cursor-pointer transition-colors hover:underline truncate text-sm"
+              >
+                {f.name}
+              </p>
+              <p className="text-[10px] text-text-secondary truncate mt-0.5" title={`${f.email} • ${f.whatsapp}`}>
+                {f.email} • {f.whatsapp}
+              </p>
+              {f.cnpj_normalized ? (
+                <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                  CNPJ: {formatCnpj(f.cnpj_normalized)} {f.cnpj_is_mock && <span className="bg-amber-100 text-amber-800 text-[8px] font-bold px-1 rounded-sm ml-1 select-none">CNPJ de teste</span>}
+                </p>
+              ) : f.foreign_tax_id ? (
+                <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                  Tax ID: {f.foreign_tax_id} ({f.tax_country_code})
+                </p>
+              ) : null}
+            </div>
+          </div>
+        );
+      }
+    },
+    {
+      key: 'role',
+      label: 'Função / Senioridade',
+      sortKey: 'role',
+      width: '16%',
+      render: (f: any) => (
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold text-text-primary text-sm truncate">{f.mainRole}</span>
+            {(f.mainRole === 'Planejamento' || f.mainRole?.includes('Planejamento')) && (
+              <span className="bg-cyan-50 text-cyan-800 text-[8px] font-bold px-1 rounded-md">PLANNER</span>
+            )}
+          </div>
+          <span className="text-[10px] text-text-secondary mt-0.5">{f.seniority}</span>
+        </div>
+      )
+    },
+    {
+      key: 'location',
+      label: 'Localização',
+      sortKey: 'location',
+      width: '12%',
+      render: (f: any) => (
+        <span className="text-text-primary font-medium text-sm truncate block">
+          {f.locationText || `${f.city}, ${f.state}`}
+        </span>
+      )
+    },
+    {
+      key: 'availability',
+      label: 'Disponibilidade',
+      sortKey: 'availability',
+      width: '14%',
+      render: (f: any) => (
+        <div className="flex flex-wrap gap-1">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold border
+            ${f.availability === 'Imediata' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' : ''}
+            ${f.availability === '15 dias' ? 'bg-blue-50 text-blue-700 border-blue-150 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30' : ''}
+            ${f.availability === '30+ dias' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30' : ''}
+            ${f.availability === 'Indisponível' ? 'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-800 dark:text-slate-450 dark:border-slate-700' : ''}
+          `}>
+            {f.availability}
+          </span>
+          {f.contractType && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-150 dark:bg-indigo-950/20 dark:text-indigo-300 dark:border-indigo-900/30">
+              {f.contractType}
+            </span>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'experience',
+      label: 'Histórico V3A',
+      sortKey: 'experience',
+      width: '10%',
+      render: (f: any) => (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+          {f.hasWorkedWithV3a || (f.experienceWithV3A ? 'Sim' : 'Nunca')}
+        </span>
+      )
+    },
+    {
+      key: 'score',
+      label: 'Score e segmentos',
+      sortKey: 'score',
+      width: '14%',
+      render: (f: any) => (
+        <div className="flex flex-col gap-1.5 items-start">
+          <ScoreStars score={f.averageScore} size="sm" showNumber={true} />
+          <div className="flex flex-col gap-0.5">
+            {f.industries && <div className="text-[10px] text-text-muted truncate max-w-[120px]" title={f.industries}>Segmentos: {renderChipsWithTooltip(f.industries, 1)}</div>}
+            {f.brandsWorked && <div className="text-[10px] text-text-muted truncate max-w-[120px]" title={f.brandsWorked}>Marcas: {renderBrandsWithTooltip(f.brandsWorked, 1)}</div>}
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      label: 'Status e ações',
+      sortKey: 'status',
+      width: '12%',
+      align: 'right',
+      render: (f: any) => {
+        const isBlocked = f.status === 'Bloqueado';
+        return (
+          <div className="flex flex-col gap-1 items-end">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border
+              ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' : ''}
+              ${f.status === 'Em onboarding' ? 'bg-cyan-50 text-cyan-800 border-cyan-150 dark:bg-cyan-950/20 dark:text-cyan-300 dark:border-cyan-900/30' : ''}
+              ${f.status === 'Em observação' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30' : ''}
+              ${f.status === 'Em análise' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30' : ''}
+              ${f.status === 'Bloqueado' ? 'bg-rose-50 text-rose-700 border-rose-150 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/30' : ''}
+              ${f.status === 'Inativo' ? 'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-800 dark:text-slate-455 dark:border-slate-700' : ''}
+            `}>
+              {f.status}
+            </span>
+            <div className="flex items-center justify-end gap-0.5 mt-1">
+              <button
+                onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }}
+                className="p-1 text-slate-500 hover:text-action-cyan hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                title="Visualizar dossiê"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') && (
+                <>
+                  <button
+                    onClick={() => openEditModal(f)}
+                    className="p-1 text-slate-500 hover:text-blue-650 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    title="Editar Cadastro"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleToggleBlock(f.id, f.status)}
+                    className={`p-1 rounded-lg transition-colors ${isBlocked 
+                      ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20' 
+                      : 'text-rose-605 hover:bg-rose-50 dark:hover:bg-rose-950/20'}`}
+                    title={isBlocked ? 'Desbloquear Profissional' : 'Bloquear / Aplicar Veto'}
+                  >
+                    {isBlocked ? <Check className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
+                  </button>
+                </>
+              )}
+              {db.selectedJobId && f.status === 'Elegível' && (
+                <button
+                  onClick={() => handleAddToShortlistDirect(f)}
+                  className="p-1 text-slate-500 hover:text-cyan-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  title="Adicionar à Shortlist"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [sortBy, sortOrder, db.selectedJobId]);
+
+  const mobileFreelancerRenderer = (f: any) => {
+    const isBlocked = f.status === 'Bloqueado';
+    const initials = f.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+    return (
+      <div 
+        className={`p-4 bg-white dark:bg-bg-card rounded-2xl border border-border-soft space-y-3.5 transition-shadow hover:shadow-xs
+          ${isBlocked ? 'bg-rose-50/20 border-rose-200 dark:bg-rose-950/5' : ''}`}
+      >
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex items-center gap-3 animate-fade-in">
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-white uppercase text-[11px] shrink-0
+              ${isBlocked ? 'bg-rose-600/40' : 'bg-sidebar-navy'}`}>
+              {initials}
+            </div>
+            <div>
+              <h4 
+                onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }} 
+                className="font-bold text-text-primary text-sm hover:underline cursor-pointer"
+              >
+                {f.name}
+              </h4>
+              <p className="text-[10px] text-text-secondary mt-0.5">{f.email} • {f.whatsapp}</p>
+            </div>
+          </div>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-bold border
+            ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' : ''}
+            ${f.status === 'Em onboarding' ? 'bg-cyan-50 text-cyan-800 border-cyan-150 dark:bg-cyan-950/20 dark:text-cyan-300 dark:border-cyan-900/30' : ''}
+            ${f.status === 'Em observação' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30' : ''}
+            ${f.status === 'Em análise' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30' : ''}
+            ${f.status === 'Bloqueado' ? 'bg-rose-50 text-rose-700 border-rose-150 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/30' : ''}
+            ${f.status === 'Inativo' ? 'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-800 dark:text-slate-450 dark:border-slate-700' : ''}
+          `}>
+            {f.status}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3" style={{ borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Perfil</p>
+            <p className="font-bold text-text-primary mt-0.5 truncate">{f.mainRole}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{f.seniority}</p>
+          </div>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Localização</p>
+            <p className="font-semibold text-text-primary mt-0.5 truncate">{f.locationText || `${f.city}, ${f.state}`}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3" style={{ borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Disponibilidade</p>
+            <p className="font-semibold text-text-primary mt-0.5">{f.availability} {f.contractType ? `(${f.contractType})` : ''}</p>
+          </div>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Experiência V3A</p>
+            <p className="font-semibold text-text-primary mt-0.5">{f.hasWorkedWithV3a || (f.experienceWithV3A ? 'Sim' : 'Nunca')}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3" style={{ borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">CNPJ</p>
+            <p className="font-semibold text-text-primary mt-0.5 truncate">
+              {f.cnpj_normalized ? formatCnpj(f.cnpj_normalized) : f.foreign_tax_id || '—'}
+            </p>
+          </div>
+          <div>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Avaliação</p>
+            <div className="mt-0.5">
+              <ScoreStars score={f.averageScore} size="sm" showNumber={true} />
+            </div>
+          </div>
+        </div>
+
+        {f.industries && (
+          <div className="border-t pt-2" style={{ borderColor: 'var(--border-soft)' }}>
+            <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider mb-1">Segmentos</p>
+            {renderChipsWithTooltip(f.industries, 4)}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
+          <button 
+            onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }}
+            className="flex items-center gap-1 px-3 py-2 rounded-xl font-bold text-xs cursor-pointer border hover:bg-slate-50 dark:hover:bg-slate-800"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
+          >
+            <Eye className="w-4 h-4" /> Ver Perfil
+          </button>
+          
+          <div className="flex items-center gap-1">
+            {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') && (
+              <>
+                <button
+                  onClick={() => openEditModal(f)}
+                  className="p-2 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  style={{ borderColor: 'var(--border-soft)', color: 'var(--text-secondary)' }}
+                  title="Editar Cadastro"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleToggleBlock(f.id, f.status)}
+                  className={`p-2 rounded-xl border transition-colors ${isBlocked 
+                    ? 'border-emerald-200 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20' 
+                    : 'border-rose-200 text-rose-600 bg-rose-50 dark:bg-rose-950/20'}`}
+                  title={isBlocked ? 'Desbloquear' : 'Bloquear'}
+                >
+                  {isBlocked ? <Check className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+                </button>
+              </>
+            )}
+            {db.selectedJobId && f.status === 'Elegível' && (
+              <button
+                onClick={() => handleAddToShortlistDirect(f)}
+                className="p-2 rounded-xl border hover:bg-cyan-50 dark:hover:bg-slate-800 transition-colors"
+                style={{ borderColor: 'var(--border-soft)', color: 'var(--accent)' }}
+                title="Adicionar à Shortlist"
+              >
+                <UserPlus className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div id="banco-freelas-container" className="space-y-6">
@@ -658,310 +952,19 @@ export default function BancoFreelas({ db }: { db: any }) {
       </div>
 
       {/* Main card database view */}
-      <div className="bg-white rounded-2xl border border-border-subtle shadow-xs overflow-hidden">
-        
-        {/* DESKTOP TABLE VIEW */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-xs whitespace-nowrap table-fixed">
-            <thead className="bg-[#0A192F] text-white font-bold border-b border-border-subtle">
-              <tr>
-                <SortableHeader field="name" label="Freela" width="310px" />
-                <SortableHeader field="role" label="Função / Senioridade" width="180px" />
-                <SortableHeader field="location" label="Localização" width="140px" />
-                <SortableHeader field="availability" label="Disponibilidade" width="150px" />
-                <SortableHeader field="experience" label="Experiência V3A" width="140px" />
-                <SortableHeader field="score" label="Score Inicial" width="120px" />
-                <th style={{ width: '220px' }} className="px-4 py-3 text-[10px] uppercase tracking-wider font-bold text-text-secondary">Segmentos</th>
-                <th style={{ width: '220px' }} className="px-4 py-3 text-[10px] uppercase tracking-wider font-bold text-text-secondary">Marcas</th>
-                <SortableHeader field="status" label="Status" width="130px" />
-                <th style={{ width: '120px' }} className="px-4 py-3 text-center text-[10px] uppercase tracking-wider font-bold text-text-secondary">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-subtle align-middle">
-              {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-              ) : paginatedFreelancers.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center text-text-secondary italic">
-                    Nenhum freelancer encontrado com os filtros selecionados.
-                  </td>
-                </tr>
-              ) : (
-                paginatedFreelancers.map((f) => {
-                  const isBlocked = f.status === 'Bloqueado';
-                  const initials = f.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
-                  
-                  return (
-                    <tr 
-                      key={f.id} 
-                      className={`hover:bg-slate-50 transition-colors h-[76px]
-                        ${isBlocked ? 'bg-rose-50/40 text-rose-950/80' : ''}`}
-                    >
-                      {/* Identity contact cell */}
-                      <td className="px-6 py-3 overflow-hidden">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white uppercase text-[10px] shrink-0
-                            ${isBlocked ? 'bg-rose-600/40' : 'bg-sidebar-navy'}`}>
-                            {initials}
-                          </div>
-                          <div className="truncate">
-                            <p 
-                              onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }} 
-                              className="font-bold text-text-primary hover:text-action-cyan cursor-pointer transition-colors hover:underline truncate"
-                            >
-                              {f.name}
-                            </p>
-                            <p className="text-[10px] text-text-secondary truncate mt-0.5" title={`${f.email} • ${f.whatsapp}`}>
-                              {f.email} • {f.whatsapp}
-                            </p>
-                            {f.cnpj_normalized ? (
-                              <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                                CNPJ: {formatCnpj(f.cnpj_normalized)} {f.cnpj_is_mock && <span className="bg-amber-100 text-amber-800 text-[8px] font-bold px-1 rounded-sm ml-1 select-none">CNPJ de teste</span>}
-                              </p>
-                            ) : f.foreign_tax_id ? (
-                              <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                                Tax ID: {f.foreign_tax_id} ({f.tax_country_code})
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Role & Seniority */}
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-text-primary truncate">{f.mainRole}</span>
-                            {(f.mainRole === 'Planejamento' || f.mainRole?.includes('Planejamento')) && (
-                              <span className="bg-cyan-50 text-cyan-800 text-[8px] font-bold px-1 rounded-md">PLANNER</span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-text-secondary mt-0.5">{f.seniority}</span>
-                        </div>
-                      </td>
-
-                      {/* Location */}
-                      <td className="px-4 py-3">
-                        <span className="text-text-primary font-medium truncate block">
-                          {f.locationText || `${f.city}, ${f.state}`}
-                        </span>
-                      </td>
-
-                      {/* Availability */}
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold border
-                            ${f.availability === 'Imediata' ? 'bg-emerald-50 text-emerald-700 border-emerald-150' : ''}
-                            ${f.availability === '15 dias' ? 'bg-blue-50 text-blue-700 border-blue-150' : ''}
-                            ${f.availability === '30+ dias' ? 'bg-amber-50 text-[#B28900] border-amber-150' : ''}
-                            ${f.availability === 'Indisponível' ? 'bg-slate-100 text-slate-650 border-slate-200' : ''}
-                          `}>
-                            {f.availability}
-                          </span>
-                          {f.contractType && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-150">
-                              {f.contractType}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Experience V3A */}
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border bg-slate-50 text-slate-700 border-slate-200`}>
-                          {f.hasWorkedWithV3a || (f.experienceWithV3A ? 'Sim' : 'Nunca')}
-                        </span>
-                      </td>
-
-                      {/* Average Stars score */}
-                      <td className="px-4 py-3">
-                        <ScoreStars score={f.averageScore} size="sm" showNumber={true} />
-                      </td>
-
-                      {/* Segmentos */}
-                      <td className="px-4 py-3">
-                        {renderChipsWithTooltip(f.industries, 2)}
-                      </td>
-
-                      {/* Marcas */}
-                      <td className="px-4 py-3">
-                        {renderBrandsWithTooltip(f.brandsWorked, 2)}
-                      </td>
-
-                      {/* Core Status */}
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border
-                          ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150' : ''}
-                          ${f.status === 'Em onboarding' ? 'bg-cyan-50 text-cyan-800 border-cyan-150' : ''}
-                          ${f.status === 'Em observação' ? 'bg-amber-50 text-[#B28900] border-amber-150' : ''}
-                          ${f.status === 'Em análise' ? 'bg-amber-50 text-[#B28900] border-amber-150' : ''}
-                          ${f.status === 'Bloqueado' ? 'bg-rose-50 text-rose-700 border-rose-150' : ''}
-                          ${f.status === 'Inativo' ? 'bg-slate-100 text-slate-600 border-slate-200' : ''}
-                        `}>
-                          {f.status}
-                        </span>
-                      </td>
-
-                      {/* Action buttons */}
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }}
-                            className="p-1 text-slate-500 hover:text-action-cyan hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Visualizar dossiê"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') && (
-                            <>
-                              <button
-                                onClick={() => openEditModal(f)}
-                                className="p-1 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
-                                title="Editar Cadastro"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-
-                              <button
-                                onClick={() => handleToggleBlock(f.id, f.status)}
-                                className={`p-1 rounded-lg transition-colors ${isBlocked 
-                                  ? 'text-emerald-600 hover:bg-emerald-50' 
-                                  : 'text-rose-600 hover:bg-rose-50'}`}
-                                title={isBlocked ? 'Desbloquear Profissional' : 'Bloquear / Aplicar Veto'}
-                              >
-                                {isBlocked ? <Check className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
-                              </button>
-                            </>
-                          )}
-
-                          {db.selectedJobId && f.status === 'Elegível' && (
-                            <button
-                              onClick={() => handleAddToShortlistDirect(f)}
-                              className="p-1 text-slate-500 hover:text-cyan-600 hover:bg-slate-100 rounded-lg transition-colors"
-                              title="Adicionar à Shortlist"
-                            >
-                              <UserPlus className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* MOBILE CARDS VIEW */}
-        <div className="md:hidden divide-y divide-border-subtle">
-          {isLoading ? (
-            Array.from({ length: 4 }).map((_, idx) => (
-              <div key={idx} className="p-4 space-y-3 animate-pulse bg-white">
-                <div className="flex justify-between items-center">
-                  <div className="bg-slate-200 h-8 w-32 rounded-lg"></div>
-                  <div className="bg-slate-200 h-5 w-16 rounded-full"></div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-slate-200 h-6 w-24 rounded-lg"></div>
-                  <div className="bg-slate-200 h-6 w-20 rounded-lg"></div>
-                </div>
-              </div>
-            ))
-          ) : paginatedFreelancers.length === 0 ? (
-            <div className="p-8 text-center text-text-secondary italic">
-              Nenhum freelancer encontrado com os filtros selecionados.
-            </div>
-          ) : (
-            paginatedFreelancers.map((f) => {
-              const isBlocked = f.status === 'Bloqueado';
-              return (
-                <div 
-                  key={f.id} 
-                  className={`p-4 bg-white space-y-3.5
-                    ${isBlocked ? 'bg-rose-50/45 text-rose-950/80' : ''}`}
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <h4 
-                        onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }} 
-                        className="font-bold text-text-primary text-sm hover:underline cursor-pointer"
-                      >
-                        {f.name}
-                      </h4>
-                      <p className="text-[10px] text-text-secondary mt-0.5">{f.email} • {f.whatsapp}</p>
-                      {f.cnpj_normalized ? (
-                        <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                          CNPJ: {formatCnpj(f.cnpj_normalized)} {f.cnpj_is_mock && <span className="bg-amber-100 text-amber-800 text-[8px] font-bold px-1 rounded-sm ml-1 select-none">CNPJ de teste</span>}
-                        </p>
-                      ) : f.foreign_tax_id ? (
-                        <p className="text-[10px] text-slate-500 mt-0.5 font-medium">
-                          Tax ID: {f.foreign_tax_id} ({f.tax_country_code})
-                        </p>
-                      ) : null}
-                    </div>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold shrink-0 border
-                      ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150' : ''}
-                      ${f.status === 'Bloqueado' ? 'bg-rose-50 text-rose-700 border-rose-150' : ''}
-                      ${f.status === 'Em onboarding' ? 'bg-cyan-50 text-cyan-850 border-cyan-150' : 'bg-slate-100 text-slate-700 border-slate-200'}
-                    `}>
-                      {f.status}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3 text-[11px] pt-1.5 border-t border-dashed border-border-subtle">
-                    <div>
-                      <span className="text-[9px] text-text-secondary font-bold uppercase block">Função / Sênior</span>
-                      <span className="font-semibold text-text-primary leading-tight mt-0.5 block">{f.mainRole} ({f.seniority})</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-text-secondary font-bold uppercase block">Disponibilidade</span>
-                      <span className="font-medium text-text-primary mt-0.5 block">{f.availability}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-text-secondary font-bold uppercase block">Localização</span>
-                      <span className="font-medium text-text-primary mt-0.5 block">{f.locationText || `${f.city}/${f.state}`}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-text-secondary font-bold uppercase block">Avaliação</span>
-                      <span className="font-semibold text-text-primary mt-0.5 block">
-                        {f.averageScore > 0 ? `${f.averageScore.toFixed(2)} ★` : '—'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-2 border-t border-dashed border-border-subtle">
-                    <button
-                      onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }}
-                      className="bg-slate-50 hover:bg-slate-100 border border-border-subtle text-text-primary font-bold px-3 py-1.5 rounded-xl text-[10px]"
-                    >
-                      Ver Perfil
-                    </button>
-
-                    {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') && (
-                      <button
-                        onClick={() => openEditModal(f)}
-                        className="bg-slate-50 hover:bg-slate-100 border border-border-subtle text-text-primary font-bold px-3 py-1.5 rounded-xl text-[10px]"
-                      >
-                        Editar
-                      </button>
-                    )}
-
-                    {db.selectedJobId && f.status === 'Elegível' && (
-                      <button
-                        onClick={() => handleAddToShortlistDirect(f)}
-                        className="bg-cyan-50 hover:bg-cyan-100 border border-cyan-250 text-cyan-800 font-bold px-3 py-1.5 rounded-xl text-[10px]"
-                      >
-                        Shortlist
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+      <div className="bg-white rounded-2xl border border-border-subtle shadow-xs p-6">
+        <ResponsiveDataTable
+          columns={columns}
+          data={paginatedFreelancers}
+          rowKey={(f) => f.id}
+          isLoading={isLoading}
+          activeSortKey={sortBy}
+          sortDirection={sortOrder}
+          onSort={handleSort}
+          mobileRenderer={mobileFreelancerRenderer}
+          emptyState="Nenhum freelancer encontrado com os filtros selecionados."
+        />
+      </div>
 
         {/* PAGINATION PANEL FOOTER */}
         {totalItems > 0 && (
@@ -1010,7 +1013,6 @@ export default function BancoFreelas({ db }: { db: any }) {
             </div>
           </div>
         )}
-      </div>
 
       {/* EDIT FREELANCER MODAL */}
       {isEditModalOpen && editingFreelancer && (
