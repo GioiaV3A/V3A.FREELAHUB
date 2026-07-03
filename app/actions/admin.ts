@@ -1157,6 +1157,7 @@ export async function confirmAllocationAction(
     preferredDueDay?: number;
     paymentTerms?: string;
     paymentNotes?: string;
+    excludedDates?: string[];
   }
 ) {
   try {
@@ -1250,7 +1251,13 @@ export async function confirmAllocationAction(
     }
 
     let totalContractValue = payload.paymentModel === 'monthly_recurring'
-      ? (payload.recurringAmount || payload.negotiatedRate) * generateMonthlyInstallmentsList(start_date, end_date, payload.preferredDueDay || 5, payload.recurringAmount || payload.negotiatedRate).length
+      ? (() => {
+          let list = generateMonthlyInstallmentsList(start_date, end_date, payload.preferredDueDay || 5, payload.recurringAmount || payload.negotiatedRate);
+          if (payload.excludedDates && payload.excludedDates.length > 0) {
+            list = list.filter(inst => !payload.excludedDates?.includes(inst.due_date));
+          }
+          return list.reduce((sum, inst) => sum + inst.amount, 0);
+        })()
       : negotiatedTotal;
 
     const budgetSavingAmount = Number(reqData.budget_max || 0) - totalContractValue;
@@ -1304,8 +1311,12 @@ export async function confirmAllocationAction(
       const preferredDueDay = payload.preferredDueDay || 5;
       const recurringAmount = payload.recurringAmount || payload.negotiatedRate;
       
-      const installments = generateMonthlyInstallmentsList(start_date, end_date, preferredDueDay, recurringAmount);
+      let installments = generateMonthlyInstallmentsList(start_date, end_date, preferredDueDay, recurringAmount);
+      if (payload.excludedDates && payload.excludedDates.length > 0) {
+        installments = installments.filter(inst => !payload.excludedDates?.includes(inst.due_date));
+      }
       
+      let currentNumber = 1;
       for (const inst of installments) {
         const { error: instErr } = await adminClient
           .from('allocation_payment_schedules')
@@ -1314,8 +1325,8 @@ export async function confirmAllocationAction(
             job_id: reqData.job_id,
             freelancer_id: payload.freelancerId,
             nucleo_id: job.nucleo_id,
-            installment_number: inst.installment_number,
-            payment_number: inst.installment_number,
+            installment_number: currentNumber,
+            payment_number: currentNumber,
             total_payments: installments.length,
             reference_period_start: inst.reference_period_start,
             reference_period_end: inst.reference_period_end,
@@ -1328,6 +1339,7 @@ export async function confirmAllocationAction(
         if (instErr) {
           console.error('Error generating installment schedule:', instErr);
         }
+        currentNumber++;
       }
     } else {
       const preferredDueDay = payload.preferredDueDay || 5;

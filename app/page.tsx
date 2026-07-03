@@ -352,7 +352,7 @@ export default function Home() {
             notes: sc.notes || '',
             negotiationStatus: mapCandidateStatusToUI(sc.negotiation_status || sc.candidate_status),
             negotiatedRate: Number(sc.negotiated_rate || 0),
-            remunerationModel: sc.remuneration_model || 'diaria',
+            remunerationModel: mapBillingTypeToUI(sc.remuneration_model),
             policyStatus: sc.policy_status || 'pending_check',
             scheduleConflict: sc.schedule_conflict || false,
             requiresRhApproval: sc.requires_rh_approval || false,
@@ -371,6 +371,13 @@ export default function Home() {
             estimatedHours: sc.estimated_hours !== null && sc.estimated_hours !== undefined ? Number(sc.estimated_hours) : undefined,
             scheduleApprovalId: sc.schedule_approval_id || null,
             valueApprovalId: sc.value_approval_id || null,
+            paymentModel: sc.payment_model === 'recurring' ? 'monthly_recurring' : 'one_time',
+            contractStartDate: sc.contract_start_date || '',
+            contractEndDate: sc.contract_end_date || '',
+            preferredDueDay: sc.preferred_due_day || 5,
+            paymentTerms: sc.payment_terms || '',
+            paymentNotes: sc.payment_notes || '',
+            paymentDatesExcluded: sc.payment_dates_excluded || [],
           }))
         );
       }
@@ -992,7 +999,7 @@ export default function Home() {
           notes: s.notes || null,
           negotiation_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
           negotiated_rate: s.negotiatedRate || null,
-          remuneration_model: s.remunerationModel || 'diaria',
+          remuneration_model: mapBillingTypeToDB(s.remunerationModel || 'Diária'),
           policy_status: s.policyStatus || 'pending_check',
           schedule_conflict: s.scheduleConflict || false,
           requires_rh_approval: s.requiresRhApproval || false,
@@ -1011,6 +1018,13 @@ export default function Home() {
           estimated_hours: s.estimatedHours || null,
           schedule_approval_id: s.scheduleApprovalId || null,
           value_approval_id: s.valueApprovalId || null,
+          payment_model: s.paymentModel === 'monthly_recurring' ? 'recurring' : 'single',
+          contract_start_date: s.contractStartDate || null,
+          contract_end_date: s.contractEndDate || null,
+          preferred_due_day: s.preferredDueDay || null,
+          payment_terms: s.paymentTerms || null,
+          payment_notes: s.paymentNotes || null,
+          payment_dates_excluded: s.paymentDatesExcluded || [],
         })
         .select('id')
         .single();
@@ -1032,7 +1046,7 @@ export default function Home() {
         notes: s.notes || null,
         negotiation_status: mapCandidateStatusToDB(s.negotiationStatus || s.candidateStatus),
         negotiated_rate: s.negotiatedRate || null,
-        remuneration_model: s.remunerationModel || 'diaria',
+        remuneration_model: mapBillingTypeToDB(s.remunerationModel || 'Diária'),
         policy_status: s.policyStatus || 'pending_check',
         schedule_conflict: s.scheduleConflict || false,
         requires_rh_approval: s.requiresRhApproval || false,
@@ -1051,6 +1065,13 @@ export default function Home() {
         estimated_hours: s.estimatedHours || null,
         schedule_approval_id: s.scheduleApprovalId || null,
         value_approval_id: s.valueApprovalId || null,
+        payment_model: s.paymentModel === 'monthly_recurring' ? 'recurring' : 'single',
+        contract_start_date: s.contractStartDate || null,
+        contract_end_date: s.contractEndDate || null,
+        preferred_due_day: s.preferredDueDay || null,
+        payment_terms: s.paymentTerms || null,
+        payment_notes: s.paymentNotes || null,
+        payment_dates_excluded: s.paymentDatesExcluded || [],
       })
       .eq('id', s.id);
   };

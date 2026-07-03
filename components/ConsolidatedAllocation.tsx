@@ -700,146 +700,148 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
       </div>
 
       {/* 4. Operations Evaluations and Reverse Token */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-border-subtle shadow-xs space-y-6">
-        <div>
-          <h4 className="font-bold text-sidebar-navy dark:text-action-cyan text-sm flex items-center gap-1.5">
-            <Award className="w-5 h-5 text-emerald-650" />
-            <span>Avaliações e Auditoria Operacional 360°</span>
-          </h4>
-          <p className="text-[11px] text-text-secondary mt-0.5">
-            Avaliação final do projeto. A liberação está condicionada ao download/exportação do primeiro faturamento.
-          </p>
-        </div>
-
-        {/* Lock Warning Banner */}
-        {!firstRequestExported && (
-          <div className="bg-amber-55 text-amber-900 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 p-4 rounded-2xl flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
-            <div>
-              <strong className="text-xs block">Avaliações Bloqueadas por Governança</strong>
-              <p className="text-[11px] mt-0.5 leading-relaxed">
-                Para liberar a avaliação do freelancer e da entrega técnica, você deve primeiro gerar e exportar (fazer o download/PDF) da primeira parcela de faturamento na tabela acima.
-              </p>
-            </div>
+      {allocation.status === 'Concluído' && (
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-border-subtle shadow-xs space-y-6">
+          <div>
+            <h4 className="font-bold text-sidebar-navy dark:text-action-cyan text-sm flex items-center gap-1.5">
+              <Award className="w-5 h-5 text-emerald-650" />
+              <span>Avaliações e Auditoria Operacional 360°</span>
+            </h4>
+            <p className="text-[11px] text-text-secondary mt-0.5">
+              Avaliação final do projeto. A liberação está condicionada ao download/exportação do primeiro faturamento.
+            </p>
           </div>
-        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-          {/* A. Evaluation Freelancer */}
-          <div className="border border-border-subtle p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20 space-y-4 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <h5 className="font-bold text-xs text-sidebar-navy dark:text-action-cyan uppercase tracking-wider flex items-center gap-1.5">
-                  <User className="w-4 h-4" />
-                  <span>Avaliar Freelancer (Comportamental)</span>
-                </h5>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                  allocation.evaluatedFreelancer
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border-amber-200'
-                }`}>
-                  {allocation.evaluatedFreelancer ? 'Concluída' : 'Pendente'}
-                </span>
+          {/* Lock Warning Banner */}
+          {!firstRequestExported && (
+            <div className="bg-amber-55 text-amber-900 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 p-4 rounded-2xl flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
+              <div>
+                <strong className="text-xs block">Avaliações Bloqueadas por Governança</strong>
+                <p className="text-[11px] mt-0.5 leading-relaxed">
+                  Para liberar a avaliação do freelancer e da entrega técnica, você deve primeiro gerar e exportar (fazer o download/PDF) da primeira parcela de faturamento na tabela acima.
+                </p>
               </div>
-              <p className="text-[11px] text-text-secondary leading-relaxed">
-                Analise critérios de comportamento, comunicação, autonomia, confiabilidade e aderência à cultura da V3A.
-              </p>
             </div>
+          )}
 
-            <div className="pt-3 border-t border-border-subtle flex justify-end">
-              <button
-                disabled={!firstRequestExported || allocation.evaluatedFreelancer || isRh}
-                onClick={() => setActiveEvalType('freelancer')}
-                className="bg-slate-900 hover:bg-slate-850 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 transition-colors"
-              >
-                <Sliders className="w-4 h-4" />
-                {allocation.evaluatedFreelancer ? 'Avaliação Enviada' : 'Avaliar Comportamento'}
-              </button>
-            </div>
-          </div>
-
-          {/* B. Evaluation Delivery */}
-          <div className="border border-border-subtle p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20 space-y-4 flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <h5 className="font-bold text-xs text-sidebar-navy dark:text-action-cyan uppercase tracking-wider flex items-center gap-1.5">
-                  <Briefcase className="w-4 h-4" />
-                  <span>Avaliar Entrega (Qualidade Técnica)</span>
-                </h5>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                  allocation.evaluatedDelivery
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border-amber-200'
-                }`}>
-                  {allocation.evaluatedDelivery ? 'Concluída' : 'Pendente'}
-                </span>
-              </div>
-              <p className="text-[11px] text-text-secondary leading-relaxed">
-                Analise qualidade técnica dos arquivos, cumprimento de briefing, pontualidade de prazos, refações e saving.
-              </p>
-            </div>
-
-            <div className="pt-3 border-t border-border-subtle flex justify-end">
-              <button
-                disabled={!firstRequestExported || allocation.evaluatedDelivery || isRh}
-                onClick={() => setActiveEvalType('delivery')}
-                className="bg-slate-900 hover:bg-slate-850 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 transition-colors"
-              >
-                <Sliders className="w-4 h-4" />
-                {allocation.evaluatedDelivery ? 'Avaliação Enviada' : 'Avaliar Técnica & Prazos'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 5. Reverse Evaluation Link / QR Code Panel (Visible only when both are submitted) */}
-        {allocation.evaluatedFreelancer && allocation.evaluatedDelivery && (
-          <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/40 p-6 rounded-2xl space-y-4 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div className="space-y-1">
-                <h5 className="font-bold text-sm text-emerald-850 dark:text-emerald-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span>Link de Avaliação Reversa Gerado!</span>
-                </h5>
-                <p className="text-xs text-text-secondary">
-                  Envie este link temporário de uso único ao freelancer para que ele avalie a liderança e condições de trabalho.
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            {/* A. Evaluation Freelancer */}
+            <div className="border border-border-subtle p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20 space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <h5 className="font-bold text-xs text-sidebar-navy dark:text-action-cyan uppercase tracking-wider flex items-center gap-1.5">
+                    <User className="w-4 h-4" />
+                    <span>Avaliar Freelancer (Comportamental)</span>
+                  </h5>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    allocation.evaluatedFreelancer
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                  }`}>
+                    {allocation.evaluatedFreelancer ? 'Concluída' : 'Pendente'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-text-secondary leading-relaxed">
+                  Analise critérios de comportamento, comunicação, autonomia, confiabilidade e aderência à cultura da V3A.
                 </p>
               </div>
 
-              {reverseToken && (
+              <div className="pt-3 border-t border-border-subtle flex justify-end">
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(reverseEvalUrl);
-                    alert('📋 Link copiado para a área de transferência!');
-                  }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                  disabled={!firstRequestExported || allocation.evaluatedFreelancer || isRh}
+                  onClick={() => setActiveEvalType('freelancer')}
+                  className="bg-slate-900 hover:bg-slate-850 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 transition-colors"
                 >
-                  <LinkIcon className="w-3.5 h-3.5" />
-                  Copiar Link Público
+                  <Sliders className="w-4 h-4" />
+                  {allocation.evaluatedFreelancer ? 'Avaliação Enviada' : 'Avaliar Comportamento'}
                 </button>
-              )}
+              </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
-              {qrCodeUrl && (
-                <div className="bg-white p-3 rounded-2xl border border-border-subtle shadow-xs shrink-0">
-                  <img src={qrCodeUrl} alt="QR Code Avaliação Reversa" className="w-36 h-36" />
+            {/* B. Evaluation Delivery */}
+            <div className="border border-border-subtle p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20 space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <h5 className="font-bold text-xs text-sidebar-navy dark:text-action-cyan uppercase tracking-wider flex items-center gap-1.5">
+                    <Briefcase className="w-4 h-4" />
+                    <span>Avaliar Entrega (Qualidade Técnica)</span>
+                  </h5>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    allocation.evaluatedDelivery
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                  }`}>
+                    {allocation.evaluatedDelivery ? 'Concluída' : 'Pendente'}
+                  </span>
                 </div>
-              )}
-              <div className="space-y-2 text-xs">
-                <div className="bg-white dark:bg-slate-850 p-3 rounded-xl border border-border-subtle font-mono text-[11px] text-text-primary break-all select-all">
-                  {reverseEvalUrl}
-                </div>
-                <div className="text-[11px] text-text-secondary leading-relaxed space-y-1">
-                  <p>&bull; O link expira automaticamente em 30 dias.</p>
-                  <p>&bull; Link de uso único: será invalidado permanentemente após a submissão.</p>
-                  <p>&bull; As respostas do freelancer serão 100% anônimas e auditadas para governança.</p>
-                </div>
+                <p className="text-[11px] text-text-secondary leading-relaxed">
+                  Analise qualidade técnica dos arquivos, cumprimento de briefing, pontualidade de prazos, refações e saving.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-border-subtle flex justify-end">
+                <button
+                  disabled={!firstRequestExported || allocation.evaluatedDelivery || isRh}
+                  onClick={() => setActiveEvalType('delivery')}
+                  className="bg-slate-900 hover:bg-slate-850 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 transition-colors"
+                >
+                  <Sliders className="w-4 h-4" />
+                  {allocation.evaluatedDelivery ? 'Avaliação Enviada' : 'Avaliar Técnica & Prazos'}
+                </button>
               </div>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* 5. Reverse Evaluation Link / QR Code Panel (Visible only when both are submitted) */}
+          {allocation.evaluatedFreelancer && allocation.evaluatedDelivery && (
+            <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/40 p-6 rounded-2xl space-y-4 animate-fade-in text-left">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="space-y-1">
+                  <h5 className="font-bold text-sm text-emerald-850 dark:text-emerald-400 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <span>Link de Avaliação Reversa Gerado!</span>
+                  </h5>
+                  <p className="text-xs text-text-secondary">
+                    Envie este link temporário de uso único ao freelancer para que ele avalie a liderança e condições de trabalho.
+                  </p>
+                </div>
+
+                {reverseToken && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(reverseEvalUrl);
+                      alert('📋 Link copiado para a área de transferência!');
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    Copiar Link Público
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-6 pt-2">
+                {qrCodeUrl && (
+                  <div className="bg-white p-3 rounded-2xl border border-border-subtle shadow-xs shrink-0">
+                    <img src={qrCodeUrl} alt="QR Code Avaliação Reversa" className="w-36 h-36" />
+                  </div>
+                )}
+                <div className="space-y-2 text-xs">
+                  <div className="bg-white dark:bg-slate-850 p-3 rounded-xl border border-border-subtle font-mono text-[11px] text-text-primary break-all select-all">
+                    {reverseEvalUrl}
+                  </div>
+                  <div className="text-[11px] text-text-secondary leading-relaxed space-y-1">
+                    <p>&bull; O link expira automaticamente em 30 dias.</p>
+                    <p>&bull; Link de uso único: será invalidado permanentemente após a submissão.</p>
+                    <p>&bull; As respostas do freelancer serão 100% anônimas e auditadas para governança.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 6. Modals for Evaluations */}
       {activeEvalType && (

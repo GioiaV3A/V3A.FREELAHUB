@@ -80,6 +80,7 @@ export type JobStatus = string;
 
 export interface Job {
   id: string;
+  jobId?: string;
   name: string;
   client: string;
   nucleoId: string;
@@ -150,6 +151,14 @@ export interface Shortlist {
   estimatedHours?: number;
   scheduleApprovalId?: string | null;
   valueApprovalId?: string | null;
+  // Persistent negotiation fields
+  paymentModel?: string;
+  contractStartDate?: string;
+  contractEndDate?: string;
+  preferredDueDay?: number;
+  paymentTerms?: string;
+  paymentNotes?: string;
+  paymentDatesExcluded?: string[];
 }
 
 export interface Negotiation {
@@ -170,9 +179,9 @@ export interface ValuePolicy {
   billingType: 'Diária' | 'Hora' | 'Job Fechado' | 'Mensal / Salário';
   referenceValue: number;
   ceilingValue: number;
-  status?: 'Ativo' | 'Inativo';
+  status: 'Ativo' | 'Inativo';
+  remunerationModel?: string;
   updatedAt?: string;
-  remunerationModel?: 'daily' | 'hourly' | 'fixed_job' | 'monthly_salary';
   approvalRequiredAbove?: number;
   notes?: string;
 }
@@ -187,6 +196,7 @@ export interface Allocation {
   endDate: string;
   approvedValue: number;
   status: string;
+  createdAt?: string;
   // Financial calculation fields
   negotiatedTotal?: number;
   budgetSavingAmount?: number;

@@ -142,14 +142,17 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const [excludedDates, setExcludedDates] = useState<Record<string, string[]>>({});
   const [visualRates, setVisualRates] = useState<Record<string, string>>({});
 
+  // Build the default negotiation state for a candidate, preferring data saved in the shortlist
   const getCandidateNeg = (freelancerId: string, sl?: any) => {
     if (candidateNegotiations[freelancerId]) {
       return candidateNegotiations[freelancerId];
     }
-    const defaultModel = activeJob?.paymentFlow === 'recurring' ? 'monthly_recurring' : 'one_time';
-    const defaultStart = activeJob?.startDate || '';
-    const defaultEnd = activeJob?.endDate || '';
-    const defaultDue = activeJob?.expectedPaymentDay || 5;
+    // Prefer saved shortlist values over job defaults
+    const savedModel = sl?.paymentModel as 'one_time' | 'monthly_recurring' | 'milestone' | undefined;
+    const defaultModel = savedModel || (activeJob?.paymentFlow === 'recurring' ? 'monthly_recurring' : 'one_time');
+    const defaultStart = sl?.contractStartDate || activeJob?.startDate || '';
+    const defaultEnd = sl?.contractEndDate || activeJob?.endDate || '';
+    const defaultDue = sl?.preferredDueDay || activeJob?.expectedPaymentDay || 5;
     const defaultRate = sl?.negotiatedRate || activeJob?.expectedRate || 0;
     
     return {
@@ -157,10 +160,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       contractStartDate: defaultStart,
       contractEndDate: defaultEnd,
       recurringAmount: defaultRate,
-      recurringAmountVisual: new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(defaultRate),
+      recurringAmountVisual: defaultRate > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(defaultRate) : '',
       preferredDueDay: defaultDue,
-      paymentTerms: '',
-      paymentNotes: ''
+      paymentTerms: sl?.paymentTerms || '',
+      paymentNotes: sl?.paymentNotes || ''
     };
   };
 
@@ -324,6 +327,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     } else {
       setNegotiatingFreelancerId('');
     }
+    // Re-initialize candidateNegotiations from saved shortlist data when job changes
+    setCandidateNegotiations({});
+    setExcludedDates({});
+    setVisualRates({});
   }
 
   // --- STEP 3: NEGOTIATION FORM INPUTS ---
@@ -361,6 +368,63 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays > 0 ? job.budget / diffDays : job.budget;
+  };
+
+  const getInstallmentsList = (startDateStr: string, endDateStr: string, preferredDueDay: number, recurringAmount: number) => {
+    const list: Array<{
+      installment_number: number;
+      reference_period: string;
+      due_date: string;
+      due_date_formatted: string;
+      amount: number;
+    }> = [];
+    if (!startDateStr || !endDateStr) return list;
+    
+    const start = new Date(startDateStr + 'T12:00:00');
+    const end = new Date(endDateStr + 'T12:00:00');
+    
+    let currentStart = new Date(start);
+    let installmentNum = 1;
+    
+    while (currentStart < end) {
+      let idealEnd = new Date(currentStart);
+      idealEnd.setMonth(idealEnd.getMonth() + 1);
+      idealEnd.setDate(idealEnd.getDate() - 1);
+      
+      let currentEnd = new Date(idealEnd);
+      if (currentEnd > end) {
+        currentEnd = new Date(end);
+      }
+      
+      let nextMonthDate = new Date(currentEnd);
+      nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+      
+      let dueDay = preferredDueDay;
+      let tempDue = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth(), dueDay, 12, 0, 0);
+      if (tempDue.getMonth() !== nextMonthDate.getMonth()) {
+        tempDue = new Date(nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1, 0, 12, 0, 0);
+      }
+      
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const formatDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      
+      const refLabel = currentStart.getMonth() === currentEnd.getMonth()
+        ? currentStart.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+        : `${currentStart.toLocaleDateString('pt-BR', { month: 'short' })} a ${currentEnd.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}`;
+        
+      list.push({
+        installment_number: installmentNum++,
+        reference_period: refLabel.charAt(0).toUpperCase() + refLabel.slice(1),
+        due_date: formatDate(tempDue),
+        due_date_formatted: tempDue.toLocaleDateString('pt-BR'),
+        amount: recurringAmount
+      });
+      
+      let nextStart = new Date(currentEnd);
+      nextStart.setDate(nextStart.getDate() + 1);
+      currentStart = nextStart;
+    }
+    return list;
   };
 
   const hasScheduleConflict = (freelancerId: string, startDate: string, endDate: string) => {
@@ -557,14 +621,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     {
       key: 'actions',
       label: 'Ação',
-      width: '100px',
+      width: '120px',
       align: 'center',
       render: (job: any) => {
         const isSelected = selectedJobIdLocal === job.id;
         return (
           <button
             onClick={() => handleSelectJob(job.id)}
-            className={`font-bold px-3 py-1.5 rounded-lg text-[11px] border transition-all cursor-pointer ${
+            className={`font-bold w-[110px] h-[32px] flex items-center justify-center rounded-lg text-[11px] border transition-all cursor-pointer ${
               isSelected 
                 ? 'bg-emerald-600 border-emerald-600 text-white' 
                 : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
@@ -1163,6 +1227,29 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       estimatedHours?: number;
     }
   ) => {
+    // Sincronizar Taxa Acordada com Valor Mensal se houver alteração
+    if (updates.negotiatedRate !== undefined) {
+      const newRate = updates.negotiatedRate;
+      updateCandidateNeg(freelancerId, {
+        recurringAmount: newRate,
+        recurringAmountVisual: newRate > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(newRate) : ''
+      });
+    }
+
+    // Sincronizar Modelo de Remuneração com o Modelo de Pagamento
+    if (updates.remunerationModel !== undefined) {
+      const m = updates.remunerationModel;
+      if (m === 'Mensal / Salário' || m === 'Mensal') {
+        updateCandidateNeg(freelancerId, {
+          paymentModel: 'monthly_recurring'
+        });
+      } else {
+        updateCandidateNeg(freelancerId, {
+          paymentModel: 'one_time'
+        });
+      }
+    }
+
     db.setShortlists(prev => prev.map(sl => {
       if (sl.jobId === selectedJobIdLocal && sl.freelancerId === freelancerId) {
         const rate = updates.negotiatedRate !== undefined ? updates.negotiatedRate : sl.negotiatedRate;
@@ -1356,7 +1443,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         return;
       }
 
-      const res = await confirmAllocationAction(token, {
+       const res = await confirmAllocationAction(token, {
         requestId: activeJob.id,
         freelancerId,
         negotiatedRate: rate,
@@ -1368,7 +1455,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         recurringAmount: candNeg.paymentModel === 'monthly_recurring' ? (candNeg.recurringAmount || rate) : undefined,
         preferredDueDay: candNeg.preferredDueDay,
         paymentTerms: candNeg.paymentTerms,
-        paymentNotes: candNeg.paymentNotes
+        paymentNotes: candNeg.paymentNotes,
+        excludedDates: excludedDates[freelancerId]
       });
 
       if (!res.success) {
@@ -1651,88 +1739,112 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
           </div>
 
           {/* Stepper Steps UI */}
-          <div className="flex items-center gap-1.5 md:gap-4 text-xs font-semibold">
-            {/* Step 1 */}
-            <button 
-              onClick={() => handleNavigateStep(1)}
-              className={`flex items-center gap-2 p-2 px-3.5 rounded-xl border transition-all ${
-                activeStep === 1 
-                  ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs' 
-                  : selectedJobIdLocal 
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                    : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
-              }`}
-            >
-              <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] ${
-                activeStep === 1 ? 'bg-action-cyan text-sidebar-navy font-bold' : 'bg-emerald-600 text-white'
-              }`}>
-                {selectedJobIdLocal ? <Check className="w-3 h-3" /> : '1'}
-              </span>
-              <span>1. Seleção do Job</span>
-            </button>
+          <div className="flex flex-wrap md:flex-nowrap items-center justify-center md:justify-end gap-1.5 md:gap-3 text-xs font-semibold w-full md:w-auto">
+            {/* Step 1 — ativo quando job selecionado */}
+            {(() => {
+              const s1Done = activeStep > 1;
+              const s1Active = activeStep === 1;
+              return (
+                <button
+                  onClick={() => handleNavigateStep(1)}
+                  className={`w-full sm:w-auto md:w-[170px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all ${
+                    s1Active
+                      ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs'
+                      : s1Done
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
+                  }`}
+                >
+                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                    s1Active ? 'bg-action-cyan text-sidebar-navy' : s1Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-text-secondary'
+                  }`}>
+                    {s1Active ? '1' : s1Done ? <Check className="w-3 h-3" /> : '1'}
+                  </span>
+                  <span>1. Seleção do Job</span>
+                </button>
+              );
+            })()}
 
             <ChevronRight className="w-4 h-4 text-text-secondary hidden md:block" />
 
-            {/* Step 2 */}
-            <button 
-              onClick={() => handleNavigateStep(2)}
-              className={`flex items-center gap-2 p-2 px-3.5 rounded-xl border transition-all ${
-                activeStep === 2 
-                  ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs' 
-                  : jobShortlists.length > 0
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                    : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
-              }`}
-            >
-              <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] ${
-                activeStep === 2 ? 'bg-action-cyan text-sidebar-navy font-bold' : 'bg-slate-200 text-text-secondary'
-              }`}>
-                {jobShortlists.length > 0 && selectedJobIdLocal ? <Check className="w-3 h-3" /> : '2'}
-              </span>
-              <span>2. Shortlist Oficial</span>
-            </button>
+            {/* Step 2 — ativo quando ao menos 1 candidato adicionado ao shortlist */}
+            {(() => {
+              const s2Done = activeStep > 2;
+              const s2Active = activeStep === 2;
+              return (
+                <button
+                  onClick={() => handleNavigateStep(2)}
+                  className={`w-full sm:w-auto md:w-[170px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all ${
+                    s2Active
+                      ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs'
+                      : s2Done
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
+                  }`}
+                >
+                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                    s2Active ? 'bg-action-cyan text-sidebar-navy' : s2Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-text-secondary'
+                  }`}>
+                    {s2Active ? '2' : s2Done ? <Check className="w-3 h-3" /> : '2'}
+                  </span>
+                  <span>2. Shortlist Oficial</span>
+                </button>
+              );
+            })()}
 
             <ChevronRight className="w-4 h-4 text-text-secondary hidden md:block" />
 
-            {/* Step 3 */}
-            <button 
-              onClick={() => handleNavigateStep(3)}
-              className={`flex items-center gap-2 p-2 px-3.5 rounded-xl border transition-all ${
-                activeStep === 3 
-                  ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs' 
-                  : jobShortlists.some(sl => ['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus))
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                    : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
-              }`}
-            >
-              <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] ${
-                activeStep === 3 ? 'bg-action-cyan text-sidebar-navy font-bold' : 'bg-slate-200 text-text-secondary'
-              }`}>
-                {jobShortlists.some(sl => ['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus)) ? <Check className="w-3 h-3" /> : '3'}
-              </span>
-              <span>3. Negociação</span>
-            </button>
+            {/* Step 3 — ativo quando ao menos 1 candidato com taxa negociada ou aceitou */}
+            {(() => {
+              const s3Done = activeStep > 3;
+              const s3Active = activeStep === 3;
+              return (
+                <button
+                  onClick={() => handleNavigateStep(3)}
+                  className={`w-full sm:w-auto md:w-[170px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all ${
+                    s3Active
+                      ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs'
+                      : s3Done
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
+                  }`}
+                >
+                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                    s3Active ? 'bg-action-cyan text-sidebar-navy' : s3Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-text-secondary'
+                  }`}>
+                    {s3Active ? '3' : s3Done ? <Check className="w-3 h-3" /> : '3'}
+                  </span>
+                  <span>3. Negociação</span>
+                </button>
+              );
+            })()}
 
             <ChevronRight className="w-4 h-4 text-text-secondary hidden md:block" />
 
-            {/* Step 4 */}
-            <button 
-              onClick={() => handleNavigateStep(4)}
-              className={`flex items-center gap-2 p-2 px-3.5 rounded-xl border transition-all ${
-                activeStep === 4 
-                  ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs' 
-                  : activeJob?.selectedFreelancerId
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                    : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
-              }`}
-            >
-              <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] ${
-                activeStep === 4 ? 'bg-action-cyan text-sidebar-navy font-bold' : 'bg-slate-200 text-text-secondary'
-              }`}>
-                {activeJob?.selectedFreelancerId ? <Check className="w-3 h-3" /> : '4'}
-              </span>
-              <span>4. Homologação</span>
-            </button>
+            {/* Step 4 — ativo quando alocação homologada */}
+            {(() => {
+              const s4Done = activeJob?.status === 'Bookado' || activeJob?.status === 'Concluído' || !!activeJob?.selectedFreelancerId;
+              const s4Active = activeStep === 4;
+              return (
+                <button
+                  onClick={() => handleNavigateStep(4)}
+                  className={`w-full sm:w-auto md:w-[170px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all ${
+                    s4Active
+                      ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs'
+                      : s4Done
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
+                  }`}
+                >
+                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                    s4Active ? 'bg-action-cyan text-sidebar-navy' : s4Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-text-secondary'
+                  }`}>
+                    {s4Active ? '4' : s4Done ? <Check className="w-3 h-3" /> : '4'}
+                  </span>
+                  <span>4. Homologação</span>
+                </button>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -2049,7 +2161,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         <span className="text-[11px] text-text-secondary font-bold">{shCount} profissionais na shortlist</span>
                         <button
                           onClick={() => handleSelectJob(job.id)}
-                          className={`p-1.5 px-4 rounded-lg font-bold text-xs border transition-all ${
+                          className={`font-bold w-[110px] h-[32px] flex items-center justify-center rounded-lg text-xs border transition-all ${
                             isSelected 
                               ? 'bg-emerald-600 border-emerald-600 text-white' 
                               : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy'
@@ -2092,45 +2204,58 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {/* -------------------- STEP 2: SHORTLIST COMPOSITION -------------------- */}
       {activeStep === 2 && activeJob && (
         <div className="space-y-6">
-          {/* Active Job Meta-Header */}
-          <div className="bg-slate-800 text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6 job-meta-header">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
-                  COD: {activeJob.id.slice(0, 8).toUpperCase()}
-                </span>
-                <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Oportunidade Selecionada</span>
-                <span className="bg-blue-900 text-blue-200 border border-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
-              </div>
-              <h3 className="text-base font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
-              <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs text-slate-300">
-                <div>Função Requerida: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
-                <div>Período: <strong className="text-white">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong></div>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between items-end gap-3 min-w-[200px]">
-              <div className="text-right">
-                <div className="text-[10px] uppercase font-bold text-slate-400">Budget Máximo</div>
-                <div className="text-base font-bold text-action-cyan">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
+          {/* Active Job Meta-Header — dados completos do job */}
+          {(() => {
+            const nucleoName = db.nucleos.find(n => n.id === activeJob.nucleoId)?.name || '—';
+            const paymentFlowLabel = activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : activeJob.paymentFlow === 'one_time' ? 'Pagamento Único' : (activeJob.paymentFlow || '—');
+            const referenceRate = activeJob.expectedRate || activeJob.budget;
+            const paymentDay = activeJob.expectedPaymentDay;
+            return (
+              <div className="bg-slate-800 text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6 job-meta-header">
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                      COD: {activeJob.id.slice(0, 8).toUpperCase()}
+                    </span>
+                    <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Oportunidade Selecionada</span>
+                    <span className="bg-blue-900 text-blue-200 border border-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                  </div>
+                  <h3 className="text-base font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-300">
+                    <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
+                    <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
+                    <div>Período: <strong className="text-white">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong></div>
+                    <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
+                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
+                    {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
+                    {activeJob.description && <div className="w-full">Descrição: <span className="text-slate-300">{activeJob.description}</span></div>}
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-400">
-                  Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
+
+                <div className="flex flex-col justify-between items-end gap-3 min-w-[180px]">
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase font-bold text-slate-400">Budget Máximo</div>
+                    <div className="text-base font-bold text-action-cyan">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleClearJob}
+                      className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600"
+                    >
+                      Trocar Job
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={handleClearJob}
-                  className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600"
-                >
-                  Trocar Job
-                </button>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Booked Locked Alert Banner */}
           {activeJob.selectedFreelancerId && (
@@ -2565,43 +2690,58 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {/* -------------------- STEP 3: CONTRACT NEGOTIATION -------------------- */}
       {activeStep === 3 && activeJob && (
         <div className="space-y-6 animate-fade-in">
-          {/* Active Job Meta-Header */}
-          <div className="bg-[#1E293B] text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-slate-750 text-slate-100 border border-slate-650 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
-                  COD: {activeJob.id.slice(0, 8).toUpperCase()}
-                </span>
-                <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Negociação Individual</span>
-                <span className="bg-blue-955 text-blue-300 border border-blue-800/90 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
-              </div>
-              <h3 className="text-lg font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
-              <p className="text-xs text-slate-200">
-                Alocação: <strong className="text-white font-extrabold">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong> &bull; Período: <strong className="text-white font-extrabold">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong>
-              </p>
-            </div>
-
-            <div className="flex flex-col justify-between items-end gap-3 min-w-[200px]">
-              <div className="text-right">
-                <div className="text-[10px] uppercase font-bold text-slate-300">Budget do Job</div>
-                <div className="text-lg font-extrabold text-action-cyan">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
+          {/* Active Job Meta-Header — dados completos do job */}
+          {(() => {
+            const nucleoName = db.nucleos.find(n => n.id === activeJob.nucleoId)?.name || '—';
+            const paymentFlowLabel = activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : activeJob.paymentFlow === 'one_time' ? 'Pagamento Único' : (activeJob.paymentFlow || '—');
+            const referenceRate = activeJob.expectedRate || activeJob.budget;
+            const paymentDay = activeJob.expectedPaymentDay;
+            return (
+              <div className="bg-slate-800 text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6 job-meta-header">
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                      COD: {activeJob.id.slice(0, 8).toUpperCase()}
+                    </span>
+                    <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Negociação Individual</span>
+                    <span className="bg-blue-900 text-blue-200 border border-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                  </div>
+                  <h3 className="text-base font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-300">
+                    <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
+                    <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
+                    <div>Período: <strong className="text-white">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong></div>
+                    <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
+                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
+                    {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
+                    {activeJob.description && <div className="w-full">Descrição: <span className="text-slate-300">{activeJob.description}</span></div>}
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-300">
-                  Média diária: <strong className="text-white font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}</strong>
+
+                <div className="flex flex-col justify-between items-end gap-3 min-w-[180px]">
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase font-bold text-slate-400">Budget Máximo</div>
+                    <div className="text-base font-bold text-action-cyan">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleNavigateStep(2)}
+                      className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600"
+                    >
+                      Voltar para Shortlist
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleNavigateStep(2)}
-                  className="bg-slate-700 hover:bg-slate-600 text-white font-extrabold p-2 px-3 rounded-lg text-xs transition-all cursor-pointer"
-                >
-                  Voltar para Shortlist
-                </button>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* COMPARISON GRID BETWEEN FREELANCERS */}
           {jobShortlists.length > 1 && (
@@ -3180,14 +3320,19 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           recurringAmountVisual: masked,
                                           recurringAmount: numeric
                                         });
+                                        handleUpdateNegotiation(cand.id, { negotiatedRate: numeric });
+                                        setVisualRates(prev => ({ ...prev, [cand.id]: masked }));
                                       }}
                                       onBlur={() => {
                                         if (candNeg.recurringAmount > 0) {
+                                          const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(candNeg.recurringAmount);
                                           updateCandidateNeg(cand.id, {
-                                            recurringAmountVisual: new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(candNeg.recurringAmount)
+                                            recurringAmountVisual: formatted
                                           });
+                                          setVisualRates(prev => ({ ...prev, [cand.id]: formatted }));
                                         } else {
                                           updateCandidateNeg(cand.id, { recurringAmountVisual: '' });
+                                          setVisualRates(prev => ({ ...prev, [cand.id]: '' }));
                                         }
                                       }}
                                       className="w-full bg-white border border-border-subtle p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-action-cyan text-text-primary"
@@ -3294,12 +3439,20 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           estimatedHours={sl.estimatedHours}
                           installmentsCount={
                             getCandidateNeg(cand.id, sl).paymentModel === 'monthly_recurring'
-                              ? calculateMonthlyPaymentSchedule(
-                                  getCandidateNeg(cand.id, sl).contractStartDate,
-                                  getCandidateNeg(cand.id, sl).contractEndDate,
-                                  getCandidateNeg(cand.id, sl).preferredDueDay,
-                                  getCandidateNeg(cand.id, sl).recurringAmount
-                                ).installmentsCount
+                              ? (() => {
+                                  const schedule = calculateMonthlyPaymentSchedule(
+                                    getCandidateNeg(cand.id, sl).contractStartDate,
+                                    getCandidateNeg(cand.id, sl).contractEndDate,
+                                    getCandidateNeg(cand.id, sl).preferredDueDay,
+                                    getCandidateNeg(cand.id, sl).recurringAmount
+                                  );
+                                  const activeInstallments = schedule.paymentDates.filter((dateObj: Date) => {
+                                    const dateStr = dateObj.toISOString().split('T')[0];
+                                    const isExcluded = (excludedDates[cand.id] || []).includes(dateStr);
+                                    return !isExcluded;
+                                  });
+                                  return activeInstallments.length;
+                                })()
                               : undefined
                           }
                           variant="detailed"
@@ -3336,43 +3489,58 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {/* -------------------- STEP 4: HOMOLOGAÇÃO & ALLOCATION -------------------- */}
       {activeStep === 4 && activeJob && (
         <div className="space-y-6 animate-fade-in">
-          {/* Active Job Meta-Header */}
-          <div className="bg-[#1E293B] text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6">
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-slate-750 text-slate-100 border border-slate-650 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
-                  COD: {activeJob.id.slice(0, 8).toUpperCase()}
-                </span>
-                <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Homologação da Alocação</span>
-                <span className="bg-emerald-950 text-emerald-300 border border-emerald-800/90 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
-              </div>
-              <h3 className="text-lg font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
-              <p className="text-xs text-slate-200">
-                Alocação: <strong className="text-white font-extrabold">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong> &bull; Período: <strong className="text-white font-extrabold">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong>
-              </p>
-            </div>
-
-            <div className="flex flex-col justify-between items-end gap-3 min-w-[200px]">
-              <div className="text-right">
-                <div className="text-[10px] uppercase font-bold text-slate-300">Budget do Job</div>
-                <div className="text-lg font-extrabold text-action-cyan">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
+          {/* Active Job Meta-Header — dados completos do job */}
+          {(() => {
+            const nucleoName = db.nucleos.find(n => n.id === activeJob.nucleoId)?.name || '—';
+            const paymentFlowLabel = activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : activeJob.paymentFlow === 'one_time' ? 'Pagamento Único' : (activeJob.paymentFlow || '—');
+            const referenceRate = activeJob.expectedRate || activeJob.budget;
+            const paymentDay = activeJob.expectedPaymentDay;
+            return (
+              <div className="bg-slate-800 text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6 job-meta-header">
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                      COD: {activeJob.id.slice(0, 8).toUpperCase()}
+                    </span>
+                    <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Homologação da Alocação</span>
+                    <span className="bg-emerald-950 text-emerald-300 border border-emerald-800/90 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                  </div>
+                  <h3 className="text-base font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-300">
+                    <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
+                    <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
+                    <div>Período: <strong className="text-white">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong></div>
+                    <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
+                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
+                    {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
+                    {activeJob.description && <div className="w-full">Descrição: <span className="text-slate-300">{activeJob.description}</span></div>}
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-300">
-                  Média diária: <strong className="text-white font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}</strong>
+
+                <div className="flex flex-col justify-between items-end gap-3 min-w-[180px]">
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase font-bold text-slate-400">Budget Máximo</div>
+                    <div className="text-base font-bold text-action-cyan">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleNavigateStep(3)}
+                      className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600"
+                    >
+                      Voltar para Negociação
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleNavigateStep(3)}
-                  className="bg-slate-700 hover:bg-slate-600 text-white font-extrabold p-2 px-3 rounded-lg text-xs transition-all cursor-pointer"
-                >
-                  Voltar para Negociação
-                </button>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* ===== PAINEL DE EXCEÇÕES PENDENTES (Head do Núcleo / MASTER / RH / C-LEVEL) ===== */}
           {(() => {
@@ -3846,30 +4014,48 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         </strong>
                                       </div>
 
-                                      <div className="sm:col-span-3 space-y-1.5 pt-1">
-                                        <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                          Datas das Parcelas
-                                        </span>
-                                        <div className="flex flex-wrap gap-1.5">
-                                          {schedule.paymentDates.map((dateObj, idx) => {
-                                            const dateStr = dateObj.toISOString().split('T')[0];
-                                            const isExcluded = (excludedDates[cand.id] || []).includes(dateStr);
-                                            return (
-                                              <span 
-                                                key={idx}
-                                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] font-mono ${
-                                                  !isExcluded
-                                                    ? 'bg-action-cyan/10 border-action-cyan/30 text-action-cyan'
-                                                    : 'bg-slate-200 border-slate-350 text-slate-400 line-through'
-                                                }`}
-                                              >
-                                                <Calendar className="w-3 h-3" />
-                                                <span>Parcela {idx + 1}: {dateObj.toLocaleDateString('pt-BR')}</span>
-                                              </span>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
+                                      {(() => {
+                                        const instList = getInstallmentsList(
+                                          candNeg.contractStartDate,
+                                          candNeg.contractEndDate,
+                                          candNeg.preferredDueDay,
+                                          candNeg.recurringAmount
+                                        );
+                                        return (
+                                          <div className="sm:col-span-3 space-y-2 pt-2">
+                                            <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                              Cronograma de Parcelas Homologado
+                                            </span>
+                                            <div className="border border-border-subtle rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                                              <table className="w-full text-left text-xs border-collapse">
+                                                <thead className="bg-slate-50 dark:bg-slate-800 text-[10px] font-bold text-text-secondary uppercase border-b border-border-subtle">
+                                                  <tr>
+                                                    <th className="p-2.5">Parcela</th>
+                                                    <th className="p-2.5">Ref. Competência</th>
+                                                    <th className="p-2.5">Vencimento</th>
+                                                    <th className="p-2.5 text-right">Valor</th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-border-subtle text-text-primary dark:text-white">
+                                                  {instList.map((inst, idx) => {
+                                                    const isExcluded = (excludedDates[cand.id] || []).includes(inst.due_date);
+                                                    return (
+                                                      <tr key={idx} className={isExcluded ? "bg-slate-50 dark:bg-slate-850/50 text-text-muted/65 line-through decoration-slate-400" : "hover:bg-slate-50/50 dark:hover:bg-slate-800/30"}>
+                                                        <td className="p-2.5 font-semibold">#{inst.installment_number}</td>
+                                                        <td className="p-2.5">{inst.reference_period}</td>
+                                                        <td className="p-2.5 font-mono">{inst.due_date_formatted}</td>
+                                                        <td className="p-2.5 text-right font-bold">
+                                                          {isExcluded ? 'Excluída' : formatCurrencyBRL(inst.amount)}
+                                                        </td>
+                                                      </tr>
+                                                    );
+                                                  })}
+                                                </tbody>
+                                              </table>
+                                            </div>
+                                          </div>
+                                        );
+                                      })()}
                                     </>
                                   )}
 

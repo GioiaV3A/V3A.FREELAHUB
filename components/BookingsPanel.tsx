@@ -3,9 +3,9 @@
 import React, { useState, useMemo } from 'react';
 import { DatabaseProps } from '@/app/page';
 import { 
-  Search, Filter, Calendar, Award, CheckCircle2, Sliders, 
-  User, Building, Download, RotateCcw, XCircle, Info, 
-  ChevronRight, AlertCircle, Check, X, CreditCard, Star
+  Search, Filter, Calendar, CheckCircle2, Sliders, 
+  ChevronRight, Check, X, CreditCard, Star,
+  Eye, RefreshCw, XCircle, Ban, Briefcase
 } from 'lucide-react';
 import { 
   formatCurrencyBRL, 
@@ -18,6 +18,65 @@ import {
   cancelAllocationAction, 
   reopenAllocationAction 
 } from '@/app/actions/admin';
+
+// ─── Helper: reverse evaluation (freelancer → V3A) badge ───
+function ReverseEvalBadge({ status }: { status?: string }) {
+  if (!status || status === 'not_generated') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-slate-600/40 bg-slate-800/30 text-slate-400">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block" />
+        Não gerada
+      </span>
+    );
+  }
+  if (status === 'generated' || status === 'sent') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-amber-500/40 bg-amber-950/30 text-amber-400">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse" />
+        Pendente
+      </span>
+    );
+  }
+  if (status === 'completed') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-emerald-500/40 bg-emerald-950/30 text-emerald-400">
+        <Check className="w-2.5 h-2.5" />
+        Enviada
+      </span>
+    );
+  }
+  if (status === 'expired') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-red-500/40 bg-red-950/30 text-red-400">
+        <Ban className="w-2.5 h-2.5" />
+        Expirada
+      </span>
+    );
+  }
+  return null;
+}
+
+// ─── Helper: V3A evaluation (V3A → freelancer) badge ───
+function EvalBadge({ alloc }: { alloc: any }) {
+  if (alloc.evaluationStatus === 'locked') {
+    return (
+      <span className="text-[9px] text-slate-500 font-medium">Aguardando Pgto</span>
+    );
+  }
+  const evalCount = (alloc.evaluatedFreelancer ? 1 : 0) + (alloc.evaluatedDelivery ? 1 : 0);
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold border ${
+      evalCount === 2
+        ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-400'
+        : evalCount === 1
+          ? 'border-amber-500/40 bg-amber-950/30 text-amber-400'
+          : 'border-orange-500/40 bg-orange-950/30 text-orange-400'
+    }`}>
+      <Star className={`w-2.5 h-2.5 ${evalCount === 2 ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
+      {evalCount}/2 Env.
+    </span>
+  );
+}
 
 export default function BookingsPanel({ db }: { db: DatabaseProps }) {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -98,6 +157,10 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
       }
 
       return true;
+    }).sort((a, b) => {
+      const codeA = a.allocationCode || '';
+      const codeB = b.allocationCode || '';
+      return codeB.localeCompare(codeA, undefined, { numeric: true });
     });
   }, [db.allocations, db.freelancers, db.jobs, db.nucleos, db.paymentSchedules, searchQuery, statusFilter, isNucleoProfile, myNucleoId]);
 
@@ -233,37 +296,39 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
   }
 
   return (
-    <div id="bookings-panel-container" className="space-y-6 animate-fade-in">
+    <div id="bookings-panel-container" className="space-y-5 animate-fade-in">
       {/* Page Header */}
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
+            <Briefcase className="w-5 h-5 text-action-cyan opacity-80" />
             <span>Meus Bookings e Alocações</span>
           </h2>
-          <p className="text-xs text-text-secondary">Acompanhe, conclua e audite as contratações e tranches financeiras de freelancers.</p>
+          <p className="text-xs text-text-secondary mt-0.5">
+            Acompanhe, conclua e audite as contratações e tranches financeiras de freelancers.
+          </p>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-border-subtle p-4 rounded-2xl shadow-xs grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div className="bg-white dark:bg-slate-900/80 border border-border-subtle p-3.5 rounded-2xl shadow-xs grid grid-cols-1 md:grid-cols-12 gap-3 backdrop-blur-sm">
         <div className="md:col-span-8 relative">
-          <Search className="absolute left-3.5 top-3 w-4 h-4 text-text-muted" />
+          <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-muted" />
           <input
             type="text"
             placeholder="Pesquise por freelancer, job, cliente, código de alocação..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface-container border border-border-subtle pl-10 pr-4 py-2.5 rounded-xl text-xs focus:outline-none focus:border-action-cyan text-text-primary placeholder:text-text-muted"
+            className="w-full bg-surface-container border border-border-subtle pl-10 pr-4 py-2.5 rounded-xl text-xs focus:outline-none focus:border-action-cyan text-text-primary placeholder:text-text-muted transition-colors"
           />
         </div>
-
         <div className="md:col-span-4 flex gap-2">
           <div className="w-full relative">
-            <Filter className="absolute left-3 top-3 w-3.5 h-3.5 text-text-muted" />
+            <Filter className="absolute left-3 top-2.5 w-3.5 h-3.5 text-text-muted" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-surface-container border border-border-subtle pl-9 pr-3 py-2.5 rounded-xl text-xs focus:outline-none focus:border-action-cyan text-text-primary appearance-none cursor-pointer"
+              className="w-full bg-surface-container border border-border-subtle pl-9 pr-3 py-2.5 rounded-xl text-xs focus:outline-none focus:border-action-cyan text-text-primary appearance-none cursor-pointer transition-colors"
             >
               <option value="all">Todos os Status</option>
               <option value="pending">Aguardando Início (Pendente)</option>
@@ -277,29 +342,44 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
         </div>
       </div>
 
-      {/* Bookings List Table */}
-      <div className="bg-white dark:bg-slate-900 border border-border-subtle rounded-2xl shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          {filteredBookings.length === 0 ? (
-            <div className="p-12 text-center text-text-secondary text-xs italic space-y-2">
-              <Calendar className="w-10 h-10 mx-auto text-text-muted opacity-50" />
-              <p>Nenhuma alocação ou booking encontrado correspondente aos filtros.</p>
-            </div>
-          ) : (
-            <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead className="bg-surface font-semibold text-text-secondary border-b border-border-subtle">
+      {/* Bookings Table */}
+      <div className="bg-white dark:bg-slate-900/90 border border-border-subtle rounded-2xl shadow-sm overflow-hidden">
+        {filteredBookings.length === 0 ? (
+          <div className="p-14 text-center text-text-secondary text-xs italic space-y-3">
+            <Calendar className="w-10 h-10 mx-auto text-text-muted opacity-40" />
+            <p>Nenhuma alocação ou booking encontrado correspondente aos filtros.</p>
+          </div>
+        ) : (
+          /* Scrollable wrapper with sticky header */
+          <div className="overflow-x-auto" style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
+            <table className="w-full text-left text-xs whitespace-nowrap border-collapse">
+              {/* STICKY THEAD */}
+              <thead
+                className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-border-subtle"
+                style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--color-bg-surface, #0f1117)' }}
+              >
                 <tr>
-                  <th className="px-4 py-3">ALOC / PROJETO</th>
-                  <th className="px-4 py-3">FREELANCER</th>
-                  <th className="px-4 py-3">PERÍODO</th>
-                  <th className="px-4 py-3">MODELO & VALOR</th>
-                  <th className="px-4 py-3 text-center">PAGAMENTOS</th>
-                  <th className="px-4 py-3 text-center">AVALIAÇÃO</th>
-                  <th className="px-4 py-3 text-center">STATUS OPERACIONAL</th>
-                  <th className="px-4 py-3 text-right">AÇÕES</th>
+                  <th className="px-4 py-3.5 text-left font-bold">Aloc / Projeto</th>
+                  <th className="px-4 py-3.5 text-left font-bold">Freelancer</th>
+                  <th className="px-4 py-3.5 text-left font-bold">Período</th>
+                  <th className="px-4 py-3.5 text-left font-bold">Modelo & Valor</th>
+                  <th className="px-4 py-3.5 text-center font-bold">Pagamentos</th>
+                  {/* Two evaluation sub-columns */}
+                  <th className="px-3 py-3.5 text-center font-bold">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-[9px] text-action-cyan/70 font-bold uppercase tracking-widest">Avaliação 360°</span>
+                      <div className="flex items-center gap-3">
+                        <span title="Avaliação da V3A ao Freelancer" className="text-[9px] leading-none text-slate-400 whitespace-nowrap">V3A → Freela</span>
+                        <span title="Avaliação do Freelancer à V3A" className="text-[9px] leading-none text-slate-400 whitespace-nowrap">Freela → V3A</span>
+                      </div>
+                    </div>
+                  </th>
+                  <th className="px-4 py-3.5 text-center font-bold">Status</th>
+                  <th className="px-4 py-3.5 text-center font-bold min-w-[160px]">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-subtle">
+
+              <tbody className="divide-y divide-border-subtle/60">
                 {filteredBookings.map((alloc) => {
                   const freelancer = db.freelancers.find(f => f.id === alloc.freelancerId);
                   const job = db.jobs.find(j => j.id === alloc.jobId);
@@ -310,51 +390,74 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                   const isCompleted = alloc.status === 'Concluído';
                   const isCancelled = alloc.status === 'Cancelado';
 
-                  // Checks evaluation status
-                  const evalCount = (alloc.evaluatedFreelancer ? 1 : 0) + (alloc.evaluatedDelivery ? 1 : 0);
+                  const canManage = (
+                    currentUser.profile === 'MASTER' ||
+                    currentUser.profile === 'C-LEVEL' ||
+                    (isNucleoProfile && myNucleoId === alloc.nucleoId)
+                  );
 
                   return (
-                    <tr key={alloc.id} className="hover:bg-surface-container-low transition-colors">
-                      {/* Allocation code and Job Info */}
+                    <tr
+                      key={alloc.id}
+                      className={`group transition-colors duration-100 ${
+                        isCancelled
+                          ? 'opacity-50 hover:opacity-70'
+                          : 'hover:bg-slate-800/20 dark:hover:bg-slate-800/30'
+                      }`}
+                    >
+                      {/* Allocation code + Project */}
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-[10px] font-bold text-sidebar-navy dark:text-action-cyan bg-bg-panel border border-border-subtle px-1.5 py-0.5 rounded">
-                            {alloc.allocationCode || 'PENDENTE'}
-                          </span>
+                        <div className="flex items-start gap-2">
+                          <div>
+                            <span className="font-mono text-[9px] font-bold text-action-cyan/80 bg-action-cyan/10 border border-action-cyan/20 px-1.5 py-0.5 rounded tracking-wider">
+                              {alloc.allocationCode || 'PENDENTE'}
+                            </span>
+                            <p className="font-bold text-text-primary text-xs mt-1.5 truncate max-w-[180px]">
+                              {job?.name || 'Projeto'}
+                            </p>
+                            <p className="text-[10px] text-text-secondary mt-0.5 truncate max-w-[180px]">
+                              {job?.client && <span>{job.client}</span>}
+                              {nucleo?.name && <span className="ml-1 text-slate-500">• {nucleo.name}</span>}
+                            </p>
+                          </div>
                         </div>
-                        <p className="font-bold text-text-primary text-xs mt-1 truncate max-w-[200px]">{job?.name || 'Projeto'}</p>
-                        <p className="text-[10px] text-text-secondary">{job?.client} &bull; {nucleo?.name}</p>
                       </td>
 
-                      {/* Freelancer details */}
-                      <td className="px-4 py-3.5 text-text-primary">
-                        <p className="font-bold">{freelancer?.name || 'Profissional'}</p>
-                        <p className="text-[10px] text-text-secondary">{freelancer?.mainRole || 'Função'}</p>
+                      {/* Freelancer */}
+                      <td className="px-4 py-3.5">
+                        <p className="font-semibold text-text-primary text-xs">{freelancer?.name || 'Profissional'}</p>
+                        <p className="text-[10px] text-text-secondary mt-0.5">{freelancer?.mainRole || '—'}</p>
                       </td>
 
                       {/* Period */}
-                      <td className="px-4 py-3.5 text-text-secondary font-medium">
-                        {formatISODateToBR(alloc.startDate)} a {formatISODateToBR(alloc.endDate)}
+                      <td className="px-4 py-3.5 text-text-secondary text-[11px] font-medium">
+                        <span className="tabular-nums">{formatISODateToBR(alloc.startDate)}</span>
+                        <span className="text-slate-600 mx-1">→</span>
+                        <span className="tabular-nums">{formatISODateToBR(alloc.endDate)}</span>
                       </td>
 
-                      {/* Payment Model and Rate */}
-                      <td className="px-4 py-3.5 font-medium">
-                        <p className="text-text-primary font-bold">
+                      {/* Payment Model & Value */}
+                      <td className="px-4 py-3.5">
+                        <p className="font-bold text-text-primary text-xs tabular-nums">
                           {formatCurrencyBRL(alloc.totalContractValue || alloc.approvedValue)}
                         </p>
-                        <span className="text-[10px] text-text-secondary uppercase">
+                        <span className={`inline-block text-[9px] font-semibold mt-0.5 px-1.5 py-0.5 rounded-sm uppercase tracking-wide ${
+                          alloc.paymentModel === 'monthly_recurring'
+                            ? 'text-blue-400 bg-blue-950/30 border border-blue-600/20'
+                            : 'text-violet-400 bg-violet-950/30 border border-violet-600/20'
+                        }`}>
                           {alloc.paymentModel === 'monthly_recurring' ? 'Mensal' : 'Job Único'}
                         </span>
                       </td>
 
-                      {/* Payment Status Check */}
+                      {/* Payment Status */}
                       <td className="px-4 py-3.5 text-center">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border ${
+                        <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-md border ${
                           (alloc.paymentRequestStatus as any) === 'paid'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400'
+                            ? 'bg-emerald-950/40 text-emerald-400 border-emerald-600/30'
                             : (alloc.paymentRequestStatus as any) === 'exported'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : 'bg-slate-150 text-slate-700 border-slate-200'
+                              ? 'bg-blue-950/40 text-blue-400 border-blue-600/30'
+                              : 'bg-slate-800/40 text-slate-400 border-slate-600/30'
                         }`}>
                           <CreditCard className="w-3 h-3" />
                           {(alloc.paymentRequestStatus as any) === 'paid' ? 'Pago' :
@@ -362,94 +465,125 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                         </span>
                       </td>
 
-                      {/* Evaluation status */}
-                      <td className="px-4 py-3.5 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          {alloc.evaluationStatus === 'locked' ? (
-                            <span className="text-[9px] text-text-muted">Aguardando Pgto</span>
-                          ) : (
-                            <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[10px] font-bold border ${
-                              evalCount === 2
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-amber-50 text-amber-700 border-amber-250'
-                            }`}>
-                              <Star className={`w-2.5 h-2.5 ${evalCount === 2 ? 'fill-emerald-600' : 'fill-amber-600 text-amber-600'}`} />
-                              {evalCount}/2 Env.
-                            </span>
-                          )}
+                      {/* Evaluation 360° — two sub-columns side by side */}
+                      <td className="px-3 py-3.5">
+                        <div className="flex items-center justify-center gap-3">
+                          {/* V3A → Freelancer */}
+                          <div className="flex flex-col items-center gap-1 min-w-[70px]">
+                            <EvalBadge alloc={alloc} />
+                          </div>
+                          {/* Divider */}
+                          <div className="w-px h-5 bg-slate-700/50" />
+                          {/* Freelancer → V3A */}
+                          <div className="flex flex-col items-center gap-1 min-w-[70px]">
+                            <ReverseEvalBadge status={alloc.reverseEvaluationStatus} />
+                          </div>
                         </div>
                       </td>
 
-                      {/* Operational status */}
+                      {/* Operational Status */}
                       <td className="px-4 py-3.5 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border
-                          ${isPending ? 'bg-amber-50 text-amber-700 border-amber-200' : ''}
-                          ${isActive ? 'bg-blue-50 text-blue-700 border-blue-200' : ''}
-                          ${isCompleted ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ''}
-                          ${isCancelled ? 'bg-red-50 text-red-700 border-red-200' : ''}
-                        `}>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold border tracking-wide ${
+                          isPending ? 'bg-amber-950/40 text-amber-300 border-amber-500/30' :
+                          isActive  ? 'bg-blue-950/40 text-blue-300 border-blue-500/30' :
+                          isCompleted ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
+                          'bg-red-950/40 text-red-300 border-red-500/30'
+                        }`}>
                           {alloc.status}
                         </span>
                       </td>
 
-                      {/* Actions */}
-                      <td className="px-4 py-3.5 text-right space-x-1.5">
-                        {/* 1. Ver Detalhes */}
-                        <button
-                          onClick={() => setSelectedJobId(alloc.jobId)}
-                          className="bg-primary/10 border border-primary/20 text-sidebar-navy hover:bg-action-cyan hover:text-white hover:border-action-cyan font-bold p-1.5 px-2.5 rounded-lg text-[10px] transition-colors cursor-pointer inline-flex items-center gap-1"
-                        >
-                          Detalhes
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                      {/* Actions — uniform h-7 icon-buttons */}
+                      <td className="px-4 py-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
 
-                        {/* 2. Concluir Job */}
-                        {(isPending || isActive) && (currentUser.profile === 'MASTER' || currentUser.profile === 'C-LEVEL' || (isNucleoProfile && myNucleoId === alloc.nucleoId)) && (
+                          {/* Detalhes — always visible, labeled */}
                           <button
-                            disabled={loadingActionId === alloc.id}
-                            onClick={() => handleOpenConcludeModal(alloc.id)}
-                            className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold p-1.5 px-2.5 rounded-lg text-[10px] transition-colors cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                            onClick={() => setSelectedJobId(alloc.jobId)}
+                            title="Ver detalhes"
+                            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-bold border
+                              bg-slate-800/60 border-slate-600/40 text-slate-300
+                              hover:bg-action-cyan/10 hover:border-action-cyan/40 hover:text-action-cyan
+                              transition-all duration-150 cursor-pointer flex-shrink-0"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Concluir Job
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Detalhes</span>
                           </button>
-                        )}
 
-                        {/* 3. Administrative Override: Cancel/Reopen */}
-                        {(currentUser.profile === 'MASTER' || currentUser.profile === 'C-LEVEL' || (isNucleoProfile && myNucleoId === alloc.nucleoId)) && (
-                          <>
-                            {isCompleted && (
-                              <button
-                                disabled={loadingActionId === alloc.id}
-                                onClick={() => handleReopenBooking(alloc.id)}
-                                className="bg-slate-750 hover:bg-slate-650 disabled:opacity-40 text-white font-bold p-1.5 px-2.5 rounded-lg text-[10px] transition-colors cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <RotateCcw className="w-3 h-3" />
-                                Reabrir
-                              </button>
-                            )}
+                          {/* Concluir Job — icon only */}
+                          {(isPending || isActive) && canManage && (
+                            <button
+                              disabled={loadingActionId === alloc.id}
+                              onClick={() => handleOpenConcludeModal(alloc.id)}
+                              title="Concluir Job"
+                              className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
+                                bg-emerald-950/60 border-emerald-600/40 text-emerald-400
+                                hover:bg-emerald-600 hover:border-emerald-500 hover:text-white
+                                disabled:opacity-40 disabled:cursor-not-allowed
+                                transition-all duration-150 cursor-pointer flex-shrink-0"
+                            >
+                              {loadingActionId === alloc.id
+                                ? <Sliders className="w-3.5 h-3.5 animate-spin" />
+                                : <CheckCircle2 className="w-3.5 h-3.5" />
+                              }
+                            </button>
+                          )}
 
-                            {(isPending || isActive) && (
-                              <button
-                                disabled={loadingActionId === alloc.id}
-                                onClick={() => handleCancelBooking(alloc.id)}
-                                className="bg-red-50 hover:bg-red-100 text-status-error font-bold p-1.5 px-2.5 rounded-lg text-[10px] border border-status-error/30 transition-colors cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <XCircle className="w-3 h-3" />
-                                Cancelar
-                              </button>
-                            )}
-                          </>
-                        )}
+                          {/* Reabrir — icon only */}
+                          {isCompleted && canManage && (
+                            <button
+                              disabled={loadingActionId === alloc.id}
+                              onClick={() => handleReopenBooking(alloc.id)}
+                              title="Reabrir booking"
+                              className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
+                                bg-slate-800/60 border-slate-500/40 text-slate-400
+                                hover:bg-slate-600 hover:border-slate-400 hover:text-white
+                                disabled:opacity-40 disabled:cursor-not-allowed
+                                transition-all duration-150 cursor-pointer flex-shrink-0"
+                            >
+                              {loadingActionId === alloc.id
+                                ? <Sliders className="w-3.5 h-3.5 animate-spin" />
+                                : <RefreshCw className="w-3.5 h-3.5" />
+                              }
+                            </button>
+                          )}
+
+                          {/* Cancelar — icon only */}
+                          {(isPending || isActive) && canManage && (
+                            <button
+                              disabled={loadingActionId === alloc.id}
+                              onClick={() => handleCancelBooking(alloc.id)}
+                              title="Cancelar booking"
+                              className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
+                                bg-red-950/40 border-red-600/30 text-red-400
+                                hover:bg-red-600 hover:border-red-500 hover:text-white
+                                disabled:opacity-40 disabled:cursor-not-allowed
+                                transition-all duration-150 cursor-pointer flex-shrink-0"
+                            >
+                              {loadingActionId === alloc.id
+                                ? <Sliders className="w-3.5 h-3.5 animate-spin" />
+                                : <XCircle className="w-3.5 h-3.5" />
+                              }
+                            </button>
+                          )}
+
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Summary footer */}
+      {filteredBookings.length > 0 && (
+        <p className="text-[10px] text-text-muted text-right pr-1">
+          {filteredBookings.length} registro{filteredBookings.length !== 1 ? 's' : ''} encontrado{filteredBookings.length !== 1 ? 's' : ''}
+        </p>
+      )}
 
       {/* Concluir Job Confirmation Modal */}
       {concludeAllocId && renderConcludeModal()}

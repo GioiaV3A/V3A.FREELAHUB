@@ -74,20 +74,22 @@ export function mapBillingTypeToUI(type: string | null): 'Diária' | 'Hora' | 'J
     case 'hora': return 'Hora';
     case 'pacote':
     case 'projeto':
+    case 'closed_package':
       return 'Job Fechado';
     case 'mensal':
     case 'monthly_salary':
+    case 'monthly':
       return 'Mensal / Salário';
     default: return 'Diária';
   }
 }
 
-export function mapBillingTypeToDB(type: string): 'diaria' | 'hora' | 'pacote' | 'projeto' {
+export function mapBillingTypeToDB(type: string): string {
   switch (type) {
     case 'Diária': return 'diaria';
     case 'Hora': return 'hora';
     case 'Job Fechado': return 'pacote';
-    case 'Mensal / Salário': return 'pacote';
+    case 'Mensal / Salário': return 'mensal';
     default: return 'diaria';
   }
 }
@@ -432,6 +434,7 @@ export function mapAllocationToUI(alloc: any): Allocation {
     endDate: alloc.end_date,
     approvedValue: Number(alloc.approved_value || 0),
     status: mapAllocationStatusToUI(alloc.status),
+    createdAt: alloc.created_at || undefined,
     negotiatedTotal: alloc.negotiated_total !== null && alloc.negotiated_total !== undefined ? Number(alloc.negotiated_total) : undefined,
     budgetSavingAmount: alloc.budget_saving_amount !== null && alloc.budget_saving_amount !== undefined ? Number(alloc.budget_saving_amount) : undefined,
     budgetSavingPercentage: alloc.budget_saving_percentage !== null && alloc.budget_saving_percentage !== undefined ? Number(alloc.budget_saving_percentage) : undefined,
@@ -629,6 +632,7 @@ export function mapJobToUI(req: any): Job {
 
   return {
     id: req.id, // request_id represents the demand / UI Job ID
+    jobId: req.job_id,
     name: req.jobs?.title || req.job_title || '',
     client: req.jobs?.client_name || req.client_name || '',
     nucleoId: req.jobs?.nucleo_id || req.nucleo_id || '',
