@@ -90,7 +90,7 @@ export function ResponsiveDataTable<T>({
       return (
         <tr key={rIdx} className="animate-pulse">
           {columns.map((col, cIdx) => (
-            <td key={col.key || cIdx} className="px-4 py-4">
+            <td key={col.key || cIdx} className="px-4 py-4" style={{ width: col.width }}>
               <div className="h-3.5 bg-slate-200 dark:bg-slate-700/60 rounded w-5/6"></div>
             </td>
           ))}
@@ -158,7 +158,7 @@ export function ResponsiveDataTable<T>({
                         <td
                           key={col.key}
                           className={`px-4 py-3 align-middle ${tdAlignClass}`}
-                          style={col.style}
+                          style={{ ...col.style, width: col.width }}
                         >
                           {col.render(item)}
                         </td>

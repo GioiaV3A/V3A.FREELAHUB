@@ -241,8 +241,6 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterRhStatus, setFilterRhStatus] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recent');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
 
   // Mobile filter drawer
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -664,7 +662,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
       key: 'display',
       label: 'Link / Candidato',
       sortKey: 'displayName',
-      width: '32%',
+      width: '28%',
       render: (link: any) => {
         const displayName = getLinkDisplayName(link);
         const emailVal = link.submission?.submitted_data?.email || link.freelancer?.email || '';
@@ -694,7 +692,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     {
       key: 'status',
       label: 'Status',
-      width: '18%',
+      width: '16%',
       render: (link: any) => (
         <div className="flex flex-col gap-1 items-start">
           {renderStatusBadge(link.status)}
@@ -706,7 +704,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
       key: 'created',
       label: 'Criação',
       sortKey: 'creatorName',
-      width: '20%',
+      width: '16%',
       render: (link: any) => (
         <div className="flex flex-col">
           <span className="font-semibold text-sm truncate text-text-primary" title={link.creator?.full_name || ''}>
@@ -722,7 +720,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
       key: 'used_at',
       label: 'Preenchimento',
       sortKey: 'used_at',
-      width: '16%',
+      width: '14%',
       render: (link: any) => link.used_at ? (
         <span className="font-semibold text-sm text-info-500">
           {new Date(link.used_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
@@ -741,11 +739,17 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
       render: (link: any) => {
         const isExpired = link.expires_at && new Date(link.expires_at) < new Date();
         return link.expires_at ? (
-          <span className={`flex items-center gap-1.5 text-sm font-semibold ${isExpired ? 'text-status-error' : 'text-text-secondary'}`}>
-            <Clock className="w-3.5 h-3.5 shrink-0 text-text-muted" />
-            {new Date(link.expires_at).toLocaleDateString('pt-BR')}
-            {isExpired && <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30">EXPIRADO</span>}
-          </span>
+          <div className="flex flex-col items-start gap-1">
+            <span className={`flex items-center gap-1 text-sm font-semibold ${isExpired ? 'text-status-error' : 'text-text-secondary'}`}>
+              <Clock className="w-3.5 h-3.5 shrink-0 text-text-muted" />
+              {new Date(link.expires_at).toLocaleDateString('pt-BR')}
+            </span>
+            {isExpired && (
+              <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 leading-none">
+                EXPIRADO
+              </span>
+            )}
+          </div>
         ) : (
           <span className="text-sm italic text-text-disabled">
             Sem expiração
@@ -756,13 +760,13 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     {
       key: 'actions',
       label: 'Ações',
-      width: '88px',
+      width: '120px',
       align: 'right',
       render: (link: any) => {
         const isCopied = copiedLinkId === link.id;
         const clearToken = link.metadata?.token;
         return (
-          <div className="flex items-center justify-end gap-1.5">
+          <div className="flex items-center justify-end gap-1.5 w-full">
             {clearToken && link.status === 'active' && (
               <button
                 onClick={() => handleCopyLink(clearToken, link.link_type, link.id)}
@@ -917,8 +921,6 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
   };
 
   const totalItems = filteredLinks.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const paginatedLinks = sortedLinks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const hasActiveFilters = searchQuery || filterType !== 'all' || filterStatus !== 'all' || filterRhStatus !== 'all';
 
@@ -1069,24 +1071,22 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                   <button
                     type="button"
                     onClick={() => setLinkFormType('new_freelancer')}
-                    className="flex-1 rounded-xl border text-center font-bold text-sm transition select-none cursor-pointer"
-                    style={
+                    className={`flex-1 rounded-xl border text-center font-bold text-sm transition select-none cursor-pointer transition-all duration-200 ${
                       linkFormType === 'new_freelancer'
-                        ? { background: '#0F2342', color: '#fff', borderColor: '#0F2342' }
-                        : { background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border-soft)' }
-                    }
+                        ? 'bg-action-cyan text-slate-950 border-action-cyan shadow-sm font-extrabold'
+                        : 'bg-transparent text-text-secondary border-border-soft hover:bg-bg-hover'
+                    }`}
                   >
                     Novo Cadastro
                   </button>
                   <button
                     type="button"
                     onClick={() => setLinkFormType('update_freelancer')}
-                    className="flex-1 rounded-xl border text-center font-bold text-sm transition select-none cursor-pointer"
-                    style={
+                    className={`flex-1 rounded-xl border text-center font-bold text-sm transition select-none cursor-pointer transition-all duration-200 ${
                       linkFormType === 'update_freelancer'
-                        ? { background: '#0F2342', color: '#fff', borderColor: '#0F2342' }
-                        : { background: 'var(--bg-surface)', color: 'var(--text-secondary)', borderColor: 'var(--border-soft)' }
-                    }
+                        ? 'bg-action-cyan text-slate-950 border-action-cyan shadow-sm font-extrabold'
+                        : 'bg-transparent text-text-secondary border-border-soft hover:bg-bg-hover'
+                    }`}
                   >
                     Atualização
                   </button>
@@ -1215,11 +1215,11 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
             filterStatus={filterStatus}
             filterRhStatus={filterRhStatus}
             sortBy={sortBy}
-            onSearchChange={v => { setSearchQuery(v); setCurrentPage(1); }}
-            onFilterTypeChange={v => { setFilterType(v); setCurrentPage(1); }}
-            onFilterStatusChange={v => { setFilterStatus(v); setCurrentPage(1); }}
-            onFilterRhStatusChange={v => { setFilterRhStatus(v); setCurrentPage(1); }}
-            onSortByChange={v => { setSortBy(v); setCurrentPage(1); }}
+            onSearchChange={v => setSearchQuery(v)}
+            onFilterTypeChange={v => setFilterType(v)}
+            onFilterStatusChange={v => setFilterStatus(v)}
+            onFilterRhStatusChange={v => setFilterRhStatus(v)}
+            onSortByChange={v => setSortBy(v)}
           />
         </div>
 
@@ -1252,11 +1252,11 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                 filterStatus={filterStatus}
                 filterRhStatus={filterRhStatus}
                 sortBy={sortBy}
-                onSearchChange={v => { setSearchQuery(v); setCurrentPage(1); }}
-                onFilterTypeChange={v => { setFilterType(v); setCurrentPage(1); }}
-                onFilterStatusChange={v => { setFilterStatus(v); setCurrentPage(1); }}
-                onFilterRhStatusChange={v => { setFilterRhStatus(v); setCurrentPage(1); }}
-                onSortByChange={v => { setSortBy(v); setCurrentPage(1); }}
+                onSearchChange={v => setSearchQuery(v)}
+                onFilterTypeChange={v => setFilterType(v)}
+                onFilterStatusChange={v => setFilterStatus(v)}
+                onFilterRhStatusChange={v => setFilterRhStatus(v)}
+                onSortByChange={v => setSortBy(v)}
               />
               <button
                 onClick={() => setMobileFiltersOpen(false)}
@@ -1283,12 +1283,12 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                 Use o painel acima para criar o primeiro acesso temporário.
               </p>
             </div>
-          ) : paginatedLinks.length === 0 ? (
+          ) : sortedLinks.length === 0 ? (
             <div className="h-64 flex flex-col items-center justify-center text-center select-none" style={{ color: 'var(--text-secondary)' }}>
               <Calendar className="w-10 h-10 mb-3" style={{ color: 'var(--text-disabled)' }} />
               <p className="font-bold text-base">Nenhum link encontrado com os filtros aplicados.</p>
               <button
-                onClick={() => { setSearchQuery(''); setFilterType('all'); setFilterStatus('all'); setFilterRhStatus('all'); setCurrentPage(1); }}
+                onClick={() => { setSearchQuery(''); setFilterType('all'); setFilterStatus('all'); setFilterRhStatus('all'); }}
                 className="mt-3 px-4 py-2 rounded-xl border text-sm font-bold cursor-pointer"
                 style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
               >
@@ -1296,10 +1296,10 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
               </button>
             </div>
           ) : (
-            <>
+            <div className="space-y-4">
               <ResponsiveDataTable
                 columns={columns}
-                data={paginatedLinks}
+                data={sortedLinks}
                 rowKey={(link) => link.id}
                 isLoading={isLoading}
                 activeSortKey={sortKey}
@@ -1307,60 +1307,11 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                 onSort={requestSort}
                 mobileRenderer={mobileLinkRenderer}
               />
-
-              {/* ── Pagination ─────────────────────────────────────────────────── */}
-              <div
-                className="flex flex-col sm:flex-row items-center justify-between border-t pt-4 mt-4 select-none text-sm gap-3"
-                style={{ borderColor: 'var(--border-soft)', color: 'var(--text-muted)' }}
-              >
-                <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-                  <span style={{ color: 'var(--text-secondary)' }}>
-                    {totalItems === 0 ? '0 itens' : `${((currentPage - 1) * pageSize) + 1}–${Math.min(currentPage * pageSize, totalItems)} de ${totalItems} itens`}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span>Itens por página:</span>
-                    <select
-                      value={pageSize}
-                      onChange={e => { setPageSize(parseInt(e.target.value)); setCurrentPage(1); }}
-                      className="border rounded-lg p-1 outline-none text-sm font-bold cursor-pointer"
-                      style={{ background: 'var(--bg-input)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
-                      aria-label="Itens por página"
-                    >
-                      <option value="10">10</option>
-                      <option value="25">25</option>
-                      <option value="50">50</option>
-                    </select>
-                  </div>
-                </div>
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      className="p-2 rounded-xl border transition cursor-pointer disabled:opacity-40"
-                      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
-                      aria-label="Página anterior"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <span className="text-sm font-bold px-1" style={{ color: 'var(--text-primary)' }}>
-                      {currentPage} / {totalPages}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      className="p-2 rounded-xl border transition cursor-pointer disabled:opacity-40"
-                      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)', color: 'var(--text-primary)' }}
-                      aria-label="Próxima página"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+              
+              <div className="flex justify-end text-xs text-text-muted select-none font-medium pr-1">
+                Total: {totalItems} {totalItems === 1 ? 'link listado' : 'links listados'}
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
