@@ -276,9 +276,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [layoutMode, setLayoutMode] = useState<'table' | 'cards'>('table');
 
-  // Pagination
-  const [jobPage, setJobPage] = useState(1);
-  const [jobLimit, setJobLimit] = useState<number>(10);
+  // (Pagination removed — all jobs shown at once)
 
   // --- CANDIDATE SEARCH & FILTERS STATE (Step 2) ---
 
@@ -342,10 +340,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   // Notifications feedback states
   const [saveStatus, setSaveStatus] = useState<Record<string, 'idle' | 'saving' | 'saved'>>({});
 
-  // Reset page if filters change
-  useEffect(() => {
-    setJobPage(1);
-  }, [jobSearch, jobTabFilter, jobRoleFilter, jobSeniorityFilter, jobUrgencyFilter, jobBudgetMin, jobBudgetMax, jobStartDateFilter, jobEndDateFilter]);
+
 
   // Set default negotiation inputs when selected freelancer changes in Step 3
   useEffect(() => {
@@ -506,19 +501,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     sortKey: jobSortKey,
     sortDirection: jobSortDirection,
     requestSort: requestJobSort,
-  } = useSortableTable(jobsWithDetails, 'id', 'desc');
-
-  // Pagination
-  const totalJobs = sortedJobs.length;
-  const totalPages = Math.ceil(totalJobs / jobLimit) || 1;
-  const paginatedJobs = sortedJobs.slice((jobPage - 1) * jobLimit, jobPage * jobLimit);
+  } = useSortableTable(jobsWithDetails, 'createdAt', 'desc');
 
   const columns = useMemo<Column<any>[]>(() => [
     {
       key: 'name',
       label: 'Job',
       sortKey: 'name',
-      width: '30%',
+      width: '26%',
       render: (job: any) => {
         const code = job.id.slice(0, 8).toUpperCase();
         return (
@@ -536,7 +526,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       key: 'nucleo',
       label: 'Núcleo',
       sortKey: 'nucleoName',
-      width: '13%',
+      width: '11%',
       render: (job: any) => {
         const nucleo = db.nucleos.find((n: any) => n.id === job.nucleoId);
         return (
@@ -550,7 +540,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       key: 'role',
       label: 'Perfil requerido',
       sortKey: 'roleNeeded',
-      width: '18%',
+      width: '16%',
       render: (job: any) => (
         <div className="flex flex-col">
           <span className="font-semibold text-text-primary text-sm">{job.roleNeeded}</span>
@@ -562,7 +552,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       key: 'period',
       label: 'Período',
       sortKey: 'startDate',
-      width: '15%',
+      width: '14%',
       render: (job: any) => (
         <span className="text-text-secondary font-medium block">
           {job.startDate ? new Date(job.startDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
@@ -574,7 +564,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       key: 'financial',
       label: 'Financeiro',
       sortKey: 'budget',
-      width: '14%',
+      width: '11%',
       align: 'right',
       render: (job: any) => {
         const dailyAvg = calculateDailyAverage(job);
@@ -594,20 +584,20 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       key: 'progress',
       label: 'Andamento',
       sortKey: 'status',
-      width: '10%',
+      width: '9%',
       align: 'center',
       render: (job: any) => {
         const shCount = db.shortlists.filter((sl: any) => sl.jobId === job.id).length;
         return (
           <div className="flex flex-col items-center gap-1">
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border transition-colors ${
               job.status === 'Bookado' 
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' 
+                ? 'bg-success-bg text-success-text border-success-border/40' 
                 : job.status === 'Aguardando RH'
-                  ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30'
+                  ? 'bg-warning-bg text-warning-text border-warning-border/40'
                   : job.status === 'Encerrado'
-                    ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/30'
-                    : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30'
+                    ? 'bg-danger-bg text-danger-text border-danger-border/40'
+                    : 'bg-info-bg text-info-text border-info-border/40'
             }`}>
               {job.status}
             </span>
@@ -621,21 +611,30 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     {
       key: 'actions',
       label: 'Ação',
-      width: '120px',
+      width: '13%',
       align: 'center',
       render: (job: any) => {
         const isSelected = selectedJobIdLocal === job.id;
+        const isBooked = job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || !!job.selectedFreelancerId;
         return (
-          <button
-            onClick={() => handleSelectJob(job.id)}
-            className={`font-bold w-[110px] h-[32px] flex items-center justify-center rounded-lg text-[11px] border transition-all cursor-pointer ${
-              isSelected 
-                ? 'bg-emerald-600 border-emerald-600 text-white' 
-                : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
-            }`}
-          >
-            {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
-          </button>
+          <div className="min-w-[105px] w-full px-1">
+            <button
+              onClick={() => handleSelectJob(job.id)}
+              className={`font-bold py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 rounded-lg text-[10.5px] border transition-all cursor-pointer whitespace-nowrap truncate ${
+                isSelected 
+                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' 
+                  : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
+              }`}
+            >
+              {isSelected ? (
+                <><Check className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" /><span>Selecionado</span></>
+              ) : isBooked ? (
+                <span>Ver Alocação</span>
+              ) : (
+                <span>Selecionar</span>
+              )}
+            </button>
+          </div>
         );
       }
     }
@@ -961,10 +960,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
           <div className="space-y-1">
             <div className="flex items-center flex-wrap gap-1.5">
               <strong className="text-text-primary text-sm font-bold">{cand.name}</strong>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                score >= 75 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' :
-                score >= 50 ? 'bg-blue-100 text-blue-800 dark:bg-blue-955/40 dark:text-blue-300' :
-                'bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-300'
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                score >= 75 ? 'bg-success-bg text-success-text border-success-border/30' :
+                score >= 50 ? 'bg-info-bg text-info-text border-info-border/30' :
+                'bg-neutral-bg text-neutral-text border-neutral-border/30'
               }`}>
                 {cand.seniority}
               </span>
@@ -999,18 +998,18 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {tags.map((t, idx) => {
-              let tagColor = "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20";
+              let tagColor = "bg-neutral-bg text-neutral-text border-neutral-border/30";
               if (t === "Função compatível" || t === "Valor dentro do budget" || t === "Já trabalhou com V3A" || t === "Disponível") {
-                tagColor = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20";
+                tagColor = "bg-success-bg text-success-text border-success-border/30";
               } else if (t === "Função relacionada") {
-                tagColor = "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20";
+                tagColor = "bg-info-bg text-info-text border-info-border/30";
               } else if (t === "Senioridade abaixo do solicitado" || t === "Valor acima do budget" || t === "Cadastro incompleto") {
-                tagColor = "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20";
+                tagColor = "bg-warning-bg text-warning-text border-warning-border/30";
               } else if (t === "Indisponível" || t === "Senioridade muito abaixo") {
-                tagColor = "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20";
+                tagColor = "bg-danger-bg text-danger-text border-danger-border/30";
               }
               return (
-                <span key={idx} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tagColor}`}>
+                <span key={idx} className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${tagColor}`}>
                   {t}
                 </span>
               );
@@ -1710,7 +1709,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const uniqueClients = Array.from(new Set(db.jobs.map(j => j.client))).filter(Boolean).sort();
   const uniqueJobRoles = Array.from(new Set(db.jobs.map(j => j.roleNeeded))).filter(Boolean).sort();
   const uniqueFreelancerRoles = Array.from(new Set([
-    ...db.freelancers.map(f => f.mainRole),
+...db.freelancers.map(f => f.mainRole),
     ...db.freelancers.flatMap(f => f.secondaryRoles)
   ])).filter(Boolean).sort();
 
@@ -1725,129 +1724,135 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   return (
     <div id="shortlist-workflow-panel" className="space-y-6">
       
-      {/* -------------------- STEPPER COMPONENT -------------------- */}
-      <div className="bg-white p-4 rounded-2xl border border-border-subtle shadow-xs">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-sidebar-navy rounded-xl text-white">
-              <Scale className="w-6 h-6 text-action-cyan" />
+      {/* -------------------- STEPPER COMPONENT — só exibe quando um job foi selecionado -------------------- */}
+      {activeStep > 1 && selectedJobIdLocal && (
+        <div className="bg-[#0f172a]/80 backdrop-blur-md border border-slate-800 rounded-2xl shadow-xl">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4">
+
+            {/* Left: Title & Subtitle */}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/50">
+                <Scale className="w-5 h-5 text-action-cyan" />
+              </div>
+              <div>
+                <h2 className="text-sm font-extrabold text-white leading-none tracking-wide">Workflow de Shortlist & Negociação</h2>
+                <p className="text-[11px] text-slate-400 mt-1 font-medium">Ciclo completo desde a triagem até a contratação e alocação.</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-sidebar-navy leading-none">Workflow de Shortlist & Negociação</h2>
-              <p className="text-xs text-text-secondary mt-1">Conduza oportunidades desde a seleção até a homologação contratual.</p>
+
+            {/* Right: Modern Connective Stepper */}
+            <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto shrink-0 bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/80 w-full lg:w-auto">
+              
+              {/* Step 1 — Seleção do Job */}
+              {(() => {
+                const done = activeStep > 1;
+                const active = activeStep === 1;
+                return (
+                  <button
+                    onClick={() => handleNavigateStep(1)}
+                    className={`flex items-center gap-2 py-2 px-4 rounded-lg transition-all duration-205 whitespace-nowrap ${
+                      active
+                        ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
+                        : done
+                          ? 'text-emerald-400 hover:bg-slate-800/50 cursor-pointer hover:text-emerald-300'
+                          : 'text-slate-500 cursor-default'
+                    }`}
+                  >
+                    <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '1'}
+                    </span>
+                    <span>Seleção</span>
+                  </button>
+                );
+              })()}
+
+              <span className="text-slate-800 font-light select-none px-0.5">/</span>
+
+              {/* Step 2 — Shortlist Oficial */}
+              {(() => {
+                const done = activeStep > 2;
+                const active = activeStep === 2;
+                return (
+                  <button
+                    onClick={() => handleNavigateStep(2)}
+                    className={`flex items-center gap-2 py-2 px-4 rounded-lg transition-all duration-205 whitespace-nowrap ${
+                      active
+                        ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
+                        : done
+                          ? 'text-emerald-400 hover:bg-slate-800/50 cursor-pointer hover:text-emerald-300'
+                          : 'text-slate-500 cursor-default'
+                    }`}
+                  >
+                    <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '2'}
+                    </span>
+                    <span>Shortlist</span>
+                  </button>
+                );
+              })()}
+
+              <span className="text-slate-800 font-light select-none px-0.5">/</span>
+
+              {/* Step 3 — Negociação */}
+              {(() => {
+                const done = activeStep > 3;
+                const active = activeStep === 3;
+                return (
+                  <button
+                    onClick={() => handleNavigateStep(3)}
+                    className={`flex items-center gap-2 py-2 px-4 rounded-lg transition-all duration-205 whitespace-nowrap ${
+                      active
+                        ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
+                        : done
+                          ? 'text-emerald-400 hover:bg-slate-800/50 cursor-pointer hover:text-emerald-300'
+                          : 'text-slate-500 cursor-default'
+                    }`}
+                  >
+                    <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '3'}
+                    </span>
+                    <span>Negociação</span>
+                  </button>
+                );
+              })()}
+
+              <span className="text-slate-800 font-light select-none px-0.5">/</span>
+
+              {/* Step 4 — Homologação */}
+              {(() => {
+                const done = activeJob?.status === 'Bookado' || activeJob?.status === 'Concluído' || !!activeJob?.selectedFreelancerId;
+                const active = activeStep === 4;
+                return (
+                  <button
+                    onClick={() => handleNavigateStep(4)}
+                    className={`flex items-center gap-2 py-2 px-4 rounded-lg transition-all duration-205 whitespace-nowrap ${
+                      active
+                        ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
+                        : done
+                          ? 'text-emerald-400 hover:bg-slate-800/50 cursor-pointer hover:text-emerald-300'
+                          : 'text-slate-500 cursor-default'
+                    }`}
+                  >
+                    <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '4'}
+                    </span>
+                    <span>Homologação</span>
+                  </button>
+                );
+              })()}
+
             </div>
-          </div>
-
-          {/* Stepper Steps UI */}
-          <div className="flex flex-wrap md:flex-nowrap items-center justify-center md:justify-end gap-1.5 md:gap-3 text-xs font-semibold w-full md:w-auto">
-            {/* Step 1 — ativo quando job selecionado */}
-            {(() => {
-              const s1Done = activeStep > 1;
-              const s1Active = activeStep === 1;
-              return (
-                <button
-                  onClick={() => handleNavigateStep(1)}
-                  className={`w-full sm:w-auto md:w-[170px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all ${
-                    s1Active
-                      ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs'
-                      : s1Done
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
-                  }`}
-                >
-                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                    s1Active ? 'bg-action-cyan text-sidebar-navy' : s1Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-text-secondary'
-                  }`}>
-                    {s1Active ? '1' : s1Done ? <Check className="w-3 h-3" /> : '1'}
-                  </span>
-                  <span>1. Seleção do Job</span>
-                </button>
-              );
-            })()}
-
-            <ChevronRight className="w-4 h-4 text-text-secondary hidden md:block" />
-
-            {/* Step 2 — ativo quando ao menos 1 candidato adicionado ao shortlist */}
-            {(() => {
-              const s2Done = activeStep > 2;
-              const s2Active = activeStep === 2;
-              return (
-                <button
-                  onClick={() => handleNavigateStep(2)}
-                  className={`w-full sm:w-auto md:w-[170px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all ${
-                    s2Active
-                      ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs'
-                      : s2Done
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
-                  }`}
-                >
-                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                    s2Active ? 'bg-action-cyan text-sidebar-navy' : s2Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-text-secondary'
-                  }`}>
-                    {s2Active ? '2' : s2Done ? <Check className="w-3 h-3" /> : '2'}
-                  </span>
-                  <span>2. Shortlist Oficial</span>
-                </button>
-              );
-            })()}
-
-            <ChevronRight className="w-4 h-4 text-text-secondary hidden md:block" />
-
-            {/* Step 3 — ativo quando ao menos 1 candidato com taxa negociada ou aceitou */}
-            {(() => {
-              const s3Done = activeStep > 3;
-              const s3Active = activeStep === 3;
-              return (
-                <button
-                  onClick={() => handleNavigateStep(3)}
-                  className={`w-full sm:w-auto md:w-[170px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all ${
-                    s3Active
-                      ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs'
-                      : s3Done
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
-                  }`}
-                >
-                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                    s3Active ? 'bg-action-cyan text-sidebar-navy' : s3Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-text-secondary'
-                  }`}>
-                    {s3Active ? '3' : s3Done ? <Check className="w-3 h-3" /> : '3'}
-                  </span>
-                  <span>3. Negociação</span>
-                </button>
-              );
-            })()}
-
-            <ChevronRight className="w-4 h-4 text-text-secondary hidden md:block" />
-
-            {/* Step 4 — ativo quando alocação homologada */}
-            {(() => {
-              const s4Done = activeJob?.status === 'Bookado' || activeJob?.status === 'Concluído' || !!activeJob?.selectedFreelancerId;
-              const s4Active = activeStep === 4;
-              return (
-                <button
-                  onClick={() => handleNavigateStep(4)}
-                  className={`w-full sm:w-auto md:w-[170px] flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all ${
-                    s4Active
-                      ? 'bg-sidebar-navy text-white border-sidebar-navy shadow-xs'
-                      : s4Done
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'
-                  }`}
-                >
-                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                    s4Active ? 'bg-action-cyan text-sidebar-navy' : s4Done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-text-secondary'
-                  }`}>
-                    {s4Active ? '4' : s4Done ? <Check className="w-3 h-3" /> : '4'}
-                  </span>
-                  <span>4. Homologação</span>
-                </button>
-              );
-            })()}
           </div>
         </div>
-      </div>
+      )}
 
       {/* -------------------- STEP 1: JOB SELECTION -------------------- */}
       {activeStep === 1 && (
@@ -2042,12 +2047,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             )}
           </div>
 
-          {/* LIST/TABLE OF JOBS */}
+          {/* LIST/TABLE OF JOBS — todos os jobs exibidos sem paginação */}
           {layoutMode === 'table' ? (
             <div className="bg-white rounded-2xl border border-border-subtle shadow-xs p-6">
               <ResponsiveDataTable
                 columns={columns}
-                data={paginatedJobs}
+                data={sortedJobs}
                 rowKey={(job) => job.id}
                 isLoading={false}
                 activeSortKey={jobSortKey}
@@ -2056,54 +2061,16 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 mobileRenderer={mobileJobRenderer}
                 emptyState="Nenhum job localizado com os critérios selecionados."
               />
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="p-4 bg-slate-50 border-t border-border-subtle flex items-center justify-between">
-                  <span className="text-xs text-text-secondary">
-                    Mostrando <strong>{Math.min(totalJobs, (jobPage - 1) * jobLimit + 1)}</strong>-<strong>{Math.min(totalJobs, jobPage * jobLimit)}</strong> de <strong>{totalJobs}</strong> jobs
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      disabled={jobPage === 1}
-                      onClick={() => setJobPage(p => Math.max(1, p - 1))}
-                      className="p-1 px-3 bg-white border border-border-subtle rounded text-xs hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Anterior
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                      <button
-                        key={p}
-                        onClick={() => setJobPage(p)}
-                        className={`p-1 px-3 rounded text-xs font-bold border transition-all ${
-                          jobPage === p 
-                            ? 'bg-sidebar-navy border-sidebar-navy text-white' 
-                            : 'bg-white border-border-subtle hover:bg-slate-50 text-text-secondary'
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                    <button
-                      disabled={jobPage === totalPages}
-                      onClick={() => setJobPage(p => Math.min(totalPages, p + 1))}
-                      className="p-1 px-3 bg-white border border-border-subtle rounded text-xs hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Próximo
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             /* Cards layout view mode */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedJobs.length === 0 ? (
+              {sortedJobs.length === 0 ? (
                 <div className="col-span-full bg-white p-12 text-center text-text-secondary border border-border-subtle rounded-2xl italic">
                   Nenhum job localizado com os critérios selecionados.
                 </div>
               ) : (
-                paginatedJobs.map((job) => {
+                sortedJobs.map((job) => {
                   const nucleo = db.nucleos.find(n => n.id === job.nucleoId);
                   const code = job.id.slice(0, 8).toUpperCase();
                   const shCount = db.shortlists.filter(sl => sl.jobId === job.id).length;
@@ -2690,24 +2657,27 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {/* -------------------- STEP 3: CONTRACT NEGOTIATION -------------------- */}
       {activeStep === 3 && activeJob && (
         <div className="space-y-6 animate-fade-in">
-          {/* Active Job Meta-Header — dados completos do job */}
+          {/* Active Job Meta-Header — STICKY no topo ao dar scroll */}
           {(() => {
             const nucleoName = db.nucleos.find(n => n.id === activeJob.nucleoId)?.name || '—';
             const paymentFlowLabel = activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : activeJob.paymentFlow === 'one_time' ? 'Pagamento Único' : (activeJob.paymentFlow || '—');
             const referenceRate = activeJob.expectedRate || activeJob.budget;
             const paymentDay = activeJob.expectedPaymentDay;
             return (
-              <div className="bg-slate-800 text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6 job-meta-header">
-                <div className="space-y-2 flex-1">
+              <div
+                className="bg-slate-800 text-slate-100 p-4 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-4 job-meta-header sticky top-0 z-30"
+                style={{ backdropFilter: 'blur(8px)' }}
+              >
+                <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
-                    <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Negociação Individual</span>
+                    <span className="text-[10px] uppercase font-bold text-action-cyan tracking-wider">Negociação Individual</span>
                     <span className="bg-blue-900 text-blue-200 border border-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
                   </div>
-                  <h3 className="text-base font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
-                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-300">
+                  <h3 className="text-sm font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-300">
                     <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
                     <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
@@ -2715,11 +2685,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
                     {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
-                    {activeJob.description && <div className="w-full">Descrição: <span className="text-slate-300">{activeJob.description}</span></div>}
+                    {activeJob.description && <div className="w-full">Descrição: <span className="text-slate-400">{activeJob.description}</span></div>}
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between items-end gap-3 min-w-[180px]">
+                <div className="flex flex-col justify-between items-end gap-2 shrink-0">
                   <div className="text-right">
                     <div className="text-[10px] uppercase font-bold text-slate-400">Budget Máximo</div>
                     <div className="text-base font-bold text-action-cyan">
@@ -2730,14 +2700,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleNavigateStep(2)}
-                      className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600"
-                    >
-                      Voltar para Shortlist
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleNavigateStep(2)}
+                    className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600 whitespace-nowrap"
+                  >
+                    Voltar para Shortlist
+                  </button>
                 </div>
               </div>
             );
@@ -2967,13 +2935,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
           {/* Cards for each candidate in shortlist */}
           <div className="grid grid-cols-1 gap-6">
-            {jobShortlists.length === 0 ? (
+            {sortedCompareList.length === 0 ? (
               <div className="bg-white p-12 text-center text-text-secondary border border-border-subtle rounded-2xl italic text-xs">
                 Nenhum candidato na shortlist para negociar. Volte para o Passo 2.
               </div>
             ) : (
-              jobShortlists.map(sl => {
-                const cand = db.freelancers.find(f => f.id === sl.freelancerId);
+              sortedCompareList.map(({ sl, cand }) => {
                 if (!cand) return null;
 
                 const targetModel = (sl.remunerationModel || (activeJob?.remunerationModel === 'daily' ? 'Diária' : activeJob?.remunerationModel === 'hourly' ? 'Hora' : activeJob?.remunerationModel === 'fixed_job' ? 'Job Fechado' : activeJob?.remunerationModel === 'monthly_salary' ? 'Mensal / Salário' : 'Diária')) || 'daily';
@@ -2989,9 +2956,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 );
                 const ceilingValue = policy ? policy.ceilingValue : 99999;
                 const referenceValue = policy ? policy.referenceValue : 0;
-                
-                const defaultRate = activeJob?.expectedRate || cand.referenceValue || 0;
-                const rate = sl.negotiatedRate || defaultRate;
+
+                // Pre-populate rate: prefer negotiated value, then job's expectedRate, then freelancer's referenceValue
+                const defaultRate = activeJob?.expectedRate ?? (cand.referenceValue || 0);
+                const rate = (sl.negotiatedRate != null && sl.negotiatedRate > 0) ? sl.negotiatedRate : defaultRate;
                 
                 const defaultBilling = 
                   activeJob?.remunerationModel === 'daily' ? 'Diária' :
@@ -3027,7 +2995,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <div className="lg:col-span-4 space-y-3">
                       <div className="flex items-center gap-2">
                         <h4 className="font-extrabold text-sidebar-navy text-sm">{cand.name}</h4>
-                        <span className="bg-slate-100 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded">{cand.seniority}</span>
+                        <span className="bg-neutral-bg text-neutral-text border border-neutral-border/30 text-[10px] font-bold px-2 py-0.5 rounded-md">{cand.seniority}</span>
                       </div>
                       <p className="text-xs text-text-secondary">{cand.mainRole} &bull; {cand.city}-{cand.state}</p>
                       
@@ -3154,8 +3122,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               const rawVal = e.target.value;
                               const masked = maskCurrencyBRL(rawVal);
                               setVisualRates(prev => ({ ...prev, [cand.id]: masked }));
+                              
                               const numeric = parseCurrencyBR(masked);
-                              handleUpdateNegotiation(cand.id, { negotiatedRate: numeric });
+                              updateCandidateNeg(cand.id, {
+                                recurringAmount: numeric,
+                                recurringAmountVisual: masked
+                              });
                             }}
                             onBlur={() => {
                               const currentVal = visualRates[cand.id] !== undefined ? visualRates[cand.id] : maskCurrencyBRL(rate.toString());
@@ -3163,6 +3135,18 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               if (numeric > 0) {
                                 const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numeric);
                                 setVisualRates(prev => ({ ...prev, [cand.id]: formatted }));
+                                updateCandidateNeg(cand.id, {
+                                  recurringAmount: numeric,
+                                  recurringAmountVisual: formatted
+                                });
+                                handleUpdateNegotiation(cand.id, { negotiatedRate: numeric });
+                              } else {
+                                setVisualRates(prev => ({ ...prev, [cand.id]: '' }));
+                                updateCandidateNeg(cand.id, {
+                                  recurringAmount: 0,
+                                  recurringAmountVisual: ''
+                                });
+                                handleUpdateNegotiation(cand.id, { negotiatedRate: 0 });
                               }
                             }}
                             className="w-full bg-[#F8FAFC] border border-border-subtle p-2.5 pl-8 rounded-lg text-xs font-bold text-text-primary focus:outline-none focus:border-action-cyan disabled:opacity-60"
@@ -3320,7 +3304,6 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           recurringAmountVisual: masked,
                                           recurringAmount: numeric
                                         });
-                                        handleUpdateNegotiation(cand.id, { negotiatedRate: numeric });
                                         setVisualRates(prev => ({ ...prev, [cand.id]: masked }));
                                       }}
                                       onBlur={() => {
@@ -3330,9 +3313,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                             recurringAmountVisual: formatted
                                           });
                                           setVisualRates(prev => ({ ...prev, [cand.id]: formatted }));
+                                          handleUpdateNegotiation(cand.id, { negotiatedRate: candNeg.recurringAmount });
                                         } else {
                                           updateCandidateNeg(cand.id, { recurringAmountVisual: '' });
                                           setVisualRates(prev => ({ ...prev, [cand.id]: '' }));
+                                          handleUpdateNegotiation(cand.id, { negotiatedRate: 0 });
                                         }
                                       }}
                                       className="w-full bg-white border border-border-subtle p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-action-cyan text-text-primary"
@@ -3668,11 +3653,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 {/* Booked Candidate Card */}
                 <div className="bg-white p-5 rounded-2xl border border-border-subtle shadow-xs space-y-4">
                   <div className="text-center pb-4 border-b border-border-subtle">
-                    <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2 text-emerald-600">
+                    <div className="w-14 h-14 bg-success-bg rounded-full flex items-center justify-center mx-auto mb-2 text-success-text border border-success-border/20">
                       <CheckCircle className="w-8 h-8" />
                     </div>
                     <h4 className="font-bold text-sidebar-navy text-sm">{bookedFreelancer?.name}</h4>
-                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded inline-block mt-1">
+                    <span className="bg-success-bg text-success-text border border-success-border/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-block mt-1">
                       Contratado Oficial
                     </span>
                   </div>

@@ -570,13 +570,7 @@ export default function Home() {
     };
   }, []);
 
-  // Update selectedJobId automatically when jobs are loaded
-  useEffect(() => {
-    if (jobsState.length > 0 && (!selectedJobId || !jobsState.some(j => j.id === selectedJobId))) {
-      setSelectedJobId(jobsState[0].id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobsState]);
+
 
   const handleManualLogin = async (e: React.FormEvent) => {
     e.preventDefault();
