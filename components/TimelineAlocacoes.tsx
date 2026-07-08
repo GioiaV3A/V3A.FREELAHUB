@@ -388,15 +388,25 @@ function getStatusDotColor(status: string): string {
 }
 
 function getPaymentDotColor(status: string): string {
-  switch (status) {
-    case 'paid': return 'bg-emerald-500 border-emerald-300';
-    case 'finance_code_received':
-    case 'sent_to_finance':
-    case 'payment_request_generated': return 'bg-cyan-400 border-cyan-200';
-    case 'pending': return 'bg-amber-400 border-amber-200';
-    case 'cancelled': return 'bg-slate-500 border-slate-300';
-    default: return 'bg-slate-400 border-slate-200';
+  const s = (status || '').toLowerCase().trim();
+  if (
+    s === 'paid' ||
+    s === 'pago' ||
+    s === 'exportado' ||
+    s === 'emitido' ||
+    s === 'finance_code_received' ||
+    s === 'sent_to_finance' ||
+    s === 'payment_request_generated'
+  ) {
+    return 'bg-emerald-500 border-emerald-300';
   }
+  if (s === 'pending' || s === 'pendente') {
+    return 'bg-amber-400 border-amber-200';
+  }
+  if (s === 'cancelled' || s === 'cancelado' || s === 'cancelada') {
+    return 'bg-slate-500 border-slate-300';
+  }
+  return 'bg-slate-400 border-slate-200';
 }
 
 // ============================================================
@@ -886,7 +896,7 @@ interface TimelineBarProps {
   leftPercent: number;
   widthPercent: number;
   dayPx: number;
-  onHover: (e: React.MouseEvent<HTMLButtonElement> | null) => void;
+  onHover: (rect: DOMRect | null) => void;
   onClick: () => void;
   onDoubleClick?: () => void;
   hoveredAllocId?: string;
@@ -956,15 +966,19 @@ function TimelineBar({
     }
   };
 
+  const isHovered = hoveredAllocId === a.id;
+  const hoverActiveClass = isHovered ? colors.hoverBg.replace('hover:', '') : '';
+
   return (
     <button
       type="button"
       aria-label={`Centralizar na alocação ${a.allocationCode}, freelancer ${a.freelancerName}, de ${formatShortDate(a.startDate)} até ${formatShortDate(a.endDate)}`}
       aria-describedby={hoveredAllocId === a.id ? 'timeline-allocation-tooltip' : undefined}
       data-selected={isSelected ? 'true' : 'false'}
-      className={`absolute rounded-md flex flex-col justify-center px-2 text-[10px] font-semibold cursor-pointer border transition-all outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 overflow-hidden select-none w-full text-left
-        ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg}
+      className={`absolute rounded-md flex flex-col justify-center text-[10px] font-semibold cursor-pointer border transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1 overflow-hidden select-none w-full text-left
+        ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg} ${hoverActiveClass}
         ${isSelected ? 'outline-[var(--accent)] outline-2 outline-offset-2 z-10 shadow-lg' : ''}
+        ${isHovered ? 'ring-2 ring-[var(--accent)] shadow-md z-20 scale-[1.01]' : ''}
       `}
       style={{
         left: `${leftPercent}%`,
@@ -976,15 +990,26 @@ function TimelineBar({
       }}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       onDoubleClick={(e) => { e.stopPropagation(); onDoubleClick?.(); }}
-      onMouseEnter={(e) => onHover(e as any)}
+      onMouseEnter={(e) => {
+        onHover({
+          left: e.clientX,
+          top: e.clientY,
+          bottom: e.clientY,
+          right: e.clientX,
+          width: 0,
+          height: 0
+        } as DOMRect);
+      }}
       onMouseLeave={() => onHover(null)}
-      onFocus={(e) => onHover(e as any)}
+      onFocus={(e) => onHover(e.currentTarget.getBoundingClientRect())}
       onBlur={() => onHover(null)}
     >
-      {a.conflict.hasConflict && (
-        <AlertTriangle className="w-3 h-3 shrink-0 mr-1" aria-label="Conflito de agenda" />
-      )}
-      {renderBarContent()}
+      <div className="sticky left-2 right-2 w-max max-w-[calc(100%-8px)] flex items-center gap-1 overflow-hidden pointer-events-none">
+        {a.conflict.hasConflict && (
+          <AlertTriangle className="w-3 h-3 shrink-0 text-amber-500 mr-1 animate-pulse" aria-label="Conflito de agenda" />
+        )}
+        {renderBarContent()}
+      </div>
 
       {/* Payment schedule dots */}
       {Array.isArray(a.paymentSchedules) && a.paymentSchedules.length > 0 && totalRange > 0 && barWidth > 40 && (
@@ -998,7 +1023,7 @@ function TimelineBar({
             return (
               <div
                 key={sched.id || idx}
-                className={`absolute w-1.5 h-1.5 rounded-full border border-white/70 top-1/2 -translate-y-1/2 -translate-x-1/2 ${getPaymentDotColor(sched.status)}`}
+                className={`absolute w-2 h-2 rounded-full border border-white/95 bottom-0.5 shadow-xs -translate-x-1/2 ${getPaymentDotColor(sched.status)}`}
                 style={{ left: `${dotPercent}%` }}
                 title={`Parcela ${sched.installmentNumber}: ${formatCurrency(sched.amount)}`}
               />
@@ -1010,30 +1035,25 @@ function TimelineBar({
   );
 }
 
-// ============================================================
-// RESOURCE CELL — dynamic heights, popup fallback for compact
-// ============================================================
 interface ResourceCellProps {
   allocations: AllocationItemEnriched[];
-  isExpanded?: boolean;
-  onToggle?: () => void;
-  hasMultiple?: boolean;
+  isManuallyExpanded?: boolean;
+  onToggleExpand?: () => void;
   height: number;
   onFocusAllocation: (a: AllocationItemEnriched) => void;
 }
 
 function ResourceCell({
   allocations,
-  isExpanded,
-  onToggle,
-  hasMultiple,
+  isManuallyExpanded,
+  onToggleExpand,
   height,
   onFocusAllocation,
 }: ResourceCellProps) {
   const [showPopover, setShowPopover] = useState(false);
   const a = allocations[0];
 
-  const isCompact = height <= 70; // 64px is standard compact height
+  const isCompact = !isManuallyExpanded;
 
   return (
     <div
@@ -1099,70 +1119,46 @@ function ResourceCell({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowPopover(prev => !prev);
+                    onToggleExpand?.();
                   }}
                   className="mt-0.5 px-2.5 py-0.5 text-[9px] font-extrabold bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-white text-[var(--accent)] rounded-full transition w-max cursor-pointer focus:outline-none"
                 >
                   {allocations.length} alocações
                 </button>
-
-                {showPopover && (
-                  <div className="absolute left-[240px] top-2 w-64 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-xl z-50 p-2.5 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-1.5 mb-1.5">
-                      <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase truncate max-w-[200px]">
-                        Alocações: {a.freelancerName}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowPopover(false);
-                        }}
-                        className="p-0.5 hover:bg-[var(--bg-hover)] rounded transition"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
-                      {allocations.map(alloc => (
-                        <button
-                          key={alloc.id}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onFocusAllocation(alloc);
-                            setShowPopover(false);
-                          }}
-                          className="text-left text-[10px] font-semibold bg-[var(--bg-surface-elevated)] hover:bg-[var(--accent)] hover:text-white px-2.5 py-1.5 rounded border border-[var(--border-subtle)] transition flex flex-col gap-0.5 w-full cursor-pointer focus:outline-none"
-                        >
-                          <span className="font-bold text-xs">{alloc.allocationCode} · {alloc.jobName}</span>
-                          <span className="text-[9px] opacity-80">{formatPeriod(alloc.startDate, alloc.endDate)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
-              <div className="mt-0.5 flex flex-col gap-0.5 w-full overflow-y-auto no-scrollbar" style={{ maxHeight: height - 42 }}>
-                {allocations.map(alloc => (
-                  <div key={alloc.id} className="flex items-center gap-2 min-w-0 min-height-[18px] overflow-visible">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onFocusAllocation(alloc);
-                      }}
-                      className="inline-flex items-center w-fit p-0 border-0 bg-transparent text-[var(--accent)] hover:underline text-[10px] font-mono cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded"
-                      aria-label={`Localizar alocação ${alloc.allocationCode} na Timeline`}
-                    >
-                      {alloc.allocationCode}
-                    </button>
-                    <span className="inline-flex items-center flex-shrink-0 min-height-[18px] gap-1 text-[9px] text-[var(--text-muted)]">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(alloc.status)}`} />
-                      {alloc.status}
-                    </span>
-                  </div>
-                ))}
+              <div className="mt-1 flex flex-col gap-1 w-full overflow-hidden">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleExpand?.();
+                  }}
+                  className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-full transition w-max cursor-pointer focus:outline-none"
+                >
+                  Recolher alocações
+                </button>
+                <div className="mt-0.5 flex flex-col gap-0.5 w-full overflow-y-auto no-scrollbar" style={{ maxHeight: height - 56 }}>
+                  {allocations.map(alloc => (
+                    <div key={alloc.id} className="flex items-center gap-2 min-w-0 min-height-[18px] overflow-visible">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onFocusAllocation(alloc);
+                        }}
+                        className="inline-flex items-center w-fit p-0 border-0 bg-transparent text-[var(--accent)] hover:underline text-[10px] font-mono cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded"
+                        aria-label={`Localizar alocação ${alloc.allocationCode} na Timeline`}
+                      >
+                        {alloc.allocationCode}
+                      </button>
+                      <span className="inline-flex items-center flex-shrink-0 min-height-[18px] gap-1 text-[9px] text-[var(--text-muted)]">
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(alloc.status)}`} />
+                        {alloc.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>
@@ -1456,12 +1452,15 @@ interface TimelineViewProps {
   onScrollAnchorChange?: (newAnchor: Date) => void;
   onRegisterScrollFn?: (fn: (date: Date, options?: { alignment?: 'start' | 'center'; behavior?: 'smooth' }) => void) => void;
   onFocusAllocation: (a: AllocationItemEnriched) => void;
+  expandedFreelancers?: Record<string, boolean>;
+  onToggleExpandFreelancer?: (freelancerId: string) => void;
 }
 
 function TimelineView({
   allocations, scale, anchor, zoom, today,
   onHoverAllocation, onClickAllocation, onDoubleClickAllocation, hoveredAllocId, selectedAllocationId,
   onScrollAnchorChange, onRegisterScrollFn, onFocusAllocation,
+  expandedFreelancers = {}, onToggleExpandFreelancer,
 }: TimelineViewProps) {
   const dayPx = zoomDayPx(zoom, scale);
 
@@ -1567,7 +1566,11 @@ function TimelineView({
           onScroll={syncScroll}
         >
           {groupedByFreelancer.map((group, gi) => {
-            const rows = computeRows(group);
+            const freelancerId = group[0]?.freelancerId;
+            const isManuallyExpanded = !!expandedFreelancers[freelancerId];
+            const rows = isManuallyExpanded
+              ? group.map(alloc => [alloc])
+              : computeRows(group);
             const rowCount = rows.length;
             // Height formula: 64px base + 32px for additional rows
             const totalHeight = 64 + Math.max(0, rowCount - 1) * 32;
@@ -1580,6 +1583,8 @@ function TimelineView({
                   allocations={group}
                   height={totalHeight}
                   onFocusAllocation={onFocusAllocation}
+                  isManuallyExpanded={isManuallyExpanded}
+                  onToggleExpand={() => onToggleExpandFreelancer?.(freelancerId)}
                 />
               </div>
             );
@@ -1597,7 +1602,11 @@ function TimelineView({
         >
           <div style={{ width: totalWidth, minWidth: totalWidth }}>
             {groupedByFreelancer.map((group, gi) => {
-              const rows = computeRows(group);
+              const freelancerId = group[0]?.freelancerId;
+              const isManuallyExpanded = !!expandedFreelancers[freelancerId];
+              const rows = isManuallyExpanded
+                ? group.map(alloc => [alloc])
+                : computeRows(group);
               const rowCount = rows.length;
               const totalHeight = 64 + Math.max(0, rowCount - 1) * 32;
               return (
@@ -1623,9 +1632,8 @@ function TimelineView({
                           leftPercent={pos.leftPercent}
                           widthPercent={pos.widthPercent}
                           dayPx={dayPx}
-                          onHover={(e) => {
-                            if (!e) { onHoverAllocation(null, null); return; }
-                            onHoverAllocation(a, e.currentTarget.getBoundingClientRect());
+                          onHover={(rect) => {
+                            onHoverAllocation(rect ? a : null, rect);
                           }}
                           onClick={() => onClickAllocation(a)}
                           onDoubleClick={() => onDoubleClickAllocation?.(a)}
@@ -1988,12 +1996,22 @@ function SingleMonthGrid({
                       gridColumn: `${colStart + 1} / span ${span}`,
                       gridRow: `${row + 1}`
                     }}
-                    className={`pointer-events-auto text-left text-[9px] font-semibold px-2 py-0.5 border truncate transition-all duration-150 flex items-center gap-1 min-h-[22px]
+                    className={`pointer-events-auto text-left text-[9px] font-semibold px-2 py-0.5 border truncate transition-all duration-150 flex items-center gap-1 min-h-[22px] cursor-pointer
                       ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg} ${roundedClasses}
                       ${isSelected ? 'outline-[var(--accent)] outline-2 outline-offset-1 z-10 shadow-md' : ''}
+                      ${hoveredAllocId === a.id ? `${colors.hoverBg.replace('hover:', '')} ring-2 ring-[var(--accent)] shadow-md z-15 scale-[1.01]` : ''}
                     `}
                     onClick={() => onClickAllocation(a)}
-                    onMouseEnter={(e) => onHoverAllocation(a, e.currentTarget.getBoundingClientRect())}
+                    onMouseEnter={(e) => {
+                      onHoverAllocation(a, {
+                        left: e.clientX,
+                        top: e.clientY,
+                        bottom: e.clientY,
+                        right: e.clientX,
+                        width: 0,
+                        height: 0
+                      } as DOMRect);
+                    }}
                     onMouseLeave={() => onHoverAllocation(null, null)}
                     onFocus={(e) => onHoverAllocation(a, e.currentTarget.getBoundingClientRect())}
                     onBlur={() => onHoverAllocation(null, null)}
@@ -2270,9 +2288,19 @@ function CalendarWeek({
                         className={`relative z-10 text-left text-[10px] font-semibold px-2 py-1 border transition-all duration-150 flex items-center gap-1 min-h-[28px] cursor-pointer
                           ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg} ${roundedClasses}
                           ${isSelected ? 'outline-[var(--accent)] outline-2 outline-offset-1 z-10 shadow-md' : ''}
+                          ${hoveredAllocId === a.id ? `${colors.hoverBg.replace('hover:', '')} ring-2 ring-[var(--accent)] shadow-md z-15 scale-[1.01]` : ''}
                         `}
                         onClick={() => onClickAllocation(a)}
-                        onMouseEnter={(e) => onHoverAllocation(a, e.currentTarget.getBoundingClientRect())}
+                        onMouseEnter={(e) => {
+                          onHoverAllocation(a, {
+                            left: e.clientX,
+                            top: e.clientY,
+                            bottom: e.clientY,
+                            right: e.clientX,
+                            width: 0,
+                            height: 0
+                          } as DOMRect);
+                        }}
                         onMouseLeave={() => onHoverAllocation(null, null)}
                         onFocus={(e) => onHoverAllocation(a, e.currentTarget.getBoundingClientRect())}
                         onBlur={() => onHoverAllocation(null, null)}
@@ -2331,9 +2359,20 @@ function CalendarDay({
             return (
               <button
                 key={a.id}
-                className={`w-full text-left px-4 py-3 rounded-xl border flex items-start gap-3 ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg} transition`}
+                className={`w-full text-left px-4 py-3 rounded-xl border flex items-start gap-3 ${colors.bg} ${colors.border} ${colors.text} ${colors.hoverBg} transition duration-150
+                  ${hoveredAllocId === a.id ? `${colors.hoverBg.replace('hover:', '')} ring-2 ring-[var(--accent)] shadow-md z-15 scale-[1.01]` : ''}
+                `}
                 onClick={() => onClickAllocation(a)}
-                onMouseEnter={(e) => onHoverAllocation(a, e.currentTarget.getBoundingClientRect())}
+                onMouseEnter={(e) => {
+                  onHoverAllocation(a, {
+                    left: e.clientX,
+                    top: e.clientY,
+                    bottom: e.clientY,
+                    right: e.clientX,
+                    width: 0,
+                    height: 0
+                  } as DOMRect);
+                }}
                 onMouseLeave={() => onHoverAllocation(null, null)}
                 onFocus={(e) => onHoverAllocation(a, e.currentTarget.getBoundingClientRect())}
                 onBlur={() => onHoverAllocation(null, null)}
@@ -2498,7 +2537,10 @@ function FilterChips({ filters, nucleos, onRemoveNucleo, onRemoveStatus, onRemov
     const n = nucleos.find(n => n.id === filters.nucleoId);
     if (n) chips.push({ label: `Núcleo: ${n.name}`, onRemove: onRemoveNucleo });
   }
-  if (filters.status) chips.push({ label: `Status: ${filters.status}`, onRemove: onRemoveStatus });
+  if (filters.status) {
+    const displayStatus = filters.status === 'Bookado' ? 'Reservado (Bookado)' : filters.status;
+    chips.push({ label: `Status: ${displayStatus}`, onRemove: onRemoveStatus });
+  }
   if (filters.conflictsOnly) chips.push({ label: 'Conflitos', onRemove: onRemoveConflicts });
   if (filters.activeOnly) chips.push({ label: 'Apenas ativas', onRemove: onRemoveActiveOnly });
 
@@ -2569,6 +2611,15 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
 
   const [selectedAllocationId, setSelectedAllocationId] = useState<string | null>(null);
   const [searchResultIndex, setSearchResultIndex] = useState(0);
+
+  const [expandedFreelancers, setExpandedFreelancers] = useState<Record<string, boolean>>({});
+
+  const toggleExpandFreelancer = useCallback((freelancerId: string) => {
+    setExpandedFreelancers(prev => ({
+      ...prev,
+      [freelancerId]: !prev[freelancerId]
+    }));
+  }, []);
 
   const [hoveredAlloc, setHoveredAlloc] = useState<HoverState | null>(null);
   const [clickedAlloc, setClickedAlloc] = useState<AllocationItemEnriched | null>(null);
@@ -2675,7 +2726,19 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
     let result = withConflicts;
     if (filters.activeOnly) result = result.filter(a => a.status === 'Ativo' || a.status === 'Ativa' || a.status === 'Em andamento' || a.status === 'Bookado' || a.status === 'Bookada');
     if (filters.nucleoId) result = result.filter(a => a.nucleoId === filters.nucleoId);
-    if (filters.status) result = result.filter(a => a.status === filters.status);
+    if (filters.status) {
+      result = result.filter(a => {
+        const s = (a.status || '').toLowerCase();
+        const fStatus = filters.status.toLowerCase();
+        if (fStatus === 'bookado') {
+          return s === 'bookado' || s === 'bookada' || s.includes('bookad');
+        }
+        if (fStatus === 'ativo') {
+          return s === 'ativo' || s === 'ativa';
+        }
+        return s === fStatus;
+      });
+    }
     if (filters.conflictsOnly) result = result.filter(a => a.conflict.hasConflict);
 
     const query = normalizeSearch(deferredSearch);
@@ -3050,9 +3113,13 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
                 className="bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition"
               >
                 <option value="">Todos os status</option>
-                {['Bookado', 'Bookada', 'Ativo', 'Ativa', 'Em andamento', 'Concluído', 'Cancelado', 'Aguardando entrega'].map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                {['Bookado', 'Ativo', 'Em andamento', 'Concluído', 'Cancelado', 'Aguardando entrega'].map(s => {
+                  let display = s;
+                  if (s === 'Bookado') display = 'Reservado (Bookado)';
+                  return (
+                    <option key={s} value={s}>{display}</option>
+                  );
+                })}
               </select>
             </div>
             {/* Conflict toggle */}
@@ -3112,6 +3179,8 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
                   selectedAllocationId={selectedAllocationId || undefined}
                   onRegisterScrollFn={(fn) => { timelineScrollToDateRef.current = fn; }}
                   onFocusAllocation={focusAllocation}
+                  expandedFreelancers={expandedFreelancers}
+                  onToggleExpandFreelancer={toggleExpandFreelancer}
                 />
               </div>
             ) : (
