@@ -116,6 +116,9 @@ export async function validatePublicLinkAction(token: string) {
         portfolio_file_name: freela.portfolio_file_name || '',
         portfolio_file_path: freela.portfolio_file_path || '',
         industries: industryIds,
+        cnpj_normalized: freela.cnpj_normalized || '',
+        foreign_tax_id: freela.foreign_tax_id || '',
+        tax_country_code: freela.tax_country_code || '',
       };
     }
 
@@ -240,6 +243,9 @@ export async function submitPublicFormAction(token: string, formData: any) {
           portfolio_file_name: freela.portfolio_file_name || '',
           portfolio_file_path: freela.portfolio_file_path || '',
           industries: industryIds,
+          cnpj_normalized: freela.cnpj_normalized || '',
+          foreign_tax_id: freela.foreign_tax_id || '',
+          tax_country_code: freela.tax_country_code || '',
         };
 
         // Compute diff
@@ -390,19 +396,24 @@ export async function uploadPublicPortfolioAction(
  * Public action to check if a CNPJ already exists in the database.
  * Returns only a boolean to protect personal data.
  */
-export async function checkPublicDuplicateAction(cnpj: string) {
+export async function checkPublicDuplicateAction(cnpj: string, excludeFreelancerId?: string) {
   try {
     if (!cnpj) return { hasDuplicate: false };
     const clean = cnpj.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     if (clean.length !== 14) return { hasDuplicate: false };
 
     const adminClient = getSupabaseAdmin();
-    const { data, error } = await adminClient
+    let query = adminClient
       .from('freelancers')
       .select('id')
       .eq('cnpj_normalized', clean)
-      .is('merged_into_freelancer_id', null)
-      .maybeSingle();
+      .is('merged_into_freelancer_id', null);
+
+    if (excludeFreelancerId) {
+      query = query.neq('id', excludeFreelancerId);
+    }
+
+    const { data, error } = await query.maybeSingle();
 
     if (error) {
       console.error('Error checking public CNPJ duplicate:', error);

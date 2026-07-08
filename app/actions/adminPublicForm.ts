@@ -466,6 +466,9 @@ export async function reviewPublicSubmissionAction(
             portfolio_file_url: sData.portfolio_file_url || null,
             portfolio_file_name: sData.portfolio_file_name || null,
             portfolio_file_path: sData.portfolio_file_path || null,
+            cnpj_normalized: sData.cnpj_normalized || null,
+            foreign_tax_id: sData.foreign_tax_id || null,
+            tax_country_code: sData.tax_country_code || null,
             updated_by: requester.id,
           })
           .eq('id', targetId);
@@ -594,6 +597,9 @@ export async function reviewPublicSubmissionAction(
           portfolio_file_url: sData.portfolio_file_url || null,
           portfolio_file_name: sData.portfolio_file_name || null,
           portfolio_file_path: sData.portfolio_file_path || null,
+          cnpj_normalized: sData.cnpj_normalized || null,
+          foreign_tax_id: sData.foreign_tax_id || null,
+          tax_country_code: sData.tax_country_code || null,
           created_by: requester.id,
         })
         .select('id')
@@ -697,6 +703,9 @@ export async function reviewPublicSubmissionAction(
           portfolio_file_url: sData.portfolio_file_url || null,
           portfolio_file_name: sData.portfolio_file_name || null,
           portfolio_file_path: sData.portfolio_file_path || null,
+          cnpj_normalized: sData.cnpj_normalized || null,
+          foreign_tax_id: sData.foreign_tax_id || null,
+          tax_country_code: sData.tax_country_code || null,
           updated_by: requester.id,
         })
         .eq('id', freelaId);

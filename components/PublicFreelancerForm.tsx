@@ -106,6 +106,7 @@ export default function PublicFreelancerForm({
 
   // Consent checkbox
   const [consentChecked, setConsentChecked] = useState(false);
+  const [lgpdChecked, setLgpdChecked] = useState(false);
 
   // Handle Country Selection Change
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -240,7 +241,8 @@ export default function PublicFreelancerForm({
     if (step === 1 && formData.country_code === 'BR') {
       setIsSubmitting(true);
       try {
-        const result = await checkPublicDuplicateAction(formData.cnpj_normalized);
+        const excludeId = linkType === 'update_freelancer' ? initialData?.id : undefined;
+        const result = await checkPublicDuplicateAction(formData.cnpj_normalized, excludeId);
         if (result && result.hasDuplicate) {
           setErrorMsg('Este CNPJ já está associado a um profissional em nossa base. O RH analisará os registros antes da aprovação.');
           setIsSubmitting(false);
@@ -750,19 +752,44 @@ export default function PublicFreelancerForm({
               </ul>
             </div>
 
-            {/* Consent check */}
-            <label className="flex items-start gap-3 bg-action-cyan/5 border border-action-cyan/20 p-4 rounded-2xl cursor-pointer select-none">
-              <input
-                type="checkbox"
-                required
-                checked={consentChecked}
-                onChange={(e) => setConsentChecked(e.target.checked)}
-                className="mt-0.5 rounded border-white/10 text-action-cyan focus:ring-action-cyan bg-[#0B1E38]"
-              />
-              <span className="text-[10px] sm:text-[11px] text-slate-350 leading-relaxed font-semibold">
-                Confirmo que as informações fornecidas são verdadeiras e autorizo a V3A a analisá-las para fins de cadastro em sua base de freelancers.
-              </span>
-            </label>
+            {/* Consent checks */}
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 bg-action-cyan/5 border border-action-cyan/20 p-4 rounded-2xl cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  required
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-0.5 rounded border-white/10 text-action-cyan focus:ring-action-cyan bg-[#0B1E38]"
+                />
+                <span className="text-[10px] sm:text-[11px] text-slate-350 leading-relaxed font-semibold">
+                  Confirmo que as informações fornecidas são verdadeiras e autorizo a V3A a analisá-las para fins de cadastro em sua base de freelancers.
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 bg-action-cyan/5 border border-action-cyan/20 p-4 rounded-2xl cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  required
+                  checked={lgpdChecked}
+                  onChange={(e) => setLgpdChecked(e.target.checked)}
+                  className="mt-0.5 rounded border-white/10 text-action-cyan focus:ring-action-cyan bg-[#0B1E38]"
+                />
+                <span className="text-[10px] sm:text-[11px] text-slate-350 leading-relaxed font-semibold">
+                  Li e concordo com a{' '}
+                  <a
+                    href="/politica-privacidade.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-action-cyan underline hover:text-action-cyan/80 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Política Corporativa de Privacidade e Proteção de Dados Pessoais (LGPD)
+                  </a>
+                  {' '}da V3A.
+                </span>
+              </label>
+            </div>
           </div>
         )}
 
@@ -792,7 +819,7 @@ export default function PublicFreelancerForm({
           ) : (
             <button
               type="submit"
-              disabled={isSubmitting || !consentChecked}
+              disabled={isSubmitting || !consentChecked || !lgpdChecked}
               className="bg-action-cyan hover:bg-action-cyan/90 text-[#0A192F] px-8 py-3 font-extrabold rounded-xl cursor-pointer transition select-none shadow-sm disabled:opacity-50 flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}

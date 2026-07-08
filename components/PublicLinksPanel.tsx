@@ -509,14 +509,26 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     return '—';
   };
 
+  // Helper `getEffectiveLinkStatus(link)`
+  const getEffectiveLinkStatus = (link: any): 'active' | 'used' | 'expired' | 'revoked' => {
+    if (link.status === 'revoked') return 'revoked';
+    if (link.status === 'used') return 'used';
+    
+    const isExpired = link.expires_at && new Date(link.expires_at) < new Date();
+    if (isExpired) return 'expired';
+    
+    return link.status || 'expired';
+  };
+
   // Helper `getLinkRhStatus(link)`
   const getLinkRhStatus = (link: any) => {
     const submission = link.submission;
+    const isExpired = link.expires_at && new Date(link.expires_at) < new Date();
 
     if (link.status === 'revoked') {
       return { label: 'Link revogado', status: 'revoked' };
     }
-    if (link.status === 'expired') {
+    if (link.status === 'expired' || (link.status === 'active' && isExpired && !submission)) {
       return { label: 'Não preenchido / expirado', status: 'expired_unused' };
     }
     if (link.status === 'active' && !submission) {
@@ -608,7 +620,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
     }
 
     if (filterStatus !== 'all') {
-      result = result.filter(link => link.status === filterStatus);
+      result = result.filter(link => getEffectiveLinkStatus(link) === filterStatus);
     }
 
     if (filterRhStatus !== 'all') {
@@ -695,7 +707,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
       width: '16%',
       render: (link: any) => (
         <div className="flex flex-col gap-1 items-start">
-          {renderStatusBadge(link.status)}
+          {renderStatusBadge(getEffectiveLinkStatus(link))}
           {renderRhStatusBadge(link)}
         </div>
       )
@@ -767,7 +779,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
         const clearToken = link.metadata?.token;
         return (
           <div className="flex items-center justify-end gap-1.5 w-full">
-            {clearToken && link.status === 'active' && (
+            {clearToken && getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleCopyLink(clearToken, link.link_type, link.id)}
                 className="p-1.5 rounded-lg transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -778,7 +790,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                 {isCopied ? <Check className="w-3.5 h-3.5 text-success-500" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             )}
-            {link.status === 'active' && (
+            {getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleOpenQRModal(link)}
                 className="p-1.5 rounded-lg transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
@@ -789,7 +801,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                 <QrCode className="w-3.5 h-3.5" />
               </button>
             )}
-            {isMasterOrRh && link.status === 'active' && (
+            {isMasterOrRh && getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleRevokeLink(link.id)}
                 className="p-1.5 rounded-lg transition cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-950/20"
@@ -844,7 +856,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
             {emailVal && <p className="text-xs text-text-muted truncate mt-0.5">{emailVal}</p>}
           </div>
           <div className="flex flex-col gap-1 shrink-0">
-            {renderStatusBadge(link.status)}
+            {renderStatusBadge(getEffectiveLinkStatus(link))}
           </div>
         </div>
         <div className="flex flex-wrap gap-1">
@@ -875,7 +887,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
         
         <div className="flex items-center justify-between border-t pt-3" style={{ borderColor: 'var(--border-soft)' }}>
           <div className="flex items-center gap-1.5">
-            {clearToken && link.status === 'active' && (
+            {clearToken && getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleCopyLink(clearToken, link.link_type, link.id)}
                 className="p-2 rounded-xl transition cursor-pointer"
@@ -885,7 +897,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                 {isCopied ? <Check className="w-4 h-4" style={{ color: 'var(--success-text)' }} /> : <Copy className="w-4 h-4" />}
               </button>
             )}
-            {link.status === 'active' && (
+            {getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleOpenQRModal(link)}
                 className="p-2 rounded-xl transition cursor-pointer"
@@ -895,7 +907,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
                 <QrCode className="w-4 h-4" />
               </button>
             )}
-            {isMasterOrRh && link.status === 'active' && (
+            {isMasterOrRh && getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleRevokeLink(link.id)}
                 className="p-2 rounded-xl transition cursor-pointer"

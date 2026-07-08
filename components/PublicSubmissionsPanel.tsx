@@ -281,11 +281,10 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
         </button>
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-6">
+      <div className="space-y-6">
         
-        {/* Left Side: Submissions List Table */}
-        <div className={`flex-1 bg-white border border-border-subtle rounded-3xl p-6 shadow-sm overflow-hidden flex flex-col min-w-0
-          ${selectedSubmission ? 'hidden xl:flex' : 'flex'}`}>
+        {/* Submissions List Table */}
+        <div className="bg-white border border-border-subtle rounded-3xl p-6 shadow-sm overflow-hidden flex flex-col min-w-0">
           
           <div className="mb-4">
             <h3 className="text-sm font-extrabold text-text-primary">Fila de Submissões Recebidas</h3>
@@ -381,24 +380,35 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
           </div>
         </div>
 
-        {/* Right Side: Detailed review pane */}
+        {/* Modal Overlay: Detailed review pane */}
         {selectedSubmission && (
-          <div className="w-full xl:w-[450px] bg-white border border-border-subtle rounded-3xl p-6 shadow-sm space-y-5 flex flex-col shrink-0 animate-scale-up">
-            
-            <div className="flex justify-between items-start pb-3 border-b border-slate-100 select-none">
-              <div>
-                <h3 className="text-sm font-extrabold text-text-primary">Detalhes da Submissão</h3>
-                <p className="text-[10px] text-text-secondary mt-0.5">
-                  Recebido em {new Date(selectedSubmission.created_at).toLocaleString('pt-BR')}
-                </p>
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fade-in"
+            onClick={() => setSelectedSubmission(null)}
+          >
+            <div 
+              className="w-full max-w-4xl bg-white border border-border-subtle rounded-3xl p-6 shadow-xl space-y-5 flex flex-col my-8 max-h-[90vh] overflow-y-auto animate-scale-up"
+              onClick={e => e.stopPropagation()}
+            >
+              
+              <div className="flex justify-between items-start pb-3 border-b border-slate-100 select-none">
+                <div>
+                  <h3 className="text-base font-extrabold text-text-primary uppercase tracking-wider">Detalhes da Submissão</h3>
+                  <p className="text-[10px] text-text-secondary mt-0.5">
+                    Recebido em {new Date(selectedSubmission.created_at).toLocaleString('pt-BR')} | Tipo:{' '}
+                    <span className="font-extrabold text-action-cyan uppercase">
+                      {selectedSubmission.submission_type === 'new_freelancer' ? 'Novo Cadastro' : 'Atualização de Cadastro'}
+                    </span>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedSubmission(null)}
+                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition"
+                  aria-label="Fechar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setSelectedSubmission(null)}
-                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700"
-              >
-                Fechar
-              </button>
-            </div>
 
             {errorMsg && (
               <div className="bg-red-500/10 border border-red-500/20 text-rose-800 p-3 rounded-xl flex gap-2">
@@ -508,6 +518,11 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                     </h4>
                     <div className="space-y-1.5 text-slate-700">
                       <p><strong>Nome Completo:</strong> {selectedSubmission.submitted_data.full_name}</p>
+                      {selectedSubmission.submitted_data.cnpj_normalized ? (
+                        <p><strong>CNPJ:</strong> {selectedSubmission.submitted_data.cnpj_normalized.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}</p>
+                      ) : selectedSubmission.submitted_data.foreign_tax_id ? (
+                        <p><strong>Identificação Fiscal:</strong> {selectedSubmission.submitted_data.foreign_tax_id} ({selectedSubmission.submitted_data.tax_country_code || 'Estrangeiro'})</p>
+                      ) : null}
                       <p className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-slate-400" /> {selectedSubmission.submitted_data.email}</p>
                       <p className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-400" /> {selectedSubmission.submitted_data.whatsapp}</p>
                       <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {selectedSubmission.submitted_data.city}/{selectedSubmission.submitted_data.state} {selectedSubmission.submitted_data.location_text && `(${selectedSubmission.submitted_data.location_text})`}</p>
@@ -652,7 +667,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                 </div>
               )}
             </div>
-
+            </div>
           </div>
         )}
       </div>

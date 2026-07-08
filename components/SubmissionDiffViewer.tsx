@@ -26,6 +26,9 @@ export default function SubmissionDiffViewer({
 
   // Map database keys to user friendly UI labels in Portuguese
   const fieldLabels: Record<string, string> = {
+    cnpj_normalized: 'CNPJ',
+    foreign_tax_id: 'ID Fiscal Estrangeiro',
+    tax_country_code: 'País Tributação',
     full_name: 'Nome Completo',
     email: 'E-mail',
     whatsapp: 'WhatsApp',
@@ -51,6 +54,10 @@ export default function SubmissionDiffViewer({
   const formatValue = (key: string, value: any) => {
     if (value === null || value === undefined || value === '') {
       return <span className="text-slate-400 italic font-semibold">Vazio</span>;
+    }
+
+    if (key === 'cnpj_normalized' && value && value.length === 14) {
+      return value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
     }
 
     if (key === 'main_function_id') {
