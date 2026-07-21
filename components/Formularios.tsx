@@ -648,8 +648,8 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   // Policy match
   const billingTypeForMatch =
     remunerationModel === 'daily' ? 'Diária' :
-    remunerationModel === 'hourly' ? 'Hora' :
-    remunerationModel === 'fixed_job' ? 'Job Fechado' : 'Mensal / Salário';
+      remunerationModel === 'hourly' ? 'Hora' :
+        remunerationModel === 'fixed_job' ? 'Job Fechado' : 'Mensal / Salário';
 
   const matchedPolicy = db.policies.find((p: any) =>
     p.role === roleNeeded &&
@@ -701,7 +701,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
 
   const basePolicyStatus: 'within_policy' | 'above_policy_requires_approval' | 'no_policy_found' =
     !policyResult || policyResult.policyStatus === 'policy_missing' ? 'no_policy_found' :
-    policyResult.policyStatus === 'above_policy' ? 'above_policy_requires_approval' : 'within_policy';
+      policyResult.policyStatus === 'above_policy' ? 'above_policy_requires_approval' : 'within_policy';
 
   const policyStatus: 'within_policy' | 'above_policy_requires_approval' | 'no_policy_found' =
     isSuccessFeeAbovePolicy ? 'above_policy_requires_approval' : basePolicyStatus;
@@ -809,7 +809,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         expected_budget_saving_amount: savingAmount,
         expected_budget_saving_percentage: savingPercentage,
         payment_policy_status: policyStatus,
-        
+
         is_competitive_bid: isCompetitiveBid,
         success_fee_enabled: successFeeEnabled,
         expected_total_value: expectedTotalCompensation,
@@ -897,7 +897,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         payment_dates_generated: [],
         payment_dates_selected: [],
         payment_dates_excluded: [],
-        
+
         policy_reference_value: matchedPolicy ? Number(matchedPolicy.referenceValue) : null,
         policy_ceiling_value: matchedPolicy ? Number(matchedPolicy.ceilingValue) : null,
         is_above_policy: dbPolicyExceeded,
@@ -921,7 +921,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       const mappedJob = mapJobToUI(requestJob);
       db.setJobs(prev => [mappedJob, ...prev]);
       alert(`Demanda "${name}" registrada com sucesso! ${isCompetitiveBid ? 'Aguardando encerramento da concorrência.' : 'Prossiga para a shortlist.'}`);
-      db.setSelectedJobId(null);
+      db.setSelectedJobId(mappedJob.id);
       db.setActiveTab(isCompetitiveBid ? 'Dashboard' : 'Shortlist');
     } catch (error: any) {
       console.error('Error creating opportunity:', error);
@@ -977,22 +977,21 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     Resumo do Job
                   </span>
                   {urgency && (
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                      urgency === 'Alta'
-                        ? 'bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/10'
-                        : urgency === 'Média'
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${urgency === 'Alta'
+                      ? 'bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/10'
+                      : urgency === 'Média'
                         ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/10'
                         : 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/10'
-                    }`}>
+                      }`}>
                       Urgência: {urgency}
                     </span>
                   )}
                 </div>
-                
+
                 <h3 className="text-sm font-bold text-text-primary leading-tight">
                   {client ? `[${client}] ` : ''}{name || 'Título não definido'}
                 </h3>
-                
+
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-text-secondary">
                   {nucleoName && (
                     <div className="flex items-center gap-1">
@@ -1015,11 +1014,10 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                 </div>
               </div>
 
-              <div className={`flex flex-col sm:items-end justify-center shrink-0 px-3 py-1.5 rounded-xl transition-all duration-300 ${
-                isEditingRate || isEditingSuccessFee || isEditingBudget
-                  ? 'border border-action-cyan/40 bg-action-cyan/5 ring-1 ring-action-cyan/20 shadow-[0_0_8px_rgba(6,182,212,0.15)]'
-                  : 'border border-transparent'
-              }`}>
+              <div className={`flex flex-col sm:items-end justify-center shrink-0 px-3 py-1.5 rounded-xl transition-all duration-300 ${isEditingRate || isEditingSuccessFee || isEditingBudget
+                ? 'border border-action-cyan/40 bg-action-cyan/5 ring-1 ring-action-cyan/20 shadow-[0_0_8px_rgba(6,182,212,0.15)]'
+                : 'border border-transparent'
+                }`}>
                 <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider flex items-center gap-1.5">
                   Budget Máximo
                   {(isEditingRate || isEditingSuccessFee || isEditingBudget) && (
@@ -1091,7 +1089,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             <div>
               <label className={labelCls}>Senioridade Requerida</label>
               <select value={seniorityNeeded} onChange={e => setSeniorityNeeded(e.target.value as any)} className={selectCls}>
-                {['Júnior','Pleno','Sênior','Especialista'].map(s => (
+                {['Júnior', 'Pleno', 'Sênior', 'Especialista'].map(s => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
@@ -1157,11 +1155,10 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     handleBudgetBlur();
                     setIsEditingBudget(false);
                   }}
-                  className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${
-                    isEditingRate || isEditingSuccessFee
-                      ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
-                      : ''
-                  }`}
+                  className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${isEditingRate || isEditingSuccessFee
+                    ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                    : ''
+                    }`}
                   required
                 />
               </div>
@@ -1239,11 +1236,10 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     handleOneTimeRateBlur();
                     setIsEditingRate(false);
                   }}
-                  className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${
-                    isEditingSuccessFee || isEditingBudget
-                      ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
-                      : ''
-                  }`}
+                  className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${isEditingSuccessFee || isEditingBudget
+                    ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                    : ''
+                    }`}
                   required
                 />
               </div>
@@ -1321,7 +1317,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                           {cycleDays} dias
                         </span>
                       </div>
-                      
+
                       <div className="space-y-1 text-xs">
                         <div className="flex justify-between text-text-secondary text-[11px]">
                           <span>Período:</span>
@@ -1445,11 +1441,10 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                           handleSuccessFeeFixedAmountBlur();
                           setIsEditingSuccessFee(false);
                         }}
-                        className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${
-                          isEditingRate || isEditingBudget
-                            ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
-                            : ''
-                        }`}
+                        className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${isEditingRate || isEditingBudget
+                          ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                          : ''
+                          }`}
                         required
                       />
                     </div>
@@ -1479,11 +1474,10 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                         }}
                         onFocus={() => setIsEditingSuccessFee(true)}
                         onBlur={() => setIsEditingSuccessFee(false)}
-                        className={`${inputCls} transition-all duration-300 ${
-                          isEditingRate || isEditingBudget
-                            ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
-                            : ''
-                        }`}
+                        className={`${inputCls} transition-all duration-300 ${isEditingRate || isEditingBudget
+                          ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                          : ''
+                          }`}
                         required
                       />
                     </div>
@@ -1562,13 +1556,13 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
           const tetoFechado = tetoBruto - descontoTeto;
           const calculatedExcessAmount = proposedVal - tetoFechado;
           const calculatedExcessPercent = tetoFechado > 0 ? (calculatedExcessAmount / tetoFechado) * 100 : 0;
-          
+
           const isMemoryOpen = isMemoryOpenManual !== null ? isMemoryOpenManual : (policyStatus === 'above_policy_requires_approval');
 
-          const cardClass = 
+          const cardClass =
             policyStatus === 'above_policy_requires_approval' ? 'policy-card-above' :
-            policyStatus === 'within_policy' ? 'policy-card-within' :
-            'policy-card-missing';
+              policyStatus === 'within_policy' ? 'policy-card-within' :
+                'policy-card-missing';
 
           return (
             <div className={`border rounded-2xl p-5 space-y-4 ${cardClass}`}>
@@ -1584,15 +1578,15 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     <div>
                       Modelo: <strong className="text-text-primary">{
                         remunerationModel === 'daily' ? 'Diária' :
-                        remunerationModel === 'hourly' ? 'Hora' :
-                        remunerationModel === 'fixed_job' ? 'Job fechado' : 'Mensal / Salário'
+                          remunerationModel === 'hourly' ? 'Hora' :
+                            remunerationModel === 'fixed_job' ? 'Job fechado' : 'Mensal / Salário'
                       }</strong>
                     </div>
                     <div>
                       Base de cálculo: <strong className="text-text-primary">{
                         remunerationModel === 'fixed_job' ? 'Diária equivalente' :
-                        remunerationModel === 'daily' ? 'Diária direta' :
-                        remunerationModel === 'hourly' ? 'Horas previstas' : 'Mensal direto'
+                          remunerationModel === 'daily' ? 'Diária direta' :
+                            remunerationModel === 'hourly' ? 'Horas previstas' : 'Mensal direto'
                       }</strong>
                     </div>
                     <div>
@@ -1630,15 +1624,14 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     <div className="policy-metric-bg p-3 rounded-xl border flex flex-col justify-center">
                       <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-1">Status da Regra</span>
                       <div>
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-extrabold ${
-                          policyStatus === 'within_policy' && !isSuccessFeeAbovePolicy
-                            ? 'forecast-status-within'
-                            : (policyStatus === 'above_policy_requires_approval' || isSuccessFeeAbovePolicy)
-                              ? 'forecast-status-above'
-                              : 'bg-amber-500/20 text-amber-400'
-                        }`}>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-extrabold ${policyStatus === 'within_policy' && !isSuccessFeeAbovePolicy
+                          ? 'forecast-status-within'
+                          : (policyStatus === 'above_policy_requires_approval' || isSuccessFeeAbovePolicy)
+                            ? 'forecast-status-above'
+                            : 'bg-amber-500/20 text-amber-400'
+                          }`}>
                           {policyStatus === 'within_policy' && !isSuccessFeeAbovePolicy ? 'Dentro da política' :
-                           (policyStatus === 'above_policy_requires_approval' || isSuccessFeeAbovePolicy) ? 'Acima da política' : 'Política não cadastrada'}
+                            (policyStatus === 'above_policy_requires_approval' || isSuccessFeeAbovePolicy) ? 'Acima da política' : 'Política não cadastrada'}
                         </span>
                       </div>
                     </div>
@@ -1650,8 +1643,8 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                           {successFeeType === 'percentage' ? 'Teto Success Fee (Política)' : 'SF Calculado vs Teto'}
                         </span>
                         <span className="font-bold text-indigo-600 dark:text-indigo-400 text-sm block">
-                          {matchingSuccessFeePolicy?.successFeeMaxPercent 
-                            ? (successFeeType === 'percentage' 
+                          {matchingSuccessFeePolicy?.successFeeMaxPercent
+                            ? (successFeeType === 'percentage'
                               ? `${matchingSuccessFeePolicy.successFeeMaxPercent}%`
                               : `${currentSuccessFeePercent.toFixed(1)}% (Teto ${matchingSuccessFeePolicy.successFeeMaxPercent}%)`)
                             : 'Não definido'}
@@ -1691,7 +1684,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                         </span>
                         {isMemoryOpen ? <ChevronUp className="w-4.5 h-4.5" /> : <ChevronDown className="w-4.5 h-4.5" />}
                       </button>
-                      
+
                       {isMemoryOpen && (
                         <div className="mt-3 bg-white/40 dark:bg-slate-900/40 p-4 rounded-xl border border-border-subtle/50 text-[11px] space-y-2 font-mono text-text-primary leading-relaxed shadow-inner">
                           <div className="flex justify-between border-b border-border-subtle/20 pb-1">
@@ -1792,10 +1785,9 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             {/* Total previsto */}
             <div>
               <span className="text-[10px] text-text-secondary block mb-1">Custo Base Previsto (Freela)</span>
-              <span className={`font-extrabold text-base ${
-                expectedTotalCompensation > 0 && expectedTotalCompensation > budget
-                  ? 'forecast-value-negative' : 'forecast-value-positive'
-              }`}>
+              <span className={`font-extrabold text-base ${expectedTotalCompensation > 0 && expectedTotalCompensation > budget
+                ? 'forecast-value-negative' : 'forecast-value-positive'
+                }`}>
                 {expectedTotalCompensation > 0 ? formatCurrencyBR(expectedTotalCompensation) : '—'}
               </span>
             </div>
