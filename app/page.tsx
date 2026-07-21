@@ -1656,6 +1656,7 @@ export default function Home() {
     } else if (menuName === 'Buscar Freelancers' || menuName === 'Banco de Freelancers') {
       setActiveTab('Banco de Freelancers');
     } else if (menuName === 'Shortlist & Negociação') {
+      setSelectedJobId(null);
       setActiveTab('Shortlist');
     } else if (menuName === 'Sugestões de Freelas') {
       setActiveTab('Sugestões de Freelas');
