@@ -100,6 +100,9 @@ export function mapJobStatusToUI(status: string | null): Job['status'] {
     case 'opportunity_created':
     case 'oportunidade_criada':
       return 'Oportunidade criada';
+    case 'waiting_competition_result':
+    case 'aguardando_resultado_concorrencia':
+      return 'Aguardando resultado de concorrência';
     case 'shortlist':
     case 'em_shortlist':
       return 'Em shortlist';
@@ -138,6 +141,7 @@ export function mapJobStatusToUI(status: string | null): Job['status'] {
 export function mapJobStatusToDB(status: string): string {
   switch (status) {
     case 'Oportunidade criada': return 'oportunidade_criada';
+    case 'Aguardando resultado de concorrência': return 'waiting_competition_result';
     case 'Em shortlist': return 'em_shortlist';
     case 'Em negociação': return 'em_negociacao';
     case 'Pendente aprovação': return 'aguardando_rh';
@@ -419,6 +423,7 @@ export function mapValuePolicyToUI(pol: any): ValuePolicy {
     remunerationModel: pol.remuneration_model,
     approvalRequiredAbove: pol.approval_required_above !== null && pol.approval_required_above !== undefined ? Number(pol.approval_required_above) : undefined,
     notes: pol.notes || '',
+    successFeeMaxPercent: pol.success_fee_max_percent ? Number(pol.success_fee_max_percent) : undefined,
   };
 }
 
@@ -452,6 +457,7 @@ export function mapAllocationToUI(alloc: any): Allocation {
     paymentTerms: alloc.payment_terms || '',
     paymentNotes: alloc.payment_notes || '',
     paymentRequestStatus: alloc.payment_request_status || 'not_requested',
+    success_fee_enabled: alloc.success_fee_enabled || false,
     evaluationStatus: alloc.evaluation_status || 'locked',
     reverseEvaluationStatus: alloc.reverse_evaluation_status || 'not_generated',
     evaluatedFreelancer: alloc.evaluated_freelancer || false,
@@ -665,9 +671,12 @@ export function mapJobToUI(req: any): Job {
     policyLimitAmount: req.policy_ceiling_value !== null && req.policy_ceiling_value !== undefined ? Number(req.policy_ceiling_value) : undefined,
     policyReferenceAmount: req.policy_reference_value !== null && req.policy_reference_value !== undefined ? Number(req.policy_reference_value) : undefined,
     approvalRequired: req.approval_required || false,
+    is_competitive_bid: req.is_competitive_bid || req.jobs?.is_competitive_bid || false,
+    success_fee_enabled: req.success_fee_enabled || req.jobs?.success_fee_enabled || false,
     paymentDatesGenerated: req.payment_dates_generated || [],
     paymentDatesSelected: req.payment_dates_selected || [],
     paymentDatesExcluded: req.payment_dates_excluded || [],
+    createdAt: req.created_at || null,
   };
 }
 

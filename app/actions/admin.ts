@@ -1158,6 +1158,15 @@ export async function confirmAllocationAction(
     paymentTerms?: string;
     paymentNotes?: string;
     excludedDates?: string[];
+    // Success Fee Fields
+    successFeeEnabled?: boolean;
+    successFeeType?: 'fixed' | 'percentage';
+    successFeeFixedAmount?: number;
+    successFeePercent?: number;
+    successFeeBase?: string;
+    successFeeTrigger?: string;
+    successFeeTerms?: string;
+    acceptedByFreelancer?: boolean;
   }
 ) {
   try {
@@ -1214,7 +1223,7 @@ export async function confirmAllocationAction(
 
     // Block if job already booked
     if (reqData.allocation_id) {
-      return { success: false, error: 'Este job já possui uma alocação ativa.' };
+      return { success: false, error: 'Este job já possui uma alocação activa.' };
     }
 
     // Check nucleus matching
@@ -1264,6 +1273,91 @@ export async function confirmAllocationAction(
     const budgetSavingPercentage = reqData.budget_max > 0 ? (budgetSavingAmount / reqData.budget_max) * 100 : 0;
     const budgetDeltaStatus = budgetSavingAmount > 0 ? 'saving' : budgetSavingAmount === 0 ? 'neutral' : 'over_budget';
 
+    const modelDb = 
+      payload.remunerationModel?.toLowerCase() === 'diária' || payload.remunerationModel?.toLowerCase() === 'diaria' || payload.remunerationModel === 'daily' ? 'daily' :
+      payload.remunerationModel?.toLowerCase() === 'hora' || payload.remunerationModel === 'hourly' ? 'hourly' :
+      payload.remunerationModel?.toLowerCase() === 'job fechado' || payload.remunerationModel === 'fixed_job' ? 'fixed_job' : 'monthly_salary';
+
+    // 1. Fetch or create negotiation record
+    const { data: existingNeg } = await adminClient
+      .from('negotiations')
+      .select('id')
+      .eq('request_id', payload.requestId)
+      .eq('freelancer_id', payload.freelancerId)
+      .maybeSingle();
+
+    let negotiationId = existingNeg?.id;
+    if (!negotiationId) {
+      const { data: createdNeg, error: createdNegErr } = await adminClient
+        .from('negotiations')
+        .insert({
+          job_id: reqData.job_id,
+          request_id: payload.requestId,
+          freelancer_id: payload.freelancerId,
+          scope: payload.scope || 'Alocação homologada pelo núcleo',
+          negotiated_value: payload.negotiatedRate,
+          billing_type: modelDb,
+          status: 'aceitou'
+        })
+        .select('id')
+        .single();
+      if (!createdNegErr && createdNeg) {
+        negotiationId = createdNeg.id;
+      }
+    }
+
+    // 2. Persist success fee settings if applicable
+    if (payload.successFeeEnabled && negotiationId) {
+      let calculatedPotentialAmount = 0;
+      if (payload.successFeeType === 'fixed') {
+        calculatedPotentialAmount = payload.successFeeFixedAmount || 0;
+      } else {
+        const baseForCalc = payload.successFeeBase === 'sobre o budget' ? Number(reqData.budget_max || 0) : totalContractValue;
+        calculatedPotentialAmount = (baseForCalc * (payload.successFeePercent || 0)) / 100;
+      }
+
+      const { data: existingNSF } = await adminClient
+        .from('negotiation_success_fees')
+        .select('id')
+        .eq('negotiation_id', negotiationId)
+        .maybeSingle();
+
+      if (existingNSF) {
+        await adminClient
+          .from('negotiation_success_fees')
+          .update({
+            enabled: true,
+            fee_type: payload.successFeeType,
+            fixed_amount: payload.successFeeFixedAmount || 0,
+            percentage_rate: payload.successFeePercent || 0,
+            percentage_base: payload.successFeeBase,
+            calculated_potential_amount: calculatedPotentialAmount,
+            trigger_type: payload.successFeeTrigger,
+            terms: payload.successFeeTerms,
+            accepted_by_freelancer: payload.acceptedByFreelancer || false,
+            accepted_at: payload.acceptedByFreelancer ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingNSF.id);
+      } else {
+        await adminClient
+          .from('negotiation_success_fees')
+          .insert({
+            negotiation_id: negotiationId,
+            enabled: true,
+            fee_type: payload.successFeeType,
+            fixed_amount: payload.successFeeFixedAmount || 0,
+            percentage_rate: payload.successFeePercent || 0,
+            percentage_base: payload.successFeeBase,
+            calculated_potential_amount: calculatedPotentialAmount,
+            trigger_type: payload.successFeeTrigger,
+            terms: payload.successFeeTerms,
+            accepted_by_freelancer: payload.acceptedByFreelancer || false,
+            accepted_at: payload.acceptedByFreelancer ? new Date().toISOString() : null
+          });
+      }
+    }
+
     // Insert Allocation
     const { data: newAlloc, error: allocCreateErr } = await adminClient
       .from('allocations')
@@ -1272,6 +1366,7 @@ export async function confirmAllocationAction(
         request_id: payload.requestId,
         freelancer_id: payload.freelancerId,
         nucleo_id: job.nucleo_id,
+        negotiation_id: negotiationId || null,
         start_date,
         end_date,
         approved_value: payload.negotiatedRate,
@@ -1291,7 +1386,8 @@ export async function confirmAllocationAction(
         payment_notes: payload.paymentNotes || '',
         payment_request_status: 'not_requested',
         evaluation_status: 'locked',
-        reverse_evaluation_status: 'not_generated'
+        reverse_evaluation_status: 'not_generated',
+        success_fee_enabled: payload.successFeeEnabled || false
       })
       .select('id, allocation_code')
       .single();
@@ -1300,11 +1396,6 @@ export async function confirmAllocationAction(
       console.error('Error inserting allocation:', allocCreateErr);
       return { success: false, error: `Erro ao criar alocação: ${allocCreateErr?.message}` };
     }
-
-    const modelDb = 
-      payload.remunerationModel?.toLowerCase() === 'diária' || payload.remunerationModel?.toLowerCase() === 'diaria' || payload.remunerationModel === 'daily' ? 'daily' :
-      payload.remunerationModel?.toLowerCase() === 'hora' || payload.remunerationModel === 'hourly' ? 'hourly' :
-      payload.remunerationModel?.toLowerCase() === 'job fechado' || payload.remunerationModel === 'fixed_job' ? 'fixed_job' : 'monthly_salary';
 
     // Generate Payment Installments in schedule
     if (payload.paymentModel === 'monthly_recurring') {

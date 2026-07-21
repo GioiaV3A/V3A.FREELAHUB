@@ -583,3 +583,169 @@ export function calculatePolicyLimitForJob(args: PolicyLimitArgs): PolicyLimitRe
 
   return empty;
 }
+
+export interface PaymentProjectionSim {
+  cycleNumber: number;
+  startDate: string;
+  endDate: string;
+  suggestedPaymentDate: string;
+  suggestedRcDeadline: string;
+  alertLevel: 'informational' | 'attention' | 'urgent' | 'critical';
+  memory: string;
+}
+
+function findLastTuesdayOrBefore(targetDate: Date): Date {
+  const d = new Date(targetDate);
+  const day = d.getDay();
+  const diff = (day - 2 + 7) % 7;
+  d.setDate(d.getDate() - diff);
+  return d;
+}
+
+export function simulatePaymentProjections(
+  startDateStr: string,
+  endDateStr: string
+): PaymentProjectionSim[] {
+  const projections: PaymentProjectionSim[] = [];
+  if (!startDateStr || !endDateStr) return projections;
+
+  const startParts = startDateStr.split('-');
+  const endParts = endDateStr.split('-');
+  if (startParts.length !== 3 || endParts.length !== 3) return projections;
+  
+  const start = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
+  const end = new Date(Number(endParts[0]), Number(endParts[1]) - 1, Number(endParts[2]));
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return projections;
+
+  const duration = Math.round((end.getTime() - start.getTime()) / (1005 * 60 * 60 * 24)) + 1; // Wait, duration inclusive calculation: end - start + 1
+  const actualDuration = end.getDate() - start.getDate() + 1; // Actually, let's use reliable date difference:
+  const diffTime = end.getTime() - start.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+  const formatDateISO = (d: Date): string => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const getAlertLevel = (rcDeadline: Date, allocationStart: Date): 'informational' | 'attention' | 'urgent' | 'critical' => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const rc = new Date(rcDeadline);
+    rc.setHours(0, 0, 0, 0);
+    const allocStart = new Date(allocationStart);
+    allocStart.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.round((rc.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0 || rc < allocStart) {
+      return 'critical';
+    } else if (diffDays <= 3) {
+      return 'urgent';
+    } else if (diffDays <= 10) {
+      return 'attention';
+    } else {
+      return 'informational';
+    }
+  };
+
+  if (diffDays <= 15) {
+    const limitDate = new Date(end);
+    limitDate.setDate(limitDate.getDate() + 15);
+    let payDate = findLastTuesdayOrBefore(limitDate);
+    if (payDate <= end) {
+      payDate.setDate(payDate.getDate() + 7);
+    }
+    const rcDate = new Date(payDate);
+    rcDate.setDate(rcDate.getDate() - 10);
+
+    projections.push({
+      cycleNumber: 1,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      suggestedPaymentDate: formatDateISO(payDate),
+      suggestedRcDeadline: formatDateISO(rcDate),
+      alertLevel: getAlertLevel(rcDate, start),
+      memory: `Faixa 1-15 dias (Duração: ${diffDays} dias). Limite de 15 dias pós-fim (${formatDateISO(limitDate)}). Projeção na terça-feira.`
+    });
+  } else if (diffDays <= 21) {
+    const limitDate = new Date(end);
+    limitDate.setDate(limitDate.getDate() + 7);
+    let payDate = findLastTuesdayOrBefore(limitDate);
+    if (payDate <= end) {
+      payDate.setDate(payDate.getDate() + 7);
+    }
+    const rcDate = new Date(payDate);
+    rcDate.setDate(rcDate.getDate() - 10);
+
+    projections.push({
+      cycleNumber: 1,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      suggestedPaymentDate: formatDateISO(payDate),
+      suggestedRcDeadline: formatDateISO(rcDate),
+      alertLevel: getAlertLevel(rcDate, start),
+      memory: `Faixa 16-21 dias (Duração: ${diffDays} dias). Limite de 7 dias pós-fim (${formatDateISO(limitDate)}). Projeção na terça-feira.`
+    });
+  } else if (diffDays <= 30) {
+    let payDate = findLastTuesdayOrBefore(end);
+    if (payDate < start) {
+      payDate = new Date(start);
+      const day = payDate.getDay();
+      const diff = (2 - day + 7) % 7;
+      payDate.setDate(payDate.getDate() + diff);
+    }
+    const rcDate = new Date(payDate);
+    rcDate.setDate(rcDate.getDate() - 10);
+
+    projections.push({
+      cycleNumber: 1,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      suggestedPaymentDate: formatDateISO(payDate),
+      suggestedRcDeadline: formatDateISO(rcDate),
+      alertLevel: getAlertLevel(rcDate, start),
+      memory: `Faixa 22-30 dias (Duração: ${diffDays} dias). Última terça-feira do período.`
+    });
+  } else {
+    let cycleStart = new Date(start);
+    let cycleNum = 1;
+
+    while (cycleStart <= end) {
+      let cycleEnd = new Date(cycleStart);
+      cycleEnd.setMonth(cycleEnd.getMonth() + 1);
+      cycleEnd.setDate(cycleEnd.getDate() - 1);
+
+      const remainingTime = end.getTime() - cycleEnd.getTime();
+      const remainingDays = Math.round(remainingTime / (1000 * 60 * 60 * 24));
+      if (remainingDays <= 15) {
+        cycleEnd = new Date(end);
+      }
+
+      let payDate = findLastTuesdayOrBefore(cycleEnd);
+      if (payDate < cycleStart) {
+        payDate = new Date(cycleStart);
+        const day = payDate.getDay();
+        const diff = (2 - day + 7) % 7;
+        payDate.setDate(payDate.getDate() + diff);
+      }
+      const rcDate = new Date(payDate);
+      rcDate.setDate(rcDate.getDate() - 10);
+
+      projections.push({
+        cycleNumber: cycleNum,
+        startDate: formatDateISO(cycleStart),
+        endDate: formatDateISO(cycleEnd),
+        suggestedPaymentDate: formatDateISO(payDate),
+        suggestedRcDeadline: formatDateISO(rcDate),
+        alertLevel: getAlertLevel(rcDate, start),
+        memory: `Faixa 31+ dias (Ciclo ${cycleNum}). Última terça-feira do ciclo.`
+      });
+
+      cycleNum++;
+      cycleStart = new Date(cycleEnd);
+      cycleStart.setDate(cycleStart.getDate() + 1);
+    }
+  }
+
+  return projections;
+}
+

@@ -105,7 +105,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, { scope: 'all_nuclei' | 'single_
   }
 };
 
-export function can(user: { role: string | null | undefined } | null | undefined, permission: PermissionKey): boolean {
+export function can(user: { role?: string | null } | null | undefined, permission: PermissionKey): boolean {
   if (!user || !user.role) return false;
   const role = user.role.toLowerCase() as UserRole;
   const roleConfig = ROLE_PERMISSIONS[role];

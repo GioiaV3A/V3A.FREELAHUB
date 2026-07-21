@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { simulatePaymentProjections } from '@/lib/financial';
 import { 
   mapJobToUI, 
   mapCandidateStatusToUI, 
@@ -40,6 +41,50 @@ export default function JobDetailPage() {
   const [allocations, setAllocations] = useState<any[]>([]);
   const [paymentCodes, setPaymentCodes] = useState<any[]>([]);
   const [evaluations, setEvaluations] = useState<any[]>([]);
+  const [successFee, setSuccessFee] = useState<any>(null);
+  const [updatingOutcome, setUpdatingOutcome] = useState(false);
+  const [outcomeStatus, setOutcomeStatus] = useState<string>('pending');
+  const [outcomeNotes, setOutcomeNotes] = useState<string>('');
+
+  useEffect(() => {
+    if (successFee) {
+      setOutcomeStatus(successFee.status || 'pending');
+      setOutcomeNotes(successFee.notes || '');
+    }
+  }, [successFee]);
+
+  const handleUpdateSuccessFeeOutcome = async () => {
+    if (!successFee) return;
+    setUpdatingOutcome(true);
+    try {
+      const { error } = await supabase
+        .from('allocation_success_fees')
+        .update({
+          status: outcomeStatus,
+          notes: outcomeNotes,
+          achieved_at: ['achieved', 'paid'].includes(outcomeStatus) ? new Date().toISOString() : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', successFee.id);
+
+      if (error) {
+        alert(`❌ Erro ao atualizar resultado: ${error.message}`);
+        return;
+      }
+
+      alert('✅ Resultado da Success Fee atualizado com sucesso!');
+      setSuccessFee((prev: any) => ({
+        ...prev,
+        status: outcomeStatus,
+        notes: outcomeNotes,
+        achieved_at: ['achieved', 'paid'].includes(outcomeStatus) ? new Date().toISOString() : null
+      }));
+    } catch (err: any) {
+      alert(`❌ Erro: ${err.message}`);
+    } finally {
+      setUpdatingOutcome(false);
+    }
+  };
 
   const [origin, setOrigin] = useState<string>('');
   const [allocationId, setAllocationId] = useState<string>('');
@@ -146,7 +191,18 @@ export default function JobDetailPage() {
           .eq('job_id', reqData.job_id);
 
         if (allocErr) console.error('Error fetching allocations:', allocErr);
-        else setAllocations(dbAllocs || []);
+        else {
+          setAllocations(dbAllocs || []);
+          if (dbAllocs && dbAllocs.length > 0) {
+            const { data: dbAllocFees, error: feeErr } = await supabase
+              .from('allocation_success_fees')
+              .select('*')
+              .eq('allocation_id', dbAllocs[0].id)
+              .maybeSingle();
+            if (feeErr) console.error('Error fetching success fee details:', feeErr);
+            else setSuccessFee(dbAllocFees);
+          }
+        }
 
         // 5. Fetch Payment Codes using resolved job_id
         const { data: dbPayments, error: payErr } = await supabase
@@ -579,6 +635,141 @@ export default function JobDetailPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* SUCCESS FEE OUTCOME CONTROL PANEL */}
+      {successFee && (
+        <div className="bg-bg-surface border border-indigo-200 dark:border-indigo-900/40 rounded-2xl p-6 shadow-xs space-y-4 text-left">
+          <div className="flex justify-between items-center border-b border-indigo-100 dark:border-indigo-950 pb-3">
+            <div>
+              <h2 className="text-lg font-black text-indigo-900 dark:text-action-cyan flex items-center gap-2">
+                <Award className="w-5 h-5" />
+                <span>Painel de Resultados da Success Fee (Gatilho)</span>
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Defina o desfecho comercial da taxa de sucesso com base no cumprimento das metas acordadas.
+              </p>
+            </div>
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border uppercase ${
+              successFee.status === 'achieved' || successFee.status === 'paid' ? 'bg-success-bg text-success-text border-success-border/20' :
+              successFee.status === 'failed' ? 'bg-danger-bg text-danger-text border-danger-border/20' :
+              'bg-warning-bg text-warning-text border-warning-border/20'
+            }`}>
+              {successFee.status === 'achieved' ? 'Atingido (Elegível)' :
+               successFee.status === 'failed' ? 'Não Atingido (Inelegível)' :
+               successFee.status === 'paid' ? 'Pago' : 'Pendente de Resultado'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-bg-panel p-4 rounded-xl border border-border-subtle space-y-2 text-xs">
+              <span className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">Regra de Cálculo</span>
+              <div>
+                <strong className="text-base text-text-primary font-extrabold block">
+                  {formatCurrency(successFee.calculated_potential_amount)}
+                </strong>
+                <span className="text-text-secondary">
+                  Tipo: {successFee.fee_type === 'fixed' ? 'Valor Fixo' : `${successFee.percentage_rate}%`}
+                </span>
+              </div>
+              {successFee.terms && (
+                <p className="pt-1.5 border-t border-dashed border-border-subtle text-text-secondary italic">
+                  Gatilho: {successFee.terms}
+                </p>
+              )}
+            </div>
+
+            <div className="md:col-span-2 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5 text-xs">
+                  <label className="font-bold text-[11px] text-text-primary uppercase tracking-wider block">Desfecho Comercial</label>
+                  <select
+                    value={outcomeStatus}
+                    onChange={(e) => setOutcomeStatus(e.target.value)}
+                    className="w-full bg-surface-container border border-border-subtle p-2.5 rounded-xl focus:outline-none focus:border-action-cyan text-text-primary text-xs"
+                  >
+                    <option value="pending">Aguardando Resultado (Pendente)</option>
+                    <option value="achieved">Gatilho Atingido (Elegível)</option>
+                    <option value="failed">Gatilho Não Atingido (Inelegível)</option>
+                    <option value="paid">Pago</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <label className="font-bold text-[11px] text-text-primary uppercase tracking-wider block">Observações / Notas</label>
+                  <input
+                    type="text"
+                    value={outcomeNotes}
+                    onChange={(e) => setOutcomeNotes(e.target.value)}
+                    placeholder="Adicione detalhes sobre o atingimento do gatilho..."
+                    className="w-full bg-surface-container border border-border-subtle p-2.5 rounded-xl focus:outline-none focus:border-action-cyan text-text-primary text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  disabled={updatingOutcome}
+                  onClick={handleUpdateSuccessFeeOutcome}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs shadow-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {updatingOutcome ? <Clock className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  <span>Salvar Resultado do Gatilho</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SIMULATED BILLING PROJECTIONS LIST */}
+      <div className="bg-bg-surface rounded-2xl border border-border-subtle p-6 shadow-xs space-y-4 text-left">
+        <div>
+          <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
+            <Clock className="w-5 h-5 text-accent" />
+            <span>Simulação de Cronograma & Compliance de RC</span>
+          </h2>
+          <p className="text-xs text-text-secondary mt-0.5">
+            Projeção estimativa dos ciclos de pagamento, prazos limites para abertura de RCs e níveis de risco operacional.
+          </p>
+        </div>
+
+        {(() => {
+          const projections = simulatePaymentProjections(job.startDate, job.endDate);
+          if (projections.length === 0) return <p className="text-xs text-text-secondary italic">Sem projeções para o período deste job.</p>;
+
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projections.map((p) => {
+                const alertColors = 
+                  p.alertLevel === 'critical' ? 'border-status-error bg-red-500/10 text-status-error' :
+                  p.alertLevel === 'urgent' ? 'border-warning-border bg-warning-bg text-warning-text' :
+                  p.alertLevel === 'attention' ? 'border-amber-500/15 bg-amber-500/10 text-amber-600' :
+                  'border-border-subtle bg-bg-panel text-text-primary';
+
+                return (
+                  <div key={p.cycleNumber} className={`p-4 rounded-xl border ${alertColors} space-y-2.5 text-xs`}>
+                    <div className="flex justify-between items-center">
+                      <strong className="text-xs font-black">Ciclo #{p.cycleNumber}</strong>
+                      <span className="text-[10px] font-mono opacity-80">{formatDate(p.startDate)} a {formatDate(p.endDate)}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-dashed border-current/20 font-semibold">
+                      <div>
+                        <span className="text-[9px] opacity-75 block uppercase">Vencimento</span>
+                        <span className="font-mono text-xs">{formatDate(p.suggestedPaymentDate)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] opacity-75 block uppercase">Prazo RC</span>
+                        <span className="font-mono text-xs">{formatDate(p.suggestedRcDeadline)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
     </div>

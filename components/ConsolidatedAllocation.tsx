@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { 
   formatCurrencyBRL, 
-  formatISODateToBR 
+  formatISODateToBR,
+  simulatePaymentProjections
 } from '@/lib/financial';
 import ScoreStars from '@/components/ScoreStars';
 import { supabase } from '@/lib/supabase';
@@ -43,6 +44,10 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
   const requests = allocation
     ? db.paymentRequests.filter(r => r.allocationId === allocation.id)
     : [];
+
+  const successFee = allocation && db.allocationSuccessFees
+    ? db.allocationSuccessFees.find(sf => sf.allocationId === allocation.id)
+    : undefined;
 
   const isRh = db.currentUser.profile === 'RH';
   const isAllocationActive = allocation && ['booked', 'active', 'pendente', 'ativo'].includes(allocation.status.toLowerCase());
@@ -540,6 +545,42 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                   {formatISODateToBR(allocation.startDate)} a {formatISODateToBR(allocation.endDate)}
                 </div>
               </div>
+
+              {successFee && (
+                <div className="sm:col-span-2 bg-indigo-50/50 dark:bg-indigo-950/15 p-3.5 rounded-xl border border-indigo-200 dark:border-indigo-900/40 space-y-1.5">
+                  <span className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-400 tracking-wider block">
+                    Success Fee Potencial Vinculado
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-[10px] text-text-secondary block">Remuneração Potencial</span>
+                      <strong className="text-indigo-900 dark:text-white text-sm">
+                        {formatCurrencyBRL(successFee.potentialAmount)} 
+                        <span className="text-text-secondary font-normal text-[10px]">
+                          {' '}({successFee.feeType === 'fixed' ? 'Valor Fixo' : `${successFee.percentageRate}%`})
+                        </span>
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-text-secondary block">Status do Gatilho</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold mt-0.5 border ${
+                        successFee.status === 'eligible' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' :
+                        successFee.status === 'not_eligible' ? 'bg-red-950 text-red-300 border-red-800' :
+                        'bg-slate-800 text-slate-350 border-slate-700'
+                      }`}>
+                        {successFee.status === 'eligible' ? 'Atingido (Elegível)' :
+                         successFee.status === 'not_eligible' ? 'Não Atingido (Inelegível)' :
+                         'Aguardando Resultado'}
+                      </span>
+                    </div>
+                    {successFee.termsSnapshot && (
+                      <div className="sm:col-span-2 pt-1 border-t border-indigo-200/45 dark:border-indigo-900/30 text-[10.5px] text-indigo-850 dark:text-indigo-350 italic">
+                        Regra: {successFee.termsSnapshot}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -560,6 +601,78 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
               <span>{hasExportedAny ? 'Ver Solicitação Exportada' : 'Exportar Solicitação de Pagamento'}</span>
             </button>
           </div>
+        </div>
+
+        {/* Projeções de Faturamento & Compliance de RC (Supply) */}
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
+          <div>
+            <h4 className="font-bold text-sidebar-navy dark:text-action-cyan text-sm flex items-center gap-1.5">
+              <Clock className="w-5 h-5 text-amber-500" />
+              <span>Projeções de Faturamento & Compliance de RC (Supply)</span>
+            </h4>
+            <p className="text-[11px] text-text-secondary mt-0.5">
+              Visualização estimada do cronograma operacional de pagamentos, prazos regulamentares para abertura de RCs no ERP de Supply e classificação de risco de compliance.
+            </p>
+          </div>
+
+          {(() => {
+            const projections = simulatePaymentProjections(allocation.startDate, allocation.endDate);
+            if (projections.length === 0) return <p className="text-xs text-text-muted italic">Sem projeções de vencimento para este período.</p>;
+
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {projections.map((p) => {
+                  const alertColors = 
+                    p.alertLevel === 'critical' ? 'border-red-500 bg-red-50/50 dark:bg-red-950/15 text-red-800 dark:text-red-400' :
+                    p.alertLevel === 'urgent' ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/15 text-orange-850 dark:text-orange-400' :
+                    p.alertLevel === 'attention' ? 'border-amber-500 bg-amber-55/50 dark:bg-amber-955/15 text-amber-900 dark:text-amber-400' :
+                    'border-slate-200 bg-slate-50 dark:bg-slate-800/30 text-text-primary';
+
+                  const badgeColors = 
+                    p.alertLevel === 'critical' ? 'bg-red-500 text-white' :
+                    p.alertLevel === 'urgent' ? 'bg-orange-500 text-white' :
+                    p.alertLevel === 'attention' ? 'bg-amber-500 text-white' :
+                    'bg-slate-500 text-white';
+
+                  const riskLabel = 
+                    p.alertLevel === 'critical' ? 'Risco Crítico (Prazo estourado/RC Bloqueado)' :
+                    p.alertLevel === 'urgent' ? 'Risco Urgente (<3 dias)' :
+                    p.alertLevel === 'attention' ? 'Atenção (<10 dias)' :
+                    'Sob Controle (Dentro do prazo)';
+
+                  return (
+                    <div key={p.cycleNumber} className={`p-4 rounded-2xl border ${alertColors} flex flex-col justify-between space-y-3`}>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <strong className="text-[12px] block font-extrabold">Ciclo #{p.cycleNumber}</strong>
+                          <span className="text-[10px] opacity-75">{formatISODateToBR(p.startDate)} a {formatISODateToBR(p.endDate)}</span>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide shadow-xs ${badgeColors}`}>
+                          {p.alertLevel === 'critical' ? 'Bloqueado' : p.alertLevel === 'urgent' ? 'Urgente' : p.alertLevel === 'attention' ? 'Atenção' : 'Normal'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-dashed border-current/20 text-xs">
+                        <div>
+                          <span className="text-[10px] opacity-70 block font-semibold uppercase">Vencimento Projetado</span>
+                          <strong className="font-mono">{formatISODateToBR(p.suggestedPaymentDate)}</strong>
+                        </div>
+                        <div>
+                          <span className="text-[10px] opacity-70 block font-semibold uppercase">Prazo Limite RC</span>
+                          <strong className="font-mono">{formatISODateToBR(p.suggestedRcDeadline)}</strong>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] opacity-80 pt-1 leading-normal flex items-start gap-1 text-left">
+                        <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                        <span>Status: <strong>{riskLabel}</strong></span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

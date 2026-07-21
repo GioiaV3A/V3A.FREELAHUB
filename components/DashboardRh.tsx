@@ -6,10 +6,11 @@ import { generateUniqueId } from '@/lib/utils';
 import { 
   Users, FileWarning, ClipboardCheck, CornerDownRight, Check, X, 
   ShieldAlert, BadgeInfo, Building, PhoneCall, Heart, AlertTriangle, 
-  CalendarDays, Flame, Loader2, Sparkles, MessageSquare
+  CalendarDays, Flame, Loader2, Sparkles, MessageSquare, Clock, Award
 } from 'lucide-react';
 import { decideApprovalAction } from '@/app/actions/evaluation';
 import { supabase } from '@/lib/supabase';
+import { simulatePaymentProjections } from '@/lib/financial';
 
 export default function DashboardRh({ db }: { db: DatabaseProps }) {
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -166,6 +167,33 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
   const lowScoreLeaders = getLowScoreLeaders();
   const highReworkProjects = getHighReworkProjects();
 
+  const successFeeStats = React.useMemo(() => {
+    const totalActiveSF = db.allocationSuccessFees?.filter(sf => sf.status === 'pending_competition_result').length || 0;
+    const totalEligibleSF = db.allocationSuccessFees?.filter(sf => sf.status === 'eligible').length || 0;
+    return { totalActiveSF, totalEligibleSF };
+  }, [db.allocationSuccessFees]);
+
+  const rcRiskStats = React.useMemo(() => {
+    let critical = 0;
+    let urgent = 0;
+    let attention = 0;
+
+    const activeAllocations = db.allocations.filter(alloc => 
+      ['booked', 'active', 'pendente', 'ativo'].includes(alloc.status.toLowerCase())
+    );
+
+    activeAllocations.forEach(alloc => {
+      const projections = simulatePaymentProjections(alloc.startDate, alloc.endDate);
+      projections.forEach(p => {
+        if (p.alertLevel === 'critical') critical++;
+        else if (p.alertLevel === 'urgent') urgent++;
+        else if (p.alertLevel === 'attention') attention++;
+      });
+    });
+
+    return { critical, urgent, attention };
+  }, [db.allocations]);
+
   return (
     <div id="dashboard-rh-container" className="space-y-6 font-sans text-xs">
       
@@ -214,6 +242,53 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
           </div>
           <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{blockedCount}</p>
           <span className="text-[10px] text-rose-500 font-semibold">Vetados de engajar</span>
+        </div>
+      </div>
+
+      {/* COMPLIANCE & SUCCESS FEE INDICATORS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs flex flex-col justify-between text-left">
+          <div>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+              <Clock className="w-4 h-4 text-amber-550" />
+              <span>Prazos de RCs no ERP (Supply)</span>
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Alertas de vencimento de RCs com base na regra de antecedência de 10 dias.</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+            <div className="bg-red-50 dark:bg-red-950/15 p-2 rounded-lg border border-red-200 dark:border-red-900/30">
+              <span className="text-[9px] font-bold text-red-600 block uppercase">Crítico</span>
+              <strong className="text-lg font-bold text-red-755 dark:text-red-400">{rcRiskStats.critical}</strong>
+            </div>
+            <div className="bg-orange-50 dark:bg-orange-950/15 p-2 rounded-lg border border-orange-200 dark:border-orange-900/30">
+              <span className="text-[9px] font-bold text-orange-600 block uppercase">Urgente</span>
+              <strong className="text-lg font-bold text-orange-755 dark:text-orange-400">{rcRiskStats.urgent}</strong>
+            </div>
+            <div className="bg-amber-50 dark:bg-[#2e2515] p-2 rounded-lg border border-amber-200 dark:border-amber-900/30">
+              <span className="text-[9px] font-bold text-amber-600 block uppercase">Atenção</span>
+              <strong className="text-lg font-bold text-amber-700 dark:text-amber-400">{rcRiskStats.attention}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs flex flex-col justify-between text-left">
+          <div>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+              <Award className="w-4 h-4 text-indigo-500" />
+              <span>Gatilhos de Success Fee</span>
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Acompanhamento de faturamento de bônus por performance comercial.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mt-4 text-center">
+            <div className="bg-indigo-50 dark:bg-indigo-950/15 p-2.5 rounded-lg border border-indigo-200 dark:border-indigo-900/30">
+              <span className="text-[9px] font-bold text-indigo-650 block uppercase">Gatilhos Pendentes</span>
+              <strong className="text-lg font-bold text-indigo-755 dark:text-indigo-400">{successFeeStats.totalActiveSF}</strong>
+            </div>
+            <div className="bg-emerald-50 dark:bg-emerald-950/15 p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
+              <span className="text-[9px] font-bold text-emerald-650 block uppercase">Gatilhos Aprovados</span>
+              <strong className="text-lg font-bold text-emerald-755 dark:text-emerald-400">{successFeeStats.totalEligibleSF}</strong>
+            </div>
+          </div>
         </div>
       </div>
 

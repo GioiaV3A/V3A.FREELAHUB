@@ -31,6 +31,12 @@ interface NegotiationFinancialSummaryProps {
   installmentsCount?: number | null | undefined;
   showDetailedBreakdown?: boolean;
   variant?: 'compact' | 'detailed';
+  successFeeEnabled?: boolean;
+  successFeeType?: 'fixed' | 'percentage';
+  successFeeFixedAmount?: number;
+  successFeePercent?: number;
+  successFeeBase?: string;
+  successFeeTrigger?: string;
 }
 
 export default function NegotiationFinancialSummary({
@@ -42,7 +48,13 @@ export default function NegotiationFinancialSummary({
   estimatedHours,
   installmentsCount,
   showDetailedBreakdown = true,
-  variant = 'detailed'
+  variant = 'detailed',
+  successFeeEnabled,
+  successFeeType,
+  successFeeFixedAmount,
+  successFeePercent,
+  successFeeBase,
+  successFeeTrigger
 }: NegotiationFinancialSummaryProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -54,6 +66,21 @@ export default function NegotiationFinancialSummary({
     estimatedHours,
     installmentsCount
   });
+
+  const baseTotal = negotiatedTotal || 0;
+
+  // Potential success fee calculation
+  let successFeeAmount = 0;
+  if (successFeeEnabled) {
+    if (successFeeType === 'fixed') {
+      successFeeAmount = successFeeFixedAmount || 0;
+    } else {
+      const baseForCalc = successFeeBase === 'sobre o budget' ? budget : baseTotal;
+      successFeeAmount = (baseForCalc * (successFeePercent || 0)) / 100;
+    }
+  }
+
+  const potentialTotal = baseTotal + successFeeAmount;
 
   const { savingAmount, savingPercentage } = calculateBudgetSaving({
     budget,
@@ -237,6 +264,43 @@ export default function NegotiationFinancialSummary({
           </span>
         </div>
       </div>
+
+      {successFeeEnabled && (
+        <div className="bg-indigo-50/20 dark:bg-indigo-950/10 p-4 rounded-xl border border-indigo-250/30 space-y-3">
+          <span className="text-[10px] text-indigo-900 dark:text-indigo-300 block uppercase font-bold tracking-wider">
+            Detalhamento de Remuneração com Success Fee
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div className="bg-white/50 dark:bg-slate-900/40 p-3 rounded-lg border border-border-subtle">
+              <span className="text-[10px] text-text-secondary block font-bold mb-0.5">Valor-Base Garantido</span>
+              <div className="text-sm font-extrabold text-sidebar-navy dark:text-white">
+                {formatCurrencyBRL(baseTotal)}
+              </div>
+              <span className="text-[9px] text-text-muted">Valor garantido por contrato</span>
+            </div>
+
+            <div className="bg-white/50 dark:bg-slate-900/40 p-3 rounded-lg border border-border-subtle">
+              <span className="text-[10px] text-indigo-700 dark:text-indigo-400 block font-bold mb-0.5">+ Success Fee Potencial</span>
+              <div className="text-sm font-extrabold text-indigo-700 dark:text-indigo-400">
+                {formatCurrencyBRL(successFeeAmount)}
+              </div>
+              <span className="text-[9px] text-text-muted">Condicionado a: {successFeeTrigger || 'Gatilho de sucesso'}</span>
+            </div>
+
+            <div className="bg-indigo-655/10 dark:bg-indigo-500/10 p-3 rounded-lg border border-indigo-500/30">
+              <span className="text-[10px] text-indigo-900 dark:text-indigo-300 block font-bold mb-0.5">= Remuneração Potencial Total</span>
+              <div className="text-sm font-black text-indigo-650 dark:text-indigo-300">
+                {formatCurrencyBRL(potentialTotal)}
+              </div>
+              <span className="text-[9px] text-indigo-700/80 dark:text-indigo-400/80 font-semibold">Valor condicionado à elegibilidade</span>
+            </div>
+          </div>
+
+          <div className="text-[10.5px] text-indigo-950 dark:text-indigo-400/90 leading-relaxed bg-indigo-50/40 dark:bg-indigo-950/20 p-2.5 rounded-lg border border-indigo-150/30">
+            <strong>⚠️ Atenção sobre Faturamento:</strong> O valor do Success Fee não é garantido de forma inicial. Ele somente será faturável se o gatilho de concorrência for atingido (resultado comercial vencedor). O faturamento inicial e a emissão de RCs correspondentes devem considerar estritamente o Valor-Base Garantido.
+          </div>
+        </div>
+      )}
 
       {/* Accordion Detailed Calculations */}
       {showDetailedBreakdown && (

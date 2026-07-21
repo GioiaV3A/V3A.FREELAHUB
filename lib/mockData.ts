@@ -80,6 +80,7 @@ export type JobStatus = string;
 
 export interface Job {
   id: string;
+  createdAt?: string;
   jobId?: string;
   name: string;
   client: string;
@@ -121,7 +122,112 @@ export interface Job {
   policyReferenceAmount?: number;
   /** Indica se requer aprovação do Head antes de homologar */
   approvalRequired?: boolean;
+  is_competitive_bid?: boolean;
+  success_fee_enabled?: boolean;
 }
+
+export interface JobSuccessFeeRule {
+  id: string;
+  jobId: string;
+  feeType: 'fixed' | 'percentage';
+  fixedAmount?: number;
+  percentageRate?: number;
+  percentageBase?: string;
+  triggerType?: string;
+  terms?: string;
+  requiresApproval?: boolean;
+  createdBy?: string;
+  version?: number;
+  isActive?: boolean;
+}
+
+export interface NegotiationSuccessFee {
+  id: string;
+  negotiationId: string;
+  enabled: boolean;
+  feeType: 'fixed' | 'percentage';
+  fixedAmount?: number;
+  percentageRate?: number;
+  percentageBase?: string;
+  calculatedPotentialAmount?: number;
+  triggerType?: string;
+  terms?: string;
+  acceptedByFreelancer?: boolean;
+  acceptedAt?: string;
+  approvalRequestId?: string;
+}
+
+export interface AllocationSuccessFee {
+  id: string;
+  allocationId: string;
+  jobId: string;
+  freelancerId: string;
+  feeType: 'fixed' | 'percentage';
+  fixedAmount?: number;
+  percentageRate?: number;
+  percentageBase?: string;
+  potentialAmount?: number;
+  triggerType?: string;
+  termsSnapshot?: string;
+  status: 'not_applicable' | 'pending_competition_result' | 'eligible' | 'not_eligible' | 'cancelled';
+  eligibleAt?: string;
+  eligibilityConfirmedBy?: string;
+  ineligibilityReason?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface JobCompetitionResult {
+  id: string;
+  jobId: string;
+  result: 'pending' | 'won' | 'lost' | 'cancelled';
+  confirmedBy?: string;
+  confirmedAt?: string;
+  evidenceReference?: string;
+  notes?: string;
+}
+
+export interface AllocationPaymentProjection {
+  id: string;
+  allocationId: string;
+  cycleNumber: number;
+  cycleStartDate: string;
+  cycleEndDate: string;
+  suggestedPaymentDate: string;
+  suggestedRcDeadline: string;
+  alertLevel: 'informational' | 'attention' | 'urgent' | 'critical';
+  policyRuleId?: string;
+  policyVersion?: string;
+  calculationMemory?: any;
+  status: 'active' | 'recalculated' | 'superseded' | 'cancelled';
+  replacedById?: string;
+  calculatedAt?: string;
+  calculationSource?: 'system' | 'recalculation' | 'legacy';
+  triggeredByUserId?: string;
+}
+
+export interface EvaluationAnswer {
+  id: string;
+  evaluationId: string;
+  criterionKey: string;
+  score: number;
+  weight: number;
+  comment?: string;
+  createdAt?: string;
+}
+
+export interface EvaluationReminder {
+  id: string;
+  allocationId: string;
+  evaluationType: string;
+  firstDueAt: string;
+  nextNotificationAt: string;
+  notificationCount: number;
+  status: 'pending' | 'resolved' | 'waived' | 'cancelled';
+  resolvedAt?: string;
+  waiverReason?: string;
+}
+
 
 export interface Shortlist {
   id: string;
@@ -179,11 +285,12 @@ export interface ValuePolicy {
   billingType: 'Diária' | 'Hora' | 'Job Fechado' | 'Mensal / Salário';
   referenceValue: number;
   ceilingValue: number;
-  status: 'Ativo' | 'Inativo';
+  status?: 'Ativo' | 'Inativo';
   remunerationModel?: string;
   updatedAt?: string;
   approvalRequiredAbove?: number;
   notes?: string;
+  successFeeMaxPercent?: number;
 }
 
 export interface Allocation {
@@ -215,6 +322,7 @@ export interface Allocation {
   paymentTerms?: string;
   paymentNotes?: string;
   paymentRequestStatus?: 'not_requested' | 'partially_requested' | 'requested' | 'completed' | 'cancelled';
+  success_fee_enabled?: boolean;
   evaluationStatus?: 'locked' | 'available' | 'pending' | 'completed';
   reverseEvaluationStatus?: 'not_generated' | 'generated' | 'sent' | 'completed' | 'expired';
   evaluatedFreelancer?: boolean;

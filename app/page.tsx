@@ -24,7 +24,9 @@ import {
   User,
   AllocationPaymentSchedule,
   PaymentRequest,
-  ValueExceptionApproval
+  ValueExceptionApproval,
+  JobSuccessFeeRule,
+  AllocationSuccessFee
 } from '@/lib/mockData';
 
 // Supabase and Server Actions
@@ -135,6 +137,10 @@ export interface DatabaseProps {
   setEvaluations: React.Dispatch<React.SetStateAction<Evaluation[]>>;
   paymentCodes: PaymentCode[];
   setPaymentCodes: React.Dispatch<React.SetStateAction<PaymentCode[]>>;
+  jobSuccessFeeRules?: JobSuccessFeeRule[];
+  setJobSuccessFeeRules?: React.Dispatch<React.SetStateAction<JobSuccessFeeRule[]>>;
+  allocationSuccessFees?: AllocationSuccessFee[];
+  setAllocationSuccessFees?: React.Dispatch<React.SetStateAction<AllocationSuccessFee[]>>;
 
   nucleos: Nucleo[];
   setNucleos: React.Dispatch<React.SetStateAction<Nucleo[]>>;
@@ -183,6 +189,8 @@ export default function Home() {
   const [reverseEvaluationsState, setReverseEvaluationsState] = useState<any[]>([]);
   const [paymentSchedulesState, setPaymentSchedulesState] = useState<AllocationPaymentSchedule[]>([]);
   const [paymentRequestsState, setPaymentRequestsState] = useState<PaymentRequest[]>([]);
+  const [jobSuccessFeeRules, setJobSuccessFeeRules] = useState<JobSuccessFeeRule[]>([]);
+  const [allocationSuccessFees, setAllocationSuccessFees] = useState<AllocationSuccessFee[]>([]);
 
   // Auth credential states
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -465,6 +473,48 @@ export default function Home() {
       const { data: dbPaymentRequests } = await supabase.from('payment_requests').select('*');
       if (dbPaymentRequests) {
         setPaymentRequestsState(dbPaymentRequests.map(mapPaymentRequestToUI));
+      }
+
+      const { data: dbFeeRules } = await supabase.from('job_success_fee_rules').select('*');
+      if (dbFeeRules) {
+        setJobSuccessFeeRules(dbFeeRules.map((r: any) => ({
+          id: r.id,
+          jobId: r.job_id,
+          feeType: r.fee_type,
+          fixedAmount: r.fixed_amount ? Number(r.fixed_amount) : undefined,
+          percentageRate: r.percentage_rate ? Number(r.percentage_rate) : undefined,
+          percentageBase: r.percentage_base || undefined,
+          triggerType: r.trigger_type || undefined,
+          terms: r.terms || undefined,
+          requiresApproval: r.requires_approval ?? true,
+          createdBy: r.created_by || undefined,
+          version: r.version || undefined,
+          isActive: r.is_active ?? true,
+        })));
+      }
+
+      const { data: dbAllocFees } = await supabase.from('allocation_success_fees').select('*');
+      if (dbAllocFees) {
+        setAllocationSuccessFees(dbAllocFees.map((r: any) => {
+          const alloc = dbAllocations?.find((a: any) => a.id === r.allocation_id);
+          return {
+            id: r.id,
+            allocationId: r.allocation_id,
+            jobId: alloc?.job_id || '',
+            freelancerId: alloc?.freelancer_id || '',
+            feeType: r.fee_type || 'fixed',
+            fixedAmount: r.fixed_amount ? Number(r.fixed_amount) : undefined,
+            percentageRate: r.percentage_rate ? Number(r.percentage_rate) : undefined,
+            percentageBase: r.percentage_base || undefined,
+            potentialAmount: r.calculated_potential_amount ? Number(r.calculated_potential_amount) : undefined,
+            triggerType: r.trigger_type || undefined,
+            termsSnapshot: r.terms || undefined,
+            status: r.status === 'achieved' ? 'eligible' : r.status === 'failed' ? 'not_eligible' : r.status === 'paid' ? 'eligible' : 'pending_competition_result',
+            eligibleAt: r.achieved_at || undefined,
+            createdAt: r.created_at || undefined,
+            updatedAt: r.updated_at || undefined
+          };
+        }));
       }
     } catch (error) {
       console.warn('Error loading data from Supabase:', error instanceof Error ? error.message : String(error));
@@ -1352,6 +1402,7 @@ export default function Home() {
         approval_required_above: p.ceilingValue,
         status: p.status === 'Inativo' ? 'inactive' : 'active',
         notes: p.notes || null,
+        success_fee_max_percent: p.successFeeMaxPercent !== undefined ? p.successFeeMaxPercent : null,
       })
       .select('id')
       .single();
@@ -1386,6 +1437,7 @@ export default function Home() {
         approval_required_above: p.ceilingValue,
         status: p.status === 'Inativo' ? 'inactive' : 'active',
         notes: p.notes || null,
+        success_fee_max_percent: p.successFeeMaxPercent !== undefined ? p.successFeeMaxPercent : null,
       })
       .eq('id', p.id);
   };
@@ -1497,6 +1549,10 @@ export default function Home() {
     setPaymentSchedules: setPaymentSchedulesState,
     paymentRequests: paymentRequestsState,
     setPaymentRequests: setPaymentRequestsState,
+    jobSuccessFeeRules,
+    setJobSuccessFeeRules,
+    allocationSuccessFees,
+    setAllocationSuccessFees,
     reloadDatabase,
     activeTab,
     setActiveTab,
@@ -1528,7 +1584,6 @@ export default function Home() {
           { name: 'Política de Valores', icon: Scale },
           { name: 'Meus Bookings', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
-          { name: 'Faturamento & Códigos', icon: Key },
           { name: 'Relatórios & Exportar', icon: TrendingUp },
           { name: 'Configurações', icon: SlidersHorizontal }
         ];
@@ -1544,7 +1599,6 @@ export default function Home() {
           { name: 'Política de Valores', icon: Scale },
           { name: 'Meus Bookings', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
-          { name: 'Faturamento & Códigos', icon: Key },
           { name: 'Relatórios', icon: TrendingUp }
         ];
       case 'C-LEVEL':
@@ -1557,7 +1611,6 @@ export default function Home() {
           { name: 'Shortlist & Negociação', icon: SlidersHorizontal },
           { name: 'Meus Bookings', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
-          { name: 'Faturamento & Códigos', icon: Key },
           { name: 'Relatórios', icon: TrendingUp },
           { name: 'Configurações', icon: SlidersHorizontal }
         ];
@@ -1572,7 +1625,6 @@ export default function Home() {
           { name: 'Shortlist & Negociação', icon: Briefcase },
           { name: 'Meus Bookings / Alocações', icon: CalendarDays },
           { name: 'Timeline de Alocações', icon: CalendarDays },
-          { name: 'Faturamento & Códigos', icon: Key },
           { name: 'Relatórios & Exportar', icon: TrendingUp }
         ];
       case 'NÚCLEO':
@@ -2161,9 +2213,7 @@ export default function Home() {
             <TimelineAlocacoes db={db} />
           )}
 
-          {activeTab === 'Faturamento & Códigos' && (
-            <PaymentCodesPanel db={db} />
-          )}
+
 
           {activeTab === 'Avaliar Freelancers' && (
             <EvaluationForm db={db} />

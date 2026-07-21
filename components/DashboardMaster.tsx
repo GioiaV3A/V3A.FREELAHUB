@@ -3,6 +3,7 @@
 import React from 'react';
 import { DatabaseProps } from '@/app/page';
 import { Users, ShieldAlert, Award, Briefcase, Key, Star, FileWarning, TrendingUp, CheckCircle, Clock } from 'lucide-react';
+import { simulatePaymentProjections } from '@/lib/financial';
 
 export default function DashboardMaster({ db }: { db: DatabaseProps }) {
   // Compute metric cards values

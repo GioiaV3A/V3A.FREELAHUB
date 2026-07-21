@@ -53,6 +53,7 @@ export interface GroupedPolicy {
   isMonthlyDefined: boolean;
   isHourlyDefined: boolean;
   isFixedDefined: boolean;
+  successFeeMaxPercent?: number;
 }
 
 export default function ExcecaoPanel({ db }: { db: any }) {
@@ -87,6 +88,7 @@ export default function ExcecaoPanel({ db }: { db: any }) {
 
   const [formFixedRef, setFormFixedRef] = useState<number | ''>('');
   const [formFixedCeiling, setFormFixedCeiling] = useState<number | ''>('');
+  const [formSuccessFeeMaxPercent, setFormSuccessFeeMaxPercent] = useState<number | ''>('');
 
   const [formNotes, setFormNotes] = useState('');
 
@@ -162,6 +164,10 @@ export default function ExcecaoPanel({ db }: { db: any }) {
         group.fixedNotes = pol.notes || '';
         group.isFixedDefined = true;
       }
+
+      if (pol.successFeeMaxPercent !== undefined && pol.successFeeMaxPercent !== null && pol.successFeeMaxPercent !== 0) {
+        group.successFeeMaxPercent = pol.successFeeMaxPercent;
+      }
     });
 
     // Compute consolidated status
@@ -202,6 +208,7 @@ export default function ExcecaoPanel({ db }: { db: any }) {
     setFormHourlyCeiling('');
     setFormFixedRef('');
     setFormFixedCeiling('');
+    setFormSuccessFeeMaxPercent('');
     setFormNotes('');
     setIsPolicyModalOpen(true);
   };
@@ -224,6 +231,7 @@ export default function ExcecaoPanel({ db }: { db: any }) {
 
     setFormFixedRef(group.fixedRef || '');
     setFormFixedCeiling(group.fixedCeiling || '');
+    setFormSuccessFeeMaxPercent(group.successFeeMaxPercent || '');
 
     setFormNotes(group.dailyNotes || group.monthlyNotes || group.hourlyNotes || group.fixedNotes || '');
     setIsPolicyModalOpen(true);
@@ -247,6 +255,7 @@ export default function ExcecaoPanel({ db }: { db: any }) {
 
     setFormFixedRef(group.fixedRef || '');
     setFormFixedCeiling(group.fixedCeiling || '');
+    setFormSuccessFeeMaxPercent(group.successFeeMaxPercent || '');
 
     setFormNotes(group.dailyNotes || group.monthlyNotes || group.hourlyNotes || group.fixedNotes || '');
     setIsPolicyModalOpen(true);
@@ -319,6 +328,14 @@ export default function ExcecaoPanel({ db }: { db: any }) {
       }
     }
 
+    // Validate success fee max percent
+    if (formSuccessFeeMaxPercent !== '') {
+      if (Number(formSuccessFeeMaxPercent) < 0 || Number(formSuccessFeeMaxPercent) > 100) {
+        alert('O teto máximo de Success Fee deve ser entre 0% e 100%.');
+        return;
+      }
+    }
+
     const hasAnyFilled = formDailyRef !== '' || formMonthlyRef !== '' || formHourlyRef !== '' || formFixedRef !== '';
     if (!hasAnyFilled) {
       alert('Preencha as informações de pelo menos um modelo de remuneração (Diária, Mensal, Hora ou Job Fechado).');
@@ -357,6 +374,7 @@ export default function ExcecaoPanel({ db }: { db: any }) {
               referenceValue: 0,
               ceilingValue: 0,
               notes: formNotes,
+              successFeeMaxPercent: formSuccessFeeMaxPercent !== '' ? Number(formSuccessFeeMaxPercent) : undefined,
               updatedAt: new Date().toLocaleDateString('pt-BR')
             };
           }
@@ -376,6 +394,7 @@ export default function ExcecaoPanel({ db }: { db: any }) {
             ceilingValue: Number(ceilVal),
             status: formStatus,
             notes: formNotes,
+            successFeeMaxPercent: formSuccessFeeMaxPercent !== '' ? Number(formSuccessFeeMaxPercent) : undefined,
             updatedAt: new Date().toLocaleDateString('pt-BR')
           };
         }
@@ -390,6 +409,7 @@ export default function ExcecaoPanel({ db }: { db: any }) {
           status: formStatus,
           notes: formNotes,
           remunerationModel: modelName,
+          successFeeMaxPercent: formSuccessFeeMaxPercent !== '' ? Number(formSuccessFeeMaxPercent) : undefined,
           updatedAt: new Date().toLocaleDateString('pt-BR')
         };
         updatedPolicies.push(newPol);
@@ -555,6 +575,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
       } else if (sortKey === 'fixedCeiling') {
         valA = a.fixedCeiling || 0;
         valB = b.fixedCeiling || 0;
+      } else if (sortKey === 'successFeeMaxPercent') {
+        valA = a.successFeeMaxPercent || 0;
+        valB = b.successFeeMaxPercent || 0;
       } else if (sortKey === 'status') {
         valA = a.status;
         valB = b.status;
@@ -765,6 +788,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                       <th className="px-6 py-3 text-right cursor-pointer select-none" onClick={() => requestSort('monthlyCeiling')}>
                         MENSAL TETO {sortKey === 'monthlyCeiling' && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
                       </th>
+                      <th className="px-6 py-3 text-right cursor-pointer select-none" onClick={() => requestSort('successFeeMaxPercent')}>
+                        SF MÁX. (%) {sortKey === 'successFeeMaxPercent' && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
+                      </th>
                       <th className="px-6 py-3">APROVAÇÃO EXIGIDA</th>
                       <th className="px-6 py-3 cursor-pointer select-none" onClick={() => requestSort('status')}>
                         STATUS {sortKey === 'status' && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
@@ -778,7 +804,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                   <tbody className="divide-y divide-border-subtle font-medium text-text-primary">
                     {sortedGroupedPolicies.length === 0 ? (
                       <tr>
-                        <td colSpan={hasWritePermission ? 10 : 9} className="px-6 py-8 text-center text-text-secondary italic">
+                        <td colSpan={hasWritePermission ? 11 : 10} className="px-6 py-8 text-center text-text-secondary italic">
                           Nenhuma diretriz de política cadastrada com os filtros informados.
                         </td>
                       </tr>
@@ -816,7 +842,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                                 <span className="text-text-secondary italic text-[10px]">Não definido</span>
                               )}
                             </td>
-
+ 
                             {/* Mensal */}
                             <td className="px-6 py-3.5 text-right font-semibold">
                               {group.isMonthlyDefined ? (
@@ -832,6 +858,15 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                                 <span className="text-[#B28900] dark:text-amber-550 font-extrabold">
                                   {formatCurrencyBRL(group.monthlyCeiling)}
                                 </span>
+                              ) : (
+                                <span className="text-text-secondary italic text-[10px]">Não definido</span>
+                              )}
+                            </td>
+ 
+                            {/* SF Máx */}
+                            <td className="px-6 py-3.5 text-right font-extrabold text-indigo-600 dark:text-indigo-400">
+                              {group.successFeeMaxPercent !== undefined && group.successFeeMaxPercent !== null ? (
+                                <span>{group.successFeeMaxPercent}%</span>
                               ) : (
                                 <span className="text-text-secondary italic text-[10px]">Não definido</span>
                               )}
@@ -932,6 +967,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                       <th className="px-6 py-3 text-right cursor-pointer select-none" onClick={() => requestSort('fixedCeiling')}>
                         JOB FECHADO TETO {sortKey === 'fixedCeiling' && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
                       </th>
+                      <th className="px-6 py-3 text-right cursor-pointer select-none" onClick={() => requestSort('successFeeMaxPercent')}>
+                        SF MÁX. (%) {sortKey === 'successFeeMaxPercent' && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
+                      </th>
                       <th className="px-6 py-3">APROVAÇÃO EXIGIDA</th>
                       <th className="px-6 py-3 cursor-pointer select-none" onClick={() => requestSort('status')}>
                         STATUS {sortKey === 'status' && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
@@ -945,7 +983,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                   <tbody className="divide-y divide-border-subtle font-medium text-text-primary">
                     {sortedGroupedPolicies.length === 0 ? (
                       <tr>
-                        <td colSpan={hasWritePermission ? 10 : 9} className="px-6 py-8 text-center text-text-secondary italic">
+                        <td colSpan={hasWritePermission ? 11 : 10} className="px-6 py-8 text-center text-text-secondary italic">
                           Nenhuma diretriz de política cadastrada com os filtros informados.
                         </td>
                       </tr>
@@ -981,7 +1019,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                                 <span className="text-text-secondary italic text-[10px]">Não definido</span>
                               )}
                             </td>
-
+ 
                             {/* Job Fechado */}
                             <td className="px-6 py-3.5 text-right font-semibold">
                               {group.isFixedDefined ? (
@@ -997,6 +1035,15 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                                 <span className="text-[#B28900] dark:text-amber-550 font-extrabold">
                                   {formatCurrencyBRL(group.fixedCeiling)}
                                 </span>
+                              ) : (
+                                <span className="text-text-secondary italic text-[10px]">Não definido</span>
+                              )}
+                            </td>
+
+                            {/* SF Máx */}
+                            <td className="px-6 py-3.5 text-right font-extrabold text-indigo-600 dark:text-indigo-400">
+                              {group.successFeeMaxPercent !== undefined && group.successFeeMaxPercent !== null ? (
+                                <span>{group.successFeeMaxPercent}%</span>
                               ) : (
                                 <span className="text-text-secondary italic text-[10px]">Não definido</span>
                               )}
@@ -1501,6 +1548,30 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         placeholder="Ex: 5000"
                         className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Seção 3: Success Fee */}
+              <div className="border-t border-border-subtle pt-4 space-y-4">
+                <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-action-cyan">Bônus por Performance (Success Fee)</h4>
+                <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-border-subtle space-y-2 max-w-xs">
+                  <span className="font-bold text-text-primary block text-[11px]">PERCENTUAL MÁXIMO</span>
+                  <div>
+                    <label className="text-[10px] text-text-secondary font-bold block mb-0.5">Teto Autorizado (%)</label>
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={formSuccessFeeMaxPercent} 
+                        onChange={e => setFormSuccessFeeMaxPercent(e.target.value === '' ? '' : Number(e.target.value))} 
+                        placeholder="Ex: 15"
+                        className="w-full border border-border-subtle p-1.5 pr-7 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-text-secondary select-none">%</span>
                     </div>
                   </div>
                 </div>

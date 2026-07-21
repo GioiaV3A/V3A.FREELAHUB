@@ -127,7 +127,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [compareSortKey, setCompareSortKey] = useState<'default' | 'saving' | 'total' | 'status' | 'score'>('default');
 
-  // Faturamento configuration states per candidate
+  // Faturamento & Success Fee configuration states per candidate
   const [candidateNegotiations, setCandidateNegotiations] = useState<Record<string, {
     paymentModel: 'one_time' | 'monthly_recurring' | 'milestone';
     contractStartDate: string;
@@ -137,6 +137,17 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     preferredDueDay: number;
     paymentTerms: string;
     paymentNotes: string;
+    // Success Fee Fields
+    successFeeEnabled: boolean;
+    successFeeType: 'fixed' | 'percentage';
+    successFeeFixedAmount: number;
+    successFeeFixedAmountVisual: string;
+    successFeePercent: number;
+    successFeeBase: string;
+    successFeeTrigger: string;
+    successFeeRequiresApproval: boolean;
+    successFeeTerms: string;
+    acceptedByFreelancer: boolean;
   }>>({});
 
   const [excludedDates, setExcludedDates] = useState<Record<string, string[]>>({});
@@ -154,6 +165,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     const defaultEnd = sl?.contractEndDate || activeJob?.endDate || '';
     const defaultDue = sl?.preferredDueDay || activeJob?.expectedPaymentDay || 5;
     const defaultRate = sl?.negotiatedRate || activeJob?.expectedRate || 0;
+
+    // Success fee defaults
+    const jobSuccessFeeEnabled = activeJob?.success_fee_enabled || false;
+    const jobRule = db.jobSuccessFeeRules?.find(r => r.jobId === activeJob?.id && r.isActive !== false);
     
     return {
       paymentModel: defaultModel as 'one_time' | 'monthly_recurring' | 'milestone',
@@ -163,7 +178,18 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       recurringAmountVisual: defaultRate > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(defaultRate) : '',
       preferredDueDay: defaultDue,
       paymentTerms: sl?.paymentTerms || '',
-      paymentNotes: sl?.paymentNotes || ''
+      paymentNotes: sl?.paymentNotes || '',
+      // Success fee defaults
+      successFeeEnabled: sl?.successFeeEnabled ?? jobSuccessFeeEnabled,
+      successFeeType: sl?.successFeeType || jobRule?.feeType || 'percentage',
+      successFeeFixedAmount: sl?.successFeeFixedAmount || jobRule?.fixedAmount || 0,
+      successFeeFixedAmountVisual: sl?.successFeeFixedAmount ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(sl.successFeeFixedAmount) : (jobRule?.fixedAmount ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(jobRule.fixedAmount) : ''),
+      successFeePercent: sl?.successFeePercent || jobRule?.percentageRate || 0,
+      successFeeBase: sl?.successFeeBase || jobRule?.percentageBase || 'sobre o valor-base',
+      successFeeTrigger: sl?.successFeeTrigger || jobRule?.triggerType || 'v3a_wins_bid',
+      successFeeRequiresApproval: sl?.successFeeRequiresApproval ?? (jobRule?.requiresApproval ?? true),
+      successFeeTerms: sl?.successFeeTerms || jobRule?.terms || '',
+      acceptedByFreelancer: sl?.acceptedByFreelancer ?? false,
     };
   };
 
@@ -176,6 +202,17 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     preferredDueDay: number;
     paymentTerms: string;
     paymentNotes: string;
+    // Success Fee
+    successFeeEnabled: boolean;
+    successFeeType: 'fixed' | 'percentage';
+    successFeeFixedAmount: number;
+    successFeeFixedAmountVisual: string;
+    successFeePercent: number;
+    successFeeBase: string;
+    successFeeTrigger: string;
+    successFeeRequiresApproval: boolean;
+    successFeeTerms: string;
+    acceptedByFreelancer: boolean;
   }>) => {
     setCandidateNegotiations(prev => {
       const current = prev[freelancerId] || getCandidateNeg(freelancerId);
@@ -995,8 +1032,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         </div>
 
         {/* Semantic Tags */}
-        {tags.length > 0 && (
+        {(tags.length > 0 || activeJob?.success_fee_enabled) && (
           <div className="flex flex-wrap gap-1.5">
+            {activeJob?.success_fee_enabled && (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-300 dark:border-indigo-900/30 flex items-center gap-1">
+                <Award className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                <span>Success Fee Aplicável</span>
+              </span>
+            )}
             {tags.map((t, idx) => {
               let tagColor = "bg-neutral-bg text-neutral-text border-neutral-border/30";
               if (t === "Função compatível" || t === "Valor dentro do budget" || t === "Já trabalhou com V3A" || t === "Disponível") {
@@ -1455,7 +1498,16 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         preferredDueDay: candNeg.preferredDueDay,
         paymentTerms: candNeg.paymentTerms,
         paymentNotes: candNeg.paymentNotes,
-        excludedDates: excludedDates[freelancerId]
+        excludedDates: excludedDates[freelancerId],
+        // Success Fee fields
+        successFeeEnabled: candNeg.successFeeEnabled,
+        successFeeType: candNeg.successFeeType,
+        successFeeFixedAmount: candNeg.successFeeFixedAmount,
+        successFeePercent: candNeg.successFeePercent,
+        successFeeBase: candNeg.successFeeBase,
+        successFeeTrigger: candNeg.successFeeTrigger,
+        successFeeTerms: candNeg.successFeeTerms,
+        acceptedByFreelancer: candNeg.acceptedByFreelancer
       });
 
       if (!res.success) {
@@ -2589,6 +2641,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <strong className="text-sidebar-navy font-bold text-xs">{cand?.name}</strong>
                                 <span className="bg-slate-100 text-slate-800 text-[10px] font-bold px-1.5 py-0.2 rounded">{cand?.seniority}</span>
+                                {activeJob.success_fee_enabled && (
+                                  <span className="bg-indigo-50 border border-indigo-200 text-indigo-700 text-[9px] font-bold px-1.5 py-0.2 rounded dark:bg-indigo-950/20 dark:text-indigo-300 dark:border-indigo-900/30 flex items-center gap-0.5">
+                                    <Award className="w-2.5 h-2.5 text-indigo-500" />
+                                    <span>Success Fee</span>
+                                  </span>
+                                )}
                               </div>
                               <p className="text-[11px] text-text-secondary">{cand?.mainRole}</p>
                               <div className="flex items-center gap-1.5 mt-1 text-[11.5px]">
@@ -3221,228 +3279,228 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       {/* Faturamento e Condições Comerciais per Candidate */}
                       {(() => {
                         const candNeg = getCandidateNeg(cand.id, sl);
-                        const schedule = calculateMonthlyPaymentSchedule(
-                          candNeg.contractStartDate,
-                          candNeg.contractEndDate,
-                          candNeg.preferredDueDay,
-                          candNeg.recurringAmount
-                        );
 
                         return (
-                          <div className="sm:col-span-2 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 mt-2 text-left">
-                            <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
-                              Condições Comerciais & Faturamento
-                            </span>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Modelo de Pagamento *
-                                </label>
-                                <select
-                                  disabled={isLocked}
-                                  value={candNeg.paymentModel}
-                                  onChange={(e) => {
-                                    const m = e.target.value as any;
-                                    updateCandidateNeg(cand.id, { 
-                                      paymentModel: m,
-                                      recurringAmount: m === 'monthly_recurring' ? rate : candNeg.recurringAmount
-                                    });
-                                  }}
-                                  className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                >
-                                  <option value="one_time">Pagamento Único</option>
-                                  <option value="monthly_recurring">Recorrente Mensal</option>
-                                </select>
-                              </div>
-
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Início do Contrato
-                                </label>
-                                <input
-                                  type="date"
-                                  disabled={isLocked}
-                                  value={candNeg.contractStartDate}
-                                  onChange={(e) => updateCandidateNeg(cand.id, { contractStartDate: e.target.value })}
-                                  className="w-full bg-white border border-border-subtle p-1 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Fim do Contrato
-                                </label>
-                                <input
-                                  type="date"
-                                  disabled={isLocked}
-                                  value={candNeg.contractEndDate}
-                                  onChange={(e) => updateCandidateNeg(cand.id, { contractEndDate: e.target.value })}
-                                  className="w-full bg-white border border-border-subtle p-1 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                />
-                              </div>
-                            </div>
-
-                            {candNeg.paymentModel === 'monthly_recurring' && (
+                          <div className="sm:col-span-2 space-y-4">
+                            {/* Contract dates and terms */}
+                            <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 text-left">
+                              <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
+                                Informações Contratuais & Operacionais
+                              </span>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                   <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                    Valor Mensal (R$) *
+                                    Início do Contrato *
                                   </label>
-                                  <div className="relative">
-                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary select-none">R$</span>
-                                    <input
-                                      type="text"
-                                      inputMode="decimal"
-                                      disabled={isLocked}
-                                      value={candNeg.recurringAmountVisual}
-                                      onChange={(e) => {
-                                        const rawVal = e.target.value;
-                                        const masked = maskCurrencyBRL(rawVal);
-                                        const numeric = parseCurrencyBR(masked);
-                                        updateCandidateNeg(cand.id, { 
-                                          recurringAmountVisual: masked,
-                                          recurringAmount: numeric
-                                        });
-                                        setVisualRates(prev => ({ ...prev, [cand.id]: masked }));
-                                      }}
-                                      onBlur={() => {
-                                        if (candNeg.recurringAmount > 0) {
-                                          const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(candNeg.recurringAmount);
-                                          updateCandidateNeg(cand.id, {
-                                            recurringAmountVisual: formatted
-                                          });
-                                          setVisualRates(prev => ({ ...prev, [cand.id]: formatted }));
-                                          handleUpdateNegotiation(cand.id, { negotiatedRate: candNeg.recurringAmount });
-                                        } else {
-                                          updateCandidateNeg(cand.id, { recurringAmountVisual: '' });
-                                          setVisualRates(prev => ({ ...prev, [cand.id]: '' }));
-                                          handleUpdateNegotiation(cand.id, { negotiatedRate: 0 });
-                                        }
-                                      }}
-                                      className="w-full bg-white border border-border-subtle p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-action-cyan text-text-primary"
-                                    />
-                                  </div>
+                                  <input
+                                    type="date"
+                                    disabled={isLocked}
+                                    value={candNeg.contractStartDate}
+                                    onChange={(e) => updateCandidateNeg(cand.id, { contractStartDate: e.target.value })}
+                                    className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                  />
                                 </div>
-
                                 <div>
                                   <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                    Vencimento Preferencial *
+                                    Fim do Contrato *
                                   </label>
-                                  <select
+                                  <input
+                                    type="date"
                                     disabled={isLocked}
-                                    value={candNeg.preferredDueDay}
-                                    onChange={(e) => updateCandidateNeg(cand.id, { preferredDueDay: Number(e.target.value) })}
+                                    value={candNeg.contractEndDate}
+                                    onChange={(e) => updateCandidateNeg(cand.id, { contractEndDate: e.target.value })}
                                     className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                  >
-                                    <option value="5">Dia 5</option>
-                                    <option value="10">Dia 10</option>
-                                    <option value="15">Dia 15</option>
-                                    <option value="20">Dia 20</option>
-                                    <option value="25">Dia 25</option>
-                                    <option value="30">Dia 30</option>
-                                  </select>
+                                  />
                                 </div>
                               </div>
-                            )}
-
-                            {/* Render interactive toggleable date chips if monthly_recurring */}
-                            {candNeg.paymentModel === 'monthly_recurring' && schedule.paymentDates.length > 0 && (
-                              <div className="space-y-2">
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <label className="text-[10px] font-bold text-text-secondary uppercase tracking-wider block">
-                                    Cronograma de Pagamento Previsto ({schedule.installmentsCount} parcelas)
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                    Condições de Pagamento
                                   </label>
-                                  <span className="text-[10px] text-text-secondary">
-                                    Total sugerido: <strong>{formatCurrencyBRL(schedule.totalSuggestedAmount)}</strong>
+                                  <input
+                                    type="text"
+                                    disabled={isLocked}
+                                    placeholder="Prazo NF, etc..."
+                                    value={candNeg.paymentTerms}
+                                    onChange={(e) => updateCandidateNeg(cand.id, { paymentTerms: e.target.value })}
+                                    className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
+                                    Notas Administrativas
+                                  </label>
+                                  <input
+                                    type="text"
+                                    disabled={isLocked}
+                                    placeholder="Notas..."
+                                    value={candNeg.paymentNotes}
+                                    onChange={(e) => updateCandidateNeg(cand.id, { paymentNotes: e.target.value })}
+                                    className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Success Fee Custom settings */}
+                            {activeJob.success_fee_enabled && (
+                              <div className="bg-indigo-50/30 dark:bg-indigo-950/10 p-4 rounded-xl border border-indigo-200/50 space-y-3 text-left">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-bold text-[11px] text-indigo-950 dark:text-indigo-300 uppercase tracking-wider block flex items-center gap-1">
+                                    <Award className="w-3.5 h-3.5 text-indigo-650" />
+                                    Condições de Success Fee
                                   </span>
+                                  <label className="flex items-center gap-1.5 text-xs font-semibold text-text-primary cursor-pointer select-none">
+                                    <input
+                                      type="checkbox"
+                                      disabled={isLocked}
+                                      checked={candNeg.successFeeEnabled}
+                                      onChange={(e) => updateCandidateNeg(cand.id, { successFeeEnabled: e.target.checked })}
+                                      className="rounded text-indigo-650 focus:ring-indigo-500 w-3.5 h-3.5"
+                                    />
+                                    <span>Aplicável a este freela</span>
+                                  </label>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                  {schedule.paymentDates.map((dateObj: Date, idx: number) => {
-                                    const dateStr = dateObj.toISOString().split('T')[0];
-                                    const isExcluded = (excludedDates[cand.id] || []).includes(dateStr);
-                                    return (
-                                      <button
-                                        key={idx}
-                                        type="button"
-                                        onClick={() => toggleExcludedDate(cand.id, dateStr)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-mono transition-all cursor-pointer ${
-                                          !isExcluded
-                                            ? 'bg-action-cyan/15 border-action-cyan/50 text-action-cyan hover:bg-action-cyan/25'
-                                            : 'bg-slate-200 border-slate-350 text-slate-500 line-through decoration-slate-400 hover:bg-slate-300'
-                                        }`}
-                                      >
-                                        <Calendar className="w-3.5 h-3.5" />
-                                        <span>Parcela {idx + 1}: {dateObj.toLocaleDateString('pt-BR')}</span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
+
+                                {candNeg.successFeeEnabled && (
+                                  <div className="space-y-3 pt-2 border-t border-indigo-200/30 text-xs">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                      <div>
+                                        <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Tipo de Taxa *</label>
+                                        <select
+                                          disabled={isLocked}
+                                          value={candNeg.successFeeType}
+                                          onChange={(e) => updateCandidateNeg(cand.id, { successFeeType: e.target.value as any })}
+                                          className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
+                                        >
+                                          <option value="percentage">Percentual (%)</option>
+                                          <option value="fixed">Valor Fixo (R$)</option>
+                                        </select>
+                                      </div>
+
+                                      {candNeg.successFeeType === 'percentage' ? (
+                                        <>
+                                          <div>
+                                            <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Percentual (%) *</label>
+                                            <input
+                                              type="number"
+                                              disabled={isLocked}
+                                              value={candNeg.successFeePercent || ''}
+                                              onChange={(e) => updateCandidateNeg(cand.id, { successFeePercent: Number(e.target.value) })}
+                                              className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
+                                              placeholder="Ex: 10"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Base de Cálculo *</label>
+                                            <select
+                                              disabled={isLocked}
+                                              value={candNeg.successFeeBase}
+                                              onChange={(e) => updateCandidateNeg(cand.id, { successFeeBase: e.target.value })}
+                                              className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
+                                            >
+                                              <option value="sobre o valor-base">Sobre o valor-base garantido</option>
+                                              <option value="sobre o budget">Sobre o budget máximo</option>
+                                            </select>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <div className="sm:col-span-2">
+                                          <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Valor Fixo (R$) *</label>
+                                          <div className="relative">
+                                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary">R$</span>
+                                            <input
+                                              type="text"
+                                              inputMode="decimal"
+                                              disabled={isLocked}
+                                              value={candNeg.successFeeFixedAmountVisual}
+                                              onChange={(e) => {
+                                                const raw = e.target.value;
+                                                const masked = maskCurrencyBRL(raw);
+                                                const numeric = parseCurrencyBR(masked);
+                                                updateCandidateNeg(cand.id, {
+                                                  successFeeFixedAmountVisual: masked,
+                                                  successFeeFixedAmount: numeric
+                                                });
+                                              }}
+                                              onBlur={() => {
+                                                if (candNeg.successFeeFixedAmount > 0) {
+                                                  const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(candNeg.successFeeFixedAmount);
+                                                  updateCandidateNeg(cand.id, { successFeeFixedAmountVisual: formatted });
+                                                }
+                                              }}
+                                              className="w-full bg-white border border-border-subtle p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary"
+                                              placeholder="0,00"
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div>
+                                        <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Gatilho de Sucesso *</label>
+                                        <input
+                                          type="text"
+                                          disabled={isLocked}
+                                          value={candNeg.successFeeTrigger}
+                                          onChange={(e) => updateCandidateNeg(cand.id, { successFeeTrigger: e.target.value })}
+                                          className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
+                                          placeholder="Ex: V3A ganhar a concorrência"
+                                        />
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Condições Complementares</label>
+                                        <input
+                                          type="text"
+                                          disabled={isLocked}
+                                          value={candNeg.successFeeTerms}
+                                          onChange={(e) => updateCandidateNeg(cand.id, { successFeeTerms: e.target.value })}
+                                          className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
+                                          placeholder="Condições ou termos extras..."
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="bg-indigo-50/50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-indigo-100 dark:border-slate-850 flex items-center justify-between mt-2">
+                                      <label className="flex items-center gap-2 text-xs font-bold text-indigo-950 dark:text-indigo-350 cursor-pointer select-none">
+                                        <input
+                                          type="checkbox"
+                                          disabled={isLocked}
+                                          checked={candNeg.acceptedByFreelancer}
+                                          onChange={(e) => updateCandidateNeg(cand.id, { acceptedByFreelancer: e.target.checked })}
+                                          className="rounded text-indigo-650 focus:ring-indigo-500 w-4 h-4 bg-white"
+                                        />
+                                        <span>Aceite formal do freelancer às condições de success fee</span>
+                                      </label>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Condições de Pagamento
-                                </label>
-                                <input
-                                  type="text"
-                                  disabled={isLocked}
-                                  placeholder="Prazo NF, etc..."
-                                  value={candNeg.paymentTerms}
-                                  onChange={(e) => updateCandidateNeg(cand.id, { paymentTerms: e.target.value })}
-                                  className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-[10px] font-bold text-text-secondary block mb-0.5">
-                                  Notas Administrativas
-                                </label>
-                                <input
-                                  type="text"
-                                  disabled={isLocked}
-                                  placeholder="Notas..."
-                                  value={candNeg.paymentNotes}
-                                  onChange={(e) => updateCandidateNeg(cand.id, { paymentNotes: e.target.value })}
-                                  className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-action-cyan text-text-primary"
-                                />
-                              </div>
+                            {/* Negotiation Financial Summary */}
+                            <div className="pt-2 text-left">
+                              <NegotiationFinancialSummary
+                                budget={activeJob.budget}
+                                startDate={activeJob.startDate}
+                                endDate={activeJob.endDate}
+                                negotiatedRate={rate}
+                                remunerationModel={billing}
+                                estimatedHours={sl.estimatedHours}
+                                successFeeEnabled={candNeg.successFeeEnabled}
+                                successFeeType={candNeg.successFeeType}
+                                successFeeFixedAmount={candNeg.successFeeFixedAmount}
+                                successFeePercent={candNeg.successFeePercent}
+                                successFeeBase={candNeg.successFeeBase}
+                                successFeeTrigger={candNeg.successFeeTrigger}
+                                variant="detailed"
+                              />
                             </div>
                           </div>
                         );
                       })()}
-
-                      <div className="sm:col-span-2 pt-2 text-left">
-                        <NegotiationFinancialSummary
-                          budget={activeJob.budget}
-                          startDate={activeJob.startDate}
-                          endDate={activeJob.endDate}
-                          negotiatedRate={rate}
-                          remunerationModel={billing}
-                          estimatedHours={sl.estimatedHours}
-                          installmentsCount={
-                            getCandidateNeg(cand.id, sl).paymentModel === 'monthly_recurring'
-                              ? (() => {
-                                  const schedule = calculateMonthlyPaymentSchedule(
-                                    getCandidateNeg(cand.id, sl).contractStartDate,
-                                    getCandidateNeg(cand.id, sl).contractEndDate,
-                                    getCandidateNeg(cand.id, sl).preferredDueDay,
-                                    getCandidateNeg(cand.id, sl).recurringAmount
-                                  );
-                                  const activeInstallments = schedule.paymentDates.filter((dateObj: Date) => {
-                                    const dateStr = dateObj.toISOString().split('T')[0];
-                                    const isExcluded = (excludedDates[cand.id] || []).includes(dateStr);
-                                    return !isExcluded;
-                                  });
-                                  return activeInstallments.length;
-                                })()
-                              : undefined
-                          }
-                          variant="detailed"
-                        />
-                      </div>
                     </div>
                   </div>
                 );
@@ -3864,16 +3922,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               negotiatedRate={rate}
                               remunerationModel={billing}
                               estimatedHours={sl.estimatedHours}
-                              installmentsCount={
-                                getCandidateNeg(cand.id, sl).paymentModel === 'monthly_recurring'
-                                  ? calculateMonthlyPaymentSchedule(
-                                      getCandidateNeg(cand.id, sl).contractStartDate,
-                                      getCandidateNeg(cand.id, sl).contractEndDate,
-                                      getCandidateNeg(cand.id, sl).preferredDueDay,
-                                      getCandidateNeg(cand.id, sl).recurringAmount
-                                    ).installmentsCount
-                                  : undefined
-                              }
+                              successFeeEnabled={getCandidateNeg(cand.id, sl).successFeeEnabled}
+                              successFeeType={getCandidateNeg(cand.id, sl).successFeeType}
+                              successFeeFixedAmount={getCandidateNeg(cand.id, sl).successFeeFixedAmount}
+                              successFeePercent={getCandidateNeg(cand.id, sl).successFeePercent}
+                              successFeeBase={getCandidateNeg(cand.id, sl).successFeeBase}
+                              successFeeTrigger={getCandidateNeg(cand.id, sl).successFeeTrigger}
                               variant="compact"
                             />
 
@@ -3938,128 +3992,51 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           {/* READ-ONLY FINAL COMMERCIAL & BILLING CONDITIONS */}
                           {(() => {
                             const candNeg = getCandidateNeg(cand.id, sl);
-                            const schedule = calculateMonthlyPaymentSchedule(
-                              candNeg.contractStartDate,
-                              candNeg.contractEndDate,
-                              candNeg.preferredDueDay,
-                              candNeg.recurringAmount
-                            );
 
                             return (
-                              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 mt-4 text-left">
-                                <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
-                                  Condições Comerciais & Faturamento (Confirmado)
-                                </span>
+                              <div className="space-y-4 mt-4">
+                                <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 text-left">
+                                  <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
+                                    Condições Comerciais & Faturamento (Confirmado)
+                                  </span>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                                  <div>
-                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                      Modelo de Pagamento
-                                    </span>
-                                    <strong className="text-sidebar-navy dark:text-white">
-                                      {candNeg.paymentModel === 'monthly_recurring' ? 'Recorrente Mensal' : 'Pagamento Único'}
-                                    </strong>
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                                    <div>
+                                      <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                        Período do Contrato
+                                      </span>
+                                      <strong className="text-sidebar-navy dark:text-white">
+                                        {candNeg.contractStartDate ? new Date(candNeg.contractStartDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
+                                        {candNeg.contractEndDate ? new Date(candNeg.contractEndDate).toLocaleDateString('pt-BR') : 'A definir'}
+                                      </strong>
+                                    </div>
+
+                                    <div>
+                                      <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                        Condições de Pagamento
+                                      </span>
+                                      <strong className="text-sidebar-navy dark:text-white">
+                                        {candNeg.paymentTerms || '—'}
+                                      </strong>
+                                    </div>
+
+                                    <div>
+                                      <span className="text-[10px] uppercase font-bold text-text-secondary block">
+                                        Notas Administrativas
+                                      </span>
+                                      <strong className="text-sidebar-navy dark:text-white">
+                                        {candNeg.paymentNotes || '—'}
+                                      </strong>
+                                    </div>
                                   </div>
+                                </div>
 
+                                {/* ERP Supply Lead Time Disclaimer */}
+                                <div className="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-400 flex items-start gap-2 leading-relaxed text-left">
+                                  <AlertCircle className="w-4.5 h-4.5 text-amber-650 dark:text-amber-550 shrink-0 mt-0.5" />
                                   <div>
-                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                      Início do Contrato
-                                    </span>
-                                    <strong className="text-sidebar-navy dark:text-white">
-                                      {candNeg.contractStartDate ? new Date(candNeg.contractStartDate).toLocaleDateString('pt-BR') : 'A definir'}
-                                    </strong>
-                                  </div>
-
-                                  <div>
-                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                      Fim do Contrato
-                                    </span>
-                                    <strong className="text-sidebar-navy dark:text-white">
-                                      {candNeg.contractEndDate ? new Date(candNeg.contractEndDate).toLocaleDateString('pt-BR') : 'A definir'}
-                                    </strong>
-                                  </div>
-
-                                  {candNeg.paymentModel === 'monthly_recurring' && (
-                                    <>
-                                      <div>
-                                        <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                          Valor Mensal
-                                        </span>
-                                        <strong className="text-sidebar-navy dark:text-white">
-                                          {formatCurrencyBRL(candNeg.recurringAmount)}
-                                        </strong>
-                                      </div>
-
-                                      <div>
-                                        <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                          Vencimento Preferencial
-                                        </span>
-                                        <strong className="text-sidebar-navy dark:text-white">
-                                          Dia {candNeg.preferredDueDay}
-                                        </strong>
-                                      </div>
-
-                                      {(() => {
-                                        const instList = getInstallmentsList(
-                                          candNeg.contractStartDate,
-                                          candNeg.contractEndDate,
-                                          candNeg.preferredDueDay,
-                                          candNeg.recurringAmount
-                                        );
-                                        return (
-                                          <div className="sm:col-span-3 space-y-2 pt-2">
-                                            <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                              Cronograma de Parcelas Homologado
-                                            </span>
-                                            <div className="border border-border-subtle rounded-xl overflow-hidden bg-white dark:bg-slate-900">
-                                              <table className="w-full text-left text-xs border-collapse">
-                                                <thead className="bg-slate-50 dark:bg-slate-800 text-[10px] font-bold text-text-secondary uppercase border-b border-border-subtle">
-                                                  <tr>
-                                                    <th className="p-2.5">Parcela</th>
-                                                    <th className="p-2.5">Ref. Competência</th>
-                                                    <th className="p-2.5">Vencimento</th>
-                                                    <th className="p-2.5 text-right">Valor</th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-border-subtle text-text-primary dark:text-white">
-                                                  {instList.map((inst, idx) => {
-                                                    const isExcluded = (excludedDates[cand.id] || []).includes(inst.due_date);
-                                                    return (
-                                                      <tr key={idx} className={isExcluded ? "bg-slate-50 dark:bg-slate-850/50 text-text-muted/65 line-through decoration-slate-400" : "hover:bg-slate-50/50 dark:hover:bg-slate-800/30"}>
-                                                        <td className="p-2.5 font-semibold">#{inst.installment_number}</td>
-                                                        <td className="p-2.5">{inst.reference_period}</td>
-                                                        <td className="p-2.5 font-mono">{inst.due_date_formatted}</td>
-                                                        <td className="p-2.5 text-right font-bold">
-                                                          {isExcluded ? 'Excluída' : formatCurrencyBRL(inst.amount)}
-                                                        </td>
-                                                      </tr>
-                                                    );
-                                                  })}
-                                                </tbody>
-                                              </table>
-                                            </div>
-                                          </div>
-                                        );
-                                      })()}
-                                    </>
-                                  )}
-
-                                  <div>
-                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                      Condições de Pagamento
-                                    </span>
-                                    <strong className="text-sidebar-navy dark:text-white">
-                                      {candNeg.paymentTerms || '—'}
-                                    </strong>
-                                  </div>
-
-                                  <div>
-                                    <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                      Notas Administrativas
-                                    </span>
-                                    <strong className="text-sidebar-navy dark:text-white">
-                                      {candNeg.paymentNotes || '—'}
-                                    </strong>
+                                    <strong className="block text-[11.5px] text-amber-900 dark:text-amber-300 font-bold mb-0.5">⚠️ Diretriz de Compliance: Prazo de Abertura de RCs (Supply)</strong>
+                                    Para garantir a conformidade operacional, a homologação final e a liberação de pagamentos no ERP dependem do cumprimento do prazo regulamentar de abertura de RCs junto ao time de Supply (mínimo de <strong>10 dias</strong> de antecedência, conforme regra de compliance de <code>rc_lead_days</code>).
                                   </div>
                                 </div>
                               </div>

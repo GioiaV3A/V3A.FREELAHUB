@@ -6,10 +6,11 @@ import {
   getRoleLabel, mapSeniorityToDB, mapFreelancerStatusToDB,
   mapAvailabilityToDB, mapFreelancerToUI, mapJobToUI, mapUrgencyToDB
 } from '@/lib/dbMapper';
-import { calculateInclusiveDays, calculatePolicyLimitForJob, formatCurrencyBR, parseCurrencyBR, maskCurrencyBRL } from '@/lib/financial';
+import { calculateInclusiveDays, calculatePolicyLimitForJob, formatCurrencyBR, parseCurrencyBR, maskCurrencyBRL, simulatePaymentProjections } from '@/lib/financial';
 import {
   Sparkles, Save, Briefcase, Plus, Scale, Building,
-  RefreshCw, Check, X, ChevronDown, ChevronUp, HelpCircle
+  RefreshCw, Check, X, ChevronDown, ChevronUp, HelpCircle, Percent,
+  Calendar, AlertTriangle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { countries } from '@/lib/countries';
@@ -410,6 +411,24 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   const userRole = getRoleLabel(db.currentUser.profile);
   const canSelectNucleo = userRole === 'MASTER' || userRole === 'RH' || userRole === 'C-LEVEL';
 
+  // Today's date in YYYY-MM-DD local format
+  const todayStr = React.useMemo(() => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
+
+  const defaultEndStr = React.useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }, []);
+
   // ── Section 1: Job basics ─────────────────────────────────────────────────
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
@@ -417,8 +436,8 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   const [seniorityNeeded, setSeniorityNeeded] = useState<'Júnior' | 'Pleno' | 'Sênior' | 'Especialista'>('Sênior');
   const [description, setDescription] = useState('');
   const [deliverables, setDeliverables] = useState('');
-  const [startDate, setStartDate] = useState('2026-07-01');
-  const [endDate, setEndDate] = useState('2026-10-31');
+  const [startDate, setStartDate] = useState(todayStr);
+  const [endDate, setEndDate] = useState(defaultEndStr);
   const [budget, setBudget] = useState(10000);
   const [urgency, setUrgency] = useState<'Alta' | 'Média' | 'Baixa'>('Média');
   const [selectedNucleoId, setSelectedNucleoId] = useState(
@@ -426,27 +445,137 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ── Section 2: Payment flow ───────────────────────────────────────────────
-  const [paymentFlow, setPaymentFlow] = useState<'one_time' | 'recurring'>('one_time');
+  // ── Section 2: Remuneration ───────────────────────────────────────────────
   const [remunerationModel, setRemunerationModel] = useState<'daily' | 'hourly' | 'fixed_job' | 'monthly_salary'>('daily');
 
-  // One-time payment fields
+  // Unified payment fields
   const [expectedHours, setExpectedHours] = useState<number>(0);
   const [oneTimeRate, setOneTimeRate] = useState<number>(0);
 
-  // Recurring payment fields
-  const [expectedPaymentDay, setExpectedPaymentDay] = useState<number>(5);
-  // The rich date list — source of truth for recurring
-  const [paymentDates, setPaymentDates] = useState<PaymentDateEntry[]>([]);
-  const [datesUpdatedMsg, setDatesUpdatedMsg] = useState<string | null>(null);
-  // Manual monthly amount override: null = auto (budget/selectedCount)
-  const [manualMonthlyRate, setManualMonthlyRate] = useState<number | null>(null);
+  // ── Section 3: Success Fee Rules ──────────────────────────────────────────
+  const [successFeeEnabled, setSuccessFeeEnabled] = useState(false);
+  const [isCompetitiveBid, setIsCompetitiveBid] = useState(false);
+  const [successFeeType, setSuccessFeeType] = useState<'fixed' | 'percentage'>('fixed');
+  const [successFeeFixedAmount, setSuccessFeeFixedAmount] = useState(0);
+  const [successFeeFixedAmountVisual, setSuccessFeeFixedAmountVisual] = useState('');
+  const [successFeePercent, setSuccessFeePercent] = useState(0);
+  const [successFeeBase, setSuccessFeeBase] = useState('Valor total do contrato');
+  const [successFeeTrigger, setSuccessFeeTrigger] = useState('vitória da V3A na concorrência');
+  const [successFeeTerms, setSuccessFeeTerms] = useState('');
+  const [successFeeRequiresApproval, setSuccessFeeRequiresApproval] = useState(true);
 
   // Visual currency formatting states
   const [budgetVisual, setBudgetVisual] = useState(() => budget > 0 ? maskCurrencyBRL(budget.toString()) : '');
   const [oneTimeRateVisual, setOneTimeRateVisual] = useState(() => oneTimeRate > 0 ? maskCurrencyBRL(oneTimeRate.toString()) : '');
-  const [manualMonthlyRateVisual, setManualMonthlyRateVisual] = useState(() => manualMonthlyRate !== null ? maskCurrencyBRL(manualMonthlyRate.toString()) : '');
   const [isMemoryOpenManual, setIsMemoryOpenManual] = useState<boolean | null>(null);
+  const [isEditingRate, setIsEditingRate] = useState(false);
+  const [isEditingSuccessFee, setIsEditingSuccessFee] = useState(false);
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [isSticky, setIsSticky] = useState(false);
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSticky(!entry.isIntersecting);
+      },
+      { threshold: [0] }
+    );
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
+    }
+
+    return () => {
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
+      observer.disconnect();
+    };
+  }, []);
+
+  // Financial totals
+  const days = calculateInclusiveDays(startDate, endDate);
+
+  const projectedPayments = React.useMemo(() => {
+    return simulatePaymentProjections(startDate, endDate);
+  }, [startDate, endDate]);
+
+  // Helper to sync rate (oneTimeRate) from budget
+  const syncRateFromBudget = useCallback((
+    targetBudget: number,
+    model = remunerationModel,
+    sfEnabled = successFeeEnabled,
+    sfType = successFeeType,
+    sfFixed = successFeeFixedAmount,
+    sfPercent = successFeePercent,
+    currentDays = days,
+    currentPayments = projectedPayments.length,
+    currentHours = expectedHours
+  ) => {
+    let baseBudget = targetBudget;
+    if (sfEnabled) {
+      if (sfType === 'fixed') {
+        baseBudget = targetBudget - sfFixed;
+      } else {
+        baseBudget = targetBudget / (1 + (sfPercent || 0) / 100);
+      }
+    }
+    if (baseBudget < 0) baseBudget = 0;
+
+    let rate = 0;
+    if (model === 'monthly_salary') {
+      rate = baseBudget / (currentPayments || 1);
+    } else if (model === 'fixed_job') {
+      rate = baseBudget;
+    } else if (model === 'daily') {
+      rate = baseBudget / (currentDays || 1);
+    } else if (model === 'hourly') {
+      rate = baseBudget / (currentHours || 1);
+    }
+
+    rate = Math.round(rate * 100) / 100;
+    setOneTimeRate(rate);
+    setOneTimeRateVisual(rate > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rate) : '');
+  }, [remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours]);
+
+  // Helper to sync budget from rate
+  const syncBudgetFromRate = useCallback((
+    targetRate: number,
+    model = remunerationModel,
+    sfEnabled = successFeeEnabled,
+    sfType = successFeeType,
+    sfFixed = successFeeFixedAmount,
+    sfPercent = successFeePercent,
+    currentDays = days,
+    currentPayments = projectedPayments.length,
+    currentHours = expectedHours
+  ) => {
+    let baseCost = 0;
+    if (model === 'monthly_salary') {
+      baseCost = targetRate * (currentPayments || 1);
+    } else if (model === 'fixed_job') {
+      baseCost = targetRate;
+    } else if (model === 'daily') {
+      baseCost = targetRate * (currentDays || 1);
+    } else if (model === 'hourly') {
+      baseCost = targetRate * (currentHours || 1);
+    }
+
+    let calculatedBudget = baseCost;
+    if (sfEnabled) {
+      if (sfType === 'fixed') {
+        calculatedBudget = baseCost + sfFixed;
+      } else {
+        calculatedBudget = baseCost * (1 + (sfPercent || 0) / 100);
+      }
+    }
+
+    calculatedBudget = Math.round(calculatedBudget * 100) / 100;
+    setBudget(calculatedBudget);
+    setBudgetVisual(calculatedBudget > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedBudget) : '');
+  }, [remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours]);
 
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
@@ -454,8 +583,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     setBudgetVisual(masked);
     const numeric = parseCurrencyBR(masked);
     setBudget(numeric);
-    setManualMonthlyRate(null);
-    setManualMonthlyRateVisual('');
+    syncRateFromBudget(numeric);
   };
 
   const handleBudgetBlur = () => {
@@ -472,6 +600,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     setOneTimeRateVisual(masked);
     const numeric = parseCurrencyBR(masked);
     setOneTimeRate(numeric);
+    syncBudgetFromRate(numeric);
   };
 
   const handleOneTimeRateBlur = () => {
@@ -482,111 +611,26 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     }
   };
 
-  const handleManualMonthlyRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSuccessFeeFixedAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
     const masked = maskCurrencyBRL(rawVal);
-    setManualMonthlyRateVisual(masked);
+    setSuccessFeeFixedAmountVisual(masked);
     const numeric = parseCurrencyBR(masked);
-    setManualMonthlyRate(numeric || null);
+    setSuccessFeeFixedAmount(numeric);
+    syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, numeric, successFeePercent, days, projectedPayments.length, expectedHours);
   };
 
-  const handleManualMonthlyRateBlur = () => {
-    if (manualMonthlyRate !== null && manualMonthlyRate > 0) {
-      setManualMonthlyRateVisual(new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(manualMonthlyRate));
+  const handleSuccessFeeFixedAmountBlur = () => {
+    if (successFeeFixedAmount > 0) {
+      setSuccessFeeFixedAmountVisual(new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(successFeeFixedAmount));
     } else {
-      setManualMonthlyRateVisual('');
+      setSuccessFeeFixedAmountVisual('');
     }
   };
 
   const activeNucleos = db.nucleos.filter((n: any) => n.status === 'Ativo');
+  const nucleoName = db.nucleos.find((n: any) => n.id === selectedNucleoId)?.name || '';
 
-  // ── Derived summary from paymentDates ────────────────────────────────────
-  const summary = React.useMemo(
-    () => derivePaymentSummary(paymentDates, budget, manualMonthlyRate),
-    [paymentDates, budget, manualMonthlyRate]
-  );
-
-  // ── Rebuild dates when schedule parameters change (recurring only) ────────
-  const rebuildDates = useCallback((
-    sd: string,
-    ed: string,
-    pDay: number,
-    prev: PaymentDateEntry[]
-  ) => {
-    const newDates = buildPaymentDates(sd, ed, pDay, prev);
-    setPaymentDates(newDates);
-    setManualMonthlyRate(null); // reset manual override
-
-    // Show update notification if dates actually changed
-    const prevKeys = new Set(prev.map(p => p.date));
-    const newKeys = new Set(newDates.map(n => n.date));
-    const changed = newDates.some(d => !prevKeys.has(d.date)) || prev.some(p => !newKeys.has(p.date));
-    if (changed && prev.length > 0) {
-      setDatesUpdatedMsg('As datas foram atualizadas conforme o novo período informado.');
-      setTimeout(() => setDatesUpdatedMsg(null), 5000);
-    }
-  }, []);
-
-  // ── Initialize / rebuild dates when entering recurring mode or changing params
-  React.useEffect(() => {
-    if (paymentFlow !== 'recurring') return;
-    if (!startDate || !endDate) return;
-    rebuildDates(startDate, endDate, expectedPaymentDay, paymentDates);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentFlow, startDate, endDate, expectedPaymentDay]);
-
-  // ── Toggle a single payment date ─────────────────────────────────────────
-  const togglePaymentDate = useCallback((isoDate: string) => {
-    setPaymentDates(prev => {
-      const selectedCount = prev.filter(d => d.selected).length;
-      const target = prev.find(d => d.date === isoDate);
-      if (!target) return prev;
-
-      // Block: cannot deselect the last selected date
-      if (target.selected && selectedCount <= 1) {
-        alert('É necessário manter pelo menos uma data de pagamento ativa.');
-        return prev;
-      }
-
-      return prev.map(d =>
-        d.date === isoDate
-          ? { ...d, selected: !d.selected, manuallyExcluded: d.selected }
-          : d
-      );
-    });
-    // When a date is toggled manually, clear the manual monthly rate
-    // so the suggestion recalculates automatically
-    setManualMonthlyRate(null);
-  }, []);
-
-  // ── Switch payment flow ───────────────────────────────────────────────────
-  const handlePaymentFlowChange = (val: 'one_time' | 'recurring') => {
-    setPaymentFlow(val);
-    setManualMonthlyRate(null);
-    setManualMonthlyRateVisual('');
-    setOneTimeRate(0);
-    setOneTimeRateVisual('');
-    if (val === 'recurring') {
-      setRemunerationModel('monthly_salary');
-      // Immediately build dates
-      const newDates = buildPaymentDates(startDate, endDate, expectedPaymentDay, []);
-      setPaymentDates(newDates);
-    } else {
-      setRemunerationModel('daily');
-      setPaymentDates([]);
-    }
-  };
-
-  // ── Recalculate button (resets manual rate) ───────────────────────────────
-  const handleRecalculate = () => {
-    setManualMonthlyRate(null);
-    setManualMonthlyRateVisual('');
-    // Restore all dates to selected
-    setPaymentDates(prev => prev.map(d => ({ ...d, selected: true, manuallyExcluded: false })));
-  };
-
-  // ── Financial totals for one_time ────────────────────────────────────────
-  const days = calculateInclusiveDays(startDate, endDate);
   let oneTimeTotal = 0;
   if (remunerationModel === 'daily') {
     oneTimeTotal = oneTimeRate * Math.max(0, days);
@@ -594,15 +638,14 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     oneTimeTotal = oneTimeRate * (expectedHours || 0);
   } else if (remunerationModel === 'fixed_job') {
     oneTimeTotal = oneTimeRate;
+  } else if (remunerationModel === 'monthly_salary') {
+    oneTimeTotal = oneTimeRate * projectedPayments.length;
   }
 
-  // Unified expected total compensation
-  const expectedTotalCompensation =
-    paymentFlow === 'recurring' ? summary.totalExpectedCompensation : oneTimeTotal;
-  const expectedRate = paymentFlow === 'recurring' ? summary.effectiveMonthlyAmount : oneTimeRate;
-  const expectedPaymentCount = paymentFlow === 'recurring' ? summary.selectedCount : 1;
+  const expectedTotalCompensation = oneTimeTotal;
+  const expectedRate = oneTimeRate;
 
-  // ── Policy match using calculatePolicyLimitForJob ──────────────────────────
+  // Policy match
   const billingTypeForMatch =
     remunerationModel === 'daily' ? 'Diária' :
     remunerationModel === 'hourly' ? 'Hora' :
@@ -614,10 +657,9 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     p.billingType === billingTypeForMatch
   );
 
-  // Full policy calculation with discount for fixed jobs
   const policyResult = React.useMemo(() => {
     if (!roleNeeded || !seniorityNeeded || !remunerationModel || !startDate || !endDate) return null;
-    const proposedAmt = paymentFlow === 'recurring' ? summary.effectiveMonthlyAmount : oneTimeRate;
+    const proposedAmt = oneTimeRate;
     if (!proposedAmt || proposedAmt <= 0) return null;
     return calculatePolicyLimitForJob({
       role: roleNeeded,
@@ -627,22 +669,44 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       endDate,
       proposedAmount: proposedAmt,
       policies: db.policies,
-      installmentsCount: paymentFlow === 'recurring' ? summary.selectedCount : undefined
+      installmentsCount: undefined
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roleNeeded, seniorityNeeded, remunerationModel, startDate, endDate, oneTimeRate, summary.effectiveMonthlyAmount, summary.selectedCount, db.policies, paymentFlow]);
+  }, [roleNeeded, seniorityNeeded, remunerationModel, startDate, endDate, oneTimeRate, db.policies]);
 
-  const policyStatus: 'within_policy' | 'above_policy_requires_approval' | 'no_policy_found' =
+  const matchingSuccessFeePolicy = React.useMemo(() => {
+    return db.policies.find((p: any) =>
+      p.role === roleNeeded &&
+      p.seniority === seniorityNeeded &&
+      p.successFeeMaxPercent !== undefined &&
+      p.successFeeMaxPercent !== null &&
+      p.successFeeMaxPercent > 0
+    );
+  }, [roleNeeded, seniorityNeeded, db.policies]);
+
+  const currentSuccessFeePercent = React.useMemo(() => {
+    if (!successFeeEnabled) return 0;
+    if (successFeeType === 'percentage') {
+      return successFeePercent || 0;
+    } else {
+      if (!budget || budget <= 0) return 0;
+      return (successFeeFixedAmount / budget) * 100;
+    }
+  }, [successFeeEnabled, successFeeType, successFeePercent, successFeeFixedAmount, budget]);
+
+  const isSuccessFeeAbovePolicy = successFeeEnabled && matchingSuccessFeePolicy
+    ? currentSuccessFeePercent > Number(matchingSuccessFeePolicy.successFeeMaxPercent)
+    : false;
+
+  const isAccumulatedOverBudget = budget > 0 && expectedTotalCompensation > budget;
+
+  const basePolicyStatus: 'within_policy' | 'above_policy_requires_approval' | 'no_policy_found' =
     !policyResult || policyResult.policyStatus === 'policy_missing' ? 'no_policy_found' :
     policyResult.policyStatus === 'above_policy' ? 'above_policy_requires_approval' : 'within_policy';
 
-  const formatBRL = (v: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+  const policyStatus: 'within_policy' | 'above_policy_requires_approval' | 'no_policy_found' =
+    isSuccessFeeAbovePolicy ? 'above_policy_requires_approval' : basePolicyStatus;
 
-  // ── Check if any dates were manually excluded ─────────────────────────────
-  const hasManuallyExcluded = paymentDates.some(d => d.manuallyExcluded);
-
-  // ── Submit ────────────────────────────────────────────────────────────────
+  // Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -651,51 +715,32 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       if (!confirmCreate) return;
     }
 
+    if (isSuccessFeeAbovePolicy && matchingSuccessFeePolicy) {
+      const msg = successFeeType === 'percentage'
+        ? `Atenção: O percentual de Success Fee informado (${successFeePercent}%) excede o teto autorizado na política para esta função (${matchingSuccessFeePolicy.successFeeMaxPercent}%). A contratação exigirá validação. Deseja prosseguir?`
+        : `Atenção: O valor de Success Fee informado equivale a ${currentSuccessFeePercent.toFixed(1)}% do budget, o que excede o teto de ${matchingSuccessFeePolicy.successFeeMaxPercent}% na política para esta função. A contratação exigirá validação. Deseja prosseguir?`;
+      const confirmExceed = confirm(msg);
+      if (!confirmExceed) return;
+    }
+
     if (!name || !client || !description) {
       alert('Preencha os campos obrigatórios: Título do Job, Cliente e Descrição Técnica.');
       return;
     }
-    if (canSelectNucleo && !selectedNucleoId) {
-      alert('Selecione o Núcleo Responsável para este job.');
-      return;
-    }
     const nucleoId = canSelectNucleo ? selectedNucleoId : (db.currentUser.nucleoId || '');
-    if (!nucleoId) { alert('Núcleo não identificado. Verifique seu perfil.'); return; }
-    if ((userRole === 'NÚCLEO' || userRole === 'NUCLEO') && nucleoId !== db.currentUser.nucleoId) {
-      alert('Usuário de núcleo só pode criar oportunidades para o próprio núcleo.');
+    if (!nucleoId) { alert('Selecione o núcleo contratante.'); return; }
+    if (!startDate || !endDate) { alert('Informe a data de início e término.'); return; }
+    if (startDate < todayStr) {
+      alert('A data de início estimado não pode ser anterior à data de hoje.');
       return;
     }
-    if (!startDate || !endDate) { alert('Informe a data de início e término.'); return; }
     if (days < 1) { alert('A data de fim deve ser igual ou posterior à data de início.'); return; }
     if (!budget || budget <= 0) { alert('Informe o budget com um valor maior que zero.'); return; }
-
-    if (paymentFlow === 'recurring') {
-      if (summary.selectedCount <= 0) {
-        alert('É necessário manter pelo menos uma data de pagamento ativa.');
-        return;
-      }
-      if (summary.effectiveMonthlyAmount <= 0) {
-        alert('Informe um valor previsto mensal maior que zero.');
-        return;
-      }
-    } else {
-      if (oneTimeRate <= 0) { alert('Informe um valor previsto de remuneração maior que zero.'); return; }
-      if (remunerationModel === 'hourly' && expectedHours <= 0) {
-        alert('Informe a quantidade de horas previstas maior que zero.');
-        return;
-      }
+    if (oneTimeRate <= 0) { alert('Informe um valor previsto de remuneração maior que zero.'); return; }
+    if (remunerationModel === 'hourly' && expectedHours <= 0) {
+      alert('Informe a quantidade de horas previstas maior que zero.');
+      return;
     }
-
-    const savingAmount = budget - expectedTotalCompensation;
-    const savingPercentage = budget > 0 ? (savingAmount / budget) * 100 : 0;
-
-    // Prepare date arrays for DB
-    const allGeneratedISO = paymentDates.map(d => d.date);
-    const selectedISO = paymentDates.filter(d => d.selected).map(d => d.date);
-    const excludedISO = paymentDates.filter(d => d.manuallyExcluded).map(d => d.date);
-
-    let jobPayload: any = null;
-    let requestPayload: any = null;
 
     setIsSubmitting(true);
     try {
@@ -709,7 +754,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       }
 
       const urgencyDb = mapUrgencyToDB(urgency);
-      const statusDb = 'oportunidade_criada';
+      const statusDb = isCompetitiveBid ? 'waiting_competition_result' : 'oportunidade_criada';
 
       const isAbove = policyResult?.policyStatus === 'above_policy';
       const isMissing = !policyResult || policyResult.policyStatus === 'policy_missing';
@@ -739,7 +784,10 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         return model;
       };
 
-      jobPayload = {
+      const savingAmount = budget - expectedTotalCompensation;
+      const savingPercentage = budget > 0 ? (savingAmount / budget) * 100 : 0;
+
+      const jobPayload = {
         job_code: `JOB-${Date.now().toString().slice(-6)}`,
         title: name,
         client_name: client,
@@ -750,45 +798,39 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         status: statusDb,
         start_date: startDate,
         end_date: endDate,
-        payment_flow: paymentFlow,
-        payment_model: paymentFlow === 'one_time' ? 'single' : 'recurring',
+        payment_flow: 'one_time',
+        payment_model: 'single',
         remuneration_model: mapRemunerationModelToDB(remunerationModel),
         expected_rate: expectedRate,
         expected_hours: remunerationModel === 'hourly' ? expectedHours : null,
-        expected_payment_day: paymentFlow === 'recurring' ? expectedPaymentDay : null,
-        expected_payment_count: expectedPaymentCount,
+        expected_payment_day: null,
+        expected_payment_count: 1,
         expected_total_compensation: expectedTotalCompensation,
         expected_budget_saving_amount: savingAmount,
         expected_budget_saving_percentage: savingPercentage,
         payment_policy_status: policyStatus,
         
-        // New financial columns in jobs
+        is_competitive_bid: isCompetitiveBid,
+        success_fee_enabled: successFeeEnabled,
         expected_total_value: expectedTotalCompensation,
         expected_daily_value: remunerationModel === 'daily' ? oneTimeRate : null,
-        expected_monthly_value: (remunerationModel === 'monthly_salary' || paymentFlow === 'recurring') ? summary.effectiveMonthlyAmount : null,
+        expected_monthly_value: remunerationModel === 'monthly_salary' ? oneTimeRate : null,
         expected_closed_value: remunerationModel === 'fixed_job' ? oneTimeRate : null,
-        payment_day: paymentFlow === 'recurring' ? expectedPaymentDay : null,
-        installments_count: paymentFlow === 'recurring' ? summary.selectedCount : 1,
-        suggested_installments_count: paymentFlow === 'recurring' ? summary.totalCount : 1,
-        payment_dates: allGeneratedISO,
-        selected_payment_dates: selectedISO,
-        deselected_payment_dates: excludedISO,
-        payment_dates_generated: allGeneratedISO,
-        payment_dates_selected: selectedISO,
-        payment_dates_excluded: excludedISO,
+        payment_day: null,
+        installments_count: 1,
+        suggested_installments_count: 1,
+        payment_dates: [],
+        selected_payment_dates: [],
+        deselected_payment_dates: [],
+        payment_dates_generated: [],
+        payment_dates_selected: [],
+        payment_dates_excluded: [],
 
-        // Policy columns in jobs
         policy_reference_value: matchedPolicy ? Number(matchedPolicy.referenceValue) : null,
         policy_cap_value: matchedPolicy ? Number(matchedPolicy.ceilingValue) : null,
         policy_reference_total: policyResult ? policyResult.referenceAmount : null,
         policy_cap_total: policyResult ? policyResult.limitAmount : null,
         policy_discount_percent: policyResult ? (policyResult.appliedDiscount * 100) : 0,
-        policy_discount_amount_reference: (policyResult && policyResult.appliedDiscount > 0)
-          ? (matchedPolicy ? Number(matchedPolicy.referenceValue) : 0) * days * policyResult.appliedDiscount
-          : 0,
-        policy_discount_amount_cap: (policyResult && policyResult.appliedDiscount > 0)
-          ? (matchedPolicy ? Number(matchedPolicy.ceilingValue) : 0) * days * policyResult.appliedDiscount
-          : 0,
         policy_exceeded: dbPolicyExceeded,
         policy_excess_amount: policyResult ? policyResult.excessAmount : 0,
         policy_excess_percent: policyResult ? policyResult.excessPercent : 0,
@@ -797,7 +839,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         requires_head_approval: dbRequiresHeadApproval,
         approval_status: dbApprovalStatus,
         created_by_user_id: db.currentUser.id,
-        created_by_profile: db.currentUser.role,
+        created_by_profile: db.currentUser.role || db.currentUser.profile,
         created_by_nucleo_id: db.currentUser.nucleoId || nucleoId
       };
 
@@ -809,7 +851,29 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
 
       if (jobErr || !parentJob) throw jobErr || new Error('Erro ao criar job.');
 
-      requestPayload = {
+      // Save Success Fee Rules if enabled
+      if (successFeeEnabled) {
+        const { error: ruleErr } = await supabase
+          .from('job_success_fee_rules')
+          .insert({
+            job_id: parentJob.id,
+            fee_type: successFeeType,
+            fixed_amount: successFeeType === 'fixed' ? successFeeFixedAmount : null,
+            percentage_rate: successFeeType === 'percentage' ? successFeePercent : null,
+            percentage_base: successFeeType === 'percentage' ? successFeeBase : null,
+            trigger_type: successFeeTrigger,
+            terms: successFeeTerms,
+            requires_approval: successFeeRequiresApproval,
+            created_by: db.currentUser.id
+          });
+        if (ruleErr) {
+          // Cleanup job
+          await supabase.from('jobs').delete().eq('id', parentJob.id);
+          throw ruleErr;
+        }
+      }
+
+      const requestPayload = {
         request_code: `REQ-${Date.now().toString().slice(-6)}`,
         job_id: parentJob.id,
         function_id: funcId,
@@ -820,21 +884,20 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         end_date: endDate,
         budget_max: budget,
         status: statusDb,
-        payment_flow: paymentFlow,
+        payment_flow: 'one_time',
         remuneration_model: mapRemunerationModelToDB(remunerationModel),
         expected_rate: expectedRate,
         expected_hours: remunerationModel === 'hourly' ? expectedHours : null,
-        expected_payment_day: paymentFlow === 'recurring' ? expectedPaymentDay : null,
-        expected_payment_count: expectedPaymentCount,
+        expected_payment_day: null,
+        expected_payment_count: 1,
         expected_total_compensation: expectedTotalCompensation,
         expected_budget_saving_amount: savingAmount,
         expected_budget_saving_percentage: savingPercentage,
         payment_policy_status: policyStatus,
-        payment_dates_generated: allGeneratedISO,
-        payment_dates_selected: selectedISO,
-        payment_dates_excluded: excludedISO,
+        payment_dates_generated: [],
+        payment_dates_selected: [],
+        payment_dates_excluded: [],
         
-        // Policy fields in requests
         policy_reference_value: matchedPolicy ? Number(matchedPolicy.referenceValue) : null,
         policy_ceiling_value: matchedPolicy ? Number(matchedPolicy.ceilingValue) : null,
         is_above_policy: dbPolicyExceeded,
@@ -857,27 +920,12 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
 
       const mappedJob = mapJobToUI(requestJob);
       db.setJobs(prev => [mappedJob, ...prev]);
-      alert(`Demanda "${name}" registrada com sucesso! Prossiga para a shortlist.`);
+      alert(`Demanda "${name}" registrada com sucesso! ${isCompetitiveBid ? 'Aguardando encerramento da concorrência.' : 'Prossiga para a shortlist.'}`);
       db.setSelectedJobId(mappedJob.id);
-      db.setActiveTab('Shortlist');
+      db.setActiveTab(isCompetitiveBid ? 'Dashboard' : 'Shortlist');
     } catch (error: any) {
       console.error('Error creating opportunity:', error);
-      console.error('Error payload details:', {
-        message: error?.message,
-        details: error?.details,
-        hint: error?.hint,
-        code: error?.code,
-        payload: jobPayload
-      });
-
-      alert(
-        `Erro ao criar oportunidade: ${
-          error?.message ||
-          error?.details ||
-          error?.hint ||
-          'Erro desconhecido. Verifique o console.'
-        }`
-      );
+      alert(`Erro ao criar oportunidade: ${error?.message || 'Erro desconhecido.'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -907,12 +955,86 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             Registrar Nova Demanda de Freelancer
           </h2>
           <p className="text-xs text-text-secondary mt-0.5">
-            Configure o job, defina o fluxo de pagamento e inicie a shortlist automaticamente.
+            Configure o job, defina o modelo de remuneração e inicie a shortlist automaticamente.
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 relative">
+        {/* Sentinel for sticky header */}
+        <div ref={sentinelRef} className="absolute top-0 left-0 w-px h-px pointer-events-none" />
+
+        {/* Sticky Consolidated Header Wrapper */}
+        <div className="sticky top-0 z-30 h-0 overflow-visible pointer-events-none">
+          {isSticky && (
+            <div
+              className="bg-white/95 dark:bg-slate-900/95 text-text-primary p-4 rounded-2xl border border-border-subtle shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 animate-fade-in pointer-events-auto"
+              style={{ backdropFilter: 'blur(8px)' }}
+            >
+              <div className="space-y-1 text-left">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="bg-action-cyan/15 text-action-cyan font-mono text-[9px] font-extrabold px-2 py-0.5 rounded tracking-wider uppercase">
+                    Resumo do Job
+                  </span>
+                  {urgency && (
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                      urgency === 'Alta'
+                        ? 'bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/10'
+                        : urgency === 'Média'
+                        ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/10'
+                        : 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/10'
+                    }`}>
+                      Urgência: {urgency}
+                    </span>
+                  )}
+                </div>
+                
+                <h3 className="text-sm font-bold text-text-primary leading-tight">
+                  {client ? `[${client}] ` : ''}{name || 'Título não definido'}
+                </h3>
+                
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-text-secondary">
+                  {nucleoName && (
+                    <div className="flex items-center gap-1">
+                      <Building className="w-3 h-3 text-text-muted" />
+                      <span>Núcleo: <strong className="text-text-primary">{nucleoName}</strong></span>
+                    </div>
+                  )}
+                  {(roleNeeded || seniorityNeeded) && (
+                    <div className="flex items-center gap-1">
+                      <Briefcase className="w-3 h-3 text-text-muted" />
+                      <span>Função: <strong className="text-text-primary">{roleNeeded} ({seniorityNeeded})</strong></span>
+                    </div>
+                  )}
+                  {(startDate || endDate) && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-text-muted" />
+                      <span>Período: <strong className="text-text-primary">{startDate ? isoToBR(startDate) : '?'} a {endDate ? isoToBR(endDate) : '?'}</strong></span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className={`flex flex-col sm:items-end justify-center shrink-0 px-3 py-1.5 rounded-xl transition-all duration-300 ${
+                isEditingRate || isEditingSuccessFee || isEditingBudget
+                  ? 'border border-action-cyan/40 bg-action-cyan/5 ring-1 ring-action-cyan/20 shadow-[0_0_8px_rgba(6,182,212,0.15)]'
+                  : 'border border-transparent'
+              }`}>
+                <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider flex items-center gap-1.5">
+                  Budget Máximo
+                  {(isEditingRate || isEditingSuccessFee || isEditingBudget) && (
+                    <span className="text-[8px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                      (Atualizando...)
+                    </span>
+                  )}
+                </span>
+                <span className="text-base font-extrabold text-action-cyan">
+                  {formatCurrencyBR(budget || 0)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* ═══════════════════════════════════════════════════════════════
             SECTION 1 — Dados Principais
@@ -930,37 +1052,38 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             </label>
             <select
               required disabled={!canSelectNucleo}
-              value={selectedNucleoId} onChange={e => setSelectedNucleoId(e.target.value)}
-              className={selectCls + ' border-amber-300 dark:border-amber-700 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-text-secondary disabled:cursor-not-allowed'}
+              value={selectedNucleoId}
+              onChange={e => setSelectedNucleoId(e.target.value)}
+              className={selectCls}
             >
-              <option value="">— Selecione o núcleo responsável —</option>
+              <option value="">Selecione o núcleo responsável...</option>
               {activeNucleos.map((n: any) => (
                 <option key={n.id} value={n.id}>{n.name}</option>
               ))}
             </select>
-            {activeNucleos.length === 0 && canSelectNucleo && (
-              <p className="text-[11px] text-amber-700 dark:text-amber-400">Nenhum núcleo ativo cadastrado no sistema.</p>
+            {!canSelectNucleo && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-500/80">
+                Você está vinculado ao núcleo <strong>{activeNucleos.find((n: any) => n.id === db.currentUser.nucleoId)?.name || '—'}</strong>. Contatos de nível Núcleo não podem alterar o núcleo contratante.
+              </p>
             )}
           </div>
 
-          {/* Título + Cliente */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className={labelCls}>Título do Projeto / Job *</label>
-              <input type="text" placeholder="Ex: Arena Real Gamer – Stand CCXP 2026" value={name} onChange={e => setName(e.target.value)} className={inputCls} required />
+              <label className={labelCls}>Título do Job / Oportunidade *</label>
+              <input type="text" placeholder="Ex: Diretor de Arte para Convenção Anual" value={name} onChange={e => setName(e.target.value)} className={inputCls} required />
             </div>
             <div>
-              <label className={labelCls}>Cliente Solicitante *</label>
-              <input type="text" placeholder="Ex: Coca-Cola Inc." value={client} onChange={e => setClient(e.target.value)} className={inputCls} required />
+              <label className={labelCls}>Cliente / Projeto *</label>
+              <input type="text" placeholder="Ex: Nestlé - Campanha Páscoa" value={client} onChange={e => setClient(e.target.value)} className={inputCls} required />
             </div>
           </div>
 
-          {/* Função + Senioridade + Urgência */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div>
               <label className={labelCls}>Função Requerida</label>
               <select value={roleNeeded} onChange={e => setRoleNeeded(e.target.value)} className={selectCls}>
-                {['Diretor de Arte','Designer 3D','Planejamento','Produtor Executivo','Produtor de Campo','Atendimento','Redator','Motion Designer','Cenógrafo','Conteúdo'].map(r => (
+                {Array.from(new Set(db.policies.map((p: any) => p.role))).map(r => (
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
@@ -988,10 +1111,13 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             <div>
               <label className={labelCls}>Início Estimado</label>
               <input type="date" value={startDate}
+                min={todayStr}
                 onChange={e => {
-                  const v = e.target.value;
-                  setStartDate(v);
-                  if (paymentFlow === 'recurring') rebuildDates(v, endDate, expectedPaymentDay, paymentDates);
+                  const newStart = e.target.value;
+                  setStartDate(newStart);
+                  const newDays = calculateInclusiveDays(newStart, endDate);
+                  const newProj = simulatePaymentProjections(newStart, endDate);
+                  syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, newDays, newProj.length, expectedHours);
                 }}
                 className={inputCls}
               />
@@ -999,16 +1125,26 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             <div>
               <label className={labelCls}>Fim Estimado</label>
               <input type="date" value={endDate}
+                min={startDate}
                 onChange={e => {
-                  const v = e.target.value;
-                  setEndDate(v);
-                  if (paymentFlow === 'recurring') rebuildDates(startDate, v, expectedPaymentDay, paymentDates);
+                  const newEnd = e.target.value;
+                  setEndDate(newEnd);
+                  const newDays = calculateInclusiveDays(startDate, newEnd);
+                  const newProj = simulatePaymentProjections(startDate, newEnd);
+                  syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, newDays, newProj.length, expectedHours);
                 }}
                 className={inputCls}
               />
             </div>
             <div>
-              <label className={labelCls}>Budget Previsto Máximo (Valor Total do Job) *</label>
+              <label className={labelCls}>
+                Budget Previsto Máximo (Valor Total do Job) *
+                {(isEditingRate || isEditingSuccessFee) && (
+                  <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                    (Atualizando...)
+                  </span>
+                )}
+              </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-text-secondary select-none">R$</span>
                 <input
@@ -1016,8 +1152,16 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                   inputMode="decimal"
                   value={budgetVisual}
                   onChange={handleBudgetChange}
-                  onBlur={handleBudgetBlur}
-                  className={inputCls + ' pl-9 font-semibold'}
+                  onFocus={() => setIsEditingBudget(true)}
+                  onBlur={() => {
+                    handleBudgetBlur();
+                    setIsEditingBudget(false);
+                  }}
+                  className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${
+                    isEditingRate || isEditingSuccessFee
+                      ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                      : ''
+                  }`}
                   required
                 />
               </div>
@@ -1038,545 +1182,643 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════
-            SECTION 2 — Fluxo de Pagamento
+            SECTION 2 — Modelo de Remuneração e Valores
         ═══════════════════════════════════════════════════════════════ */}
         <div className={sectionCls}>
           <div className="border-b border-border-subtle pb-3">
             <h3 className="font-bold text-action-cyan text-xs uppercase tracking-wider flex items-center gap-2">
               <Scale className="w-4 h-4" />
-              2. Fluxo de Pagamento da Alocação
+              2. Modelo de Remuneração da Alocação
             </h3>
             <p className="text-xs text-text-secondary mt-1.5">
-              Defina se o pagamento será único ou recorrente durante o período contratado.
+              Defina a sugestão do modelo de remuneração mais adequado para este job e revise os valores.
             </p>
           </div>
 
-          {/* Modelo de pagamento + Modelo de remuneração */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className={labelCls}>Modelo de Pagamento *</label>
-              <select value={paymentFlow} onChange={e => handlePaymentFlowChange(e.target.value as 'one_time' | 'recurring')} className={selectCls} required>
-                <option value="one_time">Pagamento único</option>
-                <option value="recurring">Pagamento recorrente durante o período de alocação</option>
+              <label className={labelCls}>Modelo de Remuneração *</label>
+              <select
+                value={remunerationModel}
+                onChange={e => {
+                  const newModel = e.target.value as any;
+                  setRemunerationModel(newModel);
+                  syncRateFromBudget(budget, newModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours);
+                }}
+                className={selectCls}
+                required
+              >
+                <option value="daily">Diária</option>
+                <option value="hourly">Hora</option>
+                <option value="fixed_job">Job fechado (pacote)</option>
+                <option value="monthly_salary">Mensal / Salário por período</option>
               </select>
             </div>
 
             <div>
-              <label className={labelCls}>Modelo de Remuneração *</label>
-              {paymentFlow === 'recurring' ? (
-                <>
-                  <div className="w-full border border-action-cyan/40 bg-action-cyan/5 dark:bg-action-cyan/10 rounded-xl px-4 py-3 min-h-[44px] text-sm text-text-primary flex items-center gap-2.5 select-none">
-                    <span className="w-2 h-2 rounded-full bg-action-cyan shrink-0" />
-                    <span className="font-semibold">Mensal / salário por período</span>
-                    <span className="ml-auto text-[9px] font-bold text-action-cyan bg-action-cyan/15 px-2 py-0.5 rounded-full uppercase tracking-wide whitespace-nowrap">
-                      Obrigatório
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-text-secondary mt-1.5">
-                    Para pagamento recorrente, o modelo é sempre Mensal / Salário por período.
-                  </p>
-                </>
-              ) : (
-                <select value={remunerationModel} onChange={e => setRemunerationModel(e.target.value as any)} className={selectCls} required>
-                  <option value="daily">Diária</option>
-                  <option value="hourly">Hora</option>
-                  <option value="fixed_job">Job fechado (pacote)</option>
-                </select>
-              )}
+              <label className={labelCls}>
+                {remunerationModel === 'daily' && 'Valor Previsto por Diária (R$) *'}
+                {remunerationModel === 'hourly' && 'Valor Previsto por Hora (R$) *'}
+                {remunerationModel === 'fixed_job' && 'Valor Total Fechado (R$) *'}
+                {remunerationModel === 'monthly_salary' && 'Valor Mensal Equivalente (R$) *'}
+                {(isEditingSuccessFee || isEditingBudget) && (
+                  <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                    (Atualizando...)
+                  </span>
+                )}
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-text-secondary select-none">R$</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={oneTimeRateVisual}
+                  onChange={handleOneTimeRateChange}
+                  onFocus={() => setIsEditingRate(true)}
+                  onBlur={() => {
+                    handleOneTimeRateBlur();
+                    setIsEditingRate(false);
+                  }}
+                  className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${
+                    isEditingSuccessFee || isEditingBudget
+                      ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                      : ''
+                  }`}
+                  required
+                />
+              </div>
             </div>
           </div>
 
-          {/* ── One-time fields ── */}
-          {paymentFlow === 'one_time' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className={remunerationModel === 'hourly' ? '' : 'md:col-span-2'}>
-                <label className={labelCls}>
-                  {remunerationModel === 'daily' && 'Valor Previsto por Dia (R$) *'}
-                  {remunerationModel === 'hourly' && 'Valor Previsto por Hora (R$) *'}
-                  {remunerationModel === 'fixed_job' && 'Valor Total Fechado (R$) *'}
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-text-secondary select-none">R$</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={oneTimeRateVisual}
-                    onChange={handleOneTimeRateChange}
-                    onBlur={handleOneTimeRateBlur}
-                    className={inputCls + ' pl-9 font-semibold'}
-                    required
-                  />
-                </div>
+          {remunerationModel === 'monthly_salary' && isAccumulatedOverBudget && (
+            <div className="mt-4 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2.5 text-xs font-semibold text-red-650 dark:text-red-400">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
+              <div>
+                Atenção: O custo total previsto para as parcelas mensais acumuladas ({projectedPayments.length} × {formatCurrencyBR(oneTimeRate)} = {formatCurrencyBR(expectedTotalCompensation)}) excede o budget máximo do job ({formatCurrencyBR(budget)}).
               </div>
-              {remunerationModel === 'hourly' && (
-                <div>
-                  <label className={labelCls}>Horas Previstas *</label>
-                  <input type="number" value={expectedHours || ''} placeholder="0" min={1} onChange={e => setExpectedHours(Number(e.target.value))} className={inputCls} required />
-                </div>
-              )}
             </div>
           )}
 
-          {/* ── Recurring configuration block ── */}
-          {paymentFlow === 'recurring' && (
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-border-subtle rounded-xl p-5 space-y-5">
-
-              {/* Header + recalculate button */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-                  Configuração de Parcelas Recorrentes
-                </h4>
-                <button
-                  type="button"
-                  onClick={handleRecalculate}
-                  title="Restaurar todas as datas e recalcular valor mensal sugerido"
-                  className="text-[11px] font-bold text-action-cyan hover:text-white bg-action-cyan/10 hover:bg-action-cyan px-3 py-1.5 rounded-lg transition-colors duration-150 cursor-pointer flex items-center gap-1.5"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  Recalcular sugestão
-                </button>
+          {remunerationModel === 'hourly' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className={labelCls}>Horas Previstas *</label>
+                <input
+                  type="number"
+                  value={expectedHours || ''}
+                  placeholder="0"
+                  min={1}
+                  onChange={e => {
+                    const newHours = Number(e.target.value);
+                    setExpectedHours(newHours);
+                    syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, newHours);
+                  }}
+                  className={inputCls}
+                  required
+                />
               </div>
-
-              {/* Date update message */}
-              {datesUpdatedMsg && (
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 rounded-lg px-3.5 py-2.5 text-[11px] text-blue-700 dark:text-blue-400 font-medium">
-                  ℹ️ {datesUpdatedMsg}
-                </div>
-              )}
-
-              {/* Dia preferencial + Qtd parcelas (derived) + Valor mensal */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-                {/* Dia preferencial */}
-                <div>
-                  <label className={labelCls}>Dia Preferencial de Pagamento *</label>
-                  <select
-                    value={expectedPaymentDay}
-                    onChange={e => {
-                      const d = Number(e.target.value);
-                      setExpectedPaymentDay(d);
-                      rebuildDates(startDate, endDate, d, paymentDates);
-                    }}
-                    className={selectCls} required
-                  >
-                    {[1,2,3,4,5,6,7,8,9,10,12,15,20,25,28,30].map(d => (
-                      <option key={d} value={d}>Dia {d}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Quantidade de parcelas — derived, read-only display */}
-                <div>
-                  <label className={labelCls}>
-                    Quantidade de Parcelas
-                    {hasManuallyExcluded && (
-                      <span className="ml-2 text-[9px] font-bold text-amber-200 bg-amber-700 dark:bg-amber-600 px-1.5 py-0.5 rounded-full uppercase">
-                        Ajustado manualmente
-                      </span>
-                    )}
-                  </label>
-                  <div className={inputCls + ' bg-slate-100 dark:bg-slate-700/60 font-bold text-lg select-none flex items-center justify-between'}>
-                    <span>{summary.selectedCount > 0 ? summary.selectedCount : '—'}</span>
-                    {summary.totalCount > 0 && (
-                      <span className="text-[11px] font-normal text-text-secondary">
-                        de {summary.totalCount} geradas
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-text-secondary mt-1">
-                    A quantidade acompanha as datas selecionadas abaixo.
-                  </p>
-                </div>
-
-                {/* Valor previsto mensal */}
-                <div>
-                  <label className={labelCls}>
-                    Valor Previsto Mensal (R$) *
-                    {manualMonthlyRate !== null && (
-                      <span className="ml-2 text-[9px] font-bold text-amber-200 bg-amber-700 dark:bg-amber-600 px-1.5 py-0.5 rounded-full uppercase">
-                        Editado
-                      </span>
-                    )}
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-text-secondary select-none">R$</span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      value={manualMonthlyRate !== null ? manualMonthlyRateVisual : ''}
-                      placeholder={summary.suggestedMonthlyAmount > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(summary.suggestedMonthlyAmount) : "Calculado automaticamente"}
-                      onChange={handleManualMonthlyRateChange}
-                      onBlur={handleManualMonthlyRateBlur}
-                      className={inputCls + ' pl-9 font-semibold'}
-                      required={manualMonthlyRate !== null}
-                    />
-                  </div>
-                  {manualMonthlyRate === null && budget > 0 && summary.selectedCount > 0 && (
-                    <p className="text-[10px] text-text-secondary mt-1">
-                      Sugestão: {formatBRL(budget)} ÷ {summary.selectedCount} parcela{summary.selectedCount !== 1 ? 's' : ''} selecionada{summary.selectedCount !== 1 ? 's' : ''}
-                    </p>
-                  )}
-                  {manualMonthlyRate !== null && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setManualMonthlyRate(null);
-                        setManualMonthlyRateVisual('');
-                      }}
-                      className="text-[10px] text-action-cyan hover:underline mt-1 cursor-pointer"
-                    >
-                      ↺ Usar sugestão automática
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* ── Interactive payment dates ── */}
-              {paymentDates.length > 0 ? (
-                <div className="bg-white dark:bg-slate-800 border border-border-subtle rounded-xl p-4 space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
-                      Datas de Pagamento Previstas
-                    </p>
-                    <p className="text-[11px] text-text-secondary">
-                      <span className="font-bold text-text-primary">{summary.selectedCount}</span> de{' '}
-                      <span className="font-bold">{summary.totalCount}</span> datas selecionadas para pagamento.
-                    </p>
-                  </div>
-
-                  {/* Date chips — toggleable */}
-                  <div className="flex flex-wrap gap-2">
-                    {paymentDates.map((entry) => {
-                      const isLast = entry.selected && summary.selectedCount === 1;
-                      return (
-                        <button
-                          key={entry.date}
-                          type="button"
-                          title={
-                            isLast
-                              ? 'Esta é a última data ativa — não pode ser removida.'
-                              : entry.selected
-                                ? 'Clique para desmarcar esta data'
-                                : 'Clique para reativar esta data'
-                          }
-                          onClick={() => togglePaymentDate(entry.date)}
-                          aria-pressed={entry.selected}
-                          className={[
-                            // Base
-                            'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[12px] font-semibold',
-                            'transition-all duration-150 cursor-pointer min-h-[40px]',
-                            'focus:outline-none focus:ring-2 focus:ring-offset-1',
-                            // Selected state
-                            entry.selected
-                              ? [
-                                  'bg-action-cyan/15 dark:bg-action-cyan/20',
-                                  'border-action-cyan/60 dark:border-action-cyan/50',
-                                  'text-action-cyan dark:text-cyan-300',
-                                  'hover:bg-action-cyan/25 dark:hover:bg-action-cyan/30',
-                                  'focus:ring-action-cyan',
-                                ].join(' ')
-                              : [
-                                  'bg-slate-200 dark:bg-slate-700',
-                                  'border-slate-300 dark:border-slate-600',
-                                  'text-slate-500 dark:text-slate-400',
-                                  'hover:bg-slate-300 dark:hover:bg-slate-600',
-                                  'focus:ring-slate-400',
-                                  'line-through decoration-slate-400',
-                                ].join(' '),
-                            // Last-active styling
-                            isLast && 'opacity-60 cursor-not-allowed',
-                          ].join(' ')}
-                        >
-                          {entry.selected ? (
-                            <Check className="w-3 h-3 shrink-0" />
-                          ) : (
-                            <X className="w-3 h-3 shrink-0" />
-                          )}
-                          {isoToBR(entry.date)}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Informational message when some dates are excluded */}
-                  {hasManuallyExcluded && (
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 italic border-t border-border-subtle pt-2">
-                      Datas desmarcadas não serão consideradas na agenda de pagamento.
-                    </p>
-                  )}
-
-                  {/* Error: budget not set */}
-                  {(!budget || budget <= 0) && (
-                    <p className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold">
-                      💡 Informe o budget para calcular o valor mensal automaticamente.
-                    </p>
-                  )}
-                </div>
-              ) : (
-                startDate && endDate && (
-                  <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-xl p-3.5 text-sm text-red-700 dark:text-red-400 font-semibold flex items-start gap-2">
-                    <span className="shrink-0">⚠️</span>
-                    <span>Não há nenhuma data de pagamento dentro do período informado. Ajuste o período da alocação ou o dia preferencial de pagamento.</span>
-                  </div>
-                )
-              )}
             </div>
           )}
 
-          {/* ── Policy reference card ── */}
-          {(() => {
-            const dailyPolicyForFixedJob = db.policies.find((p: any) =>
-              p.role === roleNeeded &&
-              p.seniority === seniorityNeeded &&
-              (['Diária', 'daily'].includes(p.billingType) || p.remunerationModel === 'daily')
-            );
-            const dailyReferenceUnit = dailyPolicyForFixedJob ? Number(dailyPolicyForFixedJob.referenceValue) : 0;
-            const dailyCeilingUnit = dailyPolicyForFixedJob ? Number(dailyPolicyForFixedJob.ceilingValue) : 0;
+          {/* Projeção de Pagamento Box */}
+          {projectedPayments && projectedPayments.length > 0 && (
+            <div className="mt-6 border-t border-border-subtle/50 pt-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-action-cyan" />
+                  <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+                    Projeção de Pagamentos (Diretrizes de Supply)
+                  </h4>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] font-bold text-text-secondary">
+                  <span>Duração total: <strong className="text-text-primary">{days} dias</strong></span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-border-subtle" />
+                  <span>Parcelas: <strong className="text-text-primary">{projectedPayments.length}</strong></span>
+                </div>
+              </div>
 
-            const proposedVal = paymentFlow === 'recurring' ? summary.effectiveMonthlyAmount : oneTimeRate;
-            const calculatedDays = policyResult ? policyResult.calculatedDays : calculateInclusiveDays(startDate, endDate);
-            const refBruto = dailyReferenceUnit * calculatedDays;
-            const tetoBruto = dailyCeilingUnit * calculatedDays;
-            const discountPercent = policyResult ? Math.round(policyResult.appliedDiscount * 100) : 0;
-            const descontoReferencia = refBruto * (discountPercent / 100);
-            const descontoTeto = tetoBruto * (discountPercent / 100);
-            const refFechado = refBruto - descontoReferencia;
-            const tetoFechado = tetoBruto - descontoTeto;
-            const calculatedExcessAmount = proposedVal - tetoFechado;
-            const calculatedExcessPercent = tetoFechado > 0 ? (calculatedExcessAmount / tetoFechado) * 100 : 0;
-            
-            const isMemoryOpen = isMemoryOpenManual !== null ? isMemoryOpenManual : (policyStatus === 'above_policy_requires_approval');
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {projectedPayments.map((p, idx) => {
+                  const cycleDays = calculateInclusiveDays(p.startDate, p.endDate);
+                  let parcelAmount = 0;
+                  if (remunerationModel === 'monthly_salary') {
+                    parcelAmount = oneTimeRate;
+                  } else if (remunerationModel === 'fixed_job') {
+                    parcelAmount = oneTimeRate / projectedPayments.length;
+                  } else if (remunerationModel === 'daily') {
+                    parcelAmount = oneTimeRate * cycleDays;
+                  } else if (remunerationModel === 'hourly') {
+                    parcelAmount = (oneTimeRate * expectedHours) / projectedPayments.length;
+                  }
 
-            const cardClass = 
-              policyStatus === 'above_policy_requires_approval' ? 'policy-card-above' :
-              policyStatus === 'within_policy' ? 'policy-card-within' :
-              'policy-card-missing';
-
-            return (
-              <div className={`border rounded-2xl p-5 space-y-4 ${cardClass}`}>
-                <h5 className="policy-title text-[12px] font-bold flex items-center gap-1.5 uppercase tracking-wide">
-                  <Scale className="w-4 h-4 text-[inherit]" />
-                  Política de Referência — {roleNeeded} / {seniorityNeeded}
-                </h5>
-
-                {policyResult && policyResult.policyStatus !== 'policy_missing' ? (
-                  <div className="space-y-4">
-                    {/* Linha 1 */}
-                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs border-b border-border-subtle pb-3 text-text-secondary">
-                      <div>
-                        Modelo: <strong className="text-text-primary">{
-                          remunerationModel === 'daily' ? 'Diária' :
-                          remunerationModel === 'hourly' ? 'Hora' :
-                          remunerationModel === 'fixed_job' ? 'Job fechado' : 'Mensal / Salário'
-                        }</strong>
-                      </div>
-                      <div>
-                        Base de cálculo: <strong className="text-text-primary">{
-                          remunerationModel === 'fixed_job' ? 'Diária equivalente' :
-                          remunerationModel === 'daily' ? 'Diária direta' :
-                          remunerationModel === 'hourly' ? 'Horas previstas' : 'Mensal direto'
-                        }</strong>
-                      </div>
-                      <div>
-                        Período considerado: <strong className="text-text-primary">{calculatedDays} dias corridos</strong>
-                      </div>
-                    </div>
-
-                    {/* Cards Internos */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {/* Card 1: Valor informado */}
-                      <div className="policy-metric-bg p-3 rounded-xl border">
-                        <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-0.5">Valor Informado</span>
-                        <span className="font-extrabold text-sm block">
-                          {formatCurrencyBR(proposedVal)}
+                  return (
+                    <div key={idx} className="bg-slate-500/5 border border-border-subtle/50 rounded-xl p-3.5 flex flex-col justify-between gap-2 shadow-sm">
+                      <div className="flex items-center justify-between border-b border-border-subtle/20 pb-1.5 mb-1">
+                        <span className="text-[10px] font-extrabold text-action-cyan uppercase tracking-wider">
+                          Parcela {p.cycleNumber}/{projectedPayments.length}
+                        </span>
+                        <span className="text-[10px] text-text-secondary font-medium italic">
+                          {cycleDays} dias
                         </span>
                       </div>
-
-                      {/* Card 2: Referência total */}
-                      <div className="policy-metric-bg p-3 rounded-xl border">
-                        <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-0.5">Referência Total</span>
-                        <span className="font-semibold text-sm block">
-                          {policyResult.referenceAmount ? formatCurrencyBR(policyResult.referenceAmount) : '—'}
-                        </span>
-                      </div>
-
-                      {/* Card 3: Teto autorizado total */}
-                      <div className="policy-metric-bg p-3 rounded-xl border">
-                        <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-0.5">Teto Autorizado Total</span>
-                        <span className="font-bold text-amber-600 dark:text-amber-400 text-sm block">
-                          {policyResult.limitAmount ? formatCurrencyBR(policyResult.limitAmount) : '—'}
-                        </span>
-                      </div>
-
-                      {/* Card 4: Status da regra */}
-                      <div className="policy-metric-bg p-3 rounded-xl border flex flex-col justify-center">
-                        <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-1">Status da Regra</span>
-                        <div>
-                          <span className="policy-badge inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-bold">
-                            {policyStatus === 'within_policy' ? 'Dentro da política' : 'Acima do teto'}
+                      
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between text-text-secondary text-[11px]">
+                          <span>Período:</span>
+                          <span className="font-semibold text-text-primary">
+                            {isoToBR(p.startDate)} a {isoToBR(p.endDate)}
+                          </span>
+                        </div>
+                        {parcelAmount > 0 && (
+                          <div className="flex justify-between text-text-secondary text-[11px]">
+                            <span>Valor Previsto:</span>
+                            <span className="font-bold text-text-primary">
+                              {formatCurrencyBR(parcelAmount)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between border-t border-border-subtle/10 pt-1.5 mt-1.5">
+                          <span className="text-[10px] font-bold text-text-secondary uppercase">
+                            Projeção de Pgto:
+                          </span>
+                          <span className="text-[11px] font-extrabold text-emerald-500 dark:text-emerald-400">
+                            {isoToBR(p.suggestedPaymentDate)} (Terça)
                           </span>
                         </div>
                       </div>
                     </div>
-
-                    {/* Alerta de excedente */}
-                    {policyStatus === 'above_policy_requires_approval' && policyResult.excessAmount > 0 && (
-                      <div className="policy-warning-bg p-3.5 rounded-xl text-xs font-semibold border">
-                        ⚠️ Excedente: {formatCurrencyBR(policyResult.excessAmount)} — {policyResult.excessPercent.toFixed(1)}% acima do teto. Será necessário solicitar aprovação do Head do Núcleo.
-                      </div>
-                    )}
-
-                    {/* Memória de cálculo */}
-                    {remunerationModel === 'fixed_job' && (
-                      <div className="border-t border-border-subtle/60 pt-3.5 mt-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsMemoryOpenManual(!isMemoryOpen)}
-                          className="flex items-center justify-between w-full text-xs font-bold text-text-primary hover:text-action-cyan transition-colors"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            <span>Memória de cálculo</span>
-                            <span className="text-[10px] font-normal text-text-secondary">({isMemoryOpen ? 'Clique para colapsar' : 'Clique para expandir'})</span>
-                          </span>
-                          {isMemoryOpen ? <ChevronUp className="w-4.5 h-4.5" /> : <ChevronDown className="w-4.5 h-4.5" />}
-                        </button>
-                        
-                        {isMemoryOpen && (
-                          <div className="mt-3 bg-white/40 dark:bg-slate-900/40 p-4 rounded-xl border border-border-subtle/50 text-[11px] space-y-2 font-mono text-text-primary leading-relaxed shadow-inner">
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Período:</span>
-                              <span className="font-semibold">{isoToBR(startDate)} a {isoToBR(endDate)}</span>
-                            </div>
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Dias considerados:</span>
-                              <span className="font-semibold">{calculatedDays} dias corridos</span>
-                            </div>
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Diária referência:</span>
-                              <span className="font-semibold">{formatCurrencyBR(dailyReferenceUnit)}</span>
-                            </div>
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Diária teto:</span>
-                              <span className="font-semibold">{formatCurrencyBR(dailyCeilingUnit)}</span>
-                            </div>
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Referência bruta:</span>
-                              <span className="font-semibold">{formatCurrencyBR(dailyReferenceUnit)} × {calculatedDays} = {formatCurrencyBR(refBruto)}</span>
-                            </div>
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Teto bruto:</span>
-                              <span className="font-semibold">{formatCurrencyBR(dailyCeilingUnit)} × {calculatedDays} = {formatCurrencyBR(tetoBruto)}</span>
-                            </div>
-                            <div className="flex justify-between items-center border-b border-border-subtle/20 pb-1 group relative cursor-help">
-                              <span className="underline decoration-dotted flex items-center gap-1">
-                                Desconto por job fechado:
-                                <HelpCircle className="w-3.5 h-3.5 text-text-secondary" />
-                              </span>
-                              <span className="font-semibold">{discountPercent}%</span>
-                              <div className="absolute bottom-full mb-1.5 left-0 hidden group-hover:block bg-slate-900 text-white text-[10px] rounded p-2.5 shadow-lg z-50 max-w-[280px] font-sans normal-case leading-normal">
-                                Desconto aplicado porque contratações por pacote/job fechado tendem a consolidar escopo e reduzir custo proporcional em relação à diária cheia.
-                              </div>
-                            </div>
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Desconto aplicado na referência:</span>
-                              <span className="font-semibold">{formatCurrencyBR(descontoReferencia)}</span>
-                            </div>
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Desconto aplicado no teto:</span>
-                              <span className="font-semibold">{formatCurrencyBR(descontoTeto)}</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-xs pt-1 border-b border-border-subtle/20 pb-1">
-                              <span>Referência total após desconto:</span>
-                              <span>{formatCurrencyBR(refFechado)}</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-xs pt-1 border-b border-border-subtle/20 pb-1">
-                              <span>Teto autorizado após desconto:</span>
-                              <span>{formatCurrencyBR(tetoFechado)}</span>
-                            </div>
-                            <div className="flex justify-between border-b border-border-subtle/20 pb-1">
-                              <span>Valor informado:</span>
-                              <span className="font-semibold">{formatCurrencyBR(proposedVal)}</span>
-                            </div>
-                            {calculatedExcessAmount > 0 ? (
-                              <>
-                                <div className="flex justify-between text-red-650 dark:text-red-400 font-bold border-b border-border-subtle/20 pb-1">
-                                  <span>Excedente:</span>
-                                  <span>{formatCurrencyBR(calculatedExcessAmount)}</span>
-                                </div>
-                                <div className="flex justify-between text-red-650 dark:text-red-400 font-bold">
-                                  <span>Percentual acima do teto:</span>
-                                  <span>{calculatedExcessPercent.toFixed(1)}%</span>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="text-emerald-600 dark:text-emerald-400 font-bold text-right pt-0.5">
-                                ✓ Dentro do limite autorizado
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-xs text-text-secondary italic flex items-center gap-2 p-2 bg-amber-500/5 rounded-lg border border-amber-500/20">
-                    <span>⚠️</span>
-                    <span>Não existe política cadastrada para esta função, senioridade e modelo. Solicite validação do RH.</span>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* ── Financial summary ── */}
-          <div className="forecast-card rounded-xl p-5">
-            <p className="forecast-title text-[10px] font-bold uppercase tracking-wider mb-4">Resumo da Previsão</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Budget */}
-              <div>
-                <span className="text-[10px] text-text-muted block mb-1">Budget do Job</span>
-                <span className="font-extrabold text-base">{formatCurrencyBR(budget)}</span>
+                  );
+                })}
               </div>
 
-              {/* Total previsto */}
-              <div>
-                <span className="text-[10px] text-text-muted block mb-1">Total Previsto Freela</span>
-                <span className={`font-extrabold text-base ${
-                  expectedTotalCompensation > 0 && expectedTotalCompensation > budget
-                    ? 'forecast-value-negative' : 'forecast-value-positive'
-                }`}>
-                  {expectedTotalCompensation > 0 ? formatCurrencyBR(expectedTotalCompensation) : '—'}
-                </span>
-              </div>
-
-              {/* Status da Política */}
-              <div>
-                <span className="text-[10px] text-text-muted block mb-1">Status da Política</span>
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-extrabold ${
-                  policyStatus === 'within_policy'
-                    ? 'forecast-status-within'
-                    : policyStatus === 'above_policy_requires_approval'
-                      ? 'forecast-status-above'
-                      : 'bg-amber-500/20 text-amber-400'
-                }`}>
-                  {policyStatus === 'within_policy' ? 'Dentro da política' :
-                   policyStatus === 'above_policy_requires_approval' ? 'Acima da política' : 'Política não cadastrada'}
+              <div className="p-3 bg-amber-500/5 border border-amber-500/15 rounded-xl text-[10.5px] font-medium text-text-secondary leading-relaxed flex gap-2">
+                <span className="shrink-0 text-amber-500">⚠️</span>
+                <span>
+                  <strong>Aviso Importante:</strong> Data sugerida, não oficial. O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas.
                 </span>
               </div>
             </div>
+          )}
+        </div>
 
-            {policyStatus === 'above_policy_requires_approval' && (
-              <p className="text-[11px] forecast-value-negative mt-4 font-semibold border-t border-border-soft pt-3">
-                ⚠️ Esta oportunidade foi criada acima da política e exigirá aprovação do Head do Núcleo durante a negociação.
+        {/* ═══════════════════════════════════════════════════════════════
+            SECTION 3 — Success Fee (Bônus por Performance)
+        ═══════════════════════════════════════════════════════════════ */}
+        <div className={sectionCls}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border-subtle pb-3 gap-4">
+            <div>
+              <h3 className="font-bold text-action-cyan text-xs uppercase tracking-wider flex items-center gap-2">
+                <Percent className="w-4 h-4" />
+                3. Bônus por Performance (Success Fee)
+              </h3>
+              <p className="text-xs text-text-secondary mt-1.5">
+                Indique se a contratação contempla comissão ou bônus por êxito comercial/performance.
               </p>
-            )}
+            </div>
 
-            {policyStatus === 'no_policy_found' && (
-              <p className="text-[11px] text-amber-500 mt-4 font-semibold border-t border-border-soft pt-3">
-                ⚠️ Não existe política cadastrada para esta combinação. A contratação exigirá validação.
-              </p>
-            )}
+            <div className="flex items-center">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={successFeeEnabled}
+                  onChange={e => {
+                    const val = e.target.checked;
+                    setSuccessFeeEnabled(val);
+                    syncRateFromBudget(budget, remunerationModel, val, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours);
+                  }}
+                  className="w-4 h-4 rounded text-action-cyan border-border-subtle focus:ring-action-cyan"
+                />
+                <span className="text-xs font-bold text-text-secondary uppercase tracking-wide">Habilitar Bônus por Performance (Success Fee)</span>
+              </label>
+              <div className="relative group ml-1.5">
+                <HelpCircle className="w-3.5 h-3.5 text-text-muted hover:text-action-cyan transition-colors cursor-help" />
+                <div className="absolute bottom-full right-0 mb-2 w-72 p-3 rounded-xl bg-[#0a1628] border border-action-cyan/30 text-white text-[11px] leading-relaxed shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                  <strong className="text-action-cyan block mb-1">💰 Success Fee (Bônus)</strong>
+                  <span className="text-slate-300">
+                    Cria um <strong className="text-white">valor financeiro adicional</strong> condicionado ao atingimento de um gatilho mensurável (ex: vitória na concorrência, KPI de projeto, meta de entrega).
+                    <span className="block mt-1.5 text-slate-400 italic">O bônus só é pago se o resultado for marcado como &quot;Atingido&quot;. Pode ser valor fixo ou percentual sobre o fee-base.</span>
+                  </span>
+                  <div className="absolute top-full right-1.5 w-2 h-2 bg-[#0a1628] border-r border-b border-action-cyan/30 rotate-45 -mt-1"></div>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {successFeeEnabled && (
+            <div className="bg-slate-50 dark:bg-slate-800/40 border border-border-subtle rounded-xl p-5 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className={labelCls}>Tipo de Remuneração *</label>
+                  <select
+                    value={successFeeType}
+                    onChange={e => {
+                      const newType = e.target.value as 'fixed' | 'percentage';
+                      setSuccessFeeType(newType);
+                      syncRateFromBudget(budget, remunerationModel, successFeeEnabled, newType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours);
+                    }}
+                    className={selectCls}
+                  >
+                    <option value="fixed">Valor Fixo</option>
+                    <option value="percentage">Percentual (%)</option>
+                  </select>
+                </div>
+
+                {successFeeType === 'fixed' ? (
+                  <div>
+                    <label className={labelCls}>
+                      Valor Fixo Sugerido (R$) *
+                      {(isEditingRate || isEditingBudget) && (
+                        <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                          (Atualizando...)
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-text-secondary select-none">R$</span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={successFeeFixedAmountVisual}
+                        onChange={handleSuccessFeeFixedAmountChange}
+                        onFocus={() => setIsEditingSuccessFee(true)}
+                        onBlur={() => {
+                          handleSuccessFeeFixedAmountBlur();
+                          setIsEditingSuccessFee(false);
+                        }}
+                        className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${
+                          isEditingRate || isEditingBudget
+                            ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                            : ''
+                        }`}
+                        required
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className={labelCls}>
+                        Percentual Sugerido (%) *
+                        {(isEditingRate || isEditingBudget) && (
+                          <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                            (Atualizando...)
+                          </span>
+                        )}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        placeholder="Ex: 5.0"
+                        value={successFeePercent || ''}
+                        onChange={e => {
+                          const newPercent = Number(e.target.value);
+                          setSuccessFeePercent(newPercent);
+                          syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, newPercent, days, projectedPayments.length, expectedHours);
+                        }}
+                        onFocus={() => setIsEditingSuccessFee(true)}
+                        onBlur={() => setIsEditingSuccessFee(false)}
+                        className={`${inputCls} transition-all duration-300 ${
+                          isEditingRate || isEditingBudget
+                            ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                            : ''
+                        }`}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Base de Cálculo *</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Margem bruta do projeto"
+                        value={successFeeBase}
+                        onChange={e => setSuccessFeeBase(e.target.value)}
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className={labelCls}>Gatilho de Elegibilidade (Trigger) *</label>
+                  <input
+                    type="text"
+                    value={successFeeTrigger}
+                    onChange={e => setSuccessFeeTrigger(e.target.value)}
+                    className={inputCls}
+                    placeholder="Ex: vitória da V3A na concorrência"
+                    required
+                  />
+                </div>
+                <div className="flex items-end pb-3">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={successFeeRequiresApproval}
+                      onChange={e => setSuccessFeeRequiresApproval(e.target.checked)}
+                      className="w-4 h-4 rounded text-action-cyan border-border-subtle focus:ring-action-cyan"
+                    />
+                    <span className="text-xs font-bold text-text-secondary uppercase tracking-wide">Exige aprovação extraordinária do Head</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Condições Complementares & Observações</label>
+                <textarea
+                  rows={3}
+                  placeholder="Especifique os critérios e métricas adicionais para pagamento deste bônus..."
+                  value={successFeeTerms}
+                  onChange={e => setSuccessFeeTerms(e.target.value)}
+                  className={inputCls + ' resize-y'}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Policy reference card ── */}
+        {(() => {
+          const dailyPolicyForFixedJob = db.policies.find((p: any) =>
+            p.role === roleNeeded &&
+            p.seniority === seniorityNeeded &&
+            (['Diária', 'daily'].includes(p.billingType) || p.remunerationModel === 'daily')
+          );
+          const dailyReferenceUnit = dailyPolicyForFixedJob ? Number(dailyPolicyForFixedJob.referenceValue) : 0;
+          const dailyCeilingUnit = dailyPolicyForFixedJob ? Number(dailyPolicyForFixedJob.ceilingValue) : 0;
+
+          const proposedVal = oneTimeRate;
+          const calculatedDays = policyResult ? policyResult.calculatedDays : calculateInclusiveDays(startDate, endDate);
+          const refBruto = dailyReferenceUnit * calculatedDays;
+          const tetoBruto = dailyCeilingUnit * calculatedDays;
+          const discountPercent = policyResult ? Math.round(policyResult.appliedDiscount * 100) : 0;
+          const descontoReferencia = refBruto * (discountPercent / 100);
+          const descontoTeto = tetoBruto * (discountPercent / 100);
+          const refFechado = refBruto - descontoReferencia;
+          const tetoFechado = tetoBruto - descontoTeto;
+          const calculatedExcessAmount = proposedVal - tetoFechado;
+          const calculatedExcessPercent = tetoFechado > 0 ? (calculatedExcessAmount / tetoFechado) * 100 : 0;
+          
+          const isMemoryOpen = isMemoryOpenManual !== null ? isMemoryOpenManual : (policyStatus === 'above_policy_requires_approval');
+
+          const cardClass = 
+            policyStatus === 'above_policy_requires_approval' ? 'policy-card-above' :
+            policyStatus === 'within_policy' ? 'policy-card-within' :
+            'policy-card-missing';
+
+          return (
+            <div className={`border rounded-2xl p-5 space-y-4 ${cardClass}`}>
+              <h5 className="policy-title text-[12px] font-bold flex items-center gap-1.5 uppercase tracking-wide">
+                <Scale className="w-4 h-4 text-[inherit]" />
+                Política de Referência — {roleNeeded} / {seniorityNeeded}
+              </h5>
+
+              {policyResult && policyResult.policyStatus !== 'policy_missing' ? (
+                <div className="space-y-4">
+                  {/* Linha 1 */}
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs border-b border-border-subtle pb-3 text-text-secondary">
+                    <div>
+                      Modelo: <strong className="text-text-primary">{
+                        remunerationModel === 'daily' ? 'Diária' :
+                        remunerationModel === 'hourly' ? 'Hora' :
+                        remunerationModel === 'fixed_job' ? 'Job fechado' : 'Mensal / Salário'
+                      }</strong>
+                    </div>
+                    <div>
+                      Base de cálculo: <strong className="text-text-primary">{
+                        remunerationModel === 'fixed_job' ? 'Diária equivalente' :
+                        remunerationModel === 'daily' ? 'Diária direta' :
+                        remunerationModel === 'hourly' ? 'Horas previstas' : 'Mensal direto'
+                      }</strong>
+                    </div>
+                    <div>
+                      Período considerado: <strong className="text-text-primary">{calculatedDays} dias corridos</strong>
+                    </div>
+                  </div>
+
+                  {/* Cards Internos */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {/* Card 1: Valor informado */}
+                    <div className="policy-metric-bg p-3 rounded-xl border">
+                      <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-0.5">Valor Informado</span>
+                      <span className="font-extrabold text-sm block">
+                        {formatCurrencyBR(proposedVal)}
+                      </span>
+                    </div>
+
+                    {/* Card 2: Referência total */}
+                    <div className="policy-metric-bg p-3 rounded-xl border">
+                      <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-0.5">Referência Total</span>
+                      <span className="font-semibold text-sm block">
+                        {policyResult.referenceAmount ? formatCurrencyBR(policyResult.referenceAmount) : '—'}
+                      </span>
+                    </div>
+
+                    {/* Card 3: Teto authorized total */}
+                    <div className="policy-metric-bg p-3 rounded-xl border">
+                      <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-0.5">Teto Autorizado Total</span>
+                      <span className="font-bold text-amber-600 dark:text-amber-400 text-sm block">
+                        {policyResult.limitAmount ? formatCurrencyBR(policyResult.limitAmount) : '—'}
+                      </span>
+                    </div>
+
+                    {/* Card 4: Status da regra */}
+                    <div className="policy-metric-bg p-3 rounded-xl border flex flex-col justify-center">
+                      <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-1">Status da Regra</span>
+                      <div>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-extrabold ${
+                          policyStatus === 'within_policy' && !isSuccessFeeAbovePolicy
+                            ? 'forecast-status-within'
+                            : (policyStatus === 'above_policy_requires_approval' || isSuccessFeeAbovePolicy)
+                              ? 'forecast-status-above'
+                              : 'bg-amber-500/20 text-amber-400'
+                        }`}>
+                          {policyStatus === 'within_policy' && !isSuccessFeeAbovePolicy ? 'Dentro da política' :
+                           (policyStatus === 'above_policy_requires_approval' || isSuccessFeeAbovePolicy) ? 'Acima da política' : 'Política não cadastrada'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card 5: Success Fee Máximo */}
+                    {successFeeEnabled && (
+                      <div className="policy-metric-bg p-3 rounded-xl border">
+                        <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-0.5">
+                          {successFeeType === 'percentage' ? 'Teto Success Fee (Política)' : 'SF Calculado vs Teto'}
+                        </span>
+                        <span className="font-bold text-indigo-600 dark:text-indigo-400 text-sm block">
+                          {matchingSuccessFeePolicy?.successFeeMaxPercent 
+                            ? (successFeeType === 'percentage' 
+                              ? `${matchingSuccessFeePolicy.successFeeMaxPercent}%`
+                              : `${currentSuccessFeePercent.toFixed(1)}% (Teto ${matchingSuccessFeePolicy.successFeeMaxPercent}%)`)
+                            : 'Não definido'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Alerta de excedente */}
+                  {policyStatus === 'above_policy_requires_approval' && policyResult && policyResult.excessAmount > 0 && (
+                    <div className="policy-warning-bg p-3.5 rounded-xl text-xs font-semibold border">
+                      ⚠️ Excedente: {formatCurrencyBR(policyResult.excessAmount)} — {policyResult.excessPercent.toFixed(1)}% acima do teto. Será necessário solicitar aprovação do Head do Núcleo.
+                    </div>
+                  )}
+
+                  {isSuccessFeeAbovePolicy && matchingSuccessFeePolicy && (
+                    <div className="policy-warning-bg p-3.5 rounded-xl text-xs font-semibold border mt-2">
+                      {successFeeType === 'percentage' ? (
+                        <span>⚠️ Success Fee Excedente: O percentual de {successFeePercent}% está acima do teto de {matchingSuccessFeePolicy.successFeeMaxPercent}% estabelecido para esta função/senioridade. Será necessário solicitar aprovação do Head do Núcleo.</span>
+                      ) : (
+                        <span>⚠️ Success Fee Excedente: O valor de Success Fee equivale a {currentSuccessFeePercent.toFixed(1)}% do budget, ultrapassando o teto de {matchingSuccessFeePolicy.successFeeMaxPercent}% estabelecido para esta função/senioridade. Será necessário solicitar aprovação do Head do Núcleo.</span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Memória de cálculo */}
+                  {remunerationModel === 'fixed_job' && (
+                    <div className="border-t border-border-subtle/60 pt-3.5 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsMemoryOpenManual(!isMemoryOpen)}
+                        className="flex items-center justify-between w-full text-xs font-bold text-text-primary hover:text-action-cyan transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span>Memória de cálculo</span>
+                          <span className="text-[10px] font-normal text-text-secondary">({isMemoryOpen ? 'Clique para colapsar' : 'Clique para expandir'})</span>
+                        </span>
+                        {isMemoryOpen ? <ChevronUp className="w-4.5 h-4.5" /> : <ChevronDown className="w-4.5 h-4.5" />}
+                      </button>
+                      
+                      {isMemoryOpen && (
+                        <div className="mt-3 bg-white/40 dark:bg-slate-900/40 p-4 rounded-xl border border-border-subtle/50 text-[11px] space-y-2 font-mono text-text-primary leading-relaxed shadow-inner">
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Período:</span>
+                            <span className="font-semibold">{isoToBR(startDate)} a {isoToBR(endDate)}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Dias considerados:</span>
+                            <span className="font-semibold">{calculatedDays} dias corridos</span>
+                          </div>
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Diária referência:</span>
+                            <span className="font-semibold">{formatCurrencyBR(dailyReferenceUnit)}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Diária teto:</span>
+                            <span className="font-semibold">{formatCurrencyBR(dailyCeilingUnit)}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Referência bruta:</span>
+                            <span className="font-semibold">{formatCurrencyBR(dailyReferenceUnit)} × {calculatedDays} = {formatCurrencyBR(refBruto)}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Teto bruto:</span>
+                            <span className="font-semibold">{formatCurrencyBR(dailyCeilingUnit)} × {calculatedDays} = {formatCurrencyBR(tetoBruto)}</span>
+                          </div>
+                          <div className="flex justify-between items-center border-b border-border-subtle/20 pb-1 group relative cursor-help">
+                            <span className="underline decoration-dotted flex items-center gap-1">
+                              Desconto por job fechado:
+                              <HelpCircle className="w-3.5 h-3.5 text-text-secondary" />
+                            </span>
+                            <span className="font-semibold">{discountPercent}%</span>
+                            <div className="absolute bottom-full mb-1.5 left-0 hidden group-hover:block bg-slate-900 text-white text-[10px] rounded p-2.5 shadow-lg z-50 max-w-[280px] font-sans normal-case leading-normal">
+                              Desconto aplicado porque contratações por pacote/job fechado tendem a consolidar escopo e reduzir custo proporcional em relação à diária cheia.
+                            </div>
+                          </div>
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Desconto aplicado na referência:</span>
+                            <span className="font-semibold">{formatCurrencyBR(descontoReferencia)}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Desconto aplicado no teto:</span>
+                            <span className="font-semibold">{formatCurrencyBR(descontoTeto)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-xs pt-1 border-b border-border-subtle/20 pb-1">
+                            <span>Referência total após desconto:</span>
+                            <span>{formatCurrencyBR(refFechado)}</span>
+                          </div>
+                          <div className="flex justify-between font-bold text-xs pt-1 border-b border-border-subtle/20 pb-1">
+                            <span>Teto autorizado após desconto:</span>
+                            <span>{formatCurrencyBR(tetoFechado)}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-border-subtle/20 pb-1">
+                            <span>Valor informado:</span>
+                            <span className="font-semibold">{formatCurrencyBR(proposedVal)}</span>
+                          </div>
+                          {calculatedExcessAmount > 0 ? (
+                            <>
+                              <div className="flex justify-between text-red-650 dark:text-red-400 font-bold border-b border-border-subtle/20 pb-1">
+                                <span>Excedente:</span>
+                                <span>{formatCurrencyBR(calculatedExcessAmount)}</span>
+                              </div>
+                              <div className="flex justify-between text-red-650 dark:text-red-400 font-bold">
+                                <span>Percentual acima do teto:</span>
+                                <span>{calculatedExcessPercent.toFixed(1)}%</span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-emerald-600 dark:text-emerald-400 font-bold text-right pt-0.5">
+                              ✓ Dentro do limite autorizado
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-xs text-text-secondary italic flex items-center gap-2 p-2 bg-amber-500/5 rounded-lg border border-amber-500/20">
+                  <span>⚠️</span>
+                  <span>Não existe política cadastrada para esta função, senioridade e modelo. Solicite validação do RH.</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ── Financial summary ── */}
+        <div className="forecast-card rounded-xl p-5 bg-slate-50/50 dark:bg-slate-900/30 border border-border-subtle">
+          <p className="forecast-title text-[10px] font-bold uppercase tracking-wider mb-4">Resumo da Previsão</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Budget */}
+            <div>
+              <span className="text-[10px] text-text-secondary block mb-1">Budget do Job</span>
+              <span className="font-extrabold text-base">{formatCurrencyBR(budget)}</span>
+            </div>
+
+            {/* Total previsto */}
+            <div>
+              <span className="text-[10px] text-text-secondary block mb-1">Custo Base Previsto (Freela)</span>
+              <span className={`font-extrabold text-base ${
+                expectedTotalCompensation > 0 && expectedTotalCompensation > budget
+                  ? 'forecast-value-negative' : 'forecast-value-positive'
+              }`}>
+                {expectedTotalCompensation > 0 ? formatCurrencyBR(expectedTotalCompensation) : '—'}
+              </span>
+            </div>
+
+            {/* Success Fee Potencial */}
+            <div>
+              <span className="text-[10px] text-text-secondary block mb-1">Success Fee Potencial</span>
+              <span className="font-extrabold text-base text-action-cyan">
+                {successFeeEnabled
+                  ? (successFeeType === 'fixed'
+                    ? `${formatCurrencyBR(successFeeFixedAmount)} (Fixo)`
+                    : `${successFeePercent}% sobre ${successFeeBase}`)
+                  : 'Nenhum'
+                }
+              </span>
+            </div>
+          </div>
+
+          {successFeeEnabled && isCompetitiveBid && (
+            <p className="text-[11px] text-action-cyan mt-4 font-semibold border-t border-border-subtle pt-3">
+              💡 Este job será marcado em concorrência. O status inicial será &quot;Aguardando Resultado de Concorrência&quot;. O success fee só se tornará elegível após a confirmação de vitória.
+            </p>
+          )}
         </div>
 
         {/* ── Action buttons ── */}
