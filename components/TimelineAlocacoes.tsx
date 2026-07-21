@@ -544,6 +544,7 @@ interface HoverCardProps {
   onEscape: () => void;
   onFocusAllocation: () => void;
   onOpenDetails: () => void;
+  onSelectJobForShortlist?: (jobId: string) => void;
 }
 
 function AllocationHoverCard({
@@ -554,6 +555,7 @@ function AllocationHoverCard({
   onEscape,
   onFocusAllocation,
   onOpenDetails,
+  onSelectJobForShortlist,
 }: HoverCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
@@ -648,15 +650,14 @@ function AllocationHoverCard({
     return trimmed;
   };
 
+  const isUnallocated = !!(allocation as any)?.isUnallocatedOpportunity;
   const jobNameClean = cleanValue(allocation.jobName);
   const clientNameClean = cleanValue(allocation.clientName);
-  const codeClean = cleanValue(allocation.allocationCode);
+  const codeClean = isUnallocated ? 'VAGA ABERTA' : cleanValue(allocation.allocationCode);
 
-  const allocationTitle =
-    jobNameClean ||
-    clientNameClean ||
-    codeClean ||
-    'Alocação sem título';
+  const allocationTitle = isUnallocated
+    ? (jobNameClean ? `VAGA: ${jobNameClean}` : 'Vaga Aberta')
+    : (jobNameClean || clientNameClean || codeClean || 'Alocação sem título');
 
   const isValidValue = (val: any): boolean => {
     if (val === undefined || val === null) return false;
@@ -688,18 +689,22 @@ function AllocationHoverCard({
         transition: 'opacity 0.1s',
         pointerEvents: 'auto',
       }}
-      className="w-76 max-w-[340px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-[var(--timeline-hover-shadow)] p-4 text-xs flex flex-col gap-2"
+      className="w-76 max-w-[340px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-[var(--timeline-hover-shadow)] p-4 text-xs flex flex-col gap-2 overflow-hidden"
     >
       {/* Header */}
-      <div className="pb-2 border-b border-[var(--border-subtle)] flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h4 className="font-extrabold text-[var(--text-primary)] text-sm leading-tight truncate">{allocationTitle}</h4>
+      <div className="pb-2 border-b border-[var(--border-subtle)] flex items-start justify-between gap-2 overflow-hidden">
+        <div className="min-w-0 flex-1">
+          <h4 className="font-extrabold text-[var(--text-primary)] text-sm leading-tight truncate" title={allocationTitle}>{allocationTitle}</h4>
           {clientNameClean && (
-            <p className="text-[var(--text-secondary)] text-[11px] mt-0.5">Cliente: {clientNameClean}</p>
+            <p className="text-[var(--text-secondary)] text-[11px] mt-0.5 truncate" title={`Cliente: ${clientNameClean}`}>Cliente: {clientNameClean}</p>
           )}
         </div>
         {codeClean && (
-          <span className="shrink-0 font-mono text-[10px] font-bold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20 px-1.5 py-0.5 rounded">
+          <span className={`shrink-0 font-mono text-[10px] font-bold max-w-[120px] truncate px-1.5 py-0.5 rounded ${
+            isUnallocated
+              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              : 'text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20'
+          }`}>
             {codeClean}
           </span>
         )}
@@ -708,32 +713,32 @@ function AllocationHoverCard({
       {/* Body grid */}
       <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px]">
         {[
-          ['Freelancer', allocation.freelancerName],
+          ['Freelancer', isUnallocated ? '— (Vaga Aberta)' : allocation.freelancerName],
           ['Núcleo', allocation.nucleoName],
           ['Função', allocation.freelancerRole],
           ['Senioridade', allocation.freelancerSeniority],
           ['Período', formatPeriod(allocation.startDate, allocation.endDate)],
           ['Duração', calcDuration(allocation.startDate, allocation.endDate)],
-          ['Status da Alocação', allocation.status],
-          ['Modelo de Pagamento', paymentModelLabel(allocation.paymentModel)],
+          ['Status da Alocação', isUnallocated ? 'Vaga Não Alocada' : allocation.status],
+          ['Modelo de Pagamento', isUnallocated ? 'A definir' : paymentModelLabel(allocation.paymentModel)],
           ['Modelo de Remuneração', remunerationModelLabel(allocation.remunerationModel)],
-          ['Valor Contratado', formatCurrency(totalValue)],
-          ['Avaliação', evalStatusLabel(allocation.evaluationStatus)],
-          ['Status do Pagamento', paymentStatusLabel(allocation.paymentRequestStatus)],
+          ['Valor Contratado', isUnallocated ? 'A definir' : formatCurrency(totalValue)],
+          ['Avaliação', isUnallocated ? 'Não iniciada' : evalStatusLabel(allocation.evaluationStatus)],
+          ['Status do Pagamento', isUnallocated ? 'Pendente' : paymentStatusLabel(allocation.paymentRequestStatus)],
         ].map(([label, value]) => {
           if (!isValidValue(value)) return null;
           const isWide = label === 'Período' || label === 'Duração';
           return (
-            <div key={label} className={isWide ? 'col-span-2' : ''}>
-              <span className="block text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5">{label}</span>
-              <span className="font-semibold text-[var(--text-primary)]">{value}</span>
+            <div key={label} className={`${isWide ? 'col-span-2' : ''} min-w-0 overflow-hidden`}>
+              <span className="block text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5 truncate">{label}</span>
+              <span className="font-semibold text-[var(--text-primary)] block truncate" title={String(value)}>{value}</span>
             </div>
           );
         })}
         {nextSchedule && isValidValue(nextSchedule.amount) && (
-          <div className="col-span-2">
-            <span className="block text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Próxima Parcela</span>
-            <span className="font-semibold text-[var(--accent)]">
+          <div className="col-span-2 min-w-0 overflow-hidden">
+            <span className="block text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5 truncate">Próxima Parcela</span>
+            <span className="font-semibold text-[var(--accent)] block truncate">
               {formatCurrency(nextSchedule.amount)} · {formatShortDate(nextSchedule.dueDate || nextSchedule.referencePeriodEnd)}
             </span>
           </div>
@@ -763,17 +768,33 @@ function AllocationHoverCard({
           <span>Centralizar na Timeline</span>
           <ChevronRight className="w-3 h-3" />
         </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenDetails();
-          }}
-          className="w-full text-left bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] font-semibold py-1.5 px-3 rounded-lg text-[10px] border border-[var(--border-subtle)] flex items-center justify-between transition cursor-pointer"
-        >
-          <span>Ver detalhes da alocação</span>
-          <LayoutList className="w-3 h-3" />
-        </button>
+        {isUnallocated ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onSelectJobForShortlist) {
+                onSelectJobForShortlist(allocation.jobId);
+              }
+            }}
+            className="w-full text-left bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-bold py-1.5 px-3 rounded-lg text-[10px] border border-amber-500/40 flex items-center justify-between transition cursor-pointer"
+          >
+            <span>Ir para Shortlist (Alocar Talentos)</span>
+            <ChevronRight className="w-3 h-3" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenDetails();
+            }}
+            className="w-full text-left bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] font-semibold py-1.5 px-3 rounded-lg text-[10px] border border-[var(--border-subtle)] flex items-center justify-between transition cursor-pointer"
+          >
+            <span>Ver detalhes da alocação</span>
+            <LayoutList className="w-3 h-3" />
+          </button>
+        )}
       </div>
     </div>,
     portalRoot
@@ -1067,6 +1088,7 @@ interface ResourceCellProps {
   onToggleExpand?: () => void;
   height: number;
   onFocusAllocation: (a: AllocationItemEnriched) => void;
+  onHoverAllocation?: (alloc: AllocationItemEnriched | null, rect: DOMRect | null) => void;
 }
 
 function ResourceCell({
@@ -1075,6 +1097,7 @@ function ResourceCell({
   onToggleExpand,
   height,
   onFocusAllocation,
+  onHoverAllocation,
 }: ResourceCellProps) {
   const [showPopover, setShowPopover] = useState(false);
   const a = allocations[0];
@@ -1128,9 +1151,25 @@ function ResourceCell({
         {allocations.length === 1 && (
           <div className="flex items-center gap-2 min-w-0 min-height-[18px] overflow-visible mt-0.5">
             {isUnallocated ? (
-              <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold border border-amber-500/40">
-                Vaga Aberta
-              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFocusAllocation(a);
+                }}
+                onMouseEnter={(e) => {
+                  if (onHoverAllocation) {
+                    onHoverAllocation(a, e.currentTarget.getBoundingClientRect());
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (onHoverAllocation) onHoverAllocation(null, null);
+                }}
+                className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-extrabold border border-amber-500/40 cursor-pointer transition"
+                title={`Localizar vaga na Timeline (Início: ${formatShortDate(a.startDate)})`}
+              >
+                Localizar na Timeline
+              </button>
             ) : (
               <>
                 <button
@@ -1138,6 +1177,14 @@ function ResourceCell({
                   onClick={(e) => {
                     e.stopPropagation();
                     onFocusAllocation(a);
+                  }}
+                  onMouseEnter={(e) => {
+                    if (onHoverAllocation) {
+                      onHoverAllocation(a, e.currentTarget.getBoundingClientRect());
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    if (onHoverAllocation) onHoverAllocation(null, null);
                   }}
                   className="inline-flex items-center w-fit p-0 border-0 bg-transparent text-[var(--accent)] hover:underline text-[10px] font-mono cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded"
                   aria-label={`Localizar alocação ${a.allocationCode} na Timeline`}
@@ -1190,9 +1237,25 @@ function ResourceCell({
                     <div key={alloc.id} className="flex items-center gap-2 min-w-0 h-[26px] overflow-visible">
                       {isUnallocated ? (
                         <div className="flex items-center justify-between gap-1 w-full truncate">
-                          <span className="text-[10px] font-mono font-bold text-amber-400 truncate" title={alloc.jobName}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onFocusAllocation(alloc);
+                            }}
+                            onMouseEnter={(e) => {
+                              if (onHoverAllocation) {
+                                onHoverAllocation(alloc, e.currentTarget.getBoundingClientRect());
+                              }
+                            }}
+                            onMouseLeave={() => {
+                              if (onHoverAllocation) onHoverAllocation(null, null);
+                            }}
+                            className="text-[10px] font-mono font-bold text-amber-400 hover:underline cursor-pointer truncate text-left"
+                            title={`Localizar vaga ${alloc.jobName} na Timeline (Início: ${formatShortDate(alloc.startDate)})`}
+                          >
                             {alloc.jobName}
-                          </span>
+                          </button>
                           <span className="text-[9px] text-[var(--text-muted)] shrink-0">
                             {alloc.freelancerRole}
                           </span>
@@ -1204,6 +1267,14 @@ function ResourceCell({
                             onClick={(e) => {
                               e.stopPropagation();
                               onFocusAllocation(alloc);
+                            }}
+                            onMouseEnter={(e) => {
+                              if (onHoverAllocation) {
+                                onHoverAllocation(alloc, e.currentTarget.getBoundingClientRect());
+                              }
+                            }}
+                            onMouseLeave={() => {
+                              if (onHoverAllocation) onHoverAllocation(null, null);
                             }}
                             className="inline-flex items-center w-fit p-0 border-0 bg-transparent text-[var(--accent)] hover:underline text-[10px] font-mono cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded"
                             aria-label={`Localizar alocação ${alloc.allocationCode} na Timeline`}
@@ -1650,6 +1721,7 @@ function TimelineView({
                   allocations={group}
                   height={totalHeight}
                   onFocusAllocation={onFocusAllocation}
+                  onHoverAllocation={onHoverAllocation}
                   isManuallyExpanded={isManuallyExpanded}
                   onToggleExpand={() => onToggleExpandFreelancer?.(freelancerId)}
                 />
@@ -2938,7 +3010,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
     await waitForTimelineRender();
 
     if (viewMode === 'timeline') {
-      timelineScrollToDateRef.current?.(parseDate(allocation.startDate), { alignment: 'start', behavior: 'smooth' });
+      timelineScrollToDateRef.current?.(parseDate(allocation.startDate), { alignment: 'center', behavior: 'smooth' });
     } else if (viewMode === 'calendar') {
       const d = parseDate(allocation.startDate);
       const monthElId = `cal-month-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -3385,6 +3457,10 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
           onEscape={() => setHoveredAlloc(null)}
           onFocusAllocation={() => focusAllocation(hoveredAlloc.allocation)}
           onOpenDetails={() => handleDoubleClickAllocation(hoveredAlloc.allocation)}
+          onSelectJobForShortlist={(jobId) => {
+            if (db.setSelectedJobId) db.setSelectedJobId(jobId);
+            db.setActiveTab('Shortlist');
+          }}
         />
       )}
 

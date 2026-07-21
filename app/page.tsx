@@ -91,8 +91,14 @@ import BookingsPanel from '@/components/BookingsPanel';
 import { 
   LayoutDashboard, 
   Users, 
+  UserCog,
+  Contact,
   Briefcase, 
+  FolderPlus,
+  Handshake,
   CalendarDays, 
+  CalendarCheck,
+  CalendarRange,
   FileCheck2, 
   Scale, 
   TrendingUp, 
@@ -1585,15 +1591,15 @@ export default function Home() {
         return [
           { name: 'Dashboard Geral', icon: LayoutDashboard },
           { name: 'Cadastro de Núcleos', icon: Building },
-          { name: 'Gestão de Usuários', icon: Users },
-          { name: 'Banco de Freelancers', icon: Users },
+          { name: 'Gestão de Usuários', icon: UserCog },
+          { name: 'Banco de Freelancers', icon: Contact },
           { name: 'Links Públicos / QR Codes', icon: QrCode },
           { name: 'Análise de Pré-cadastros', icon: FileCheck2 },
-          { name: 'Criar Oportunidade', icon: Briefcase },
-          { name: 'Shortlist & Negociação', icon: Briefcase },
+          { name: 'Criar Oportunidade', icon: FolderPlus },
+          { name: 'Shortlist & Negociação', icon: Handshake },
           { name: 'Política de Valores', icon: Scale },
-          { name: 'Meus Bookings', icon: CalendarDays },
-          { name: 'Timeline de Alocações', icon: CalendarDays },
+          { name: 'Meus Bookings', icon: CalendarCheck },
+          { name: 'Timeline de Alocações', icon: CalendarRange },
           { name: 'Relatórios & Exportar', icon: TrendingUp },
           { name: 'Configurações', icon: SlidersHorizontal }
         ];
@@ -1601,26 +1607,26 @@ export default function Home() {
         return [
           { name: 'Dashboard RH', icon: LayoutDashboard },
           { name: 'Cadastro de Núcleos', icon: Building },
-          { name: 'Gestão de Usuários dos Núcleos', icon: Users },
-          { name: 'Banco de Freelancers', icon: Users },
+          { name: 'Gestão de Usuários dos Núcleos', icon: UserCog },
+          { name: 'Banco de Freelancers', icon: Contact },
           { name: 'Links Públicos / QR Codes', icon: QrCode },
           { name: 'Análise de Pré-cadastros', icon: FileCheck2 },
-          { name: 'Shortlist & Negociação', icon: Briefcase },
+          { name: 'Shortlist & Negociação', icon: Handshake },
           { name: 'Política de Valores', icon: Scale },
-          { name: 'Meus Bookings', icon: CalendarDays },
-          { name: 'Timeline de Alocações', icon: CalendarDays },
+          { name: 'Meus Bookings', icon: CalendarCheck },
+          { name: 'Timeline de Alocações', icon: CalendarRange },
           { name: 'Relatórios', icon: TrendingUp }
         ];
       case 'C-LEVEL':
         return [
           { name: 'Dashboard C-LEVEL', icon: LayoutDashboard },
           { name: 'Cadastro de Núcleos', icon: Building },
-          { name: 'Banco de Freelancers', icon: Users },
+          { name: 'Banco de Freelancers', icon: Contact },
           { name: 'Links Públicos / QR Codes', icon: QrCode },
-          { name: 'Criar Oportunidade', icon: Briefcase },
-          { name: 'Shortlist & Negociação', icon: SlidersHorizontal },
-          { name: 'Meus Bookings', icon: CalendarDays },
-          { name: 'Timeline de Alocações', icon: CalendarDays },
+          { name: 'Criar Oportunidade', icon: FolderPlus },
+          { name: 'Shortlist & Negociação', icon: Handshake },
+          { name: 'Meus Bookings', icon: CalendarCheck },
+          { name: 'Timeline de Alocações', icon: CalendarRange },
           { name: 'Relatórios', icon: TrendingUp },
           { name: 'Configurações', icon: SlidersHorizontal }
         ];
@@ -1629,23 +1635,23 @@ export default function Home() {
         return [
           { name: 'Dashboard Operações', icon: LayoutDashboard },
           { name: 'Cadastro de Núcleos', icon: Building },
-          { name: 'Banco de Freelancers', icon: Users },
+          { name: 'Banco de Freelancers', icon: Contact },
           { name: 'Links Públicos / QR Codes', icon: QrCode },
-          { name: 'Criar Oportunidade', icon: Briefcase },
-          { name: 'Shortlist & Negociação', icon: Briefcase },
-          { name: 'Meus Bookings / Alocações', icon: CalendarDays },
-          { name: 'Timeline de Alocações', icon: CalendarDays },
+          { name: 'Criar Oportunidade', icon: FolderPlus },
+          { name: 'Shortlist & Negociação', icon: Handshake },
+          { name: 'Meus Bookings / Alocações', icon: CalendarCheck },
+          { name: 'Timeline de Alocações', icon: CalendarRange },
           { name: 'Relatórios & Exportar', icon: TrendingUp }
         ];
       case 'NÚCLEO':
         return [
           { name: 'Meu Núcleo', icon: LayoutDashboard },
-          { name: 'Buscar Freelancers', icon: Users },
+          { name: 'Buscar Freelancers', icon: Contact },
           { name: 'Links Públicos / QR Codes', icon: QrCode },
-          { name: 'Criar Oportunidade', icon: Briefcase },
-          { name: 'Shortlist & Negociação', icon: SlidersHorizontal },
-          { name: 'Meus Bookings', icon: CalendarDays },
-          { name: 'Timeline de Alocações', icon: CalendarDays },
+          { name: 'Criar Oportunidade', icon: FolderPlus },
+          { name: 'Shortlist & Negociação', icon: Handshake },
+          { name: 'Meus Bookings', icon: CalendarCheck },
+          { name: 'Timeline de Alocações', icon: CalendarRange },
           { name: 'Avaliar Freela', icon: Award }
         ];
       default:
