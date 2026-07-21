@@ -29,6 +29,7 @@ import {
   Users,
   Building2,
   Tag,
+  Briefcase,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -903,6 +904,7 @@ interface TimelineBarProps {
   selectedAllocationId?: string;
   scale: TimelineScale;
   topOffset: number;
+  isExpandedMode?: boolean;
 }
 
 function TimelineBar({
@@ -917,8 +919,15 @@ function TimelineBar({
   selectedAllocationId,
   scale,
   topOffset,
+  isExpandedMode,
 }: TimelineBarProps) {
-  const colors = getAllocationColors(a.status, a.conflict.hasConflict);
+  const isUnallocated = !!(a as any)?.isUnallocatedOpportunity;
+  const colors = isUnallocated ? {
+    bg: 'bg-amber-500/20 dark:bg-amber-500/15',
+    border: 'border-dashed border-amber-500/80 dark:border-amber-400/80',
+    text: 'text-amber-300 dark:text-amber-200',
+    hoverBg: 'hover:bg-amber-500/35',
+  } : getAllocationColors(a.status, a.conflict.hasConflict);
 
   const allocStart = parseDate(a.startDate);
   const allocEnd = parseDate(a.endDate);
@@ -931,8 +940,20 @@ function TimelineBar({
   const barWidth = duration * dayPx;
 
   const isSelected = selectedAllocationId === a.id;
+  const isCompleted = (a.status || '').toLowerCase().includes('conclu') || (a.status || '').toLowerCase().includes('encerrad');
+  const barHeight = isExpandedMode ? '22px' : '30px';
 
   const renderBarContent = () => {
+    if (isUnallocated) {
+      if (barWidth >= 160) {
+        return <span className="truncate text-[10px] font-extrabold leading-tight">🎯 VAGA: {a.jobName} · {a.freelancerRole}</span>;
+      } else if (barWidth >= 80) {
+        return <span className="truncate text-[10px] font-extrabold leading-tight">🎯 {a.jobName}</span>;
+      } else {
+        return <span className="text-[9px] mx-auto select-none">🎯</span>;
+      }
+    }
+
     // 1. Daily scale logic
     if (scale === 'day') {
       const timeStr = `${String(allocStart.getHours()).padStart(2, '0')}:${String(allocStart.getMinutes()).padStart(2, '0')}–${String(allocEnd.getHours()).padStart(2, '0')}:${String(allocEnd.getMinutes()).padStart(2, '0')}`;
@@ -985,8 +1006,13 @@ function TimelineBar({
         width: `${widthPercent}%`,
         minWidth: '4px',
         top: topOffset,
-        height: '30px',
-        minHeight: '30px',
+        height: barHeight,
+        minHeight: barHeight,
+        ...(isUnallocated ? {
+          backgroundImage: 'repeating-linear-gradient(-45deg, rgba(245, 158, 11, 0.18), rgba(245, 158, 11, 0.18) 6px, transparent 6px, transparent 12px)',
+        } : isCompleted ? {
+          backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.15) 6px, transparent 6px, transparent 12px)',
+        } : {}),
       }}
       onClick={(e) => { e.stopPropagation(); onClick(); }}
       onDoubleClick={(e) => { e.stopPropagation(); onDoubleClick?.(); }}
@@ -1054,59 +1080,76 @@ function ResourceCell({
   const a = allocations[0];
 
   const isCompact = !isManuallyExpanded;
+  const isUnallocated = !!(a as any)?.isUnallocatedOpportunity;
 
   return (
     <div
       className="relative grid grid-cols-[30px_minmax(0,1fr)] gap-x-2.5 items-start p-2 w-full border-r border-[var(--border-subtle)]"
       style={{
-        background: 'var(--timeline-resource-background)',
+        background: isUnallocated ? 'rgba(245, 158, 11, 0.04)' : 'var(--timeline-resource-background)',
         height,
         minHeight: 64,
         boxSizing: 'border-box',
         overflow: 'visible', // Must be visible to prevent status badge clipping
       }}
     >
-      {/* Avatar */}
+      {/* Avatar / Icon */}
       <div className="shrink-0 mt-0.5">
-        <Initials name={a.freelancerName} size={30} />
+        {isUnallocated ? (
+          <div className="w-[30px] h-[30px] rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-bold text-xs">
+            🎯
+          </div>
+        ) : (
+          <Initials name={a.freelancerName} size={30} />
+        )}
       </div>
 
       {/* Info container */}
       <div className="flex flex-col gap-0.5 min-w-0 text-left overflow-visible">
         {/* Name */}
         <span
-          className="font-bold text-[var(--text-primary)] text-[13px] leading-tight truncate w-full"
+          className={`font-bold text-[13px] leading-tight truncate w-full ${isUnallocated ? 'text-amber-400' : 'text-[var(--text-primary)]'}`}
           title={a.freelancerName}
         >
           {a.freelancerName}
         </span>
 
-        {/* Role & Seniority */}
+        {/* Role & Seniority / Vagas Subtitle */}
         <p
           className="text-[11px] text-[var(--text-secondary)] leading-tight truncate w-full"
-          title={`${a.freelancerRole} · ${a.freelancerSeniority}`}
+          title={isUnallocated ? (allocations.length > 1 ? `Cliente: ${a.clientName} (${allocations.length} vagas)` : `${a.freelancerRole} · ${a.freelancerSeniority}`) : `${a.freelancerRole} · ${a.freelancerSeniority}`}
         >
-          {a.freelancerRole} · {a.freelancerSeniority}
+          {isUnallocated
+            ? (allocations.length > 1 ? `Vagas Não Alocadas (${allocations.length})` : `${a.freelancerRole} · ${a.freelancerSeniority}`)
+            : `${a.freelancerRole} · ${a.freelancerSeniority}`}
         </p>
 
         {/* Single Allocation Trigger / Code & Status */}
         {allocations.length === 1 && (
           <div className="flex items-center gap-2 min-w-0 min-height-[18px] overflow-visible mt-0.5">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onFocusAllocation(a);
-              }}
-              className="inline-flex items-center w-fit p-0 border-0 bg-transparent text-[var(--accent)] hover:underline text-[10px] font-mono cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded"
-              aria-label={`Localizar alocação ${a.allocationCode} na Timeline`}
-            >
-              {a.allocationCode}
-            </button>
-            <span className="inline-flex items-center flex-shrink-0 min-height-[18px] gap-1 text-[10px] text-[var(--text-muted)]">
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(a.status)}`} />
-              {a.status}
-            </span>
+            {isUnallocated ? (
+              <span className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold border border-amber-500/40">
+                Vaga Aberta
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFocusAllocation(a);
+                  }}
+                  className="inline-flex items-center w-fit p-0 border-0 bg-transparent text-[var(--accent)] hover:underline text-[10px] font-mono cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded"
+                  aria-label={`Localizar alocação ${a.allocationCode} na Timeline`}
+                >
+                  {a.allocationCode}
+                </button>
+                <span className="inline-flex items-center flex-shrink-0 min-height-[18px] gap-1 text-[10px] text-[var(--text-muted)]">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(a.status)}`} />
+                  {a.status}
+                </span>
+              </>
+            )}
           </div>
         )}
 
@@ -1121,41 +1164,58 @@ function ResourceCell({
                     e.stopPropagation();
                     onToggleExpand?.();
                   }}
-                  className="mt-0.5 px-2.5 py-0.5 text-[9px] font-extrabold bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-white text-[var(--accent)] rounded-full transition w-max cursor-pointer focus:outline-none"
+                  className={`mt-0.5 px-2.5 py-0.5 text-[9px] font-extrabold rounded-full transition w-max cursor-pointer focus:outline-none ${
+                    isUnallocated
+                      ? 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white border border-amber-500/30'
+                      : 'bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-white text-[var(--accent)]'
+                  }`}
                 >
-                  {allocations.length} alocações
+                  {allocations.length} {isUnallocated ? 'vagas abertas' : 'alocações'}
                 </button>
               </div>
             ) : (
-              <div className="mt-1 flex flex-col gap-1 w-full overflow-hidden">
+              <div className="mt-1 flex flex-col w-full overflow-visible">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggleExpand?.();
                   }}
-                  className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-full transition w-max cursor-pointer focus:outline-none"
+                  className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-full transition w-max cursor-pointer focus:outline-none mb-1 shrink-0"
                 >
-                  Recolher alocações
+                  Recolher {isUnallocated ? 'vagas' : 'alocações'}
                 </button>
-                <div className="mt-0.5 flex flex-col gap-0.5 w-full overflow-y-auto no-scrollbar" style={{ maxHeight: height - 56 }}>
+                <div className="flex flex-col gap-0 w-full overflow-visible">
                   {allocations.map(alloc => (
-                    <div key={alloc.id} className="flex items-center gap-2 min-w-0 min-height-[18px] overflow-visible">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onFocusAllocation(alloc);
-                        }}
-                        className="inline-flex items-center w-fit p-0 border-0 bg-transparent text-[var(--accent)] hover:underline text-[10px] font-mono cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded"
-                        aria-label={`Localizar alocação ${alloc.allocationCode} na Timeline`}
-                      >
-                        {alloc.allocationCode}
-                      </button>
-                      <span className="inline-flex items-center flex-shrink-0 min-height-[18px] gap-1 text-[9px] text-[var(--text-muted)]">
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(alloc.status)}`} />
-                        {alloc.status}
-                      </span>
+                    <div key={alloc.id} className="flex items-center gap-2 min-w-0 h-[26px] overflow-visible">
+                      {isUnallocated ? (
+                        <div className="flex items-center justify-between gap-1 w-full truncate">
+                          <span className="text-[10px] font-mono font-bold text-amber-400 truncate" title={alloc.jobName}>
+                            {alloc.jobName}
+                          </span>
+                          <span className="text-[9px] text-[var(--text-muted)] shrink-0">
+                            {alloc.freelancerRole}
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onFocusAllocation(alloc);
+                            }}
+                            className="inline-flex items-center w-fit p-0 border-0 bg-transparent text-[var(--accent)] hover:underline text-[10px] font-mono cursor-pointer text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:outline-offset-2 rounded"
+                            aria-label={`Localizar alocação ${alloc.allocationCode} na Timeline`}
+                          >
+                            {alloc.allocationCode}
+                          </button>
+                          <span className="inline-flex items-center flex-shrink-0 gap-1 text-[9px] text-[var(--text-muted)]">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(alloc.status)}`} />
+                            {alloc.status}
+                          </span>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1518,13 +1578,18 @@ function TimelineView({
     if (onRegisterScrollFn) onRegisterScrollFn(scrollToDate);
   }, [onRegisterScrollFn, scrollToDate]);
 
-  // On anchor/scale change: scroll to anchor date
+  // On anchor/scale change: scroll to anchor date (centering today if in current month)
   useEffect(() => {
     const timer = setTimeout(() => {
-      scrollToDate(scale === 'week' ? startOfWeek(anchor) : scale === 'month' ? startOfMonth(anchor) : anchor);
-    }, 50);
+      const isCurrentMonth = anchor.getMonth() === today.getMonth() && anchor.getFullYear() === today.getFullYear();
+      if (isCurrentMonth) {
+        scrollToDate(today, { alignment: 'center' });
+      } else {
+        scrollToDate(scale === 'week' ? startOfWeek(anchor) : scale === 'month' ? startOfMonth(anchor) : anchor, { alignment: 'start' });
+      }
+    }, 80);
     return () => clearTimeout(timer);
-  }, [anchor, scale, scrollToDate]);
+  }, [anchor, scale, scrollToDate, today]);
 
   // Sync vertical scroll
   const syncScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -1572,8 +1637,10 @@ function TimelineView({
               ? group.map(alloc => [alloc])
               : computeRows(group);
             const rowCount = rows.length;
-            // Height formula: 64px base + 32px for additional rows
-            const totalHeight = 64 + Math.max(0, rowCount - 1) * 32;
+            // Height formula: for expanded mode, header (68px) + each allocation (26px) + bottom padding (12px)
+            const totalHeight = isManuallyExpanded
+              ? 68 + group.length * 26 + 12
+              : 64 + Math.max(0, rowCount - 1) * 32;
             return (
               <div
                 key={gi}
@@ -1608,7 +1675,9 @@ function TimelineView({
                 ? group.map(alloc => [alloc])
                 : computeRows(group);
               const rowCount = rows.length;
-              const totalHeight = 64 + Math.max(0, rowCount - 1) * 32;
+              const totalHeight = isManuallyExpanded
+                ? 68 + group.length * 26 + 12
+                : 64 + Math.max(0, rowCount - 1) * 32;
               return (
                 <div
                   key={gi}
@@ -1624,7 +1693,9 @@ function TimelineView({
                       if (pos.isOutsideView) return null;
                       
                       // Symmetric lane centering calculations
-                      const topOffset = rowIdx === 0 ? 17 : 65 + (rowIdx - 1) * 32;
+                      const topOffset = isManuallyExpanded
+                        ? 68 + rowIdx * 26 + 2
+                        : (rowIdx === 0 ? 17 : 65 + (rowIdx - 1) * 32);
                       return (
                         <TimelineBar
                           key={a.id}
@@ -1641,6 +1712,7 @@ function TimelineView({
                           selectedAllocationId={selectedAllocationId}
                           scale={scale}
                           topOffset={topOffset}
+                          isExpandedMode={isManuallyExpanded}
                         />
                       );
                     })
@@ -2600,6 +2672,20 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
   const [zoom, setZoom] = useState<TimelineZoom>('normal');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showUnallocatedJobs, setShowUnallocatedJobs] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('freela_hub_show_unallocated_jobs') === 'true';
+    }
+    return false;
+  });
+
+  // Persist showUnallocatedJobs state
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('freela_hub_show_unallocated_jobs', String(showUnallocatedJobs));
+    }
+  }, [showUnallocatedJobs]);
+
   const [filters, setFilters] = useState<FilterState>({
     activeOnly: false,
     nucleoId: '',
@@ -2666,6 +2752,51 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
   const myNucleoId = currentUser.nucleoId;
   const canViewPaymentRequests = ['MASTER', 'RH', 'C-LEVEL', 'OPERAÇÃO', 'OPERAÇÕES'].includes(currentUser.profile);
 
+  // === Find unallocated opportunities (jobs without an active allocation) ===
+  const unallocatedJobs = useMemo(() => {
+    return db.jobs.filter(job => {
+      const s = (job.status || '').toLowerCase();
+      if (s.includes('conclu') || s.includes('encerrad')) return false;
+      if (job.selectedFreelancerId) return false;
+      const hasActiveAlloc = db.allocations.some(
+        a => a.jobId === job.id && a.status !== 'Cancelado' && a.status !== 'Cancelada'
+      );
+      if (hasActiveAlloc) return false;
+      if (isNucleoProfile && job.nucleoId !== myNucleoId) return false;
+      if (!job.startDate || !job.endDate) return false;
+      return true;
+    });
+  }, [db.jobs, db.allocations, isNucleoProfile, myNucleoId]);
+
+  const syntheticUnallocatedAllocations = useMemo<AllocationItemEnriched[]>(() => {
+    if (!showUnallocatedJobs) return [];
+    return unallocatedJobs.map(job => {
+      const ncl = db.nucleos.find(n => n.id === job.nucleoId);
+      const clientLabel = (job.client || 'Sem Cliente').trim();
+      return {
+        id: `unallocated-${job.id}`,
+        allocationCode: `VAGA: ${job.name}`,
+        jobId: job.id,
+        freelancerId: `unallocated-client-${clientLabel}`, // Group unallocated opportunities by client!
+        freelancerName: `🏢 CLIENTE: ${clientLabel}`,
+        freelancerRole: job.roleNeeded || 'Vaga Aberta',
+        freelancerSeniority: job.seniorityNeeded || '—',
+        startDate: job.startDate,
+        endDate: job.endDate,
+        status: 'Vaga Não Alocada',
+        nucleoId: job.nucleoId,
+        nucleoName: ncl?.name || '—',
+        jobName: job.name,
+        clientName: clientLabel,
+        remunerationModel: job.remunerationModel || '—',
+        conflict: { hasConflict: false, conflictingIds: [] },
+        paymentSchedules: [],
+        isUnallocatedOpportunity: true,
+        originalJob: job,
+      } as any;
+    });
+  }, [showUnallocatedJobs, unallocatedJobs, db.nucleos]);
+
   // === View range (for the anchor/label only) ===
   const { start: viewStart, end: viewEnd } = useMemo(() => getViewRange(scale, anchor), [scale, anchor]);
 
@@ -2723,11 +2854,14 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
 
   // === Apply filters + search (deferredSearch) ===
   const filtered = useMemo<AllocationItemEnriched[]>(() => {
-    let result = withConflicts;
-    if (filters.activeOnly) result = result.filter(a => a.status === 'Ativo' || a.status === 'Ativa' || a.status === 'Em andamento' || a.status === 'Bookado' || a.status === 'Bookada');
+    let result = [...syntheticUnallocatedAllocations, ...withConflicts];
+    if (filters.activeOnly) {
+      result = result.filter(a => (a as any).isUnallocatedOpportunity || a.status === 'Ativo' || a.status === 'Ativa' || a.status === 'Em andamento' || a.status === 'Bookado' || a.status === 'Bookada');
+    }
     if (filters.nucleoId) result = result.filter(a => a.nucleoId === filters.nucleoId);
     if (filters.status) {
       result = result.filter(a => {
+        if ((a as any).isUnallocatedOpportunity) return true;
         const s = (a.status || '').toLowerCase();
         const fStatus = filters.status.toLowerCase();
         if (fStatus === 'bookado') {
@@ -2739,7 +2873,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
         return s === fStatus;
       });
     }
-    if (filters.conflictsOnly) result = result.filter(a => a.conflict.hasConflict);
+    if (filters.conflictsOnly) result = result.filter(a => !(a as any).isUnallocatedOpportunity && a.conflict.hasConflict);
 
     const query = normalizeSearch(deferredSearch);
     if (query) {
@@ -2760,7 +2894,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
       });
     }
     return result;
-  }, [withConflicts, filters, deferredSearch]);
+  }, [syntheticUnallocatedAllocations, withConflicts, filters, deferredSearch]);
 
   const conflictCount = useMemo(() => withConflicts.filter(a => a.conflict.hasConflict).length, [withConflicts]);
 
@@ -2840,14 +2974,24 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
   const handleClickAllocation = useCallback((alloc: AllocationItemEnriched) => {
     cancelCloseHover();
     setHoveredAlloc(null);
+    if ((alloc as any).isUnallocatedOpportunity) {
+      if (db.setSelectedJobId) db.setSelectedJobId(alloc.jobId);
+      db.setActiveTab('Shortlist');
+      return;
+    }
     focusAllocation(alloc);
-  }, [cancelCloseHover, focusAllocation]);
+  }, [cancelCloseHover, focusAllocation, db]);
 
   const handleDoubleClickAllocation = useCallback((alloc: AllocationItemEnriched) => {
     cancelCloseHover();
     setHoveredAlloc(null);
+    if ((alloc as any).isUnallocatedOpportunity) {
+      if (db.setSelectedJobId) db.setSelectedJobId(alloc.jobId);
+      db.setActiveTab('Shortlist');
+      return;
+    }
     setClickedAlloc(alloc);
-  }, [cancelCloseHover]);
+  }, [cancelCloseHover, db]);
 
   const handleOpenJob = useCallback(() => {
     if (!clickedAlloc) return;
@@ -3073,6 +3217,26 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
             className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${filters.activeOnly ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-[var(--bg-panel)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'}`}
           >
             Apenas ativas
+          </button>
+
+          {/* Oportunidades Não Alocadas Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowUnallocatedJobs(prev => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+              showUnallocatedJobs
+                ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 shadow-sm ring-1 ring-amber-500/30'
+                : 'bg-[var(--bg-panel)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+            }`}
+            title={showUnallocatedJobs ? 'Ocultar vagas e oportunidades não alocadas na timeline/calendário' : 'Mostrar vagas e oportunidades não alocadas na timeline/calendário'}
+          >
+            <Briefcase className="w-3.5 h-3.5 text-amber-400" />
+            <span>Vagas Não Alocadas</span>
+            {unallocatedJobs.length > 0 && (
+              <span className="px-1.5 py-0.2 text-[10px] font-extrabold bg-amber-500/30 text-amber-200 rounded-full">
+                {unallocatedJobs.length}
+              </span>
+            )}
           </button>
 
           {/* Conflict KPI */}
