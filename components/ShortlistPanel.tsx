@@ -300,6 +300,15 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     }
   }
 
+  // Always scroll to top of page/viewport when ShortlistPanel mounts or step changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const container = document.getElementById('main-scroll-container');
+      if (container) container.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }
+  }, [activeStep]);
+
   // --- JOB SEARCH & FILTERS STATE (Step 1) ---
   const [jobSearch, setJobSearch] = useState('');
   const [jobTabFilter, setJobTabFilter] = useState<'ativas' | 'bookadas' | 'encerradas' | 'todas'>('ativas');

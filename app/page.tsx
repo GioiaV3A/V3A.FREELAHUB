@@ -259,6 +259,13 @@ export default function Home() {
     // Reload database on tab navigation to avoid stale data
     reloadDatabase().catch(err => console.error('Database reload error on tab switch:', err));
 
+    // Scroll main viewport container to top on tab change
+    if (typeof window !== 'undefined') {
+      const container = document.getElementById('main-scroll-container');
+      if (container) container.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }
+
     if (tab === 'Sugerir Freelancer' || tab === 'Sugestões de Freelas') {
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href);
@@ -275,6 +282,9 @@ export default function Home() {
     setActiveTab2(tab);
     if (tab !== 'Perfil do Freelancer') {
       setSelectedFreelancerId(null);
+    }
+    if (tab === 'Shortlist' || tab === 'Shortlist & Negociação') {
+      setSelectedJobId(null);
     }
     setIsHeaderMenuOpen(false);
     setIsMobileMenuOpen(false); // close drawer on navigation
@@ -2102,7 +2112,7 @@ export default function Home() {
         </header>
 
         {/* 3. SCROLLABLE ROUTE VIEWPORT */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6 focus:outline-none bg-bg-app">
+        <div id="main-scroll-container" className="flex-1 overflow-y-auto px-6 pb-6 focus:outline-none bg-bg-app">
           <div className="pt-6">
           
           {/* Dashboard router dependent on selected profile */}

@@ -921,7 +921,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       const mappedJob = mapJobToUI(requestJob);
       db.setJobs(prev => [mappedJob, ...prev]);
       alert(`Demanda "${name}" registrada com sucesso! ${isCompetitiveBid ? 'Aguardando encerramento da concorrência.' : 'Prossiga para a shortlist.'}`);
-      db.setSelectedJobId(mappedJob.id);
+      db.setSelectedJobId(null);
       db.setActiveTab(isCompetitiveBid ? 'Dashboard' : 'Shortlist');
     } catch (error: any) {
       console.error('Error creating opportunity:', error);
