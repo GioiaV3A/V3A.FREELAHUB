@@ -616,7 +616,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
           </div>
 
           {(() => {
-            const projections = simulatePaymentProjections(allocation.startDate, allocation.endDate);
+            const projections = simulatePaymentProjections(allocation.startDate, allocation.endDate, allocation.remunerationModel || job?.remunerationModel);
             if (projections.length === 0) return <p className="text-xs text-text-muted italic">Sem projeções de vencimento para este período.</p>;
 
             return (

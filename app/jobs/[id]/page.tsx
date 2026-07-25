@@ -736,7 +736,7 @@ export default function JobDetailPage() {
         </div>
 
         {(() => {
-          const projections = simulatePaymentProjections(job.startDate, job.endDate);
+          const projections = simulatePaymentProjections(job.startDate, job.endDate, job.remunerationModel);
           if (projections.length === 0) return <p className="text-xs text-text-secondary italic">Sem projeções para o período deste job.</p>;
 
           return (

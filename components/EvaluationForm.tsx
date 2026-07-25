@@ -419,7 +419,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                           <div className="text-[10px] text-slate-500">Cliente: {job?.client || 'N/A'}</div>
                         </td>
                         <td className="px-4 py-4 text-slate-600 dark:text-slate-400 font-medium">
-                          {alloc.startDate ? new Date(alloc.startDate).toLocaleDateString('pt-BR') : ''} a {alloc.endDate ? new Date(alloc.endDate).toLocaleDateString('pt-BR') : ''}
+                          {alloc.startDate ? alloc.startDate.split('T')[0].split('-').reverse().join('/') : ''} a {alloc.endDate ? alloc.endDate.split('T')[0].split('-').reverse().join('/') : ''}
                         </td>
                         <td className="px-4 py-4 font-bold text-slate-800 dark:text-slate-100">
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(code.approvedValue)}

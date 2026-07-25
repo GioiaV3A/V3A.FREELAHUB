@@ -19,7 +19,9 @@ import {
   maskCurrencyBRL,
   formatPercentage,
   calculatePolicyLimitForJob,
-  calculateMonthlyPaymentSchedule
+  calculateMonthlyPaymentSchedule,
+  simulatePaymentProjections,
+  getDominantMonthLabel
 } from '@/lib/financial';
 import NegotiationFinancialSummary from '@/components/NegotiationFinancialSummary';
 import { 
@@ -61,6 +63,14 @@ import ScoreStars from '@/components/ScoreStars';
 import { useSortableTable } from '@/hooks/useSortableTable';
 import { SortableHeader } from '@/components/SortableHeader';
 import { ResponsiveDataTable, Column } from './ResponsiveDataTable';
+
+/** Timezone-safe ISO date → dd/mm/yyyy formatter (avoids new Date(iso) UTC shift) */
+const isoToBR = (isoStr?: string | null): string => {
+  if (!isoStr) return 'A definir';
+  const parts = isoStr.split('T')[0].split('-');
+  if (parts.length === 3) return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+  return isoStr;
+};
 
 const SENIORITY_RANK: Record<string, number> = {
   'Júnior': 1,
@@ -161,8 +171,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     // Prefer saved shortlist values over job defaults
     const savedModel = sl?.paymentModel as 'one_time' | 'monthly_recurring' | 'milestone' | undefined;
     const defaultModel = savedModel || (activeJob?.paymentFlow === 'recurring' ? 'monthly_recurring' : 'one_time');
-    const defaultStart = sl?.contractStartDate || activeJob?.startDate || '';
-    const defaultEnd = sl?.contractEndDate || activeJob?.endDate || '';
+    const defaultStart = activeJob?.startDate || sl?.contractStartDate || '';
+    const defaultEnd = activeJob?.endDate || sl?.contractEndDate || '';
     const defaultDue = sl?.preferredDueDay || activeJob?.expectedPaymentDay || 5;
     const defaultRate = sl?.negotiatedRate || activeJob?.expectedRate || 0;
 
@@ -601,8 +611,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       width: '14%',
       render: (job: any) => (
         <span className="text-text-secondary font-medium block">
-          {job.startDate ? new Date(job.startDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
-          {job.endDate ? new Date(job.endDate).toLocaleDateString('pt-BR') : 'A definir'}
+          {isoToBR(job.startDate)} a {isoToBR(job.endDate)}
         </span>
       )
     },
@@ -730,8 +739,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
           <div>
             <p className="font-bold text-[10px] text-text-muted uppercase tracking-wider">Período</p>
             <p className="font-semibold text-text-primary mt-0.5">
-              {job.startDate ? new Date(job.startDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
-              {job.endDate ? new Date(job.endDate).toLocaleDateString('pt-BR') : 'A definir'}
+              {isoToBR(job.startDate)} a {isoToBR(job.endDate)}
             </p>
           </div>
         </div>
@@ -1334,7 +1342,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
           negotiatedRate: rate,
           remunerationModel: model,
           allocationDays,
-          estimatedHours: estHours
+          estimatedHours: estHours,
+          startDate: activeJob?.startDate,
+          endDate: activeJob?.endDate
         }) ?? undefined;
 
         const { savingAmount, savingPercentage } = calculateBudgetSaving({
@@ -1717,7 +1727,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         negotiatedRate: rate,
         remunerationModel: billing,
         allocationDays,
-        estimatedHours: sl.estimatedHours
+        estimatedHours: sl.estimatedHours,
+        startDate: activeJob?.startDate,
+        endDate: activeJob?.endDate
       }) || 0;
 
       const { savingAmount, savingPercentage } = calculateBudgetSaving({
@@ -2170,8 +2182,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           <div className="flex justify-between">
                             <span>Período:</span>
                             <span className="text-text-primary">
-                              {job.startDate ? new Date(job.startDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
-                              {job.endDate ? new Date(job.endDate).toLocaleDateString('pt-BR') : 'A definir'}
+                              {isoToBR(job.startDate)} a {isoToBR(job.endDate)}
                             </span>
                           </div>
                           <div className="flex justify-between">
@@ -2253,7 +2264,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
                     <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
-                    <div>Período: <strong className="text-white">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong></div>
+                    <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
                     <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
                     {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
@@ -2748,7 +2759,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
                     <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
-                    <div>Período: <strong className="text-white">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong></div>
+                    <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
                     <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
                     {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
@@ -3562,7 +3573,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
                     <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
-                    <div>Período: <strong className="text-white">{activeJob.startDate ? new Date(activeJob.startDate).toLocaleDateString('pt-BR') : 'A definir'} a {activeJob.endDate ? new Date(activeJob.endDate).toLocaleDateString('pt-BR') : 'A definir'}</strong></div>
+                    <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
                     <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
                     {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
@@ -3783,8 +3794,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-border-subtle space-y-1">
                       <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Período de Execução</span>
                       <div className="font-semibold text-xs text-sidebar-navy">
-                        {allocation?.startDate ? new Date(allocation.startDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
-                        {allocation?.endDate ? new Date(allocation.endDate).toLocaleDateString('pt-BR') : 'A definir'}
+                        {isoToBR(allocation?.startDate)} a {isoToBR(allocation?.endDate)}
                       </div>
                     </div>
                   </div>
@@ -3836,7 +3846,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <p className="text-[11.5px] text-text-secondary mt-0.5">Selecione o profissional acordado para homologar a alocação oficial e bloquear o job.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                <div className="space-y-6 pt-2">
                   {(() => {
                     const eligibleCandidates = jobShortlists.filter(sl => {
                       const cand = db.freelancers.find(f => f.id === sl.freelancerId);
@@ -3894,9 +3904,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         negotiatedRate: rate,
                         remunerationModel: billing,
                         allocationDays,
-                        estimatedHours: sl.estimatedHours
+                        estimatedHours: sl.estimatedHours,
+                        startDate: activeJob?.startDate,
+                        endDate: activeJob?.endDate
                       });
-
                       const savingAmount = negotiatedTotal !== null ? activeJob.budget - negotiatedTotal : 0;
                       const savingPercentage = negotiatedTotal !== null && activeJob.budget > 0 ? (savingAmount / activeJob.budget) * 100 : 0;
 
@@ -3907,165 +3918,300 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       const isButtonDisabled = isHoursMissing || isJustificationMissing || isConflictPending || isBudgetPending;
 
                       return (
-                        <div key={sl.id} className="border border-border-subtle hover:border-emerald-500/50 p-5 rounded-2xl bg-white space-y-4 flex flex-col justify-between transition-all">
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <strong className="text-sidebar-navy font-bold text-sm">{cand.name}</strong>
-                                <p className="text-[11px] text-text-secondary">{cand.mainRole} ({cand.seniority})</p>
-                              </div>
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                                isButtonDisabled
-                                  ? 'bg-red-50 text-red-700 border-red-200'
-                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              }`}>
-                                {isButtonDisabled ? 'Bloqueado por Pendências' : 'Pronto para Alocação'}
-                              </span>
-                            </div>
+                        <div key={sl.id} className="border border-border-subtle hover:border-emerald-500/50 p-6 rounded-2xl bg-white dark:bg-slate-900/60 shadow-sm space-y-6 transition-all text-left">
+                          {/* GRID LAYOUT (Left Column: Candidate & Commercial | Right Column: Supply Projections) */}
+                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                             
-                            {/* Embedded Financial Summary Card (Compact) */}
-                            <NegotiationFinancialSummary
-                              budget={activeJob.budget}
-                              startDate={activeJob.startDate}
-                              endDate={activeJob.endDate}
-                              negotiatedRate={rate}
-                              remunerationModel={billing}
-                              estimatedHours={sl.estimatedHours}
-                              successFeeEnabled={getCandidateNeg(cand.id, sl).successFeeEnabled}
-                              successFeeType={getCandidateNeg(cand.id, sl).successFeeType}
-                              successFeeFixedAmount={getCandidateNeg(cand.id, sl).successFeeFixedAmount}
-                              successFeePercent={getCandidateNeg(cand.id, sl).successFeePercent}
-                              successFeeBase={getCandidateNeg(cand.id, sl).successFeeBase}
-                              successFeeTrigger={getCandidateNeg(cand.id, sl).successFeeTrigger}
-                              variant="compact"
-                            />
-
-                            {/* Warnings & Justifications */}
-                            {isConflictPending && (
-                              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
-                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
-                                <div>
-                                  <span className="font-bold block">Aprovação do RH Pendente</span>
-                                  Este profissional possui um conflito de agenda no período deste job. A homologação está bloqueada até que o RH aprove a solicitação de exceção.
-                                </div>
-                              </div>
-                            )}
-
-                            {isBudgetPending && (
-                              <div className="p-3 bg-red-50 dark:bg-red-955/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
-                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
-                                <div>
-                                  <span className="font-bold block">Aprovação do Head Pendente</span>
-                                  O valor acordado ultrapassa o teto comercial. A homologação está bloqueada até que o Head do Núcleo aprove a solicitação de exceção.
-                                </div>
-                              </div>
-                            )}
-
-                            {isHoursMissing && (
-                              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
-                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
-                                <div>
-                                  <span className="font-bold block">Horas Estimadas Obrigatórias</span>
-                                  Para modelo por hora, você precisa informar a estimativa de horas no Passo 3 antes de confirmar a homologação.
-                                </div>
-                              </div>
-                            )}
-
-                            {savingAmount < 0 && (
-                              <div className="space-y-3">
-                                <div className="p-3 bg-amber-50 dark:bg-amber-955/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-450 flex items-start gap-2 leading-relaxed">
-                                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-650 dark:text-amber-500" />
+                            {/* ─── LEFT COLUMN (col-span-12 lg:col-span-5) ─── */}
+                            <div className="lg:col-span-5 space-y-4 flex flex-col justify-between">
+                              <div className="space-y-4">
+                                {/* Candidate Header */}
+                                <div className="flex justify-between items-start pb-3 border-b border-border-subtle">
                                   <div>
-                                    <span className="font-bold block">Estouro de budget detectado: {formatCurrencyBRL(Math.abs(savingAmount))}</span>
-                                    Esta alocação ultrapassa o budget definido para o job ({Math.abs(Math.round(savingPercentage))}% acima).
+                                    <strong className="text-sidebar-navy dark:text-white font-extrabold text-base block">{cand.name}</strong>
+                                    <p className="text-xs text-text-secondary dark:text-slate-400 mt-0.5">{cand.mainRole} ({cand.seniority})</p>
                                   </div>
-                                </div>
-
-                                <div className="text-left">
-                                  <label className="text-[11px] font-bold text-text-secondary block mb-1">
-                                    Justificativa do estouro de budget (Obrigatório) *
-                                  </label>
-                                  <textarea
-                                    disabled={!!activeJob.selectedFreelancerId}
-                                    placeholder="Explique o motivo do teto ultrapassado (ex: profissional sênior com alta aderência técnica)..."
-                                    value={sl.notes || ''}
-                                    onChange={(e) => handleUpdateNegotiation(cand.id, { notes: e.target.value })}
-                                    className="w-full bg-white border border-border-subtle p-2 rounded-lg text-xs focus:outline-none focus:border-action-cyan text-text-primary resize-none"
-                                    rows={2}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* READ-ONLY FINAL COMMERCIAL & BILLING CONDITIONS */}
-                          {(() => {
-                            const candNeg = getCandidateNeg(cand.id, sl);
-
-                            return (
-                              <div className="space-y-4 mt-4">
-                                <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 text-left">
-                                  <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
-                                    Condições Comerciais & Faturamento (Confirmado)
+                                  <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${
+                                    isButtonDisabled
+                                      ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
+                                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                  }`}>
+                                    {isButtonDisabled ? 'Bloqueado por Pendências' : 'Pronto para Alocação'}
                                   </span>
+                                </div>
+                                
+                                {/* Embedded Financial Summary Card */}
+                                <NegotiationFinancialSummary
+                                  budget={activeJob.budget}
+                                  startDate={activeJob.startDate}
+                                  endDate={activeJob.endDate}
+                                  negotiatedRate={rate}
+                                  remunerationModel={billing}
+                                  estimatedHours={sl.estimatedHours}
+                                  successFeeEnabled={getCandidateNeg(cand.id, sl).successFeeEnabled}
+                                  successFeeType={getCandidateNeg(cand.id, sl).successFeeType}
+                                  successFeeFixedAmount={getCandidateNeg(cand.id, sl).successFeeFixedAmount}
+                                  successFeePercent={getCandidateNeg(cand.id, sl).successFeePercent}
+                                  successFeeBase={getCandidateNeg(cand.id, sl).successFeeBase}
+                                  successFeeTrigger={getCandidateNeg(cand.id, sl).successFeeTrigger}
+                                  variant="compact"
+                                />
 
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                                    <div>
-                                      <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                        Período do Contrato
-                                      </span>
-                                      <strong className="text-sidebar-navy dark:text-white">
-                                        {candNeg.contractStartDate ? new Date(candNeg.contractStartDate).toLocaleDateString('pt-BR') : 'A definir'} a{' '}
-                                        {candNeg.contractEndDate ? new Date(candNeg.contractEndDate).toLocaleDateString('pt-BR') : 'A definir'}
-                                      </strong>
+                                {/* Read-Only Final Commercial & Billing Conditions */}
+                                {(() => {
+                                  const candNeg = getCandidateNeg(cand.id, sl);
+                                  const startDateStr = activeJob?.startDate || candNeg.contractStartDate || '';
+                                  const endDateStr = activeJob?.endDate || candNeg.contractEndDate || '';
+                                  const totalDays = (startDateStr && endDateStr) ? calculateAllocationDays(startDateStr, endDateStr) : 0;
+                                  const formatISOToBR = (isoStr?: string) => {
+                                    if (!isoStr) return 'A definir';
+                                    const parts = isoStr.split('T')[0].split('-');
+                                    if (parts.length === 3) return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+                                    return isoStr;
+                                  };
+
+                                  return (
+                                    <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
+                                          Condições Comerciais & Faturamento
+                                        </span>
+                                        {totalDays > 0 && (
+                                          <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                            {totalDays} {totalDays === 1 ? 'dia' : 'dias'}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="space-y-2 text-xs">
+                                        <div className="flex justify-between border-b border-border-subtle/50 pb-1.5">
+                                          <span className="text-[10px] uppercase font-bold text-text-secondary">Período</span>
+                                          <strong className="text-sidebar-navy dark:text-white">
+                                            {formatISOToBR(startDateStr)} a {formatISOToBR(endDateStr)}
+                                          </strong>
+                                        </div>
+                                        <div className="flex justify-between border-b border-border-subtle/50 pb-1.5">
+                                          <span className="text-[10px] uppercase font-bold text-text-secondary">Modelo</span>
+                                          <strong className="text-sidebar-navy dark:text-white">
+                                            {candNeg.paymentTerms || (activeJob?.paymentFlow === 'recurring' ? 'Parcelado Mensal' : 'Pagamento Único')}
+                                          </strong>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-[10px] uppercase font-bold text-text-secondary">Obs.</span>
+                                          <strong className="text-sidebar-navy dark:text-white truncate max-w-[200px]">
+                                            {candNeg.paymentNotes || 'Sem observações'}
+                                          </strong>
+                                        </div>
+                                      </div>
                                     </div>
+                                  );
+                                })()}
 
+                                {/* Warnings & Justifications */}
+                                {isConflictPending && (
+                                  <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
                                     <div>
-                                      <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                        Condições de Pagamento
-                                      </span>
-                                      <strong className="text-sidebar-navy dark:text-white">
-                                        {candNeg.paymentTerms || '—'}
-                                      </strong>
-                                    </div>
-
-                                    <div>
-                                      <span className="text-[10px] uppercase font-bold text-text-secondary block">
-                                        Notas Administrativas
-                                      </span>
-                                      <strong className="text-sidebar-navy dark:text-white">
-                                        {candNeg.paymentNotes || '—'}
-                                      </strong>
+                                      <span className="font-bold block">Aprovação do RH Pendente</span>
+                                      Este profissional possui um conflito de agenda no período deste job. A homologação está bloqueada até que o RH aprove a solicitação de exceção.
                                     </div>
                                   </div>
-                                </div>
+                                )}
 
-                                {/* ERP Supply Lead Time Disclaimer */}
-                                <div className="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-400 flex items-start gap-2 leading-relaxed text-left">
-                                  <AlertCircle className="w-4.5 h-4.5 text-amber-650 dark:text-amber-550 shrink-0 mt-0.5" />
-                                  <div>
-                                    <strong className="block text-[11.5px] text-amber-900 dark:text-amber-300 font-bold mb-0.5">⚠️ Diretriz de Compliance: Prazo de Abertura de RCs (Supply)</strong>
-                                    Para garantir a conformidade operacional, a homologação final e a liberação de pagamentos no ERP dependem do cumprimento do prazo regulamentar de abertura de RCs junto ao time de Supply (mínimo de <strong>10 dias</strong> de antecedência, conforme regra de compliance de <code>rc_lead_days</code>).
+                                {isBudgetPending && (
+                                  <div className="p-3 bg-red-50 dark:bg-red-955/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
+                                    <div>
+                                      <span className="font-bold block">Aprovação do Head Pendente</span>
+                                      O valor acordado ultrapassa o teto comercial. A homologação está bloqueada até que o Head do Núcleo aprove a solicitação de exceção.
+                                    </div>
                                   </div>
-                                </div>
+                                )}
+
+                                {isHoursMissing && (
+                                  <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
+                                    <div>
+                                      <span className="font-bold block">Horas Estimadas Obrigatórias</span>
+                                      Para modelo por hora, você precisa informar a estimativa de horas no Passo 3 antes de confirmar a homologação.
+                                    </div>
+                                  </div>
+                                )}
+
+                                {savingAmount < 0 && (
+                                  <div className="space-y-2">
+                                    <div className="p-3 bg-amber-50 dark:bg-amber-955/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-450 flex items-start gap-2 leading-relaxed">
+                                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-650 dark:text-amber-500" />
+                                      <div>
+                                        <span className="font-bold block">Estouro de budget detectado: {formatCurrencyBRL(Math.abs(savingAmount))}</span>
+                                        Esta alocação ultrapassa o budget definido para o job ({Math.abs(Math.round(savingPercentage))}% acima).
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <label className="text-[11px] font-bold text-text-secondary block mb-1">
+                                        Justificativa do estouro de budget (Obrigatório) *
+                                      </label>
+                                      <textarea
+                                        disabled={!!activeJob.selectedFreelancerId}
+                                        placeholder="Explique o motivo do teto ultrapassado (ex: profissional sênior com alta aderência técnica)..."
+                                        value={sl.notes || ''}
+                                        onChange={(e) => handleUpdateNegotiation(cand.id, { notes: e.target.value })}
+                                        className="w-full bg-white dark:bg-slate-800 border border-border-subtle p-2 rounded-lg text-xs focus:outline-none focus:border-action-cyan text-text-primary dark:text-white resize-none"
+                                        rows={2}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            );
-                          })()}
+                            </div>
 
-                          <div className="pt-3 border-t border-border-subtle flex justify-end">
-                            <button
-                              type="button"
-                              disabled={isButtonDisabled}
-                              onClick={() => handleFinalAllocation(cand.id, sl.id, rate, billing, sl.notes || '', sl)}
-                              className={`font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
-                                isButtonDisabled 
-                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60' 
-                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                              }`}
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                              <span>Confirmar Alocação</span>
-                            </button>
+                            {/* ─── RIGHT COLUMN (col-span-12 lg:col-span-7) ─── */}
+                            <div className="lg:col-span-7 space-y-4 flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-border-subtle pt-5 lg:pt-0 lg:pl-6 text-left">
+                              {(() => {
+                                const candNeg = getCandidateNeg(cand.id, sl);
+                                const startDateStr = activeJob?.startDate || candNeg.contractStartDate || '';
+                                const endDateStr = activeJob?.endDate || candNeg.contractEndDate || '';
+
+                                const formatISOToBR = (isoStr?: string) => {
+                                  if (!isoStr) return 'A definir';
+                                  const parts = isoStr.split('T')[0].split('-');
+                                  if (parts.length === 3) return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+                                  return isoStr;
+                                };
+
+                                 const targetModel = candNeg?.remunerationModel || sl?.remunerationModel || activeJob?.remunerationModel;
+                                const projections = (startDateStr && endDateStr) ? simulatePaymentProjections(startDateStr, endDateStr, targetModel) : [];
+
+                                const getAlertBadgeConfig = (level: 'informational' | 'attention' | 'urgent' | 'critical') => {
+                                  switch (level) {
+                                    case 'critical':
+                                      return {
+                                        label: '🚨 ALERTA CRÍTICO: Abertura de RC Imediata',
+                                        badgeClass: 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40',
+                                      };
+                                    case 'urgent':
+                                      return {
+                                        label: '🔥 ALTA PRIORIDADE: 0 a 3 dias para Prazo da RC',
+                                        badgeClass: 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/40',
+                                      };
+                                    case 'attention':
+                                      return {
+                                        label: '⚡ ATENÇÃO: 4 a 10 dias para Prazo da RC',
+                                        badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40',
+                                      };
+                                    case 'informational':
+                                    default:
+                                      return {
+                                        label: '✅ REGULAR: Mais de 10 dias até o Prazo da RC',
+                                        badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+                                      };
+                                  }
+                                };
+
+                                return (
+                                  <div className="space-y-4 flex-1 flex flex-col justify-between">
+                                    {/* Supply Payment Projections Section (Sec. 5.2 & 5.3) */}
+                                    <div className="bg-slate-900/90 text-white p-5 rounded-2xl border border-slate-700/80 shadow-md space-y-4 flex-1">
+                                      <div className="flex items-center justify-between pb-3 border-b border-slate-700/80">
+                                        <div className="flex items-center gap-2.5">
+                                          <div className="p-2 rounded-lg bg-action-cyan/10 border border-action-cyan/30 text-action-cyan">
+                                            <Clock className="w-4 h-4" />
+                                          </div>
+                                          <div>
+                                            <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">
+                                              Projeções de Pagamento & Supply
+                                            </h4>
+                                            <p className="text-[10px] text-slate-400">Diretrizes da Política de Supply v2.0</p>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {projections.length > 0 ? (
+                                        <div className="space-y-3">
+                                          {projections.map((p, idx) => {
+                                            const monthLabel = p.referenceMonth || getDominantMonthLabel(p.startDate, p.endDate);
+                                            const parcelVal = negotiatedTotal !== null ? negotiatedTotal / projections.length : 0;
+
+                                            return (
+                                              <div key={idx} className="bg-slate-800/90 border border-slate-700/90 rounded-xl p-4 space-y-3 text-xs shadow-xs">
+                                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/60 pb-2.5">
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-white text-[11px] bg-slate-700/90 border border-slate-600 px-2.5 py-0.5 rounded">
+                                                      {projections.length > 1 ? `Parcela ${p.cycleNumber}/${projections.length}` : 'Parcela Única'}
+                                                    </span>
+                                                    <span className="text-[11px] text-action-cyan font-extrabold">
+                                                      Mês de Referência: {monthLabel}
+                                                    </span>
+                                                  </div>
+                                                  <span className="text-[10px] text-slate-400 font-medium">
+                                                    {p.daysInCycle} dias de alocação
+                                                  </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                                  <div className="bg-slate-900/60 border border-slate-700/80 rounded-xl p-3 flex flex-col justify-between">
+                                                    <span className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
+                                                      PERÍODO DO CICLO
+                                                    </span>
+                                                    <span className="text-xs font-bold text-white block">
+                                                      {formatISOToBR(p.startDate)} a {formatISOToBR(p.endDate)}
+                                                    </span>
+                                                  </div>
+
+                                                  <div className="bg-emerald-950/40 border border-emerald-800/50 rounded-xl p-3 flex flex-col justify-between">
+                                                    <span className="block text-[9px] font-extrabold uppercase tracking-wider text-emerald-400 mb-1">
+                                                      VALOR PREVISTO DA PARCELA
+                                                    </span>
+                                                    <span className="text-base font-extrabold text-emerald-300 block">
+                                                      {parcelVal > 0 
+                                                        ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parcelVal) 
+                                                        : 'Sob consulta'}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <p className="text-xs text-slate-400 italic">
+                                          Defina o período do contrato para gerar as projeções de pagamento conforme a política de Supply.
+                                        </p>
+                                      )}
+
+                                      {/* Mandatory Notice Disclaimer */}
+                                      <div className="pt-3 border-t border-slate-700/80 text-[11px] text-amber-300 bg-amber-950/30 border border-amber-900/40 rounded-xl p-3.5 space-y-1">
+                                        <strong className="block font-bold text-amber-400 text-[11.5px] flex items-center gap-1.5">
+                                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                                          <span>Aviso Obrigatório da Política de Supply</span>
+                                        </strong>
+                                        <p className="text-amber-200/90 leading-relaxed text-[11px]">
+                                          Data sugerida, não oficial. O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas (antecedência mínima de 10 dias corridos).
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Action Footer */}
+                                    <div className="pt-2 flex justify-end">
+                                      <button
+                                        type="button"
+                                        disabled={isButtonDisabled}
+                                        onClick={() => handleFinalAllocation(cand.id, sl.id, rate, billing, sl.notes || '', sl)}
+                                        className={`font-extrabold px-6 py-3 rounded-xl text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer ${
+                                          isButtonDisabled 
+                                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60' 
+                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
+                                        }`}
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        <span>Confirmar Alocação</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
                           </div>
                         </div>
                       );

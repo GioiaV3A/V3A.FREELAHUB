@@ -3,8 +3,12 @@ export function calculateAllocationDays(
   endDate: string | null | undefined
 ): number {
   if (!startDate || !endDate) return 0;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  // Normalize: strip timestamp suffix
+  const sParts = startDate.split('T')[0].split('-');
+  const eParts = endDate.split('T')[0].split('-');
+  if (sParts.length !== 3 || eParts.length !== 3) return 0;
+  const start = new Date(Number(sParts[0]), Number(sParts[1]) - 1, Number(sParts[2]));
+  const end = new Date(Number(eParts[0]), Number(eParts[1]) - 1, Number(eParts[2]));
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
   const diffTime = Math.abs(end.getTime() - start.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
@@ -17,6 +21,8 @@ export interface CalculateNegotiatedTotalArgs {
   allocationDays: number;
   estimatedHours?: number | null | undefined;
   installmentsCount?: number | null | undefined;
+  startDate?: string | null | undefined;
+  endDate?: string | null | undefined;
 }
 
 export function calculateNegotiatedTotal({
@@ -24,7 +30,9 @@ export function calculateNegotiatedTotal({
   remunerationModel,
   allocationDays,
   estimatedHours,
-  installmentsCount
+  installmentsCount,
+  startDate,
+  endDate
 }: CalculateNegotiatedTotalArgs): number | null {
   if (negotiatedRate === null || negotiatedRate === undefined || isNaN(negotiatedRate)) return null;
   const model = remunerationModel?.toLowerCase() || '';
@@ -50,7 +58,16 @@ export function calculateNegotiatedTotal({
     model === 'monthly_salary' ||
     model === 'monthly'
   ) {
-    return negotiatedRate * (installmentsCount || 1);
+    let months = installmentsCount && installmentsCount > 0 ? installmentsCount : 0;
+    if (!months) {
+      if (startDate && endDate) {
+        months = simulatePaymentProjections(startDate, endDate).length;
+      }
+      if (!months && allocationDays > 0) {
+        months = Math.max(1, Math.round(allocationDays / 30));
+      }
+    }
+    return negotiatedRate * (months || 1);
   }
   return null;
 }
@@ -592,6 +609,58 @@ export interface PaymentProjectionSim {
   suggestedRcDeadline: string;
   alertLevel: 'informational' | 'attention' | 'urgent' | 'critical';
   memory: string;
+  referenceMonth: string;
+}
+
+export function getDominantMonthLabel(startDateStr?: string, endDateStr?: string): string {
+  if (!startDateStr || !endDateStr) return '—';
+
+  const normalizedStart = startDateStr.split('T')[0];
+  const normalizedEnd = endDateStr.split('T')[0];
+
+  const startParts = normalizedStart.split('-');
+  const endParts = normalizedEnd.split('-');
+  if (startParts.length !== 3 || endParts.length !== 3) return '—';
+
+  const start = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
+  const end = new Date(Number(endParts[0]), Number(endParts[1]) - 1, Number(endParts[2]));
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return '—';
+
+  const monthCounts: Record<string, { year: number; month: number; count: number }> = {};
+
+  const current = new Date(start);
+  while (current <= end) {
+    const y = current.getFullYear();
+    const m = current.getMonth();
+    const key = `${y}-${m}`;
+
+    if (!monthCounts[key]) {
+      monthCounts[key] = { year: y, month: m, count: 0 };
+    }
+    monthCounts[key].count++;
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  let dominantKey = '';
+  let maxCount = -1;
+
+  for (const key of Object.keys(monthCounts)) {
+    if (monthCounts[key].count > maxCount) {
+      maxCount = monthCounts[key].count;
+      dominantKey = key;
+    }
+  }
+
+  if (!dominantKey) return '—';
+
+  const { year, month } = monthCounts[dominantKey];
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  return `${monthNames[month]}/${year}`;
 }
 
 function findLastTuesdayOrBefore(targetDate: Date): Date {
@@ -604,21 +673,24 @@ function findLastTuesdayOrBefore(targetDate: Date): Date {
 
 export function simulatePaymentProjections(
   startDateStr: string,
-  endDateStr: string
+  endDateStr: string,
+  remunerationModel?: string | null
 ): PaymentProjectionSim[] {
   const projections: PaymentProjectionSim[] = [];
   if (!startDateStr || !endDateStr) return projections;
 
-  const startParts = startDateStr.split('-');
-  const endParts = endDateStr.split('-');
+  // Normalize: strip any timestamp suffix (e.g. "2026-06-30T03:00:00.000Z" → "2026-06-30")
+  const normalizedStart = startDateStr.split('T')[0];
+  const normalizedEnd = endDateStr.split('T')[0];
+
+  const startParts = normalizedStart.split('-');
+  const endParts = normalizedEnd.split('-');
   if (startParts.length !== 3 || endParts.length !== 3) return projections;
   
   const start = new Date(Number(startParts[0]), Number(startParts[1]) - 1, Number(startParts[2]));
   const end = new Date(Number(endParts[0]), Number(endParts[1]) - 1, Number(endParts[2]));
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return projections;
 
-  const duration = Math.round((end.getTime() - start.getTime()) / (1005 * 60 * 60 * 24)) + 1; // Wait, duration inclusive calculation: end - start + 1
-  const actualDuration = end.getDate() - start.getDate() + 1; // Actually, let's use reliable date difference:
   const diffTime = end.getTime() - start.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
@@ -647,6 +719,35 @@ export function simulatePaymentProjections(
     }
   };
 
+  // ── Special Rule: Job Fechado (fixed_job / pacote) is ALWAYS a single installment ──
+  const model = remunerationModel?.toLowerCase() || '';
+  const isFixedJob = ['fixed_job', 'pacote', 'job fechado', 'projeto', 'fixed', 'valor fechado'].includes(model);
+
+  if (isFixedJob) {
+    let payDate = findLastTuesdayOrBefore(end);
+    if (payDate < start) {
+      payDate = new Date(start);
+      const day = payDate.getDay();
+      const diff = (2 - day + 7) % 7;
+      payDate.setDate(payDate.getDate() + diff);
+    }
+    const rcDate = new Date(payDate);
+    rcDate.setDate(rcDate.getDate() - 10);
+
+    projections.push({
+      cycleNumber: 1,
+      startDate: normalizedStart,
+      endDate: normalizedEnd,
+      suggestedPaymentDate: formatDateISO(payDate),
+      suggestedRcDeadline: formatDateISO(rcDate),
+      alertLevel: getAlertLevel(rcDate, start),
+      memory: `Job Fechado (Parcela Única: ${diffDays} dias).`,
+      referenceMonth: getDominantMonthLabel(normalizedStart, normalizedEnd)
+    });
+
+    return projections;
+  }
+
   if (diffDays <= 15) {
     const limitDate = new Date(end);
     limitDate.setDate(limitDate.getDate() + 15);
@@ -659,12 +760,13 @@ export function simulatePaymentProjections(
 
     projections.push({
       cycleNumber: 1,
-      startDate: startDateStr,
-      endDate: endDateStr,
+      startDate: normalizedStart,
+      endDate: normalizedEnd,
       suggestedPaymentDate: formatDateISO(payDate),
       suggestedRcDeadline: formatDateISO(rcDate),
       alertLevel: getAlertLevel(rcDate, start),
-      memory: `Faixa 1-15 dias (Duração: ${diffDays} dias). Limite de 15 dias pós-fim (${formatDateISO(limitDate)}). Projeção na terça-feira.`
+      memory: `Faixa 1-15 dias (Duração: ${diffDays} dias).`,
+      referenceMonth: getDominantMonthLabel(normalizedStart, normalizedEnd)
     });
   } else if (diffDays <= 21) {
     const limitDate = new Date(end);
@@ -678,12 +780,13 @@ export function simulatePaymentProjections(
 
     projections.push({
       cycleNumber: 1,
-      startDate: startDateStr,
-      endDate: endDateStr,
+      startDate: normalizedStart,
+      endDate: normalizedEnd,
       suggestedPaymentDate: formatDateISO(payDate),
       suggestedRcDeadline: formatDateISO(rcDate),
       alertLevel: getAlertLevel(rcDate, start),
-      memory: `Faixa 16-21 dias (Duração: ${diffDays} dias). Limite de 7 dias pós-fim (${formatDateISO(limitDate)}). Projeção na terça-feira.`
+      memory: `Faixa 16-21 dias (Duração: ${diffDays} dias).`,
+      referenceMonth: getDominantMonthLabel(normalizedStart, normalizedEnd)
     });
   } else if (diffDays <= 30) {
     let payDate = findLastTuesdayOrBefore(end);
@@ -698,25 +801,36 @@ export function simulatePaymentProjections(
 
     projections.push({
       cycleNumber: 1,
-      startDate: startDateStr,
-      endDate: endDateStr,
+      startDate: normalizedStart,
+      endDate: normalizedEnd,
       suggestedPaymentDate: formatDateISO(payDate),
       suggestedRcDeadline: formatDateISO(rcDate),
       alertLevel: getAlertLevel(rcDate, start),
-      memory: `Faixa 22-30 dias (Duração: ${diffDays} dias). Última terça-feira do período.`
+      memory: `Faixa 22-30 dias (Duração: ${diffDays} dias).`,
+      referenceMonth: getDominantMonthLabel(normalizedStart, normalizedEnd)
     });
   } else {
+    // ── Multi-month cycles (31+ days) ──
+    // Cycle 1 ALWAYS starts at the exact allocation start date.
+    // Last cycle ALWAYS ends at the exact allocation end date.
     let cycleStart = new Date(start);
     let cycleNum = 1;
 
     while (cycleStart <= end) {
+      // Calculate next cycle boundary: ~1 month from cycleStart
       let cycleEnd = new Date(cycleStart);
       cycleEnd.setMonth(cycleEnd.getMonth() + 1);
       cycleEnd.setDate(cycleEnd.getDate() - 1);
 
+      // CRITICAL: Never exceed the allocation end date
+      if (cycleEnd > end) {
+        cycleEnd = new Date(end);
+      }
+
+      // If remaining days after this cycle would be <= 15, merge into this cycle
       const remainingTime = end.getTime() - cycleEnd.getTime();
       const remainingDays = Math.round(remainingTime / (1000 * 60 * 60 * 24));
-      if (remainingDays <= 15) {
+      if (remainingDays > 0 && remainingDays <= 15) {
         cycleEnd = new Date(end);
       }
 
@@ -730,14 +844,18 @@ export function simulatePaymentProjections(
       const rcDate = new Date(payDate);
       rcDate.setDate(rcDate.getDate() - 10);
 
+      const pStartISO = formatDateISO(cycleStart);
+      const pEndISO = formatDateISO(cycleEnd);
+
       projections.push({
         cycleNumber: cycleNum,
-        startDate: formatDateISO(cycleStart),
-        endDate: formatDateISO(cycleEnd),
+        startDate: pStartISO,
+        endDate: pEndISO,
         suggestedPaymentDate: formatDateISO(payDate),
         suggestedRcDeadline: formatDateISO(rcDate),
         alertLevel: getAlertLevel(rcDate, start),
-        memory: `Faixa 31+ dias (Ciclo ${cycleNum}). Última terça-feira do ciclo.`
+        memory: `Ciclo ${cycleNum} de ${diffDays} dias de alocação.`,
+        referenceMonth: getDominantMonthLabel(pStartISO, pEndISO)
       });
 
       cycleNum++;

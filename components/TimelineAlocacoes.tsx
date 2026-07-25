@@ -571,55 +571,49 @@ function AllocationHoverCard({
     setPortalRoot(root);
   }, []);
 
-  const getInitialPosition = useCallback((anchorRect: DOMRect) => {
-    const CARD_WIDTH = 360;
-    const CARD_HEIGHT = 320;
+  const computePosition = useCallback((anchorRect: DOMRect, cardEl?: HTMLDivElement | null) => {
+    const CARD_WIDTH = cardEl ? cardEl.offsetWidth : 350;
+    const CARD_HEIGHT = cardEl ? cardEl.offsetHeight : 420;
     const VIEWPORT_MARGIN = 16;
 
-    let left = anchorRect.left;
-    let top = anchorRect.bottom + 10;
+    // Position to the right of the hovered item / cursor boundary
+    let left = anchorRect.right + 12;
 
+    // If hovering an item in the left resource column (left < 320px), ensure popover starts to the right of the left column (>= 300px)
+    if (anchorRect.left < 320) {
+      left = Math.max(left, 300);
+    }
+
+    // If placing to the right overflows the screen, place to the left of anchorRect
     if (left + CARD_WIDTH > window.innerWidth - VIEWPORT_MARGIN) {
-      left = window.innerWidth - CARD_WIDTH - VIEWPORT_MARGIN;
+      left = anchorRect.left - CARD_WIDTH - 12;
     }
-    if (left < VIEWPORT_MARGIN) {
-      left = VIEWPORT_MARGIN;
-    }
+
+    // Keep within screen horizontal bounds
+    left = Math.max(VIEWPORT_MARGIN, Math.min(left, window.innerWidth - CARD_WIDTH - VIEWPORT_MARGIN));
+
+    // Align vertically with top of hovered row
+    let top = anchorRect.top;
+
+    // If top + CARD_HEIGHT > window.innerHeight - VIEWPORT_MARGIN, shift top UP so card stays completely visible
     if (top + CARD_HEIGHT > window.innerHeight - VIEWPORT_MARGIN) {
-      top = anchorRect.top - CARD_HEIGHT - 10;
+      top = window.innerHeight - CARD_HEIGHT - VIEWPORT_MARGIN;
     }
+    // Clamp top to top margin
     if (top < VIEWPORT_MARGIN) {
       top = VIEWPORT_MARGIN;
     }
+
     return { top, left };
   }, []);
 
-  const [position, setPosition] = useState<{ top: number; left: number } | null>(() => getInitialPosition(rect));
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(() => computePosition(rect));
 
-  useEffect(() => {
-    const cardEl = cardRef.current;
-    const w = cardEl ? cardEl.offsetWidth : 360;
-    const h = cardEl ? cardEl.offsetHeight : 340;
-    const VIEWPORT_MARGIN = 16;
-
-    let left = rect.left;
-    let top = rect.bottom + 10;
-
-    if (left + w > window.innerWidth - VIEWPORT_MARGIN) {
-      left = window.innerWidth - w - VIEWPORT_MARGIN;
+  useLayoutEffect(() => {
+    if (cardRef.current) {
+      setPosition(computePosition(rect, cardRef.current));
     }
-    if (left < VIEWPORT_MARGIN) {
-      left = VIEWPORT_MARGIN;
-    }
-    if (top + h > window.innerHeight - VIEWPORT_MARGIN) {
-      top = rect.top - h - 10;
-    }
-    if (top < VIEWPORT_MARGIN) {
-      top = VIEWPORT_MARGIN;
-    }
-
-    setPosition({ top, left });
-  }, [rect]);
+  }, [rect, computePosition]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -651,8 +645,8 @@ function AllocationHoverCard({
   };
 
   const isUnallocated = !!(allocation as any)?.isUnallocatedOpportunity;
-  const jobNameClean = cleanValue(allocation.jobName);
-  const clientNameClean = cleanValue(allocation.clientName);
+  const jobNameClean = cleanValue(allocation.jobName) || cleanValue((allocation as any)?.originalJob?.name);
+  const clientNameClean = cleanValue(allocation.clientName) || cleanValue((allocation as any)?.originalJob?.client);
   const codeClean = isUnallocated ? 'VAGA ABERTA' : cleanValue(allocation.allocationCode);
 
   const allocationTitle = isUnallocated
@@ -684,19 +678,20 @@ function AllocationHoverCard({
         position: 'fixed',
         top: position.top,
         left: position.left,
+        maxHeight: `calc(100vh - 32px)`,
         opacity: 1,
         zIndex: 9999,
         transition: 'opacity 0.1s',
         pointerEvents: 'auto',
       }}
-      className="w-76 max-w-[340px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-[var(--timeline-hover-shadow)] p-4 text-xs flex flex-col gap-2 overflow-hidden"
+      className="w-80 max-w-[360px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl shadow-[var(--timeline-hover-shadow)] p-4 text-xs flex flex-col gap-2.5 overflow-y-auto max-h-[calc(100vh-32px)] text-left"
     >
       {/* Header */}
-      <div className="pb-2 border-b border-[var(--border-subtle)] flex items-start justify-between gap-2 overflow-hidden">
+      <div className="pb-2 border-b border-[var(--border-subtle)] flex items-start justify-between gap-2 overflow-hidden shrink-0">
         <div className="min-w-0 flex-1">
           <h4 className="font-extrabold text-[var(--text-primary)] text-sm leading-tight truncate" title={allocationTitle}>{allocationTitle}</h4>
           {clientNameClean && (
-            <p className="text-[var(--text-secondary)] text-[11px] mt-0.5 truncate" title={`Cliente: ${clientNameClean}`}>Cliente: {clientNameClean}</p>
+            <p className="text-[var(--text-secondary)] text-[11px] mt-0.5 truncate font-semibold" title={`Cliente: ${clientNameClean}`}>Cliente / Projeto: {clientNameClean}</p>
           )}
         </div>
         {codeClean && (
@@ -713,6 +708,8 @@ function AllocationHoverCard({
       {/* Body grid */}
       <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px]">
         {[
+          ['Job / Oportunidade', jobNameClean || '—'],
+          ['Cliente / Projeto', clientNameClean || '—'],
           ['Freelancer', isUnallocated ? '— (Vaga Aberta)' : allocation.freelancerName],
           ['Núcleo', allocation.nucleoName],
           ['Função', allocation.freelancerRole],
@@ -727,7 +724,7 @@ function AllocationHoverCard({
           ['Status do Pagamento', isUnallocated ? 'Pendente' : paymentStatusLabel(allocation.paymentRequestStatus)],
         ].map(([label, value]) => {
           if (!isValidValue(value)) return null;
-          const isWide = label === 'Período' || label === 'Duração';
+          const isWide = label === 'Período' || label === 'Duração' || label === 'Job / Oportunidade' || label === 'Cliente / Projeto';
           return (
             <div key={label} className={`${isWide ? 'col-span-2' : ''} min-w-0 overflow-hidden`}>
               <span className="block text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-0.5 truncate">{label}</span>
@@ -746,8 +743,8 @@ function AllocationHoverCard({
       </div>
 
       {/* Conflict alert */}
-      {allocation.conflict.hasConflict && (
-        <div className="pt-2 border-t border-[var(--timeline-conflict-border)]/30 flex items-start gap-1.5 text-[var(--danger-text)]">
+      {allocation.conflict?.hasConflict && (
+        <div className="pt-2 border-t border-[var(--timeline-conflict-border)]/30 flex items-start gap-1.5 text-[var(--danger-text)] shrink-0">
           <AlertTriangle className="w-3.5 h-3.5 mt-px shrink-0" />
           <span className="text-[10px] font-semibold">
             Conflito de agenda · {allocation.conflict.conflictingIds.length} alocação(ões) sobrepost(as)
@@ -756,7 +753,7 @@ function AllocationHoverCard({
       )}
 
       {/* Interactive Actions in Tooltip */}
-      <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-1 w-full">
+      <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] flex flex-col gap-1 w-full shrink-0">
         <button
           type="button"
           onClick={(e) => {
@@ -2834,11 +2831,10 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
         a => a.jobId === job.id && a.status !== 'Cancelado' && a.status !== 'Cancelada'
       );
       if (hasActiveAlloc) return false;
-      if (isNucleoProfile && job.nucleoId !== myNucleoId) return false;
       if (!job.startDate || !job.endDate) return false;
       return true;
     });
-  }, [db.jobs, db.allocations, isNucleoProfile, myNucleoId]);
+  }, [db.jobs, db.allocations]);
 
   const syntheticUnallocatedAllocations = useMemo<AllocationItemEnriched[]>(() => {
     if (!showUnallocatedJobs) return [];
@@ -2875,10 +2871,6 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
   // === Build enriched allocations ===
   const allEnriched = useMemo<AllocationItemEnriched[]>(() => {
     return db.allocations
-      .filter(alloc => {
-        if (isNucleoProfile && alloc.nucleoId !== myNucleoId) return false;
-        return true;
-      })
       .map(alloc => {
         const fl = db.freelancers.find(f => f.id === alloc.freelancerId);
         const job = db.jobs.find(j => j.id === alloc.jobId);
@@ -2897,7 +2889,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
           paymentSchedules: db.paymentSchedules?.filter(s => s.allocationId === alloc.id) || [],
         } as AllocationItemEnriched;
       });
-  }, [db.allocations, db.freelancers, db.jobs, db.nucleos, db.paymentSchedules, isNucleoProfile, myNucleoId]);
+  }, [db.allocations, db.freelancers, db.jobs, db.nucleos, db.paymentSchedules]);
 
   // === Compute conflicts ===
   const withConflicts = useMemo<AllocationItemEnriched[]>(() => {
@@ -3127,9 +3119,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
       <div>
         <h2 className="text-xl font-extrabold text-[var(--text-primary)]">Timeline Operacional de Alocações</h2>
         <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-          {isNucleoProfile
-            ? `Planejamento do núcleo ${db.nucleos.find(n => n.id === myNucleoId)?.name || '—'} — freelancers, jobs e conflitos de agenda.`
-            : 'Planejamento de freelancers, jobs, períodos e conflitos de agenda.'}
+          Planejamento de freelancers, jobs, períodos e conflitos de agenda entre todos os núcleos.
         </p>
       </div>
 
@@ -3327,19 +3317,17 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
         {showFilters && (
           <div className="flex flex-wrap gap-3 p-3 bg-[var(--bg-panel)] border border-[var(--border-subtle)] rounded-xl text-xs">
             {/* Núcleo */}
-            {!isNucleoProfile && (
-              <div className="flex flex-col gap-1 min-w-[160px]">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Núcleo</label>
-                <select
-                  value={filters.nucleoId}
-                  onChange={e => setFilters(f => ({ ...f, nucleoId: e.target.value }))}
-                  className="bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition"
-                >
-                  <option value="">Todos os núcleos</option>
-                  {db.nucleos.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
-                </select>
-              </div>
-            )}
+            <div className="flex flex-col gap-1 min-w-[160px]">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Núcleo</label>
+              <select
+                value={filters.nucleoId}
+                onChange={e => setFilters(f => ({ ...f, nucleoId: e.target.value }))}
+                className="bg-[var(--bg-input)] border border-[var(--border-subtle)] rounded-lg px-2 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition"
+              >
+                <option value="">Todos os núcleos</option>
+                {db.nucleos.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
+              </select>
+            </div>
             {/* Status */}
             <div className="flex flex-col gap-1 min-w-[160px]">
               <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Status</label>

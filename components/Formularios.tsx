@@ -6,7 +6,7 @@ import {
   getRoleLabel, mapSeniorityToDB, mapFreelancerStatusToDB,
   mapAvailabilityToDB, mapFreelancerToUI, mapJobToUI, mapUrgencyToDB
 } from '@/lib/dbMapper';
-import { calculateInclusiveDays, calculatePolicyLimitForJob, formatCurrencyBR, parseCurrencyBR, maskCurrencyBRL, simulatePaymentProjections } from '@/lib/financial';
+import { calculateInclusiveDays, calculatePolicyLimitForJob, formatCurrencyBR, parseCurrencyBR, maskCurrencyBRL, simulatePaymentProjections, getDominantMonthLabel } from '@/lib/financial';
 import {
   Sparkles, Save, Briefcase, Plus, Scale, Building,
   RefreshCw, Check, X, ChevronDown, ChevronUp, HelpCircle, Percent,
@@ -459,10 +459,11 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   const [successFeeFixedAmount, setSuccessFeeFixedAmount] = useState(0);
   const [successFeeFixedAmountVisual, setSuccessFeeFixedAmountVisual] = useState('');
   const [successFeePercent, setSuccessFeePercent] = useState(0);
-  const [successFeeBase, setSuccessFeeBase] = useState('Valor total do contrato');
+  const [successFeeBase, setSuccessFeeBase] = useState('Valor do Budget Máximo');
   const [successFeeTrigger, setSuccessFeeTrigger] = useState('vitória da V3A na concorrência');
   const [successFeeTerms, setSuccessFeeTerms] = useState('');
-  const [successFeeRequiresApproval, setSuccessFeeRequiresApproval] = useState(true);
+  const [successFeeCalcMode, setSuccessFeeCalcMode] = useState<'dilute' | 'increment_budget'>('dilute');
+  const [baseBudgetState, setBaseBudgetState] = useState<number>(10000);
 
   // Visual currency formatting states
   const [budgetVisual, setBudgetVisual] = useState(() => budget > 0 ? maskCurrencyBRL(budget.toString()) : '');
@@ -499,10 +500,108 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   const days = calculateInclusiveDays(startDate, endDate);
 
   const projectedPayments = React.useMemo(() => {
-    return simulatePaymentProjections(startDate, endDate);
-  }, [startDate, endDate]);
+    return simulatePaymentProjections(startDate, endDate, remunerationModel);
+  }, [startDate, endDate, remunerationModel]);
 
-  // Helper to sync rate (oneTimeRate) from budget
+  // Master Financial Calculation & Synchronization Function
+  const updateFinancials = useCallback(({
+    newBaseBudget,
+    newBudget,
+    newRate,
+    newSfFixed,
+    newSfPercent,
+    newSfEnabled = successFeeEnabled,
+    newSfType = successFeeType,
+    newCalcMode = successFeeCalcMode,
+    newModel = remunerationModel,
+    newDays = days,
+    newPayments = projectedPayments.length,
+    newHours = expectedHours
+  }: {
+    newBaseBudget?: number;
+    newBudget?: number;
+    newRate?: number;
+    newSfFixed?: number;
+    newSfPercent?: number;
+    newSfEnabled?: boolean;
+    newSfType?: 'fixed' | 'percentage';
+    newCalcMode?: 'dilute' | 'increment_budget';
+    newModel?: string;
+    newDays?: number;
+    newPayments?: number;
+    newHours?: number;
+  }) => {
+    let units = 1;
+    if (newModel === 'monthly_salary') units = newPayments || 1;
+    else if (newModel === 'daily') units = newDays || 1;
+    else if (newModel === 'hourly') units = newHours || 1;
+    else if (newModel === 'fixed_job') units = 1;
+
+    const sfFixedVal = newSfFixed !== undefined ? newSfFixed : successFeeFixedAmount;
+    const sfPercentVal = newSfPercent !== undefined ? newSfPercent : successFeePercent;
+
+    let currentBase = newBaseBudget;
+    if (currentBase === undefined) {
+      if (newRate !== undefined) {
+        currentBase = newRate * units;
+      } else if (newBudget !== undefined) {
+        if (newSfEnabled && newCalcMode === 'increment_budget') {
+          let sfAmt = 0;
+          if (newSfType === 'fixed') sfAmt = sfFixedVal;
+          else sfAmt = newBudget / (1 + (sfPercentVal || 0) / 100) * ((sfPercentVal || 0) / 100);
+          currentBase = Math.max(0, newBudget - sfAmt);
+        } else {
+          currentBase = newBudget;
+        }
+      } else {
+        currentBase = baseBudgetState > 0 ? baseBudgetState : (budget > 0 ? budget : 10000);
+      }
+    }
+
+    setBaseBudgetState(currentBase);
+
+    let sfAmount = 0;
+    if (newSfEnabled) {
+      if (newSfType === 'fixed') {
+        sfAmount = sfFixedVal;
+      } else {
+        sfAmount = currentBase * ((sfPercentVal || 0) / 100);
+      }
+    }
+
+    let finalBudget = currentBase;
+    let finalRate = currentBase / units;
+
+    if (newSfEnabled) {
+      if (newCalcMode === 'dilute') {
+        finalBudget = currentBase;
+        const netBase = Math.max(0, currentBase - sfAmount);
+        finalRate = netBase / units;
+      } else if (newCalcMode === 'increment_budget') {
+        finalBudget = currentBase + sfAmount;
+        finalRate = currentBase / units;
+      }
+    }
+
+    finalBudget = Math.round(finalBudget * 100) / 100;
+    finalRate = Math.round(finalRate * 100) / 100;
+
+    setBudget(finalBudget);
+    if (!isEditingBudget) {
+      setBudgetVisual(finalBudget > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(finalBudget) : '');
+    }
+
+    setOneTimeRate(finalRate);
+    if (!isEditingRate) {
+      setOneTimeRateVisual(finalRate > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(finalRate) : '');
+    }
+
+    if (!isEditingSuccessFee && newSfFixed !== undefined) {
+      setSuccessFeeFixedAmountVisual(newSfFixed > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(newSfFixed) : '');
+    }
+  }, [baseBudgetState, budget, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, successFeeCalcMode, remunerationModel, days, projectedPayments.length, expectedHours, isEditingBudget, isEditingRate, isEditingSuccessFee]);
+
+  // Backward compatibility wrappers
   const syncRateFromBudget = useCallback((
     targetBudget: number,
     model = remunerationModel,
@@ -512,35 +611,23 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     sfPercent = successFeePercent,
     currentDays = days,
     currentPayments = projectedPayments.length,
-    currentHours = expectedHours
+    currentHours = expectedHours,
+    calcMode = successFeeCalcMode
   ) => {
-    let baseBudget = targetBudget;
-    if (sfEnabled) {
-      if (sfType === 'fixed') {
-        baseBudget = targetBudget - sfFixed;
-      } else {
-        baseBudget = targetBudget / (1 + (sfPercent || 0) / 100);
-      }
-    }
-    if (baseBudget < 0) baseBudget = 0;
+    updateFinancials({
+      newBudget: targetBudget,
+      newModel: model,
+      newSfEnabled: sfEnabled,
+      newSfType: sfType,
+      newSfFixed: sfFixed,
+      newSfPercent: sfPercent,
+      newDays: currentDays,
+      newPayments: currentPayments,
+      newHours: currentHours,
+      newCalcMode: calcMode
+    });
+  }, [updateFinancials, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours, successFeeCalcMode]);
 
-    let rate = 0;
-    if (model === 'monthly_salary') {
-      rate = baseBudget / (currentPayments || 1);
-    } else if (model === 'fixed_job') {
-      rate = baseBudget;
-    } else if (model === 'daily') {
-      rate = baseBudget / (currentDays || 1);
-    } else if (model === 'hourly') {
-      rate = baseBudget / (currentHours || 1);
-    }
-
-    rate = Math.round(rate * 100) / 100;
-    setOneTimeRate(rate);
-    setOneTimeRateVisual(rate > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rate) : '');
-  }, [remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours]);
-
-  // Helper to sync budget from rate
   const syncBudgetFromRate = useCallback((
     targetRate: number,
     model = remunerationModel,
@@ -550,32 +637,22 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     sfPercent = successFeePercent,
     currentDays = days,
     currentPayments = projectedPayments.length,
-    currentHours = expectedHours
+    currentHours = expectedHours,
+    calcMode = successFeeCalcMode
   ) => {
-    let baseCost = 0;
-    if (model === 'monthly_salary') {
-      baseCost = targetRate * (currentPayments || 1);
-    } else if (model === 'fixed_job') {
-      baseCost = targetRate;
-    } else if (model === 'daily') {
-      baseCost = targetRate * (currentDays || 1);
-    } else if (model === 'hourly') {
-      baseCost = targetRate * (currentHours || 1);
-    }
-
-    let calculatedBudget = baseCost;
-    if (sfEnabled) {
-      if (sfType === 'fixed') {
-        calculatedBudget = baseCost + sfFixed;
-      } else {
-        calculatedBudget = baseCost * (1 + (sfPercent || 0) / 100);
-      }
-    }
-
-    calculatedBudget = Math.round(calculatedBudget * 100) / 100;
-    setBudget(calculatedBudget);
-    setBudgetVisual(calculatedBudget > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedBudget) : '');
-  }, [remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours]);
+    updateFinancials({
+      newRate: targetRate,
+      newModel: model,
+      newSfEnabled: sfEnabled,
+      newSfType: sfType,
+      newSfFixed: sfFixed,
+      newSfPercent: sfPercent,
+      newDays: currentDays,
+      newPayments: currentPayments,
+      newHours: currentHours,
+      newCalcMode: calcMode
+    });
+  }, [updateFinancials, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours, successFeeCalcMode]);
 
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
@@ -583,7 +660,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     setBudgetVisual(masked);
     const numeric = parseCurrencyBR(masked);
     setBudget(numeric);
-    syncRateFromBudget(numeric);
+    updateFinancials({ newBudget: numeric });
   };
 
   const handleBudgetBlur = () => {
@@ -600,7 +677,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     setOneTimeRateVisual(masked);
     const numeric = parseCurrencyBR(masked);
     setOneTimeRate(numeric);
-    syncBudgetFromRate(numeric);
+    updateFinancials({ newRate: numeric });
   };
 
   const handleOneTimeRateBlur = () => {
@@ -617,7 +694,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
     setSuccessFeeFixedAmountVisual(masked);
     const numeric = parseCurrencyBR(masked);
     setSuccessFeeFixedAmount(numeric);
-    syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, numeric, successFeePercent, days, projectedPayments.length, expectedHours);
+    updateFinancials({ newSfFixed: numeric });
   };
 
   const handleSuccessFeeFixedAmountBlur = () => {
@@ -863,7 +940,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             percentage_base: successFeeType === 'percentage' ? successFeeBase : null,
             trigger_type: successFeeTrigger,
             terms: successFeeTerms,
-            requires_approval: successFeeRequiresApproval,
+            requires_approval: false,
             created_by: db.currentUser.id
           });
         if (ruleErr) {
@@ -1114,7 +1191,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                   const newStart = e.target.value;
                   setStartDate(newStart);
                   const newDays = calculateInclusiveDays(newStart, endDate);
-                  const newProj = simulatePaymentProjections(newStart, endDate);
+                  const newProj = simulatePaymentProjections(newStart, endDate, remunerationModel);
                   syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, newDays, newProj.length, expectedHours);
                 }}
                 className={inputCls}
@@ -1128,7 +1205,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                   const newEnd = e.target.value;
                   setEndDate(newEnd);
                   const newDays = calculateInclusiveDays(startDate, newEnd);
-                  const newProj = simulatePaymentProjections(startDate, newEnd);
+                  const newProj = simulatePaymentProjections(startDate, newEnd, remunerationModel);
                   syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, successFeePercent, newDays, newProj.length, expectedHours);
                 }}
                 className={inputCls}
@@ -1311,36 +1388,36 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     <div key={idx} className="bg-slate-500/5 border border-border-subtle/50 rounded-xl p-3.5 flex flex-col justify-between gap-2 shadow-sm">
                       <div className="flex items-center justify-between border-b border-border-subtle/20 pb-1.5 mb-1">
                         <span className="text-[10px] font-extrabold text-action-cyan uppercase tracking-wider">
-                          Parcela {p.cycleNumber}/{projectedPayments.length}
+                          {projectedPayments.length === 1 ? 'Parcela Única' : `Parcela ${p.cycleNumber}/${projectedPayments.length}`}
                         </span>
                         <span className="text-[10px] text-text-secondary font-medium italic">
                           {cycleDays} dias
                         </span>
                       </div>
 
-                      <div className="space-y-1 text-xs">
+                      <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between text-text-secondary text-[11px]">
-                          <span>Período:</span>
-                          <span className="font-semibold text-text-primary">
+                          <span>Mês de Referência:</span>
+                          <span className="font-bold text-text-primary">
+                            {p.referenceMonth || getDominantMonthLabel(p.startDate, p.endDate)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-text-secondary text-[11px]">
+                          <span>Período do Ciclo:</span>
+                          <span className="font-medium text-text-secondary">
                             {isoToBR(p.startDate)} a {isoToBR(p.endDate)}
                           </span>
                         </div>
                         {parcelAmount > 0 && (
-                          <div className="flex justify-between text-text-secondary text-[11px]">
-                            <span>Valor Previsto:</span>
-                            <span className="font-bold text-text-primary">
+                          <div className="flex justify-between border-t border-border-subtle/10 pt-1.5 mt-1.5 text-text-secondary text-[11px]">
+                            <span className="text-[10px] font-bold text-text-secondary uppercase">
+                              Valor Previsto da Parcela:
+                            </span>
+                            <span className="font-extrabold text-emerald-500 dark:text-emerald-400 text-xs">
                               {formatCurrencyBR(parcelAmount)}
                             </span>
                           </div>
                         )}
-                        <div className="flex justify-between border-t border-border-subtle/10 pt-1.5 mt-1.5">
-                          <span className="text-[10px] font-bold text-text-secondary uppercase">
-                            Projeção de Pgto:
-                          </span>
-                          <span className="text-[11px] font-extrabold text-emerald-500 dark:text-emerald-400">
-                            {isoToBR(p.suggestedPaymentDate)} (Terça)
-                          </span>
-                        </div>
                       </div>
                     </div>
                   );
@@ -1402,7 +1479,59 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
 
           {successFeeEnabled && (
             <div className="bg-slate-50 dark:bg-slate-800/40 border border-border-subtle rounded-xl p-5 space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Mandatory Choice: Application Mode */}
+              <div>
+                <label className={labelCls}>Forma de Aplicação do Success Fee *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuccessFeeCalcMode('dilute');
+                      updateFinancials({ newCalcMode: 'dilute' });
+                    }}
+                    className={`p-3.5 rounded-xl border text-xs font-bold text-left flex items-start gap-3 transition-all cursor-pointer ${
+                      successFeeCalcMode === 'dilute'
+                        ? 'bg-action-cyan/15 border-action-cyan text-action-cyan ring-2 ring-action-cyan/30 shadow-md'
+                        : 'bg-white dark:bg-slate-900 border-border-subtle text-text-secondary hover:border-action-cyan/50'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
+                      successFeeCalcMode === 'dilute' ? 'border-action-cyan bg-action-cyan' : 'border-slate-400'
+                    }`}>
+                      {successFeeCalcMode === 'dilute' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </div>
+                    <div>
+                      <span className="block font-extrabold uppercase tracking-wide text-[11px]">Diluir Success Fee nas Projeções</span>
+                      <span className="text-[10.5px] font-medium opacity-80 block mt-0.5">O bônus é integrado ao contrato e rateado entre as parcelas mensais de pagamento.</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuccessFeeCalcMode('increment_budget');
+                      updateFinancials({ newCalcMode: 'increment_budget' });
+                    }}
+                    className={`p-3.5 rounded-xl border text-xs font-bold text-left flex items-start gap-3 transition-all cursor-pointer ${
+                      successFeeCalcMode === 'increment_budget'
+                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/30 shadow-md'
+                        : 'bg-white dark:bg-slate-900 border-border-subtle text-text-secondary hover:border-emerald-500/50'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
+                      successFeeCalcMode === 'increment_budget' ? 'border-emerald-500 bg-emerald-500' : 'border-slate-400'
+                    }`}>
+                      {successFeeCalcMode === 'increment_budget' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </div>
+                    <div>
+                      <span className="block font-extrabold uppercase tracking-wide text-[11px]">INCREMENTAR E ATUALIZAR O BUDGET</span>
+                      <span className="text-[10.5px] font-medium opacity-80 block mt-0.5">O bônus incrementa e atualiza o orçamento total do job, sem alterar os valores prédefinidos das parcelas.</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className={labelCls}>Tipo de Remuneração *</label>
                   <select
@@ -1410,7 +1539,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     onChange={e => {
                       const newType = e.target.value as 'fixed' | 'percentage';
                       setSuccessFeeType(newType);
-                      syncRateFromBudget(budget, remunerationModel, successFeeEnabled, newType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours);
+                      updateFinancials({ newSfType: newType });
                     }}
                     className={selectCls}
                   >
@@ -1450,75 +1579,63 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <div>
-                      <label className={labelCls}>
-                        Percentual Sugerido (%) *
-                        {(isEditingRate || isEditingBudget) && (
-                          <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
-                            (Atualizando...)
-                          </span>
-                        )}
-                      </label>
+                  <div>
+                    <label className={labelCls}>
+                      Percentual Sugerido do Budget Máximo (%) *
+                      {(isEditingRate || isEditingBudget) && (
+                        <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                          (Atualizando...)
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         max="100"
-                        placeholder="Ex: 5.0"
+                        placeholder="Ex: 10.0"
                         value={successFeePercent || ''}
                         onChange={e => {
                           const newPercent = Number(e.target.value);
                           setSuccessFeePercent(newPercent);
-                          syncRateFromBudget(budget, remunerationModel, successFeeEnabled, successFeeType, successFeeFixedAmount, newPercent, days, projectedPayments.length, expectedHours);
+                          updateFinancials({ newSfPercent: newPercent });
                         }}
                         onFocus={() => setIsEditingSuccessFee(true)}
                         onBlur={() => setIsEditingSuccessFee(false)}
-                        className={`${inputCls} transition-all duration-300 ${isEditingRate || isEditingBudget
+                        className={`${inputCls} pr-8 font-semibold transition-all duration-300 ${isEditingRate || isEditingBudget
                           ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
                           : ''
                           }`}
                         required
                       />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-extrabold text-action-cyan select-none">%</span>
                     </div>
-                    <div>
-                      <label className={labelCls}>Base de Cálculo *</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Margem bruta do projeto"
-                        value={successFeeBase}
-                        onChange={e => setSuccessFeeBase(e.target.value)}
-                        className={inputCls}
-                        required
-                      />
-                    </div>
-                  </>
+                    {successFeePercent > 0 && baseBudgetState > 0 && (
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 animate-fadeIn">
+                        <span>💰 Equivale a:</span>
+                        <strong className="text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                          {formatCurrencyBR((baseBudgetState * successFeePercent) / 100)}
+                        </strong>
+                        <span className="text-[10px] text-text-secondary font-normal">
+                          ({successFeePercent}% de {formatCurrencyBR(baseBudgetState)})
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className={labelCls}>Gatilho de Elegibilidade (Trigger) *</label>
-                  <input
-                    type="text"
-                    value={successFeeTrigger}
-                    onChange={e => setSuccessFeeTrigger(e.target.value)}
-                    className={inputCls}
-                    placeholder="Ex: vitória da V3A na concorrência"
-                    required
-                  />
-                </div>
-                <div className="flex items-end pb-3">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={successFeeRequiresApproval}
-                      onChange={e => setSuccessFeeRequiresApproval(e.target.checked)}
-                      className="w-4 h-4 rounded text-action-cyan border-border-subtle focus:ring-action-cyan"
-                    />
-                    <span className="text-xs font-bold text-text-secondary uppercase tracking-wide">Exige aprovação extraordinária do Head</span>
-                  </label>
-                </div>
+              <div>
+                <label className={labelCls}>Gatilho de Elegibilidade (Trigger) *</label>
+                <input
+                  type="text"
+                  value={successFeeTrigger}
+                  onChange={e => setSuccessFeeTrigger(e.target.value)}
+                  className={inputCls}
+                  placeholder="Ex: vitória da V3A na concorrência"
+                  required
+                />
               </div>
 
               <div>

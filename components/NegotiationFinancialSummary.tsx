@@ -64,7 +64,9 @@ export default function NegotiationFinancialSummary({
     remunerationModel,
     allocationDays,
     estimatedHours,
-    installmentsCount
+    installmentsCount,
+    startDate,
+    endDate
   });
 
   const baseTotal = negotiatedTotal || 0;
@@ -145,8 +147,15 @@ export default function NegotiationFinancialSummary({
     };
   }
 
+  const isoToBRLocal = (isoStr?: string | null): string => {
+    if (!isoStr) return 'A definir';
+    const parts = isoStr.split('T')[0].split('-');
+    if (parts.length === 3) return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+    return isoStr;
+  };
+
   const formattedPeriod = (startDate && endDate)
-    ? `${new Date(startDate).toLocaleDateString('pt-BR')} a ${new Date(endDate).toLocaleDateString('pt-BR')}`
+    ? `${isoToBRLocal(startDate)} a ${isoToBRLocal(endDate)}`
     : 'A definir';
 
   // RENDER COMPACT VARIANT

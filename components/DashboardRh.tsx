@@ -11,6 +11,7 @@ import {
 import { decideApprovalAction } from '@/app/actions/evaluation';
 import { supabase } from '@/lib/supabase';
 import { simulatePaymentProjections } from '@/lib/financial';
+import DashboardCashFlowProjections from './DashboardCashFlowProjections';
 
 export default function DashboardRh({ db }: { db: DatabaseProps }) {
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -292,6 +293,9 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
         </div>
       </div>
 
+      {/* Executive Cash Flow Projections Panel */}
+      <DashboardCashFlowProjections db={db} />
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
         {/* LEFT: Pre-registration submissions */}
@@ -435,7 +439,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                     {/* Schedule conflict details if agenda overlap */}
                     {!isValueException && (
                       <div className="p-2.5 bg-amber-500/5 border border-amber-500/15 rounded-xl text-[11px] text-amber-700 dark:text-amber-400 font-medium leading-relaxed">
-                        ⚠️ Profissional possui uma alocação ativa confirmada que coincide com o cronograma desta demanda ({job?.startDate ? new Date(job.startDate).toLocaleDateString('pt-BR') : ''} a {job?.endDate ? new Date(job.endDate).toLocaleDateString('pt-BR') : ''}). O RH precisa validar o remanejamento ou autorizar a sobreposição.
+                        ⚠️ Profissional possui uma alocação ativa confirmada que coincide com o cronograma desta demanda ({job?.startDate ? job.startDate.split('T')[0].split('-').reverse().join('/') : ''} a {job?.endDate ? job.endDate.split('T')[0].split('-').reverse().join('/') : ''}). O RH precisa validar o remanejamento ou autorizar a sobreposição.
                       </div>
                     )}
 

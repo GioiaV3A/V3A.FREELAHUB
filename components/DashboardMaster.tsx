@@ -4,6 +4,7 @@ import React from 'react';
 import { DatabaseProps } from '@/app/page';
 import { Users, ShieldAlert, Award, Briefcase, Key, Star, FileWarning, TrendingUp, CheckCircle, Clock } from 'lucide-react';
 import { simulatePaymentProjections } from '@/lib/financial';
+import DashboardCashFlowProjections from './DashboardCashFlowProjections';
 
 export default function DashboardMaster({ db }: { db: DatabaseProps }) {
   // Compute metric cards values
@@ -150,6 +151,9 @@ export default function DashboardMaster({ db }: { db: DatabaseProps }) {
           </div>
         </div>
       </div>
+
+      {/* Cash Flow Projections Panel */}
+      <DashboardCashFlowProjections db={db} />
 
       {/* Analytics & Compliance Split panels */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
