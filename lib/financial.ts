@@ -53,8 +53,7 @@ export function calculateNegotiatedTotal({
     }
     return negotiatedRate * estimatedHours;
   } else if (
-    model === 'mensal / salário' ||
-    model === 'mensal' ||
+    model.includes('mensal') ||
     model === 'monthly_salary' ||
     model === 'monthly'
   ) {

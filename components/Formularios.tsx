@@ -7,6 +7,7 @@ import {
   mapAvailabilityToDB, mapFreelancerToUI, mapJobToUI, mapUrgencyToDB
 } from '@/lib/dbMapper';
 import { calculateInclusiveDays, calculatePolicyLimitForJob, formatCurrencyBR, parseCurrencyBR, maskCurrencyBRL, simulatePaymentProjections, getDominantMonthLabel } from '@/lib/financial';
+import { generateTechnicalScopeWithAI } from '@/lib/aiScopeGenerator';
 import {
   Sparkles, Save, Briefcase, Plus, Scale, Building,
   RefreshCw, Check, X, ChevronDown, ChevronUp, HelpCircle, Percent,
@@ -443,7 +444,51 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   const [selectedNucleoId, setSelectedNucleoId] = useState(
     canSelectNucleo ? '' : (db.currentUser.nucleoId || '')
   );
+  const activeNucleos = db.nucleos.filter((n: any) => n.status === 'Ativo');
+  const nucleoName = db.nucleos.find((n: any) => n.id === selectedNucleoId)?.name || '';
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  const handleGenerateAIScope = useCallback(() => {
+    if (description.trim().length > 10) {
+      const confirmOverwrite = window.confirm(
+        'O campo já contém uma descrição técnica. Deseja substituir pela sugestão técnica estruturada gerada pela IA com base no histórico?'
+      );
+      if (!confirmOverwrite) return;
+    }
+
+    setIsGeneratingAI(true);
+
+    setTimeout(() => {
+      try {
+        const generated = generateTechnicalScopeWithAI({
+          roleNeeded,
+          seniorityNeeded,
+          jobTitle: name,
+          clientName: client,
+          nucleoName,
+          deliverables,
+          dbJobs: db.jobs,
+          dbAllocations: db.allocations,
+          dbEvaluations: db.evaluations
+        });
+
+        setDescription(generated);
+
+        // Pre-fill deliverables if deliverables input is currently empty
+        if (!deliverables && generated.includes('• ENTREGAS ESPERADAS')) {
+          const lines = generated.split('• ENTREGAS ESPERADAS')[1]?.trim().split('\n') || [];
+          const cleanDeliv = lines.map(l => l.replace(/^-\s*/, '')).filter(Boolean).join(', ');
+          if (cleanDeliv) setDeliverables(cleanDeliv);
+        }
+      } catch (err) {
+        console.error('Error generating AI scope:', err);
+      } finally {
+        setIsGeneratingAI(false);
+      }
+    }, 400);
+  }, [description, roleNeeded, seniorityNeeded, name, client, nucleoName, deliverables, db.jobs, db.allocations, db.evaluations]);
 
   // ── Section 2: Remuneration ───────────────────────────────────────────────
   const [remunerationModel, setRemunerationModel] = useState<'daily' | 'hourly' | 'fixed_job' | 'monthly_salary'>('daily');
@@ -704,9 +749,6 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       setSuccessFeeFixedAmountVisual('');
     }
   };
-
-  const activeNucleos = db.nucleos.filter((n: any) => n.status === 'Ativo');
-  const nucleoName = db.nucleos.find((n: any) => n.id === selectedNucleoId)?.name || '';
 
   let oneTimeTotal = 0;
   if (remunerationModel === 'daily') {
@@ -1242,10 +1284,35 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             </div>
           </div>
 
-          {/* Descrição */}
+          {/* Descrição Técnica com Botão de Inteligência Artificial */}
           <div>
-            <label className={labelCls}>Descrição Técnica / Escopo da Atividade *</label>
-            <textarea rows={4} placeholder="Descreva as tarefas, responsabilidades e contexto do freelancer..." value={description} onChange={e => setDescription(e.target.value)} className={inputCls + ' resize-y'} required />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              <label className={labelCls + ' mb-0'}>Descrição Técnica / Escopo da Atividade *</label>
+
+              <button
+                type="button"
+                onClick={handleGenerateAIScope}
+                disabled={isGeneratingAI}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-action-cyan via-cyan-600 to-purple-600 hover:from-action-cyan hover:to-purple-500 text-white shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50 border border-action-cyan/40 shrink-0"
+                title="Gerar sugestão técnica estruturada com IA com base na função, senioridade e histórico de jobs"
+              >
+                <span className={`text-amber-300 text-sm ${isGeneratingAI ? 'animate-spin inline-block' : ''}`}>✨</span>
+                <span>{isGeneratingAI ? 'Analisando Histórico e Gerando...' : 'Gerar Escopo com IA'}</span>
+              </button>
+            </div>
+
+            <textarea
+              rows={9}
+              placeholder="Descreva as tarefas, responsabilidades e contexto do freelancer..."
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              className={inputCls + ' resize-y font-mono text-xs leading-relaxed transition-all duration-300 focus:border-action-cyan'}
+              required
+            />
+            <p className="text-[10.5px] text-text-muted mt-1 italic flex items-center justify-between">
+              <span>* Clique no botão acima para preencher com a sugestão técnica estruturada da IA. O texto inserido permanece 100% editável.</span>
+              {description && <span className="text-[10px] font-bold text-action-cyan not-italic">{description.length} caracteres</span>}
+            </p>
           </div>
 
           {/* Entregáveis */}

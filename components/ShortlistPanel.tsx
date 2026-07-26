@@ -128,6 +128,73 @@ const areRolesRelated = (r1: string, r2: string): boolean => {
   return false;
 };
 
+function JobDescriptionFormatted({ description }: { description: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (!description) return null;
+
+  const lines = description.split('\n');
+
+  return (
+    <div className="w-full mt-2 pt-2 border-t border-slate-700/70">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Descrição Técnico-Operacional</span>
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-[11px] font-bold text-action-cyan hover:underline flex items-center gap-1 cursor-pointer select-none"
+        >
+          {isExpanded ? (
+            <span className="flex items-center gap-1"><span>Contrair escopo</span> <ChevronUp className="w-3.5 h-3.5" /></span>
+          ) : (
+            <span className="flex items-center gap-1"><span>Expandir escopo</span> <ChevronDown className="w-3.5 h-3.5" /></span>
+          )}
+        </button>
+      </div>
+
+      <div className={`mt-1.5 text-xs text-slate-300 leading-relaxed font-sans transition-all duration-300 ${!isExpanded ? 'max-h-16 overflow-hidden relative' : ''}`}>
+        {!isExpanded && (
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-800 to-transparent pointer-events-none" />
+        )}
+        
+        {lines.map((line, idx) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={idx} className="h-1" />;
+          
+          if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+            const content = trimmed.replace(/^[•-]\s*/, '');
+            const isHeader = content === content.toUpperCase() && content.length > 5;
+            if (isHeader) {
+              return (
+                <h5 key={idx} className="font-extrabold text-action-cyan text-[11px] mt-2 mb-0.5 flex items-center gap-1.5 uppercase tracking-wide">
+                  <span className="w-1.5 h-1.5 rounded-full bg-action-cyan inline-block" />
+                  <span>{content}</span>
+                </h5>
+              );
+            }
+            return (
+              <div key={idx} className="flex items-start gap-1.5 pl-2 my-0.5">
+                <span className="text-action-cyan font-bold">•</span>
+                <span>{content}</span>
+              </div>
+            );
+          }
+
+          if (trimmed.endsWith(':') && trimmed.length < 50) {
+            return (
+              <h5 key={idx} className="font-extrabold text-action-cyan text-[11px] mt-2 mb-0.5 uppercase tracking-wide">
+                {trimmed}
+              </h5>
+            );
+          }
+
+          return <p key={idx} className="my-0.5">{trimmed}</p>;
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   // Navigation / Stepper State
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
@@ -168,17 +235,42 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     if (candidateNegotiations[freelancerId]) {
       return candidateNegotiations[freelancerId];
     }
+
+    const jobModel = activeJob?.remunerationModel || 'daily';
+    const isMonthly = (jobModel as string) === 'monthly_salary' || (jobModel as string) === 'monthly' || activeJob?.paymentFlow === 'recurring';
+    
     // Prefer saved shortlist values over job defaults
     const savedModel = sl?.paymentModel as 'one_time' | 'monthly_recurring' | 'milestone' | undefined;
-    const defaultModel = savedModel || (activeJob?.paymentFlow === 'recurring' ? 'monthly_recurring' : 'one_time');
-    const defaultStart = activeJob?.startDate || sl?.contractStartDate || '';
-    const defaultEnd = activeJob?.endDate || sl?.contractEndDate || '';
+    const defaultModel = savedModel || (isMonthly ? 'monthly_recurring' : 'one_time');
+    const defaultStart = sl?.contractStartDate || activeJob?.startDate || '';
+    const defaultEnd = sl?.contractEndDate || activeJob?.endDate || '';
     const defaultDue = sl?.preferredDueDay || activeJob?.expectedPaymentDay || 5;
-    const defaultRate = sl?.negotiatedRate || activeJob?.expectedRate || 0;
+
+    let defaultRate = sl?.negotiatedRate || 0;
+    if (!defaultRate && activeJob) {
+      if (isMonthly) {
+        if (activeJob.expectedRate && activeJob.expectedRate > 0) {
+          defaultRate = activeJob.expectedRate;
+        } else {
+          const projections = simulatePaymentProjections(activeJob.startDate, activeJob.endDate, 'monthly_salary');
+          if (projections.length > 0 && activeJob.budget > 0) {
+            defaultRate = Math.round((activeJob.budget / projections.length) * 100) / 100;
+          } else {
+            defaultRate = activeJob.budget;
+          }
+        }
+      } else {
+        defaultRate = activeJob.expectedRate || activeJob.budget;
+      }
+    }
 
     // Success fee defaults
     const jobSuccessFeeEnabled = activeJob?.success_fee_enabled || false;
     const jobRule = db.jobSuccessFeeRules?.find(r => r.jobId === activeJob?.id && r.isActive !== false);
+    const maxPercent = jobRule?.percentageRate || (activeJob as any)?.successFeePercent || 8;
+    const maxFixed = jobRule?.fixedAmount || (activeJob as any)?.successFeeFixedAmount || 0;
+    const rawTrigger = jobRule?.triggerType || (activeJob as any)?.successFeeTrigger || 'v3a_wins_bid';
+    const friendlyTrigger = rawTrigger === 'v3a_wins_bid' ? 'V3A ganhar a concorrência' : rawTrigger === 'project_delivery' ? 'Entrega do projeto no prazo' : rawTrigger;
     
     return {
       paymentModel: defaultModel as 'one_time' | 'monthly_recurring' | 'milestone',
@@ -191,12 +283,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       paymentNotes: sl?.paymentNotes || '',
       // Success fee defaults
       successFeeEnabled: sl?.successFeeEnabled ?? jobSuccessFeeEnabled,
-      successFeeType: sl?.successFeeType || jobRule?.feeType || 'percentage',
-      successFeeFixedAmount: sl?.successFeeFixedAmount || jobRule?.fixedAmount || 0,
-      successFeeFixedAmountVisual: sl?.successFeeFixedAmount ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(sl.successFeeFixedAmount) : (jobRule?.fixedAmount ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(jobRule.fixedAmount) : ''),
-      successFeePercent: sl?.successFeePercent || jobRule?.percentageRate || 0,
-      successFeeBase: sl?.successFeeBase || jobRule?.percentageBase || 'sobre o valor-base',
-      successFeeTrigger: sl?.successFeeTrigger || jobRule?.triggerType || 'v3a_wins_bid',
+      successFeeType: sl?.successFeeType || jobRule?.feeType || (activeJob as any)?.successFeeType || 'percentage',
+      successFeeFixedAmount: sl?.successFeeFixedAmount || maxFixed,
+      successFeeFixedAmountVisual: (sl?.successFeeFixedAmount || maxFixed) ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(sl?.successFeeFixedAmount || maxFixed) : '',
+      successFeePercent: sl?.successFeePercent || maxPercent,
+      successFeeBase: sl?.successFeeBase || jobRule?.percentageBase || 'sobre o budget',
+      successFeeTrigger: sl?.successFeeTrigger || friendlyTrigger,
       successFeeRequiresApproval: sl?.successFeeRequiresApproval ?? (jobRule?.requiresApproval ?? true),
       successFeeTerms: sl?.successFeeTerms || jobRule?.terms || '',
       acceptedByFreelancer: sl?.acceptedByFreelancer ?? false,
@@ -1309,10 +1401,16 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       }
     }
 
+    const isJobMonthly = (activeJob?.remunerationModel as string) === 'monthly_salary' || (activeJob?.remunerationModel as string) === 'monthly' || activeJob?.paymentFlow === 'recurring';
+    const defaultJobBilling = 
+      isJobMonthly ? 'Mensal / Salário por período' :
+      activeJob?.remunerationModel === 'hourly' ? 'Hora' :
+      ((activeJob?.remunerationModel as string) === 'fixed_job' || (activeJob?.remunerationModel as string) === 'closed_package') ? 'Job Fechado' : 'Diária';
+
     db.setShortlists(prev => prev.map(sl => {
       if (sl.jobId === selectedJobIdLocal && sl.freelancerId === freelancerId) {
         const rate = updates.negotiatedRate !== undefined ? updates.negotiatedRate : sl.negotiatedRate;
-        const model = updates.remunerationModel !== undefined ? updates.remunerationModel : sl.remunerationModel;
+        const model = updates.remunerationModel !== undefined ? updates.remunerationModel : (sl.remunerationModel || defaultJobBilling);
         const notes = updates.notes !== undefined ? updates.notes : sl.notes;
         const estHours = updates.estimatedHours !== undefined ? updates.estimatedHours : sl.estimatedHours;
         
@@ -1323,7 +1421,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         const policyResult = activeJob ? calculatePolicyLimitForJob({
           role: activeJob.roleNeeded,
           seniority: activeJob.seniorityNeeded,
-          remunerationModel: model || activeJob.remunerationModel || 'daily',
+          remunerationModel: model || defaultJobBilling,
           startDate: activeJob.startDate,
           endDate: activeJob.endDate,
           proposedAmount: currentRate,
@@ -1706,11 +1804,20 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     const list = jobShortlists.map(sl => {
       const cand = db.freelancers.find(f => f.id === sl.freelancerId);
       
-      const targetModel = sl.remunerationModel || activeJob?.remunerationModel || 'daily';
+      const isJobMonthly = (activeJob?.remunerationModel as string) === 'monthly_salary' || (activeJob?.remunerationModel as string) === 'monthly' || activeJob?.paymentFlow === 'recurring';
+      const defaultBilling = 
+        isJobMonthly ? 'Mensal / Salário por período' :
+        activeJob?.remunerationModel === 'hourly' ? 'Hora' :
+        ((activeJob?.remunerationModel as string) === 'fixed_job' || (activeJob?.remunerationModel as string) === 'closed_package') ? 'Job Fechado' : 'Diária';
+      
+      const billing = sl.remunerationModel && sl.remunerationModel !== 'Diária' && sl.remunerationModel !== 'daily'
+        ? sl.remunerationModel 
+        : defaultBilling;
+      
       const billingTypeForMatch = 
-        ['daily', 'diaria', 'diária'].includes(targetModel.toLowerCase()) ? 'Diária' :
-        ['hourly', 'hora'].includes(targetModel.toLowerCase()) ? 'Hora' :
-        ['fixed_job', 'pacote', 'job fechado', 'projeto'].includes(targetModel.toLowerCase()) ? 'Job Fechado' : 'Mensal / Salário';
+        ['daily', 'diaria', 'diária'].includes(billing.toLowerCase()) ? 'Diária' :
+        ['hourly', 'hora'].includes(billing.toLowerCase()) ? 'Hora' :
+        ['fixed_job', 'pacote', 'job fechado', 'projeto'].includes(billing.toLowerCase()) ? 'Job Fechado' : 'Mensal / Salário';
 
       const policy = db.policies.find(p => 
         p.role === activeJob?.roleNeeded && 
@@ -1719,8 +1826,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       );
       const ceilingValue = policy ? policy.ceilingValue : 99999;
       
-      const rate = sl.negotiatedRate || cand?.referenceValue || 0;
-      const billing = sl.remunerationModel || 'Diária';
+      const defaultRate = (activeJob?.expectedRate && activeJob.expectedRate > 0)
+        ? activeJob.expectedRate
+        : (cand?.referenceValue || 0);
+
+      const rate = (sl.negotiatedRate != null && sl.negotiatedRate > 0) ? sl.negotiatedRate : defaultRate;
       const allocationDays = calculateAllocationDays(activeJob?.startDate, activeJob?.endDate);
       
       const negotiatedTotal = calculateNegotiatedTotal({
@@ -2243,42 +2353,77 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {/* -------------------- STEP 2: SHORTLIST COMPOSITION -------------------- */}
       {activeStep === 2 && activeJob && (
         <div className="space-y-6">
-          {/* Active Job Meta-Header — dados completos do job */}
+          {/* Active Job Meta-Header — STICKY no topo ao dar scroll com descrição formatada */}
           {(() => {
             const nucleoName = db.nucleos.find(n => n.id === activeJob.nucleoId)?.name || '—';
-            const paymentFlowLabel = activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : activeJob.paymentFlow === 'one_time' ? 'Pagamento Único' : (activeJob.paymentFlow || '—');
-            const referenceRate = activeJob.expectedRate || activeJob.budget;
+            const model = activeJob.remunerationModel || 'monthly_salary';
+            const paymentFlowLabel =
+              (model as string) === 'monthly_salary' || (model as string) === 'monthly' ? 'Mensal / Salário por Período' :
+              model === 'daily' ? 'Diária' :
+              model === 'hourly' ? 'Hora' :
+              (model as string) === 'fixed_job' || (model as string) === 'closed_package' ? 'Job Fechado (Parcela Única)' :
+              (activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : 'Pagamento Único');
+
+            const projections = simulatePaymentProjections(activeJob.startDate, activeJob.endDate, model);
+            const monthlyRate = activeJob.expectedRate && activeJob.expectedRate > 0
+              ? activeJob.expectedRate
+              : (projections.length > 0 && activeJob.budget > 0 ? activeJob.budget / projections.length : 0);
+
+            const installmentSummaryText = projections.length > 1
+              ? ` (${projections.length} parcelas de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyRate)}/mês)`
+              : '';
+
+            const referenceRateLabel =
+              (model as string) === 'monthly_salary' || (model as string) === 'monthly' ? 'Valor Mensal de Referência' :
+              model === 'daily' ? 'Diária de Referência' :
+              model === 'hourly' ? 'Valor Hora de Referência' :
+              (model as string) === 'fixed_job' || (model as string) === 'closed_package' ? 'Valor Fechado de Referência' :
+              'Taxa de Referência';
+
+            const referenceRate = activeJob.expectedRate && activeJob.expectedRate > 0
+              ? activeJob.expectedRate
+              : (projections.length > 1 && activeJob.budget > 0 ? activeJob.budget / projections.length : activeJob.budget);
             const paymentDay = activeJob.expectedPaymentDay;
+
             return (
-              <div className="bg-slate-800 text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6 job-meta-header">
-                <div className="space-y-2 flex-1">
+              <div
+                className="bg-slate-900/95 text-slate-100 p-5 rounded-2xl border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between gap-6 job-meta-header sticky top-0 z-30 transition-all duration-300"
+                style={{ backdropFilter: 'blur(10px)' }}
+              >
+                <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                    <span className="bg-slate-950 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-800">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
-                    <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Oportunidade Selecionada</span>
-                    <span className="bg-blue-900 text-blue-200 border border-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                    <span className="text-[11px] uppercase font-extrabold text-action-cyan tracking-wider">Oportunidade Selecionada</span>
+                    <span className="bg-blue-950 text-blue-300 border border-blue-800/80 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
                   </div>
-                  <h3 className="text-base font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+
+                  <h3 className="text-base font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+
                   <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-300">
                     <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
                     <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
-                    <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
+                    <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
-                    {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
-                    {activeJob.description && <div className="w-full">Descrição: <span className="text-slate-300">{activeJob.description}</span></div>}
+                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
+
+                  {/* Formatted Description with Expand/Collapse */}
+                  {activeJob.description && (
+                    <JobDescriptionFormatted description={activeJob.description} />
+                  )}
                 </div>
 
-                <div className="flex flex-col justify-between items-end gap-3 min-w-[180px]">
+                <div className="flex flex-col justify-between items-end gap-3 min-w-[180px] shrink-0">
                   <div className="text-right">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Budget Máximo</div>
-                    <div className="text-base font-bold text-action-cyan">
+                    <div className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Budget Máximo do Job</div>
+                    <div className="text-lg font-black text-action-cyan">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
                       Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
                     </div>
                   </div>
@@ -2286,7 +2431,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="flex gap-2">
                     <button
                       onClick={handleClearJob}
-                      className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600"
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold p-2 px-3.5 rounded-xl text-xs transition-all border border-slate-700 cursor-pointer shadow-xs"
                     >
                       Trocar Job
                     </button>
@@ -2735,52 +2880,84 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {/* -------------------- STEP 3: CONTRACT NEGOTIATION -------------------- */}
       {activeStep === 3 && activeJob && (
         <div className="space-y-6 animate-fade-in">
-          {/* Active Job Meta-Header — STICKY no topo ao dar scroll */}
+          {/* Active Job Meta-Header — STICKY no topo ao dar scroll com descrição formatada */}
           {(() => {
             const nucleoName = db.nucleos.find(n => n.id === activeJob.nucleoId)?.name || '—';
-            const paymentFlowLabel = activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : activeJob.paymentFlow === 'one_time' ? 'Pagamento Único' : (activeJob.paymentFlow || '—');
-            const referenceRate = activeJob.expectedRate || activeJob.budget;
+            const model = activeJob.remunerationModel || 'monthly_salary';
+            const paymentFlowLabel =
+              (model as string) === 'monthly_salary' || (model as string) === 'monthly' ? 'Mensal / Salário por Período' :
+              model === 'daily' ? 'Diária' :
+              model === 'hourly' ? 'Hora' :
+              (model as string) === 'fixed_job' || (model as string) === 'closed_package' ? 'Job Fechado (Parcela Única)' :
+              (activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : 'Pagamento Único');
+
+            const projections = simulatePaymentProjections(activeJob.startDate, activeJob.endDate, model);
+            const monthlyRate = activeJob.expectedRate && activeJob.expectedRate > 0
+              ? activeJob.expectedRate
+              : (projections.length > 0 && activeJob.budget > 0 ? activeJob.budget / projections.length : 0);
+
+            const installmentSummaryText = projections.length > 1
+              ? ` (${projections.length} parcelas de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyRate)}/mês)`
+              : '';
+
+            const referenceRateLabel =
+              (model as string) === 'monthly_salary' || (model as string) === 'monthly' ? 'Valor Mensal de Referência' :
+              model === 'daily' ? 'Diária de Referência' :
+              model === 'hourly' ? 'Valor Hora de Referência' :
+              (model as string) === 'fixed_job' || (model as string) === 'closed_package' ? 'Valor Fechado de Referência' :
+              'Taxa de Referência';
+
+            const referenceRate = activeJob.expectedRate && activeJob.expectedRate > 0
+              ? activeJob.expectedRate
+              : (projections.length > 1 && activeJob.budget > 0 ? activeJob.budget / projections.length : activeJob.budget);
             const paymentDay = activeJob.expectedPaymentDay;
+
             return (
               <div
-                className="bg-slate-800 text-slate-100 p-4 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-4 job-meta-header sticky top-0 z-30"
-                style={{ backdropFilter: 'blur(8px)' }}
+                className="bg-slate-900/95 text-slate-100 p-4 rounded-2xl border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between gap-4 job-meta-header sticky top-0 z-30 transition-all duration-300"
+                style={{ backdropFilter: 'blur(10px)' }}
               >
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                    <span className="bg-slate-950 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-800">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
-                    <span className="text-[10px] uppercase font-bold text-action-cyan tracking-wider">Negociação Individual</span>
-                    <span className="bg-blue-900 text-blue-200 border border-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                    <span className="text-[10px] uppercase font-extrabold text-action-cyan tracking-wider">Negociação Individual</span>
+                    <span className="bg-blue-950 text-blue-300 border border-blue-800/80 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
                   </div>
-                  <h3 className="text-sm font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+
+                  <h3 className="text-sm font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-300">
                     <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
                     <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
-                    <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
+                    <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
-                    {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
-                    {activeJob.description && <div className="w-full">Descrição: <span className="text-slate-400">{activeJob.description}</span></div>}
+                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
+
+                  {/* Formatted Description with Expand/Collapse */}
+                  {activeJob.description && (
+                    <JobDescriptionFormatted description={activeJob.description} />
+                  )}
                 </div>
 
                 <div className="flex flex-col justify-between items-end gap-2 shrink-0">
                   <div className="text-right">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Budget Máximo</div>
-                    <div className="text-base font-bold text-action-cyan">
+                    <div className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Budget Máximo do Job</div>
+                    <div className="text-base font-black text-action-cyan">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
                       Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
                     </div>
                   </div>
 
                   <button
                     onClick={() => handleNavigateStep(2)}
-                    className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600 whitespace-nowrap"
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-700 whitespace-nowrap cursor-pointer shadow-xs"
                   >
                     Voltar para Shortlist
                   </button>
@@ -2864,11 +3041,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       <th className="p-3.5 font-bold uppercase tracking-wider text-center">Saving %</th>
                       <th className="p-3.5 font-bold uppercase tracking-wider text-center">Política</th>
                       <th className="p-3.5 font-bold uppercase tracking-wider text-center">Agenda</th>
-                      <th className="p-3.5 font-bold uppercase tracking-wider text-center">Homologável</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 bg-slate-900/30 text-slate-300">
-                    {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict, isEligible }) => (
+                    {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict }) => (
                       <tr key={sl.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="p-3.5">
                           <div className="font-bold text-white">{cand?.name || '—'}</div>
@@ -2931,16 +3107,6 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             <span className="text-emerald-400 font-semibold bg-emerald-950/40 p-1 px-2 rounded border border-emerald-900/40">Livre</span>
                           )}
                         </td>
-                        <td className="p-3.5 text-center">
-                          {isEligible ? (
-                            <span className="text-emerald-400 font-bold flex items-center justify-center gap-1">
-                              <Check className="w-4 h-4 text-emerald-500" />
-                              <span>Sim</span>
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 font-semibold">Não</span>
-                          )}
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -2949,7 +3115,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
               {/* Cards Wrapper for Mobile */}
               <div className="md:hidden space-y-3">
-                {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict, isEligible }) => (
+                {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict }) => (
                   <div key={sl.id} className="bg-slate-900/40 p-4 rounded-xl border border-slate-750 space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
@@ -3001,9 +3167,6 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       <span className={`p-1 px-2 rounded ${hasConflict ? 'bg-red-950 text-red-400' : 'bg-emerald-950 text-emerald-400'}`}>
                         Agenda: {hasConflict ? 'Conflito' : 'Livre'}
                       </span>
-                      <span className={`p-1 px-2 rounded ${isEligible ? 'bg-emerald-950 text-emerald-400' : 'bg-slate-850 text-slate-400'}`}>
-                        Homologável: {isEligible ? 'Sim' : 'Não'}
-                      </span>
                     </div>
                   </div>
                 ))}
@@ -3021,7 +3184,18 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               sortedCompareList.map(({ sl, cand }) => {
                 if (!cand) return null;
 
-                const targetModel = (sl.remunerationModel || (activeJob?.remunerationModel === 'daily' ? 'Diária' : activeJob?.remunerationModel === 'hourly' ? 'Hora' : activeJob?.remunerationModel === 'fixed_job' ? 'Job Fechado' : activeJob?.remunerationModel === 'monthly_salary' ? 'Mensal / Salário' : 'Diária')) || 'daily';
+                const isJobMonthly = (activeJob?.remunerationModel as string) === 'monthly_salary' || (activeJob?.remunerationModel as string) === 'monthly' || activeJob?.paymentFlow === 'recurring';
+                const defaultBilling = 
+                  isJobMonthly ? 'Mensal / Salário por período' :
+                  activeJob?.remunerationModel === 'hourly' ? 'Hora' :
+                  ((activeJob?.remunerationModel as string) === 'fixed_job' || (activeJob?.remunerationModel as string) === 'closed_package') ? 'Job Fechado' : 'Diária';
+                
+                // Keep defaultBilling for monthly jobs unless user explicitly selected a non-default model
+                const billing = sl.remunerationModel && sl.remunerationModel !== 'Diária' && sl.remunerationModel !== 'daily'
+                  ? sl.remunerationModel 
+                  : defaultBilling;
+
+                const targetModel = billing;
                 const billingTypeForMatch = 
                   ['daily', 'diaria', 'diária'].includes(targetModel.toLowerCase()) ? 'Diária' :
                   ['hourly', 'hora'].includes(targetModel.toLowerCase()) ? 'Hora' :
@@ -3035,16 +3209,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 const ceilingValue = policy ? policy.ceilingValue : 99999;
                 const referenceValue = policy ? policy.referenceValue : 0;
 
-                // Pre-populate rate: prefer negotiated value, then job's expectedRate, then freelancer's referenceValue
-                const defaultRate = activeJob?.expectedRate ?? (cand.referenceValue || 0);
+                // Pre-populate rate: for initial phase, force activeJob.expectedRate
+                const defaultRate = (activeJob?.expectedRate && activeJob.expectedRate > 0)
+                  ? activeJob.expectedRate
+                  : (cand.referenceValue || 0);
                 const rate = (sl.negotiatedRate != null && sl.negotiatedRate > 0) ? sl.negotiatedRate : defaultRate;
-                
-                const defaultBilling = 
-                  activeJob?.remunerationModel === 'daily' ? 'Diária' :
-                  activeJob?.remunerationModel === 'hourly' ? 'Hora' :
-                  activeJob?.remunerationModel === 'fixed_job' ? 'Job Fechado' :
-                  activeJob?.remunerationModel === 'monthly_salary' ? 'Mensal / Salário' : 'Diária';
-                const billing = sl.remunerationModel || defaultBilling;
                 
                 const hasConflict = hasScheduleConflict(cand.id, activeJob.startDate, activeJob.endDate);
                 const exceedsCeiling = rate > ceilingValue;
@@ -3240,10 +3409,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           onChange={(e) => handleUpdateNegotiation(cand.id, { remunerationModel: e.target.value })}
                           className="w-full bg-white border border-border-subtle p-2.5 rounded-lg text-xs font-semibold focus:outline-none focus:border-action-cyan disabled:opacity-60"
                         >
+                          <option value="Mensal / Salário por período">Mensal / Salário por período</option>
                           <option value="Diária">Diária</option>
                           <option value="Hora">Hora</option>
                           <option value="Job Fechado">Job Fechado</option>
-                          <option value="Mensal / Salário">Mensal / Salário</option>
                         </select>
                       </div>
 
@@ -3364,141 +3533,171 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             </div>
 
                             {/* Success Fee Custom settings */}
-                            {activeJob.success_fee_enabled && (
-                              <div className="bg-indigo-50/30 dark:bg-indigo-950/10 p-4 rounded-xl border border-indigo-200/50 space-y-3 text-left">
-                                <div className="flex justify-between items-center">
-                                  <span className="font-bold text-[11px] text-indigo-950 dark:text-indigo-300 uppercase tracking-wider block flex items-center gap-1">
-                                    <Award className="w-3.5 h-3.5 text-indigo-650" />
-                                    Condições de Success Fee
-                                  </span>
-                                  <label className="flex items-center gap-1.5 text-xs font-semibold text-text-primary cursor-pointer select-none">
-                                    <input
-                                      type="checkbox"
-                                      disabled={isLocked}
-                                      checked={candNeg.successFeeEnabled}
-                                      onChange={(e) => updateCandidateNeg(cand.id, { successFeeEnabled: e.target.checked })}
-                                      className="rounded text-indigo-650 focus:ring-indigo-500 w-3.5 h-3.5"
-                                    />
-                                    <span>Aplicável a este freela</span>
-                                  </label>
-                                </div>
+                            {activeJob.success_fee_enabled && (() => {
+                              const jobRule = db.jobSuccessFeeRules?.find(r => r.jobId === activeJob?.id && r.isActive !== false);
+                              const maxPercent = jobRule?.percentageRate || (activeJob as any)?.successFeePercent || 8;
+                              const maxFixed = jobRule?.fixedAmount || (activeJob as any)?.successFeeFixedAmount || 0;
+                              const calcMode = (activeJob as any)?.successFeeCalcMode || (jobRule as any)?.calcMode || 'dilute';
 
-                                {candNeg.successFeeEnabled && (
-                                  <div className="space-y-3 pt-2 border-t border-indigo-200/30 text-xs">
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                      <div>
-                                        <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Tipo de Taxa *</label>
-                                        <select
-                                          disabled={isLocked}
-                                          value={candNeg.successFeeType}
-                                          onChange={(e) => updateCandidateNeg(cand.id, { successFeeType: e.target.value as any })}
-                                          className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
-                                        >
-                                          <option value="percentage">Percentual (%)</option>
-                                          <option value="fixed">Valor Fixo (R$)</option>
-                                        </select>
-                                      </div>
-
-                                      {candNeg.successFeeType === 'percentage' ? (
-                                        <>
-                                          <div>
-                                            <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Percentual (%) *</label>
-                                            <input
-                                              type="number"
-                                              disabled={isLocked}
-                                              value={candNeg.successFeePercent || ''}
-                                              onChange={(e) => updateCandidateNeg(cand.id, { successFeePercent: Number(e.target.value) })}
-                                              className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
-                                              placeholder="Ex: 10"
-                                            />
-                                          </div>
-                                          <div>
-                                            <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Base de Cálculo *</label>
-                                            <select
-                                              disabled={isLocked}
-                                              value={candNeg.successFeeBase}
-                                              onChange={(e) => updateCandidateNeg(cand.id, { successFeeBase: e.target.value })}
-                                              className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
-                                            >
-                                              <option value="sobre o valor-base">Sobre o valor-base garantido</option>
-                                              <option value="sobre o budget">Sobre o budget máximo</option>
-                                            </select>
-                                          </div>
-                                        </>
-                                      ) : (
-                                        <div className="sm:col-span-2">
-                                          <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Valor Fixo (R$) *</label>
-                                          <div className="relative">
-                                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary">R$</span>
-                                            <input
-                                              type="text"
-                                              inputMode="decimal"
-                                              disabled={isLocked}
-                                              value={candNeg.successFeeFixedAmountVisual}
-                                              onChange={(e) => {
-                                                const raw = e.target.value;
-                                                const masked = maskCurrencyBRL(raw);
-                                                const numeric = parseCurrencyBR(masked);
-                                                updateCandidateNeg(cand.id, {
-                                                  successFeeFixedAmountVisual: masked,
-                                                  successFeeFixedAmount: numeric
-                                                });
-                                              }}
-                                              onBlur={() => {
-                                                if (candNeg.successFeeFixedAmount > 0) {
-                                                  const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(candNeg.successFeeFixedAmount);
-                                                  updateCandidateNeg(cand.id, { successFeeFixedAmountVisual: formatted });
-                                                }
-                                              }}
-                                              className="w-full bg-white border border-border-subtle p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary"
-                                              placeholder="0,00"
-                                            />
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                      <div>
-                                        <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Gatilho de Sucesso *</label>
-                                        <input
-                                          type="text"
-                                          disabled={isLocked}
-                                          value={candNeg.successFeeTrigger}
-                                          onChange={(e) => updateCandidateNeg(cand.id, { successFeeTrigger: e.target.value })}
-                                          className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
-                                          placeholder="Ex: V3A ganhar a concorrência"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="text-[10px] font-bold text-text-secondary block mb-0.5">Condições Complementares</label>
-                                        <input
-                                          type="text"
-                                          disabled={isLocked}
-                                          value={candNeg.successFeeTerms}
-                                          onChange={(e) => updateCandidateNeg(cand.id, { successFeeTerms: e.target.value })}
-                                          className="w-full bg-white border border-border-subtle p-1.5 rounded-lg text-[11px] focus:outline-none focus:border-indigo-55 text-text-primary"
-                                          placeholder="Condições ou termos extras..."
-                                        />
-                                      </div>
-                                    </div>
-
-                                    <div className="bg-indigo-50/50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-indigo-100 dark:border-slate-850 flex items-center justify-between mt-2">
-                                      <label className="flex items-center gap-2 text-xs font-bold text-indigo-950 dark:text-indigo-350 cursor-pointer select-none">
-                                        <input
-                                          type="checkbox"
-                                          disabled={isLocked}
-                                          checked={candNeg.acceptedByFreelancer}
-                                          onChange={(e) => updateCandidateNeg(cand.id, { acceptedByFreelancer: e.target.checked })}
-                                          className="rounded text-indigo-650 focus:ring-indigo-500 w-4 h-4 bg-white"
-                                        />
-                                        <span>Aceite formal do freelancer às condições de success fee</span>
-                                      </label>
-                                    </div>
+                              return (
+                                <div className="bg-indigo-50/30 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-200/50 dark:border-indigo-800/40 space-y-3 text-left">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-bold text-[11px] text-indigo-950 dark:text-indigo-300 uppercase tracking-wider block flex items-center gap-1">
+                                      <Award className="w-3.5 h-3.5 text-indigo-650" />
+                                      Condições de Success Fee (Espelhadas da Oportunidade)
+                                    </span>
+                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-text-primary dark:text-indigo-200 cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        disabled={isLocked}
+                                        checked={candNeg.successFeeEnabled}
+                                        onChange={(e) => updateCandidateNeg(cand.id, { successFeeEnabled: e.target.checked })}
+                                        className="rounded text-indigo-650 focus:ring-indigo-500 w-3.5 h-3.5"
+                                      />
+                                      <span>Aplicável a este freela</span>
+                                    </label>
                                   </div>
-                                )}
-                              </div>
-                            )}
+
+                                  {/* Read-Only Application Mode Badge (Bloqueado da Oportunidade) */}
+                                  <div className="bg-slate-900/80 border border-slate-750 p-2.5 rounded-lg flex items-center justify-between text-xs">
+                                    <div>
+                                      <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 block">Forma de Aplicação do Success Fee</span>
+                                      <strong className="text-action-cyan font-extrabold text-xs">
+                                        {calcMode === 'increment_budget' ? 'INCREMENTAR E ATUALIZAR O BUDGET' : 'DILUIR SUCCESS FEE NAS PROJEÇÕES'}
+                                      </strong>
+                                    </div>
+                                    <span className="bg-slate-800 text-slate-300 text-[9.5px] font-bold px-2 py-0.5 rounded border border-slate-700">Fixado no Job</span>
+                                  </div>
+
+                                  {candNeg.successFeeEnabled && (
+                                    <div className="space-y-3 pt-2 border-t border-indigo-200/30 text-xs">
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div>
+                                          <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Tipo de Taxa *</label>
+                                          <select
+                                            disabled={isLocked}
+                                            value={candNeg.successFeeType}
+                                            onChange={(e) => updateCandidateNeg(cand.id, { successFeeType: e.target.value as any })}
+                                            className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                          >
+                                            <option value="percentage">Percentual (%)</option>
+                                            <option value="fixed">Valor Fixo (R$)</option>
+                                          </select>
+                                        </div>
+
+                                        {candNeg.successFeeType === 'percentage' ? (
+                                          <>
+                                            <div>
+                                              <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">
+                                                Percentual (%) {maxPercent > 0 && <span className="text-amber-400 font-normal">(Teto: {maxPercent}%)</span>} *
+                                              </label>
+                                              <input
+                                                type="number"
+                                                disabled={isLocked}
+                                                max={maxPercent > 0 ? maxPercent : undefined}
+                                                value={candNeg.successFeePercent || ''}
+                                                onChange={(e) => {
+                                                  const val = Number(e.target.value);
+                                                  const capped = maxPercent > 0 ? Math.min(val, maxPercent) : val;
+                                                  updateCandidateNeg(cand.id, { successFeePercent: capped });
+                                                }}
+                                                className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                                placeholder={`Ex: ${maxPercent || 8}`}
+                                              />
+                                            </div>
+                                            <div>
+                                              <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Base de Cálculo *</label>
+                                              <select
+                                                disabled={isLocked}
+                                                value={candNeg.successFeeBase}
+                                                onChange={(e) => updateCandidateNeg(cand.id, { successFeeBase: e.target.value })}
+                                                className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                              >
+                                                <option value="sobre o budget">Sobre o budget máximo</option>
+                                                <option value="sobre o valor-base">Sobre o valor-base garantido</option>
+                                              </select>
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <div className="sm:col-span-2">
+                                            <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">
+                                              Valor Fixo (R$) {maxFixed > 0 && <span className="text-amber-400 font-normal">(Teto: R$ {maxFixed})</span>} *
+                                            </label>
+                                            <div className="relative">
+                                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary">R$</span>
+                                              <input
+                                                type="text"
+                                                inputMode="decimal"
+                                                disabled={isLocked}
+                                                value={candNeg.successFeeFixedAmountVisual}
+                                                onChange={(e) => {
+                                                  const raw = e.target.value;
+                                                  const masked = maskCurrencyBRL(raw);
+                                                  let numeric = parseCurrencyBR(masked);
+                                                  if (maxFixed > 0 && numeric > maxFixed) {
+                                                    numeric = maxFixed;
+                                                  }
+                                                  updateCandidateNeg(cand.id, {
+                                                    successFeeFixedAmountVisual: masked,
+                                                    successFeeFixedAmount: numeric
+                                                  });
+                                                }}
+                                                onBlur={() => {
+                                                  if (candNeg.successFeeFixedAmount > 0) {
+                                                    const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(candNeg.successFeeFixedAmount);
+                                                    updateCandidateNeg(cand.id, { successFeeFixedAmountVisual: formatted });
+                                                  }
+                                                }}
+                                                className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                                placeholder="0,00"
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Gatilho de Sucesso *</label>
+                                          <input
+                                            type="text"
+                                            disabled={isLocked}
+                                            value={candNeg.successFeeTrigger}
+                                            onChange={(e) => updateCandidateNeg(cand.id, { successFeeTrigger: e.target.value })}
+                                            className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                            placeholder="Ex: V3A ganhar a concorrência"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Condições Complementares</label>
+                                          <input
+                                            type="text"
+                                            disabled={isLocked}
+                                            value={candNeg.successFeeTerms}
+                                            onChange={(e) => updateCandidateNeg(cand.id, { successFeeTerms: e.target.value })}
+                                            className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                            placeholder="Condições ou termos extras..."
+                                          />
+                                        </div>
+                                      </div>
+
+                                      <div className="bg-indigo-50/50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-indigo-100 dark:border-slate-850 flex items-center justify-between mt-2">
+                                        <label className="flex items-center gap-2 text-xs font-bold text-indigo-950 dark:text-indigo-350 cursor-pointer select-none">
+                                          <input
+                                            type="checkbox"
+                                            disabled={isLocked}
+                                            checked={candNeg.acceptedByFreelancer}
+                                            onChange={(e) => updateCandidateNeg(cand.id, { acceptedByFreelancer: e.target.checked })}
+                                            className="rounded text-indigo-650 focus:ring-indigo-500 w-4 h-4 bg-white"
+                                          />
+                                          <span>Aceite formal do freelancer às condições de success fee</span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                             {/* Negotiation Financial Summary */}
                             <div className="pt-2 text-left">
@@ -3552,42 +3751,77 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {/* -------------------- STEP 4: HOMOLOGAÇÃO & ALLOCATION -------------------- */}
       {activeStep === 4 && activeJob && (
         <div className="space-y-6 animate-fade-in">
-          {/* Active Job Meta-Header — dados completos do job */}
+          {/* Active Job Meta-Header — STICKY no topo ao dar scroll com descrição formatada */}
           {(() => {
             const nucleoName = db.nucleos.find(n => n.id === activeJob.nucleoId)?.name || '—';
-            const paymentFlowLabel = activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : activeJob.paymentFlow === 'one_time' ? 'Pagamento Único' : (activeJob.paymentFlow || '—');
-            const referenceRate = activeJob.expectedRate || activeJob.budget;
+            const model = activeJob.remunerationModel || 'monthly_salary';
+            const paymentFlowLabel =
+              (model as string) === 'monthly_salary' || (model as string) === 'monthly' ? 'Mensal / Salário por Período' :
+              model === 'daily' ? 'Diária' :
+              model === 'hourly' ? 'Hora' :
+              (model as string) === 'fixed_job' || (model as string) === 'closed_package' ? 'Job Fechado (Parcela Única)' :
+              (activeJob.paymentFlow === 'recurring' ? 'Recorrente Mensal' : 'Pagamento Único');
+
+            const projections = simulatePaymentProjections(activeJob.startDate, activeJob.endDate, model);
+            const monthlyRate = activeJob.expectedRate && activeJob.expectedRate > 0
+              ? activeJob.expectedRate
+              : (projections.length > 0 && activeJob.budget > 0 ? activeJob.budget / projections.length : 0);
+
+            const installmentSummaryText = projections.length > 1
+              ? ` (${projections.length} parcelas de ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(monthlyRate)}/mês)`
+              : '';
+
+            const referenceRateLabel =
+              (model as string) === 'monthly_salary' || (model as string) === 'monthly' ? 'Valor Mensal de Referência' :
+              model === 'daily' ? 'Diária de Referência' :
+              model === 'hourly' ? 'Valor Hora de Referência' :
+              (model as string) === 'fixed_job' || (model as string) === 'closed_package' ? 'Valor Fechado de Referência' :
+              'Taxa de Referência';
+
+            const referenceRate = activeJob.expectedRate && activeJob.expectedRate > 0
+              ? activeJob.expectedRate
+              : (projections.length > 1 && activeJob.budget > 0 ? activeJob.budget / projections.length : activeJob.budget);
             const paymentDay = activeJob.expectedPaymentDay;
+
             return (
-              <div className="bg-slate-800 text-slate-100 p-5 rounded-2xl border border-slate-700 shadow-md flex flex-col md:flex-row justify-between gap-6 job-meta-header">
-                <div className="space-y-2 flex-1">
+              <div
+                className="bg-slate-900/95 text-slate-100 p-5 rounded-2xl border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between gap-6 job-meta-header sticky top-0 z-30 transition-all duration-300"
+                style={{ backdropFilter: 'blur(10px)' }}
+              >
+                <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-900 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                    <span className="bg-slate-950 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-800">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
-                    <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">Homologação da Alocação</span>
-                    <span className="bg-emerald-950 text-emerald-300 border border-emerald-800/90 px-2 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                    <span className="text-[11px] uppercase font-extrabold text-action-cyan tracking-wider">Homologação da Alocação</span>
+                    <span className="bg-emerald-950 text-emerald-300 border border-emerald-800/90 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
                   </div>
-                  <h3 className="text-base font-bold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+
+                  <h3 className="text-base font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+
                   <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-300">
                     <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
                     <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
-                    <div>Fluxo de Pagamento: <strong className="text-emerald-300">{paymentFlowLabel}</strong></div>
+                    <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
-                    {referenceRate > 0 && <div>Taxa de Referência/Teto: <strong className="text-amber-300">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
-                    {activeJob.description && <div className="w-full">Descrição: <span className="text-slate-300">{activeJob.description}</span></div>}
+                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
+
+                  {/* Formatted Description with Expand/Collapse */}
+                  {activeJob.description && (
+                    <JobDescriptionFormatted description={activeJob.description} />
+                  )}
                 </div>
 
-                <div className="flex flex-col justify-between items-end gap-3 min-w-[180px]">
+                <div className="flex flex-col justify-between items-end gap-3 min-w-[180px] shrink-0">
                   <div className="text-right">
-                    <div className="text-[10px] uppercase font-bold text-slate-400">Budget Máximo</div>
-                    <div className="text-base font-bold text-action-cyan">
+                    <div className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Budget Máximo do Job</div>
+                    <div className="text-lg font-black text-action-cyan">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
-                    <div className="text-[10px] text-slate-400">
+                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
                       Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
                     </div>
                   </div>
@@ -3595,7 +3829,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleNavigateStep(3)}
-                      className="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-600"
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold p-2 px-3.5 rounded-xl text-xs transition-all border border-slate-700 cursor-pointer shadow-xs"
                     >
                       Voltar para Negociação
                     </button>
@@ -4080,7 +4314,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   return isoStr;
                                 };
 
-                                 const targetModel = candNeg?.remunerationModel || sl?.remunerationModel || activeJob?.remunerationModel;
+                                 const targetModel = (candNeg as any)?.remunerationModel || sl?.remunerationModel || activeJob?.remunerationModel;
                                 const projections = (startDateStr && endDateStr) ? simulatePaymentProjections(startDateStr, endDateStr, targetModel) : [];
 
                                 const getAlertBadgeConfig = (level: 'informational' | 'attention' | 'urgent' | 'critical') => {
@@ -4132,6 +4366,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           {projections.map((p, idx) => {
                                             const monthLabel = p.referenceMonth || getDominantMonthLabel(p.startDate, p.endDate);
                                             const parcelVal = negotiatedTotal !== null ? negotiatedTotal / projections.length : 0;
+                                            const cycleDays = (p as any).daysInCycle || (p.startDate && p.endDate ? Math.round((new Date(p.endDate).getTime() - new Date(p.startDate).getTime()) / 86400000) + 1 : 0);
 
                                             return (
                                               <div key={idx} className="bg-slate-800/90 border border-slate-700/90 rounded-xl p-4 space-y-3 text-xs shadow-xs">
@@ -4145,7 +4380,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                                     </span>
                                                   </div>
                                                   <span className="text-[10px] text-slate-400 font-medium">
-                                                    {p.daysInCycle} dias de alocação
+                                                    {cycleDays} dias de alocação
                                                   </span>
                                                 </div>
 
