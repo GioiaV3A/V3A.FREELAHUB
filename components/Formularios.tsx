@@ -972,6 +972,21 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
 
       // Save Success Fee Rules if enabled
       if (successFeeEnabled) {
+        const newRule = {
+          id: `rule-${Date.now()}`,
+          jobId: parentJob.id,
+          feeType: successFeeType,
+          fixedAmount: successFeeType === 'fixed' ? successFeeFixedAmount : undefined,
+          percentageRate: successFeeType === 'percentage' ? successFeePercent : undefined,
+          percentageBase: successFeeType === 'percentage' ? successFeeBase : undefined,
+          triggerType: successFeeTrigger,
+          terms: successFeeTerms,
+          requiresApproval: false,
+          createdBy: db.currentUser.id,
+          isActive: true
+        };
+        db.setJobSuccessFeeRules(prev => [newRule, ...prev]);
+
         const { error: ruleErr } = await supabase
           .from('job_success_fee_rules')
           .insert({

@@ -264,14 +264,55 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       }
     }
 
-    // Success fee defaults
+    // Success fee defaults from Job Creation
     const jobSuccessFeeEnabled = activeJob?.success_fee_enabled || false;
-    const jobRule = db.jobSuccessFeeRules?.find(r => r.jobId === activeJob?.id && r.isActive !== false);
-    const maxPercent = jobRule?.percentageRate || (activeJob as any)?.successFeePercent || 8;
-    const maxFixed = jobRule?.fixedAmount || (activeJob as any)?.successFeeFixedAmount || 0;
+    const jobRule = db.jobSuccessFeeRules?.find(r => (r.jobId === activeJob?.id || r.jobId === activeJob?.jobId) && r.isActive !== false);
+    const jobBudget = activeJob?.budget || 0;
+
+    let initialType: 'percentage' | 'fixed' = 'percentage';
+    let maxPercent = 0;
+    let maxFixed = 0;
+
+    if (jobRule) {
+      initialType = (jobRule.feeType as 'percentage' | 'fixed') || 'percentage';
+      if (jobRule.feeType === 'fixed' && jobRule.fixedAmount) {
+        maxFixed = jobRule.fixedAmount;
+        maxPercent = jobBudget > 0 ? (jobRule.fixedAmount / jobBudget) * 100 : 0;
+      } else if (jobRule.feeType === 'percentage' && jobRule.percentageRate) {
+        maxPercent = jobRule.percentageRate;
+        maxFixed = (jobBudget * jobRule.percentageRate) / 100;
+      }
+    } else if (activeJob) {
+      const sfType = (activeJob as any).successFeeType || (activeJob as any).success_fee_type || 'percentage';
+      const sfFixed = (activeJob as any).successFeeFixedAmount || (activeJob as any).success_fee_fixed_amount || 0;
+      const sfPercent = (activeJob as any).successFeePercent || (activeJob as any).success_fee_percent || 0;
+
+      initialType = sfType === 'fixed' ? 'fixed' : 'percentage';
+      if (sfType === 'fixed' && sfFixed > 0) {
+        maxFixed = sfFixed;
+        maxPercent = jobBudget > 0 ? (sfFixed / jobBudget) * 100 : 0;
+      } else if (sfPercent > 0) {
+        maxPercent = sfPercent;
+        maxFixed = (jobBudget * sfPercent) / 100;
+      }
+    }
+
+    if (!maxPercent && maxFixed > 0 && jobBudget > 0) {
+      maxPercent = (maxFixed / jobBudget) * 100;
+    }
+    if (!maxFixed && maxPercent > 0 && jobBudget > 0) {
+      maxFixed = (jobBudget * maxPercent) / 100;
+    }
+    if (!maxPercent && maxFixed === 0) maxPercent = 8;
+    if (!maxFixed && jobBudget > 0) maxFixed = (jobBudget * maxPercent) / 100;
+
     const rawTrigger = jobRule?.triggerType || (activeJob as any)?.successFeeTrigger || 'v3a_wins_bid';
     const friendlyTrigger = rawTrigger === 'v3a_wins_bid' ? 'V3A ganhar a concorrência' : rawTrigger === 'project_delivery' ? 'Entrega do projeto no prazo' : rawTrigger;
-    
+
+    const selectedType = sl?.successFeeType || initialType;
+    const defaultFixedAmt = Math.min(sl?.successFeeFixedAmount || maxFixed, maxFixed || 999999);
+    const defaultPercentAmt = Math.min(sl?.successFeePercent || maxPercent, maxPercent || 100);
+
     return {
       paymentModel: defaultModel as 'one_time' | 'monthly_recurring' | 'milestone',
       contractStartDate: defaultStart,
@@ -283,11 +324,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       paymentNotes: sl?.paymentNotes || '',
       // Success fee defaults
       successFeeEnabled: sl?.successFeeEnabled ?? jobSuccessFeeEnabled,
-      successFeeType: sl?.successFeeType || jobRule?.feeType || (activeJob as any)?.successFeeType || 'percentage',
-      successFeeFixedAmount: sl?.successFeeFixedAmount || maxFixed,
-      successFeeFixedAmountVisual: (sl?.successFeeFixedAmount || maxFixed) ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(sl?.successFeeFixedAmount || maxFixed) : '',
-      successFeePercent: sl?.successFeePercent || maxPercent,
-      successFeeBase: sl?.successFeeBase || jobRule?.percentageBase || 'sobre o budget',
+      successFeeType: selectedType,
+      successFeeFixedAmount: defaultFixedAmt,
+      successFeeFixedAmountVisual: defaultFixedAmt > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(defaultFixedAmt) : '',
+      successFeePercent: defaultPercentAmt,
+      successFeeBase: 'sobre o budget',
       successFeeTrigger: sl?.successFeeTrigger || friendlyTrigger,
       successFeeRequiresApproval: sl?.successFeeRequiresApproval ?? (jobRule?.requiresApproval ?? true),
       successFeeTerms: sl?.successFeeTerms || jobRule?.terms || '',
@@ -3534,10 +3575,43 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                             {/* Success Fee Custom settings */}
                             {activeJob.success_fee_enabled && (() => {
-                              const jobRule = db.jobSuccessFeeRules?.find(r => r.jobId === activeJob?.id && r.isActive !== false);
-                              const maxPercent = jobRule?.percentageRate || (activeJob as any)?.successFeePercent || 8;
-                              const maxFixed = jobRule?.fixedAmount || (activeJob as any)?.successFeeFixedAmount || 0;
+                              const jobRule = db.jobSuccessFeeRules?.find(r => (r.jobId === activeJob?.id || r.jobId === activeJob?.jobId) && r.isActive !== false);
+                              const jobBudget = activeJob?.budget || 0;
                               const calcMode = (activeJob as any)?.successFeeCalcMode || (jobRule as any)?.calcMode || 'dilute';
+
+                              let jobMaxFixed = 0;
+                              let jobMaxPercent = 0;
+
+                              if (jobRule) {
+                                if (jobRule.feeType === 'fixed' && jobRule.fixedAmount) {
+                                  jobMaxFixed = jobRule.fixedAmount;
+                                  jobMaxPercent = jobBudget > 0 ? (jobRule.fixedAmount / jobBudget) * 100 : 0;
+                                } else if (jobRule.feeType === 'percentage' && jobRule.percentageRate) {
+                                  jobMaxPercent = jobRule.percentageRate;
+                                  jobMaxFixed = (jobBudget * jobRule.percentageRate) / 100;
+                                }
+                              } else if (activeJob) {
+                                const sfType = (activeJob as any).successFeeType || (activeJob as any).success_fee_type || 'percentage';
+                                const sfFixed = (activeJob as any).successFeeFixedAmount || (activeJob as any).success_fee_fixed_amount || 0;
+                                const sfPercent = (activeJob as any).successFeePercent || (activeJob as any).success_fee_percent || 0;
+
+                                if (sfType === 'fixed' && sfFixed > 0) {
+                                  jobMaxFixed = sfFixed;
+                                  jobMaxPercent = jobBudget > 0 ? (sfFixed / jobBudget) * 100 : 0;
+                                } else if (sfPercent > 0) {
+                                  jobMaxPercent = sfPercent;
+                                  jobMaxFixed = (jobBudget * sfPercent) / 100;
+                                }
+                              }
+
+                              if (!jobMaxPercent && jobMaxFixed > 0 && jobBudget > 0) {
+                                jobMaxPercent = (jobMaxFixed / jobBudget) * 100;
+                              }
+                              if (!jobMaxFixed && jobMaxPercent > 0 && jobBudget > 0) {
+                                jobMaxFixed = (jobBudget * jobMaxPercent) / 100;
+                              }
+                              if (!jobMaxPercent && jobMaxFixed === 0) jobMaxPercent = 8;
+                              if (!jobMaxFixed && jobBudget > 0) jobMaxFixed = (jobBudget * jobMaxPercent) / 100;
 
                               return (
                                 <div className="bg-indigo-50/30 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-200/50 dark:border-indigo-800/40 space-y-3 text-left">
@@ -3571,14 +3645,24 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                                   {candNeg.successFeeEnabled && (
                                     <div className="space-y-3 pt-2 border-t border-indigo-200/30 text-xs">
-                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
                                           <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Tipo de Taxa *</label>
                                           <select
                                             disabled={isLocked}
                                             value={candNeg.successFeeType}
-                                            onChange={(e) => updateCandidateNeg(cand.id, { successFeeType: e.target.value as any })}
-                                            className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                            onChange={(e) => {
+                                              const newType = e.target.value as 'percentage' | 'fixed';
+                                              const cappedFixed = jobMaxFixed > 0 ? Math.min(candNeg.successFeeFixedAmount || jobMaxFixed, jobMaxFixed) : candNeg.successFeeFixedAmount;
+                                              const cappedPercent = jobMaxPercent > 0 ? Math.min(candNeg.successFeePercent || jobMaxPercent, jobMaxPercent) : candNeg.successFeePercent;
+                                              updateCandidateNeg(cand.id, {
+                                                successFeeType: newType,
+                                                successFeeFixedAmount: cappedFixed,
+                                                successFeeFixedAmountVisual: cappedFixed > 0 ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cappedFixed) : '',
+                                                successFeePercent: cappedPercent
+                                              });
+                                            }}
+                                            className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-white"
                                           >
                                             <option value="percentage">Percentual (%)</option>
                                             <option value="fixed">Valor Fixo (R$)</option>
@@ -3586,42 +3670,28 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         </div>
 
                                         {candNeg.successFeeType === 'percentage' ? (
-                                          <>
-                                            <div>
-                                              <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">
-                                                Percentual (%) {maxPercent > 0 && <span className="text-amber-400 font-normal">(Teto: {maxPercent}%)</span>} *
-                                              </label>
-                                              <input
-                                                type="number"
-                                                disabled={isLocked}
-                                                max={maxPercent > 0 ? maxPercent : undefined}
-                                                value={candNeg.successFeePercent || ''}
-                                                onChange={(e) => {
-                                                  const val = Number(e.target.value);
-                                                  const capped = maxPercent > 0 ? Math.min(val, maxPercent) : val;
-                                                  updateCandidateNeg(cand.id, { successFeePercent: capped });
-                                                }}
-                                                className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
-                                                placeholder={`Ex: ${maxPercent || 8}`}
-                                              />
-                                            </div>
-                                            <div>
-                                              <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Base de Cálculo *</label>
-                                              <select
-                                                disabled={isLocked}
-                                                value={candNeg.successFeeBase}
-                                                onChange={(e) => updateCandidateNeg(cand.id, { successFeeBase: e.target.value })}
-                                                className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
-                                              >
-                                                <option value="sobre o budget">Sobre o budget máximo</option>
-                                                <option value="sobre o valor-base">Sobre o valor-base garantido</option>
-                                              </select>
-                                            </div>
-                                          </>
-                                        ) : (
-                                          <div className="sm:col-span-2">
+                                          <div>
                                             <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">
-                                              Valor Fixo (R$) {maxFixed > 0 && <span className="text-amber-400 font-normal">(Teto: R$ {maxFixed})</span>} *
+                                              Percentual (%) {jobMaxPercent > 0 && <span className="text-amber-400 font-normal">(Teto: {Math.round(jobMaxPercent * 10) / 10}%)</span>} *
+                                            </label>
+                                            <input
+                                              type="number"
+                                              disabled={isLocked}
+                                              max={jobMaxPercent > 0 ? jobMaxPercent : undefined}
+                                              value={candNeg.successFeePercent || ''}
+                                              onChange={(e) => {
+                                                const val = Number(e.target.value);
+                                                const capped = jobMaxPercent > 0 ? Math.min(val, jobMaxPercent) : val;
+                                                updateCandidateNeg(cand.id, { successFeePercent: capped });
+                                              }}
+                                              className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-white"
+                                              placeholder={`Ex: ${Math.round(jobMaxPercent) || 8}`}
+                                            />
+                                          </div>
+                                        ) : (
+                                          <div>
+                                            <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">
+                                              Valor Fixo (R$) {jobMaxFixed > 0 && <span className="text-amber-400 font-normal">(Teto: R$ {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(jobMaxFixed)})</span>} *
                                             </label>
                                             <div className="relative">
                                               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary">R$</span>
@@ -3634,11 +3704,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                                   const raw = e.target.value;
                                                   const masked = maskCurrencyBRL(raw);
                                                   let numeric = parseCurrencyBR(masked);
-                                                  if (maxFixed > 0 && numeric > maxFixed) {
-                                                    numeric = maxFixed;
+                                                  if (jobMaxFixed > 0 && numeric > jobMaxFixed) {
+                                                    numeric = jobMaxFixed;
                                                   }
+                                                  const cappedMasked = jobMaxFixed > 0 && numeric >= jobMaxFixed
+                                                    ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(jobMaxFixed)
+                                                    : masked;
                                                   updateCandidateNeg(cand.id, {
-                                                    successFeeFixedAmountVisual: masked,
+                                                    successFeeFixedAmountVisual: cappedMasked,
                                                     successFeeFixedAmount: numeric
                                                   });
                                                 }}
@@ -3648,7 +3721,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                                     updateCandidateNeg(cand.id, { successFeeFixedAmountVisual: formatted });
                                                   }
                                                 }}
-                                                className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                                className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-white"
                                                 placeholder="0,00"
                                               />
                                             </div>
@@ -4112,12 +4185,15 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       const defaultRate = activeJob?.expectedRate || cand.referenceValue || 0;
                       const rate = sl.negotiatedRate || defaultRate;
                       
+                      const isJobMonthly = (activeJob?.remunerationModel as string) === 'monthly_salary' || (activeJob?.remunerationModel as string) === 'monthly' || activeJob?.paymentFlow === 'recurring';
                       const defaultBilling = 
-                        activeJob?.remunerationModel === 'daily' ? 'Diária' :
+                        isJobMonthly ? 'Mensal / Salário por período' :
                         activeJob?.remunerationModel === 'hourly' ? 'Hora' :
-                        activeJob?.remunerationModel === 'fixed_job' ? 'Job Fechado' :
-                        activeJob?.remunerationModel === 'monthly_salary' ? 'Mensal / Salário' : 'Diária';
-                      const billing = sl.remunerationModel || defaultBilling;
+                        ((activeJob?.remunerationModel as string) === 'fixed_job' || (activeJob?.remunerationModel as string) === 'closed_package') ? 'Job Fechado' : 'Diária';
+                      
+                      const billing = sl.remunerationModel && sl.remunerationModel !== 'Diária' && sl.remunerationModel !== 'daily'
+                        ? sl.remunerationModel 
+                        : defaultBilling;
 
                       const targetModel = billing || activeJob.remunerationModel || 'daily';
                       const billingTypeForMatch = 
@@ -4227,7 +4303,19 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         <div className="flex justify-between border-b border-border-subtle/50 pb-1.5">
                                           <span className="text-[10px] uppercase font-bold text-text-secondary">Modelo</span>
                                           <strong className="text-sidebar-navy dark:text-white">
-                                            {candNeg.paymentTerms || (activeJob?.paymentFlow === 'recurring' ? 'Parcelado Mensal' : 'Pagamento Único')}
+                                            {(() => {
+                                              const bModel = billing?.toLowerCase() || '';
+                                              if (bModel.includes('mensal') || bModel === 'monthly_salary' || bModel === 'monthly') {
+                                                const candNegLocal = getCandidateNeg(cand.id, sl);
+                                                const sd = activeJob?.startDate || candNegLocal.contractStartDate || '';
+                                                const ed = activeJob?.endDate || candNegLocal.contractEndDate || '';
+                                                const installments = (sd && ed) ? simulatePaymentProjections(sd, ed, billing).length : 1;
+                                                return `Mensal / Salário por Período (${installments} ${installments === 1 ? 'parcela' : 'parcelas'})`;
+                                              }
+                                              if (bModel === 'hora' || bModel === 'hourly') return 'Por Hora';
+                                              if (bModel.includes('job fechado') || bModel === 'fixed_job' || bModel === 'closed_package') return 'Job Fechado (Valor Fixo)';
+                                              return 'Diária';
+                                            })()}
                                           </strong>
                                         </div>
                                         <div className="flex justify-between">
