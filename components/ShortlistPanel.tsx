@@ -5,6 +5,7 @@ import { DatabaseProps } from '@/app/page';
 import { generateUniqueId } from '@/lib/utils';
 import { Job, Shortlist, Freelancer, ValuePolicy, Allocation, PaymentCode } from '@/lib/mockData';
 import { createApprovalRequestAction, decideApprovalAction } from '@/app/actions/evaluation';
+import { confirmOfficialShortlistAction } from '@/app/actions/proposalActions';
 import { supabase } from '@/lib/supabase';
 import ConsolidatedAllocation from '@/components/ConsolidatedAllocation';
 import { confirmAllocationAction } from '@/app/actions/admin';
@@ -203,6 +204,56 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   const [negotiatingFreelancerId, setNegotiatingFreelancerId] = useState<string>('');
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [compareSortKey, setCompareSortKey] = useState<'default' | 'saving' | 'total' | 'status' | 'score'>('default');
+  const [isDispatchingEmails, setIsDispatchingEmails] = useState(false);
+
+  const handleConfirmShortlistAndDispatchProposals = async () => {
+    if (!activeJob || jobShortlists.length === 0) return;
+    setIsDispatchingEmails(true);
+    try {
+      const selectedFreelas = jobShortlists.map(s => {
+        const f = db.freelancers.find(fl => fl.id === s.freelancerId);
+        return {
+          id: s.freelancerId,
+          name: f?.name || 'Profissional',
+          email: f?.email || '',
+        };
+      });
+
+      const res = await confirmOfficialShortlistAction({
+        jobId: activeJob.id,
+        jobCode: activeJob.job_code || activeJob.jobCode || '26-0000-001',
+        jobTitle: activeJob.name || activeJob.title || 'Oportunidade V3A',
+        clientName: activeJob.client || activeJob.clientName || 'V3A',
+        nucleoId: activeJob.nucleoId,
+        roleName: activeJob.roleNeeded,
+        seniority: activeJob.seniorityNeeded,
+        startDate: activeJob.startDate,
+        endDate: activeJob.endDate,
+        remunerationModel: activeJob.remunerationModel,
+        baseValue: activeJob.budget,
+        selectedFreelancerIds: jobShortlists.map(s => s.freelancerId),
+        userId: db.currentUser.id,
+        freelancersMetadata: selectedFreelas,
+      });
+
+      if (res.success) {
+        const failedEmails = res.results?.filter((r: any) => !r.emailSent) || [];
+        if (failedEmails.length > 0) {
+          alert(`⚠️ Shortlist confirmada no sistema, MAS o envio de e-mail falhou!\n\nMotivo: ${failedEmails[0].emailError}\n\nNota: Se for erro "Username and Password not accepted", o Google bloqueou o SMTP. Você precisa gerar uma "Senha de App" (App Password) na conta freelahub@v3a.ag.`);
+        } else {
+          alert(`Shortlist Oficial confirmada! ${res.count} proposta(s) disparada(s) por e-mail com link público seguro.`);
+        }
+      } else {
+        alert(`Aviso ao enviar propostas: ${res.error || 'Verifique o ambiente.'}`);
+      }
+    } catch (err: any) {
+      console.error('Error dispatching proposals:', err);
+      alert(`Erro ao disparar propostas: ${err?.message || 'Erro de comunicação.'}`);
+    } finally {
+      setIsDispatchingEmails(false);
+      handleNavigateStep(3);
+    }
+  };
 
   // Faturamento & Success Fee configuration states per candidate
   const [candidateNegotiations, setCandidateNegotiations] = useState<Record<string, {
@@ -1891,6 +1942,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       const hasConflict = cand ? hasScheduleConflict(cand.id, activeJob?.startDate || '', activeJob?.endDate || '') : false;
       const exceedsCeiling = rate > ceilingValue;
 
+      const conflictApproval = db.approvals?.find(ap => 
+        ap.shortlistCandidateId === sl.id && 
+        ap.approvalType === 'schedule_conflict' &&
+        ap.freelancerId === cand?.id
+      );
+      const isConflictApproved = conflictApproval?.status === 'approved';
+
       const budgetApproval = db.approvals?.find(ap => 
         ap.shortlistCandidateId === sl.id && 
         ap.approvalType === 'value_exception' &&
@@ -1898,7 +1956,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       );
       const isBudgetApproved = budgetApproval?.status === 'approved';
 
-      const isEligible = sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
+      const isEligible = (sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved)) && (!hasConflict || isConflictApproved);
 
       return {
         sl,
@@ -2906,13 +2964,23 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             </button>
 
             {jobShortlists.length > 0 && (
-              <button
-                onClick={() => handleNavigateStep(3)}
-                className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
-              >
-                <span>Avançar para Negociação</span>
-                <ArrowRight className="w-4 h-4 text-action-cyan" />
-              </button>
+              <div className="flex gap-2">
+                <button
+                  disabled={isDispatchingEmails}
+                  onClick={handleConfirmShortlistAndDispatchProposals}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-md disabled:opacity-50 transition-all"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>{isDispatchingEmails ? 'Confirmando & Disparando...' : 'Confirmar Shortlist Oficial & Disparar Propostas'}</span>
+                </button>
+                <button
+                  onClick={() => handleNavigateStep(3)}
+                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-5 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                >
+                  <span>Negociação</span>
+                  <ArrowRight className="w-4 h-4 text-action-cyan" />
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -3086,7 +3154,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 bg-slate-900/30 text-slate-300">
                     {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict }) => (
-                      <tr key={sl.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr key={sl.id} className={`hover:bg-slate-800/30 transition-colors ${sl.candidateStatus === 'Não aceitou' ? 'opacity-40 grayscale' : ''}`}>
                         <td className="p-3.5">
                           <div className="font-bold text-white">{cand?.name || '—'}</div>
                           <div className="text-[10px] text-slate-400 mt-0.5">{cand?.seniority} &bull; {cand?.mainRole}</div>
@@ -3095,9 +3163,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head'
                               ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50'
-                              : sl.candidateStatus === 'Valor fora da política' || sl.candidateStatus === 'Reprovado pelo Head'
+                              : sl.candidateStatus === 'Valor fora da política' || sl.candidateStatus === 'Reprovado pelo Head' || sl.candidateStatus === 'Aceitou com ressalva'
                                 ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
-                                : sl.candidateStatus === 'Bloqueado por conflito de agenda'
+                                : sl.candidateStatus === 'Bloqueado por conflito de agenda' || sl.candidateStatus === 'Não aceitou'
                                   ? 'bg-red-950 text-red-400 border border-red-800/50'
                                   : 'bg-slate-800 text-slate-300 border border-slate-700/60'
                           }`}>
@@ -3157,7 +3225,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               {/* Cards Wrapper for Mobile */}
               <div className="md:hidden space-y-3">
                 {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict }) => (
-                  <div key={sl.id} className="bg-slate-900/40 p-4 rounded-xl border border-slate-750 space-y-3">
+                  <div key={sl.id} className={`bg-slate-900/40 p-4 rounded-xl border border-slate-750 space-y-3 ${sl.candidateStatus === 'Não aceitou' ? 'opacity-40 grayscale' : ''}`}>
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="font-bold text-white text-xs">{cand?.name || '—'}</div>
@@ -3166,7 +3234,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
                         sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head'
                           ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                          : 'bg-slate-800 text-slate-350'
+                          : sl.candidateStatus === 'Valor fora da política' || sl.candidateStatus === 'Reprovado pelo Head' || sl.candidateStatus === 'Aceitou com ressalva'
+                            ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
+                            : sl.candidateStatus === 'Bloqueado por conflito de agenda' || sl.candidateStatus === 'Não aceitou'
+                              ? 'bg-red-950 text-red-400 border border-red-800/50'
+                              : 'bg-slate-800 text-slate-350'
                       }`}>
                         {sl.candidateStatus}
                       </span>
@@ -3485,6 +3557,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           <option value="Selecionado">Selecionado (Fase Inicial)</option>
                           <option value="Em negociação">Em negociação</option>
                           <option value="Aguardando retorno">Aguardando retorno</option>
+                          <option value="Aceitou com ressalva">Aceitou com ressalva (Em negociação)</option>
                           <option value="Valor fora da política" disabled={!exceedsCeiling}>Valor fora da política</option>
                           <option value="Bloqueado por conflito de agenda" disabled={!hasConflict}>Bloqueado por conflito de agenda</option>
                           {isConflictPending && <option value="Pendente aprovação RH">Pendente aprovação RH</option>}
@@ -4159,6 +4232,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       const cand = db.freelancers.find(f => f.id === sl.freelancerId);
                       if (!cand) return false;
 
+                      const hasConflict = cand && activeJob ? hasScheduleConflict(cand.id, activeJob.startDate, activeJob.endDate) : false;
+                      const conflictApproval = db.approvals?.find(ap => 
+                        ap.shortlistCandidateId === sl.id && 
+                        ap.approvalType === 'schedule_conflict' &&
+                        ap.freelancerId === cand.id
+                      );
+                      const isConflictApproved = conflictApproval?.status === 'approved';
+
                       const budgetApproval = db.approvals?.find(ap => 
                         ap.shortlistCandidateId === sl.id && 
                         ap.approvalType === 'value_exception' &&
@@ -4166,7 +4247,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       );
                       const isBudgetApproved = budgetApproval?.status === 'approved';
 
-                      return sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
+                      const isStatusOk = sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved);
+                      const isConflictOk = !hasConflict || isConflictApproved;
+
+                      return isStatusOk && isConflictOk;
                     });
 
                     if (eligibleCandidates.length === 0) {
@@ -4510,7 +4594,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           <span>Aviso Obrigatório da Política de Supply</span>
                                         </strong>
                                         <p className="text-amber-200/90 leading-relaxed text-[11px]">
-                                          Data sugerida, não oficial. O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas (antecedência mínima de 10 dias corridos).
+                                          O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas (antecedência mínima de 10 dias corridos).
                                         </p>
                                       </div>
                                     </div>

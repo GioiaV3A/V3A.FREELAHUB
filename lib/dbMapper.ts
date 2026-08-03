@@ -171,10 +171,16 @@ export function mapCandidateStatusToUI(status: string | null): Shortlist['candid
       return 'Valor fora da política';
     case 'aceitou':
     case 'aprovado_rh':
+    case 'accepted':
       return 'Aceitou';
+    case 'aceitou com ressalva':
+    case 'accepted_with_reservations':
+      return 'Aceitou com ressalva';
     case 'nao_aceitou':
+    case 'não aceitou':
     case 'rejeitado':
     case 'indisponivel':
+    case 'refused':
       return 'Não aceitou';
     case 'bloqueado_conflito_agenda':
       return 'Bloqueado por conflito de agenda';
@@ -202,6 +208,7 @@ export function mapCandidateStatusToDB(status: string): string {
     case 'Em negociação': return 'em_negociacao';
     case 'Aguardando retorno': return 'aguardando_retorno';
     case 'Valor fora da política': return 'valor_fora_politica';
+    case 'Aceitou com ressalva': return 'accepted_with_reservations';
     case 'Aceitou': return 'aceitou';
     case 'Não aceitou': return 'nao_aceitou';
     case 'Bloqueado por conflito de agenda': return 'bloqueado_conflito_agenda';
@@ -224,6 +231,9 @@ export function mapCandidateStatusToDBEnum(status: string): 'selecionado' | 'em_
     case 'em_negociacao':
     case 'Aguardando retorno':
     case 'aguardando_retorno':
+    case 'Aceitou com ressalva':
+    case 'aceitou com ressalva':
+    case 'accepted_with_reservations':
     case 'Pendente aprovação RH':
     case 'pendente_aprovacao_rh':
     case 'Pendente aprovação Head':
@@ -234,6 +244,7 @@ export function mapCandidateStatusToDBEnum(status: string): 'selecionado' | 'em_
       return 'valor_fora_politica';
     case 'Aceitou':
     case 'aceitou':
+    case 'accepted':
     case 'Aprovado para alocação':
     case 'aprovado_para_alocacao':
     case 'Selecionado para alocação':
@@ -242,7 +253,9 @@ export function mapCandidateStatusToDBEnum(status: string): 'selecionado' | 'em_
     case 'Aprovado pelo Head':
       return 'aprovado_rh';
     case 'Não aceitou':
+    case 'não aceitou':
     case 'nao_aceitou':
+    case 'refused':
     case 'rejected_by_head':
     case 'Reprovado pelo Head':
       return 'rejeitado';
@@ -447,6 +460,7 @@ export function mapAllocationToUI(alloc: any): Allocation {
     dailySavingAmount: alloc.daily_saving_amount !== null && alloc.daily_saving_amount !== undefined ? Number(alloc.daily_saving_amount) : undefined,
     budgetDeltaStatus: alloc.budget_delta_status || 'not_calculated',
     estimatedHours: alloc.estimated_hours !== null && alloc.estimated_hours !== undefined ? Number(alloc.estimated_hours) : undefined,
+    remunerationModel: alloc.remuneration_model || undefined,
     // Recurring & payment model fields
     paymentModel: alloc.payment_model || 'one_time',
     contractStartDate: alloc.contract_start_date || undefined,
@@ -639,6 +653,7 @@ export function mapJobToUI(req: any): Job {
   return {
     id: req.id, // request_id represents the demand / UI Job ID
     jobId: req.job_id,
+    job_code: req.jobs?.job_code || req.job_code || '',
     name: req.jobs?.title || req.job_title || '',
     client: req.jobs?.client_name || req.client_name || '',
     nucleoId: req.jobs?.nucleo_id || req.nucleo_id || '',

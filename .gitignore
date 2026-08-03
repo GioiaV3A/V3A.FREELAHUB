@@ -10,3 +10,8 @@ coverage/
 .next/
 out/
 dev/
+
+# Large user files
+BRANDING/
+CORREÇÕES/
+LOGO FREELA HUB/

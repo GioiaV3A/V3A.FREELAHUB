@@ -407,6 +407,13 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
 
 
 
+function maskJobCode(val: string): string {
+  const digits = val.replace(/\D/g, '').slice(0, 9);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6)}`;
+}
+
 // ─── Form 3: Criar Oportunidade (Job) ────────────────────────────────────────
 export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel: () => void }) {
   const userRole = getRoleLabel(db.currentUser.profile);
@@ -431,6 +438,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   }, []);
 
   // ── Section 1: Job basics ─────────────────────────────────────────────────
+  const [jobCode, setJobCode] = useState('');
   const [name, setName] = useState('');
   const [client, setClient] = useState('');
   const [roleNeeded, setRoleNeeded] = useState('Diretor de Arte');
@@ -861,8 +869,26 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       return;
     }
 
+    if (!jobCode || !/^\d{2}-\d{4}-\d{3}$/.test(jobCode)) {
+      alert('O ID do Job é obrigatório e deve seguir o padrão XX-XXXX-XXX (ex: 26-0042-001).');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      // Check duplicate job_code in DB
+      const { data: dupCode } = await supabase
+        .from('jobs')
+        .select('id')
+        .eq('job_code', jobCode)
+        .maybeSingle();
+
+      if (dupCode) {
+        alert('Já existe uma oportunidade cadastrada com este ID do Job.');
+        setIsSubmitting(false);
+        return;
+      }
+
       const { data: funcData } = await supabase
         .from('freela_functions').select('id').eq('name', roleNeeded).maybeSingle();
       let funcId = funcData?.id;
@@ -907,7 +933,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
       const savingPercentage = budget > 0 ? (savingAmount / budget) * 100 : 0;
 
       const jobPayload = {
-        job_code: `JOB-${Date.now().toString().slice(-6)}`,
+        job_code: jobCode,
         title: name,
         client_name: client,
         nucleo_id: nucleoId,
@@ -985,7 +1011,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
           createdBy: db.currentUser.id,
           isActive: true
         };
-        db.setJobSuccessFeeRules(prev => [newRule, ...prev]);
+        db.setJobSuccessFeeRules?.(prev => [newRule, ...prev]);
 
         const { error: ruleErr } = await supabase
           .from('job_success_fee_rules')
@@ -1200,7 +1226,21 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div>
+              <label className={labelCls}>ID do Job (Formato XX-XXXX-XXX) *</label>
+              <input
+                type="text"
+                placeholder="Ex: 26-0042-001"
+                value={jobCode}
+                onChange={e => setJobCode(maskJobCode(e.target.value))}
+                className={`${inputCls} font-mono font-bold tracking-wider text-action-cyan`}
+                required
+              />
+              <p className="text-[10px] text-text-muted mt-1">
+                Formato obrigatório: ano-cliente-sequencial
+              </p>
+            </div>
             <div>
               <label className={labelCls}>Título do Job / Oportunidade *</label>
               <input type="text" placeholder="Ex: Diretor de Arte para Convenção Anual" value={name} onChange={e => setName(e.target.value)} className={inputCls} required />
@@ -1509,7 +1549,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
               <div className="p-3 bg-amber-500/5 border border-amber-500/15 rounded-xl text-[10.5px] font-medium text-text-secondary leading-relaxed flex gap-2">
                 <span className="shrink-0 text-amber-500">⚠️</span>
                 <span>
-                  <strong>Aviso Importante:</strong> Data sugerida, não oficial. O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas.
+                  <strong>Aviso Importante:</strong> O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas.
                 </span>
               </div>
             </div>

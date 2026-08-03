@@ -1353,7 +1353,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
         <div className="leading-relaxed">
           <strong className="text-amber-300 font-extrabold block mb-0.5">Aviso Obrigatório de Governança de Supply:</strong>
-          Data sugerida, não oficial. O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas.
+          O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas.
         </div>
       </div>
 

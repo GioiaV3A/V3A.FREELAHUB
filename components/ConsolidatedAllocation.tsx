@@ -432,6 +432,11 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
       <div className="bg-slate-900 text-white p-6 rounded-2xl border border-slate-800 shadow-md flex flex-col md:flex-row justify-between gap-6">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
+            { (job?.jobCode || allocation.jobCode) && (
+              <span className="bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                JOB: {job?.jobCode || allocation.jobCode}
+              </span>
+            )}
             <span className="bg-slate-800 text-slate-100 border border-slate-700 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
               ALOC: {allocation.allocationCode || 'ALOC-PENDENTE'}
             </span>

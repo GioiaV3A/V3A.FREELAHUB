@@ -409,8 +409,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                       <td className="px-4 py-3.5">
                         <div className="flex items-start gap-2">
                           <div>
-                            <span className="font-mono text-[9px] font-bold text-action-cyan/80 bg-action-cyan/10 border border-action-cyan/20 px-1.5 py-0.5 rounded tracking-wider">
-                              {alloc.allocationCode || 'PENDENTE'}
+                            <span className="font-mono text-[9px] font-bold text-action-cyan bg-action-cyan/10 border border-action-cyan/30 px-1.5 py-0.5 rounded tracking-wider">
+                              Job: {job?.jobCode || alloc.jobCode || alloc.allocationCode || 'PENDENTE'}
                             </span>
                             <p className="font-bold text-text-primary text-xs mt-1.5 truncate max-w-[180px]">
                               {job?.name || 'Projeto'}

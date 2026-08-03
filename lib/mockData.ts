@@ -34,6 +34,7 @@ export interface Nucleo {
 export interface Freelancer {
   id: string;
   name: string;
+  fullName?: string;
   email: string;
   whatsapp: string;
   city: string;
@@ -80,10 +81,14 @@ export type JobStatus = string;
 
 export interface Job {
   id: string;
+  job_code?: string;
+  jobCode?: string;
   createdAt?: string;
   jobId?: string;
   name: string;
+  title?: string;
   client: string;
+  clientName?: string;
   nucleoId: string;
   requesterId: string;
   roleNeeded: string;
@@ -124,6 +129,48 @@ export interface Job {
   approvalRequired?: boolean;
   is_competitive_bid?: boolean;
   success_fee_enabled?: boolean;
+  successFeeEnabled?: boolean;
+}
+
+export interface ProposalInvitation {
+  id: string;
+  jobId: string;
+  jobCode: string;
+  freelancerId: string;
+  shortlistCandidateId?: string;
+  negotiationId?: string;
+  publicLinkId?: string;
+  status: 'created' | 'sent' | 'delivered' | 'opened' | 'waiting_response' | 'accepted' | 'accepted_with_reservations' | 'refused' | 'expired' | 'cancelled' | 'reopened';
+  sentAt?: string;
+  deliveredAt?: string;
+  openedAt?: string;
+  respondedAt?: string;
+  responseType?: 'accepted' | 'accepted_with_reservations' | 'refused';
+  refusalReason?: string;
+  freelancerNotes?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EmailEvent {
+  id: string;
+  eventType: 'proposal_dispatch' | 'proposal_response_notification' | 'reminder' | 'evaluation_alert' | 'system_notification';
+  recipientEmail: string;
+  recipientName?: string;
+  templateKey: string;
+  relatedJobId?: string;
+  relatedJobCode?: string;
+  relatedFreelancerId?: string;
+  relatedPublicLinkId?: string;
+  relatedProposalInvitationId?: string;
+  status: 'pending' | 'sent' | 'failed' | 'error' | 'cancelled';
+  providerMessageId?: string;
+  errorMessage?: string;
+  sentAt?: string;
+  createdAt?: string;
+  metadata?: any;
 }
 
 export interface JobSuccessFeeRule {
@@ -297,6 +344,8 @@ export interface Allocation {
   id: string;
   allocationCode: string;
   jobId: string;
+  job_code?: string;
+  jobCode?: string;
   freelancerId: string;
   nucleoId: string;
   startDate: string;
@@ -312,6 +361,7 @@ export interface Allocation {
   dailySavingAmount?: number;
   budgetDeltaStatus?: string;
   estimatedHours?: number;
+  remunerationModel?: string;
   // Recurrent and billing model fields
   paymentModel?: 'one_time' | 'monthly_recurring' | 'milestone';
   contractStartDate?: string;
@@ -323,6 +373,8 @@ export interface Allocation {
   paymentNotes?: string;
   paymentRequestStatus?: 'not_requested' | 'partially_requested' | 'requested' | 'completed' | 'cancelled';
   success_fee_enabled?: boolean;
+  successFeeEnabled?: boolean;
+  successFeeAmount?: number;
   evaluationStatus?: 'locked' | 'available' | 'pending' | 'completed';
   reverseEvaluationStatus?: 'not_generated' | 'generated' | 'sent' | 'completed' | 'expired';
   evaluatedFreelancer?: boolean;

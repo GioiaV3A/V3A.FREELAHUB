@@ -2943,14 +2943,15 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
     if (query) {
       result = result.filter(a => {
         const searchableContent = [
-          a.allocationCode,
-          a.freelancerName,
-          a.jobName,
-          a.clientName,
-          a.nucleoName,
-          a.freelancerRole,
-          a.freelancerSeniority,
-          a.status,
+          (a as any).jobCode,
+          (a as any).allocationCode,
+          (a as any).freelancerName,
+          (a as any).jobName,
+          (a as any).clientName,
+          (a as any).nucleoName,
+          (a as any).freelancerRole,
+          (a as any).freelancerSeniority,
+          (a as any).status,
         ]
           .filter(Boolean)
           .join(' ');
