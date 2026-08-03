@@ -393,14 +393,17 @@ export interface SendProposalResponseNotificationParams {
 export async function sendProposalResponseNotificationEmail(params: SendProposalResponseNotificationParams): Promise<{ success: boolean; error?: string }> {
   try {
     const fromEmail = process.env.FREELAHUB_EMAIL_FROM || 'Freela Hub V3A <freelahub@v3a.ag>';
+    const host = process.env.FREELAHUB_SMTP_HOST || 'smtp.gmail.com';
+    const port = parseInt(process.env.FREELAHUB_SMTP_PORT || '465', 10);
+    const secure = process.env.FREELAHUB_SMTP_SECURE !== 'false';
+    const user = process.env.FREELAHUB_SMTP_USER || 'freelahub@v3a.ag';
+    const pass = process.env.FREELAHUB_SMTP_PASS || 'V3a#a1b2c2026114';
+
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'freelahub@v3a.ag',
-        pass: 'V3a#a1b2c2026114',
-      },
+      host,
+      port,
+      secure,
+      auth: { user, pass },
     });
 
     const logoUrl = 'https://vehkccapjpsebtmoezfm.supabase.co/storage/v1/object/public/system-assets/V3A_Aplica%C3%A7%C3%B5es%20Prim%C3%A1rias-03.png';
