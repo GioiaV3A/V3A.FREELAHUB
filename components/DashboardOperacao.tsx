@@ -109,7 +109,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
         <div className="flex gap-2">
           <button 
             onClick={() => db.setActiveTab('Criar Oportunidade')} 
-            className="bg-action-cyan hover:bg-action-cyan/85 text-white font-extrabold p-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs"
+            className="bg-action-cyan hover:bg-action-cyan/85 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs"
           >
             + Nova Demanda / Job
           </button>
@@ -245,7 +245,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
                       </td>
                       <td className="px-5 py-3.5 text-center">
                         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold
-                          ${nuc.activeAlloc > 0 ? 'bg-emerald-500/10 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                          ${nuc.activeAlloc > 0 ? 'bg-emerald-500/10 text-emerald-700' : 'bg-slate-100 text-[var(--text-disabled)]'}`}>
                           {nuc.activeAlloc} ativas
                         </span>
                       </td>

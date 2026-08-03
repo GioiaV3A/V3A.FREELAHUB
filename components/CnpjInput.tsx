@@ -59,9 +59,9 @@ export default function CnpjInput({
   const displayError = externalError || validationError;
   const isValid = !displayError && value && value.length === 14;
 
-  let borderClass = 'border-white/10 focus:border-action-cyan';
+  let borderClass = 'border-[var(--border-default)] focus:border-action-cyan';
   if (disabled) {
-    borderClass = 'border-white/5 opacity-50 cursor-not-allowed';
+    borderClass = 'border-[var(--border-subtle)] opacity-50 cursor-not-allowed';
   } else if (displayError) {
     borderClass = 'border-red-500/80 focus:border-red-500';
   } else if (isValid && showValidationStatus) {
@@ -79,7 +79,7 @@ export default function CnpjInput({
           required={required}
           autoComplete="off"
           placeholder="00.000.000/0000-00"
-          className={`w-full bg-[#0B1E38] p-3 pr-10 rounded-xl text-white outline-none transition-colors border ${borderClass}`}
+          className={`w-full bg-[var(--bg-input)] p-3 pr-10 rounded-xl text-[var(--text-primary)] outline-none transition-colors border ${borderClass}`}
         />
         {showValidationStatus && !disabled && (
           <div className="absolute right-3 flex items-center pointer-events-none">

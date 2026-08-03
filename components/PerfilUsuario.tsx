@@ -101,7 +101,7 @@ export default function PerfilUsuario({ db }: { db: DatabaseProps & { users: Use
         
         {/* Left Column: Profile Card Overview */}
         <div className="md:col-span-5 bg-white border border-border-subtle rounded-2xl p-6 flex flex-col items-center text-center shadow-xs">
-          <div className="w-16 h-16 rounded-full bg-[#0F2342] text-white font-extrabold text-xl flex items-center justify-center uppercase shadow-sm">
+          <div className="w-16 h-16 rounded-full bg-[var(--bg-surface)] text-[var(--text-primary)] font-extrabold text-xl flex items-center justify-center uppercase shadow-sm">
             {currentUser.name.slice(0, 2)}
           </div>
 
@@ -112,7 +112,7 @@ export default function PerfilUsuario({ db }: { db: DatabaseProps & { users: Use
             <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded-lg border border-slate-100">
               <span className="text-text-secondary font-bold">Perfil de Acesso:</span>
               <span className={`font-extrabold px-2.5 py-0.5 rounded-full text-[10px] tracking-wider uppercase
-                ${currentUser.profile === 'MASTER' ? 'bg-slate-900 text-slate-100' : currentUser.profile === 'RH' ? 'bg-blue-150 text-blue-800' : 'bg-cyan-150 text-cyan-800'}`}>
+                ${currentUser.profile === 'MASTER' ? 'bg-white text-slate-800' : currentUser.profile === 'RH' ? 'bg-blue-150 text-blue-800' : 'bg-cyan-150 text-cyan-800'}`}>
                 {currentUser.profile}
               </span>
             </div>
@@ -158,7 +158,7 @@ export default function PerfilUsuario({ db }: { db: DatabaseProps & { users: Use
                   onClick={() => setTheme(t)}
                   className={`py-2 px-1 rounded-xl border text-center font-extrabold text-[11px] capitalize transition cursor-pointer select-none
                     ${theme === t
-                      ? 'bg-[#0F2342] text-white border-[#0F2342]'
+                      ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] border-[#0F2342]'
                       : 'bg-slate-50 text-text-secondary border-border-subtle hover:bg-slate-100'}`}
                 >
                   {t === 'light' ? 'Claro' : t === 'dark' ? 'Escuro' : 'Sistema'}
@@ -225,7 +225,7 @@ export default function PerfilUsuario({ db }: { db: DatabaseProps & { users: Use
             <div className="pt-2">
               <button
                 type="submit"
-                className="bg-sidebar-navy hover:bg-slate-800 text-white font-extrabold p-2.5 px-6 rounded-xl transition flex items-center gap-1.5 shadow-xs text-xs"
+                className="bg-sidebar-navy hover:bg-slate-50 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition flex items-center gap-1.5 shadow-xs text-xs"
               >
                 <Lock className="w-4 h-4 text-action-cyan" /> Salvar nova senha
               </button>

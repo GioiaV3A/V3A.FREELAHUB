@@ -18,10 +18,10 @@ export default function SidebarBrand({ collapsed }: SidebarBrandProps) {
           }`}
       >
         <img
-          src="/brand/freela_hub_v3a_logo_fundo_transparente.png"
+          src="/brand/v3a-logo-yellow.png"
           alt="Freela Hub V3A"
           draggable={false}
-          className="max-w-[190px] max-h-[80px] object-contain block"
+          className="max-w-[150px] max-h-[60px] object-contain block ml-1"
           style={{ display: 'block' }}
         />
       </div>
@@ -35,10 +35,10 @@ export default function SidebarBrand({ collapsed }: SidebarBrandProps) {
           }`}
       >
         <img
-          src="/brand/logo_FH_fundo_transparente.png"
+          src="/brand/v3a-mark-yellow.png"
           alt="Freela Hub V3A Compact"
           draggable={false}
-          className="w-12 h-12 object-contain block"
+          className="w-10 h-10 object-contain block"
           style={{ display: 'block' }}
         />
       </div>

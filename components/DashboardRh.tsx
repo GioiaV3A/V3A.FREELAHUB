@@ -200,61 +200,61 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
       
       {/* KPI Base Cadastral row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div id="rh-kpi-ativos" className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold mb-1">
+        <div id="rh-kpi-ativos" className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex justify-between items-center text-[var(--text-disabled)] text-xs font-semibold mb-1">
             <span>Ativos Elegíveis</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           </div>
-          <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{activeCount}</p>
-          <span className="text-[10px] text-slate-400">Prontos para contratação</span>
+          <p className="text-2xl font-bold text-slate-800 dark:text-[var(--text-secondary)]">{activeCount}</p>
+          <span className="text-[10px] text-[var(--text-disabled)]">Prontos para contratação</span>
         </div>
 
-        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold mb-1">
+        <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex justify-between items-center text-[var(--text-disabled)] text-xs font-semibold mb-1">
             <span>Em Onboarding</span>
             <span className="w-1.5 h-1.5 rounded-full bg-action-cyan"></span>
           </div>
-          <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{onboardingCount}</p>
-          <span className="text-[10px] text-slate-400">Assinando Docs / Fiscal</span>
+          <p className="text-2xl font-bold text-slate-800 dark:text-[var(--text-secondary)]">{onboardingCount}</p>
+          <span className="text-[10px] text-[var(--text-disabled)]">Assinando Docs / Fiscal</span>
         </div>
 
-        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold mb-1">
+        <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex justify-between items-center text-[var(--text-disabled)] text-xs font-semibold mb-1">
             <span>Em Análise</span>
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
           </div>
-          <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{analysisCount}</p>
-          <span className="text-[10px] text-slate-400">Triagem de portfólio</span>
+          <p className="text-2xl font-bold text-slate-800 dark:text-[var(--text-secondary)]">{analysisCount}</p>
+          <span className="text-[10px] text-[var(--text-disabled)]">Triagem de portfólio</span>
         </div>
 
-        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold mb-1">
+        <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex justify-between items-center text-[var(--text-disabled)] text-xs font-semibold mb-1">
             <span>Em Observação</span>
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
           </div>
-          <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{observationCount}</p>
-          <span className="text-[10px] text-slate-400">Acompanhamento técnico</span>
+          <p className="text-2xl font-bold text-slate-800 dark:text-[var(--text-secondary)]">{observationCount}</p>
+          <span className="text-[10px] text-[var(--text-disabled)]">Acompanhamento técnico</span>
         </div>
 
-        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs col-span-2 lg:col-span-1">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold mb-1">
+        <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-xl p-4 shadow-xs col-span-2 lg:col-span-1">
+          <div className="flex justify-between items-center text-[var(--text-disabled)] text-xs font-semibold mb-1">
             <span>Bloqueados</span>
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
           </div>
-          <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{blockedCount}</p>
+          <p className="text-2xl font-bold text-slate-800 dark:text-[var(--text-secondary)]">{blockedCount}</p>
           <span className="text-[10px] text-rose-500 font-semibold">Vetados de engajar</span>
         </div>
       </div>
 
       {/* COMPLIANCE & SUCCESS FEE INDICATORS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs flex flex-col justify-between text-left">
+        <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-xl p-4 shadow-xs flex flex-col justify-between text-left">
           <div>
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+            <h3 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-xs flex items-center gap-1.5 uppercase tracking-wider">
               <Clock className="w-4 h-4 text-amber-550" />
               <span>Prazos de RCs no ERP (Supply)</span>
             </h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Alertas de vencimento de RCs com base na regra de antecedência de 10 dias.</p>
+            <p className="text-[10px] text-[var(--text-disabled)] mt-0.5">Alertas de vencimento de RCs com base na regra de antecedência de 10 dias.</p>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-4 text-center">
             <div className="bg-red-50 dark:bg-red-950/15 p-2 rounded-lg border border-red-200 dark:border-red-900/30">
@@ -272,13 +272,13 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-xl p-4 shadow-xs flex flex-col justify-between text-left">
+        <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-xl p-4 shadow-xs flex flex-col justify-between text-left">
           <div>
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5 uppercase tracking-wider">
+            <h3 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-xs flex items-center gap-1.5 uppercase tracking-wider">
               <Award className="w-4 h-4 text-indigo-500" />
               <span>Gatilhos de Success Fee</span>
             </h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Acompanhamento de faturamento de bônus por performance comercial.</p>
+            <p className="text-[10px] text-[var(--text-disabled)] mt-0.5">Acompanhamento de faturamento de bônus por performance comercial.</p>
           </div>
           <div className="grid grid-cols-2 gap-3 mt-4 text-center">
             <div className="bg-indigo-50 dark:bg-indigo-950/15 p-2.5 rounded-lg border border-indigo-200 dark:border-indigo-900/30">
@@ -299,9 +299,9 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
         {/* LEFT: Pre-registration submissions */}
-        <div id="rh-suggested-panel" className="bg-white dark:bg-[#0d1627] rounded-2xl shadow-xs border border-slate-150 dark:border-slate-850 overflow-hidden flex flex-col justify-between min-h-[300px]">
-          <div className="p-4 border-b border-slate-150 dark:border-slate-850 bg-slate-50 dark:bg-slate-900/40 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+        <div id="rh-suggested-panel" className="bg-white dark:bg-[var(--bg-surface)] rounded-2xl shadow-xs border border-slate-150 dark:border-slate-200 overflow-hidden flex flex-col justify-between min-h-[300px]">
+          <div className="p-4 border-b border-slate-150 dark:border-slate-200 bg-slate-50 dark:bg-white/40 flex justify-between items-center">
+            <h3 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-sm flex items-center gap-2">
               <ClipboardCheck className="w-4 h-4 text-action-cyan" />
               <span>Análise de Pré-cadastros</span>
             </h3>
@@ -311,19 +311,19 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
           </div>
 
           <div className="p-6 flex flex-col items-center justify-center text-center flex-1 space-y-4">
-            <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-              <Users className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+            <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-white flex items-center justify-center">
+              <Users className="w-6 h-6 text-[var(--text-disabled)] dark:text-[var(--text-disabled)]" />
             </div>
             {loadingSubmissionsCount ? (
-              <div className="flex items-center gap-2 text-slate-500 font-semibold text-xs">
+              <div className="flex items-center gap-2 text-[var(--text-disabled)] font-semibold text-xs">
                 <Loader2 className="w-4 h-4 animate-spin text-action-cyan" /> Carregando fila...
               </div>
             ) : (
               <div className="space-y-1">
-                <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
+                <p className="text-2xl font-bold text-slate-800 dark:text-[var(--text-secondary)]">
                   {pendingSubmissionsCount} {pendingSubmissionsCount === 1 ? 'Pré-cadastro' : 'Pré-cadastros'}
                 </p>
-                <p className="text-xs text-slate-500 max-w-sm">
+                <p className="text-xs text-[var(--text-disabled)] max-w-sm">
                   {pendingSubmissionsCount === 0 
                     ? 'Todos os cadastros e atualizações públicas foram revisados. Excelente!' 
                     : 'Há novos candidatos e solicitações de atualização aguardando validação do RH.'}
@@ -333,7 +333,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
             
             <button
               onClick={() => db.setActiveTab('Análise de Pré-cadastros')}
-              className="bg-[#0F2342] hover:bg-slate-800 text-white font-extrabold px-4 py-2 rounded-xl transition text-[11px] uppercase tracking-wider shadow-sm cursor-pointer inline-flex items-center gap-1.5"
+              className="bg-[var(--bg-surface)] hover:bg-slate-50 text-[var(--text-primary)] font-extrabold px-4 py-2 rounded-xl transition text-[11px] uppercase tracking-wider shadow-sm cursor-pointer inline-flex items-center gap-1.5"
             >
               Acessar Fila de Análise
             </button>
@@ -341,9 +341,9 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
         </div>
 
         {/* RIGHT: Governance Approvals (Rate policy exceptions + schedule conflicts) */}
-        <div id="rh-exceptions-panel" className="bg-white dark:bg-[#0d1627] rounded-2xl shadow-xs border border-slate-150 dark:border-slate-850 overflow-hidden">
-          <div className="p-4 border-b border-slate-150 dark:border-slate-850 bg-slate-50 dark:bg-slate-900/40 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+        <div id="rh-exceptions-panel" className="bg-white dark:bg-[var(--bg-surface)] rounded-2xl shadow-xs border border-slate-150 dark:border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-150 dark:border-slate-200 bg-slate-50 dark:bg-white/40 flex justify-between items-center">
+            <h3 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-sm flex items-center gap-2">
               <FileWarning className="w-4 h-4 text-status-error" />
               <span>Aprovações de Exceções de Governança ({pendingApprovals.length})</span>
             </h3>
@@ -354,7 +354,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
 
           <div className="divide-y divide-slate-100 dark:divide-slate-850/60 max-h-[420px] overflow-y-auto">
             {pendingApprovals.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 italic">
+              <div className="p-12 text-center text-[var(--text-disabled)] italic">
                 Nenhum pedido de exceção ou liberação pendente no portal.
               </div>
             ) : (
@@ -369,14 +369,14 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                 const diffPercentage = ap.policyCeilingValue > 0 ? Math.round((difference / ap.policyCeilingValue) * 100) : 0;
 
                 return (
-                  <div key={ap.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900/10 transition-colors space-y-3.5">
+                  <div key={ap.id} className="p-4 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors space-y-3.5">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                       <div>
-                        <h4 className="font-bold text-slate-800 dark:text-slate-100 text-xs">
-                          {freela?.name || 'Freelancer'} &rarr; <span className="text-slate-500">{job?.name || 'Campanha'}</span>
+                        <h4 className="font-bold text-slate-800 dark:text-slate-800 text-xs">
+                          {freela?.name || 'Freelancer'} &rarr; <span className="text-[var(--text-disabled)]">{job?.name || 'Campanha'}</span>
                         </h4>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold px-2 py-0.5 rounded-lg text-[9px]">
+                          <span className="bg-slate-100 dark:bg-slate-50 text-slate-600 dark:text-[var(--text-disabled)] font-bold px-2 py-0.5 rounded-lg text-[9px]">
                             Núcleo: {nucleo?.name || 'N/A'}
                           </span>
                           
@@ -396,7 +396,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                         <button
                           disabled={processingId === ap.id}
                           onClick={() => handleDecideApproval(ap.id, 'approved')}
-                          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white p-1.5 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
+                          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-[var(--text-primary)] p-1.5 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
                         >
                           {processingId === ap.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                           Aprovar
@@ -404,7 +404,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                         <button
                           disabled={processingId === ap.id}
                           onClick={() => handleDecideApproval(ap.id, 'rejected')}
-                          className="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white p-1.5 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
+                          className="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-[var(--text-primary)] p-1.5 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
                         >
                           {processingId === ap.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
                           Reprovar
@@ -414,21 +414,21 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
 
                     {/* Comparative analysis table for budget exceptions */}
                     {isValueException && (
-                      <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-850/80 text-[11px]">
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-white/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-200/80 text-[11px]">
                         <div>
-                          <span className="text-slate-500 block">Teto da Política</span>
-                          <span className="font-bold text-slate-850 dark:text-slate-200">
+                          <span className="text-[var(--text-disabled)] block">Teto da Política</span>
+                          <span className="font-bold text-slate-850 dark:text-[var(--text-secondary)]">
                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(ap.policyCeilingValue)} / dia
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block font-bold text-rose-500">Valor Proposto</span>
+                          <span className="text-[var(--text-disabled)] block font-bold text-rose-500">Valor Proposto</span>
                           <span className="font-black text-rose-500">
                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(ap.negotiatedValue)}
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block">Diferença (GAP)</span>
+                          <span className="text-[var(--text-disabled)] block">Diferença (GAP)</span>
                           <span className="font-bold text-rose-500">
                             +{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(difference)}
                           </span>
@@ -444,17 +444,17 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                     )}
 
                     {/* Justification details */}
-                    <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-150 dark:border-slate-850/80 p-2.5 rounded-xl space-y-2.5">
-                      <div className="flex gap-1.5 items-start text-slate-600 dark:text-slate-400">
+                    <div className="bg-slate-50 dark:bg-white/60 border border-slate-150 dark:border-slate-200/80 p-2.5 rounded-xl space-y-2.5">
+                      <div className="flex gap-1.5 items-start text-slate-600 dark:text-[var(--text-disabled)]">
                         <BadgeInfo className="w-3.5 h-3.5 text-action-cyan shrink-0 mt-0.5" />
                         <span className="font-medium text-[11px]">
-                          <span className="font-bold text-slate-500">Justificativa de {requester?.name || 'Solicitante'}:</span> &ldquo;{ap.reason}&rdquo;
+                          <span className="font-bold text-[var(--text-disabled)]">Justificativa de {requester?.name || 'Solicitante'}:</span> &ldquo;{ap.reason}&rdquo;
                         </span>
                       </div>
 
                       {/* Inline Decision notes input */}
                       <div className="flex items-center gap-2">
-                        <MessageSquare className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <MessageSquare className="w-3.5 h-3.5 text-[var(--text-disabled)] shrink-0" />
                         <input
                           type="text"
                           value={decisionNotes[ap.id] || ''}
@@ -463,7 +463,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                             setDecisionNotes(prev => ({ ...prev, [ap.id]: val }));
                           }}
                           placeholder="Digite um parecer de aprovação ou recusa..."
-                          className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-[10px] outline-none text-slate-800 dark:text-slate-200"
+                          className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-200 rounded-lg p-1.5 text-[10px] outline-none text-slate-800 dark:text-[var(--text-secondary)]"
                         />
                       </div>
                     </div>
@@ -479,23 +479,23 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
         {/* Leaders with low reverse scores warning */}
-        <div className="bg-white dark:bg-[#0d1627] p-5 rounded-2xl shadow-xs border border-slate-150 dark:border-slate-850 space-y-4">
-          <div className="border-b border-slate-150 dark:border-slate-850 pb-3">
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+        <div className="bg-white dark:bg-[var(--bg-surface)] p-5 rounded-2xl shadow-xs border border-slate-150 dark:border-slate-200 space-y-4">
+          <div className="border-b border-slate-150 dark:border-slate-200 pb-3">
+            <h3 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-sm flex items-center gap-2">
               <Flame className="w-4 h-4 text-rose-500" />
               <span>Líderes com Baixas Avaliações Operacionais</span>
             </h3>
-            <p className="text-[10px] text-slate-400 mt-1">Líderes de núcleos com notas médias abaixo de 70 no feedback reverso dos freelancers.</p>
+            <p className="text-[10px] text-[var(--text-disabled)] mt-1">Líderes de núcleos com notas médias abaixo de 70 no feedback reverso dos freelancers.</p>
           </div>
 
           <div className="overflow-x-auto">
             {lowScoreLeaders.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 italic">
+              <div className="text-center py-8 text-[var(--text-disabled)] italic">
                 Nenhum núcleo ou líder com score reverso abaixo de 70. Excelente!
               </div>
             ) : (
               <table className="w-full text-left whitespace-nowrap">
-                <thead className="text-slate-500 font-bold border-b border-slate-150 dark:border-slate-850/80">
+                <thead className="text-[var(--text-disabled)] font-bold border-b border-slate-150 dark:border-slate-200/80">
                   <tr>
                     <th className="pb-2">Líder / Núcleo</th>
                     <th className="pb-2 text-center">Avaliações</th>
@@ -506,12 +506,12 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-850/50">
                   {lowScoreLeaders.map((leader, i) => (
-                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-900/10 transition-colors">
-                      <td className="py-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-white/10 transition-colors">
+                      <td className="py-2.5 font-semibold text-slate-800 dark:text-[var(--text-secondary)]">
                         <div>{leader.name}</div>
-                        <div className="text-[9px] text-slate-400 font-normal">{leader.nucleo}</div>
+                        <div className="text-[9px] text-[var(--text-disabled)] font-normal">{leader.nucleo}</div>
                       </td>
-                      <td className="py-2.5 text-center text-slate-500 font-bold">{leader.count}</td>
+                      <td className="py-2.5 text-center text-[var(--text-disabled)] font-bold">{leader.count}</td>
                       <td className="py-2.5 text-center font-bold text-rose-500 bg-rose-500/5">{leader.avgLeaderScore}</td>
                       <td className="py-2.5 text-center font-bold text-rose-500 bg-rose-500/5">{leader.avgProjectScore}</td>
                       <td className="py-2.5 text-center font-bold text-amber-500">{leader.avgCsat} ★</td>
@@ -524,27 +524,27 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
         </div>
 
         {/* High Rework Levels dashboard */}
-        <div className="bg-white dark:bg-[#0d1627] p-5 rounded-2xl shadow-xs border border-slate-150 dark:border-slate-850 space-y-4">
-          <div className="border-b border-slate-150 dark:border-slate-850 pb-3">
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+        <div className="bg-white dark:bg-[var(--bg-surface)] p-5 rounded-2xl shadow-xs border border-slate-150 dark:border-slate-200 space-y-4">
+          <div className="border-b border-slate-150 dark:border-slate-200 pb-3">
+            <h3 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-sm flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-amber-500" />
               <span>Demandas com Nível Crítico de Refação</span>
             </h3>
-            <p className="text-[10px] text-slate-400 mt-1">Projetos sinalizados pelos coordenadores com refações médias ou altas no pós-job.</p>
+            <p className="text-[10px] text-[var(--text-disabled)] mt-1">Projetos sinalizados pelos coordenadores com refações médias ou altas no pós-job.</p>
           </div>
 
           <div className="overflow-y-auto max-h-60 space-y-3">
             {highReworkProjects.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 italic">
+              <div className="text-center py-8 text-[var(--text-disabled)] italic">
                 Nenhum projeto com refações críticas detectado nas avaliações recentes.
               </div>
             ) : (
               highReworkProjects.map((proj) => (
-                <div key={proj.id} className="p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-150 dark:border-slate-850/80 space-y-1.5">
+                <div key={proj.id} className="p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-150 dark:border-slate-200/80 space-y-1.5">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-bold text-slate-800 dark:text-slate-200">{proj.projectName}</h4>
-                      <p className="text-[9px] text-slate-400 font-medium">{proj.nucleoName} &bull; Cliente: {proj.client}</p>
+                      <h4 className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">{proj.projectName}</h4>
+                      <p className="text-[9px] text-[var(--text-disabled)] font-medium">{proj.nucleoName} &bull; Cliente: {proj.client}</p>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider
                       ${proj.reworkLevel === 'Alta' 
@@ -553,8 +553,8 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                       Refação {proj.reworkLevel}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-700 dark:text-slate-350 italic font-medium leading-relaxed">&ldquo;{proj.comments}&rdquo;</p>
-                  <p className="text-[9px] text-slate-500 font-bold border-t border-dashed border-slate-200 dark:border-slate-800 pt-1">
+                  <p className="text-[11px] text-slate-700 dark:text-slate-600 italic font-medium leading-relaxed">&ldquo;{proj.comments}&rdquo;</p>
+                  <p className="text-[9px] text-[var(--text-disabled)] font-bold border-t border-dashed border-slate-200 dark:border-slate-200 pt-1">
                     Profissional alocado: {proj.freelaName}
                   </p>
                 </div>
@@ -566,14 +566,14 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
       </div>
 
       {/* RH Audit list of low score freelas */}
-      <div id="rh-performance-panel" className="bg-white dark:bg-[#0d1627] p-5 rounded-2xl shadow-xs border border-slate-150 dark:border-slate-850">
-        <div className="flex md:flex-row flex-col justify-between items-start md:items-center border-b border-slate-150 dark:border-slate-850 pb-3 mb-4 gap-2">
+      <div id="rh-performance-panel" className="bg-white dark:bg-[var(--bg-surface)] p-5 rounded-2xl shadow-xs border border-slate-150 dark:border-slate-200">
+        <div className="flex md:flex-row flex-col justify-between items-start md:items-center border-b border-slate-150 dark:border-slate-200 pb-3 mb-4 gap-2">
           <div>
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+            <h3 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-sm flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-status-warning" />
               <span>Controle Fiscal e Alvos de Baixa Performance</span>
             </h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Profissionais com pontuações baixas sob acompanhamento ativo para manter a qualidade de entrega.</p>
+            <p className="text-[10px] text-[var(--text-disabled)] mt-0.5">Profissionais com pontuações baixas sob acompanhamento ativo para manter a qualidade de entrega.</p>
           </div>
           <button 
             onClick={() => db.setActiveTab('Banco de Freelancers')} 
@@ -592,10 +592,10 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
             .map((f) => {
               const score = f.consolidatedScore ?? (f.averageScore > 5 ? f.averageScore : f.averageScore * 20);
               return (
-                <div key={f.id} className="p-3 border border-slate-150 dark:border-slate-850 rounded-xl bg-slate-50 dark:bg-slate-900/30 flex flex-col justify-between hover:border-status-warning/45 transition-colors">
+                <div key={f.id} className="p-3 border border-slate-150 dark:border-slate-200 rounded-xl bg-slate-50 dark:bg-white/30 flex flex-col justify-between hover:border-status-warning/45 transition-colors">
                   <div>
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-xs text-slate-800 dark:text-slate-200">{f.name}</span>
+                      <span className="font-bold text-xs text-slate-800 dark:text-[var(--text-secondary)]">{f.name}</span>
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border 
                         ${f.status === 'Bloqueado' 
                           ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' 
@@ -603,11 +603,11 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                         {f.status}
                       </span>
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Função: {f.mainRole} • {f.seniority}</p>
-                    <p className="text-[11px] font-medium text-slate-700 dark:text-slate-350 line-clamp-2 mt-2.5 italic">&ldquo;{f.observations}&rdquo;</p>
+                    <p className="text-[10px] text-[var(--text-disabled)] mt-0.5">Função: {f.mainRole} • {f.seniority}</p>
+                    <p className="text-[11px] font-medium text-slate-700 dark:text-slate-600 line-clamp-2 mt-2.5 italic">&ldquo;{f.observations}&rdquo;</p>
                   </div>
-                  <div className="border-t border-dashed border-slate-200 dark:border-slate-800 pt-2 mt-3.5 flex justify-between items-center text-xs">
-                    <span className="text-slate-500 font-bold uppercase text-[9px]">Score Consolidado:</span>
+                  <div className="border-t border-dashed border-slate-200 dark:border-slate-200 pt-2 mt-3.5 flex justify-between items-center text-xs">
+                    <span className="text-[var(--text-disabled)] font-bold uppercase text-[9px]">Score Consolidado:</span>
                     <span className="font-black text-rose-500 flex items-center gap-1">
                       {score.toFixed(1)} / 100
                     </span>

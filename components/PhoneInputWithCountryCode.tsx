@@ -89,7 +89,7 @@ export default function PhoneInputWithCountryCode({
       type="text"
       value={inputValue}
       onChange={handleTextChange}
-      className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan transition-colors"
+      className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan transition-colors"
       placeholder={`${selectedCountry.dial_code} ${selectedCountry.iso2 === 'BR' ? '(11) 99999-9999' : '999999999'}`}
     />
   );

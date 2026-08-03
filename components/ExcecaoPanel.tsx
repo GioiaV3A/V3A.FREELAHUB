@@ -632,7 +632,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
       </div>
 
       {/* CONTAINER CARDS */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-border-subtle p-6 shadow-xs min-h-[300px]">
+      <div className="bg-white dark:bg-white rounded-2xl border border-border-subtle p-6 shadow-xs min-h-[300px]">
         {/* TAB 1: VALORESPOLICY */}
         {activeTab === 'politica' && (
           <div className="space-y-6">
@@ -651,7 +651,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
               {hasWritePermission && (
                 <button
                   onClick={openCreateModal}
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-white font-extrabold p-2 px-4 rounded-xl flex items-center gap-1.5 shadow-xs text-xs cursor-pointer"
+                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl flex items-center gap-1.5 shadow-xs text-xs cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Nova Política
                 </button>
@@ -660,29 +660,29 @@ db.setShortlists((prev: any[]) => prev.map(s =>
 
             {/* Resumo Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle shadow-xs">
+              <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-xl border border-border-subtle shadow-xs">
                 <span className="text-[10px] uppercase font-bold text-text-secondary">Funções Cadastradas</span>
                 <div className="text-xl font-extrabold text-text-primary mt-1">{totalRoles}</div>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle shadow-xs">
+              <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-xl border border-border-subtle shadow-xs">
                 <span className="text-[10px] uppercase font-bold text-text-secondary">Políticas Ativas</span>
                 <div className="text-xl font-extrabold text-text-primary mt-1">{activeCount}</div>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle shadow-xs">
+              <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-xl border border-border-subtle shadow-xs">
                 <span className="text-[10px] uppercase font-bold text-text-secondary">Políticas Incompletas</span>
                 <div className="text-xl font-extrabold text-amber-600 dark:text-amber-500 mt-1 flex items-center gap-1.5">
                   <span>{incompleteCount}</span>
                   {incompleteCount > 0 && <AlertTriangle className="w-4 h-4 text-amber-500" />}
                 </div>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle shadow-xs">
+              <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-xl border border-border-subtle shadow-xs">
                 <span className="text-[10px] uppercase font-bold text-text-secondary">Exceções Pendentes</span>
                 <div className="text-xl font-extrabold text-status-error mt-1">{pendingExceptionsCount}</div>
               </div>
             </div>
 
             {/* Filtros */}
-            <div className="bg-slate-50 dark:bg-slate-850/50 p-4 rounded-xl border border-border-subtle grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+            <div className="bg-slate-50 dark:bg-slate-50/50 p-4 rounded-xl border border-border-subtle grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
               <div>
                 <label className="font-bold text-text-secondary block mb-1">Buscar por Cargo</label>
                 <input
@@ -690,7 +690,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                   placeholder="Ex: Diretor, Produtor..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan"
+                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan"
                 />
               </div>
 
@@ -699,7 +699,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                 <select
                   value={filterSeniority}
                   onChange={(e) => setFilterSeniority(e.target.value)}
-                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan"
+                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan"
                 >
                   <option value="todos">Todos os níveis</option>
                   <option value="Júnior">Júnior</option>
@@ -714,7 +714,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan"
+                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan"
                 >
                   <option value="todos">Todos os status</option>
                   <option value="Ativo">Ativo</option>
@@ -766,9 +766,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
 
             {/* TABLE MATRIZ DIARIA / MENSAL */}
             {subTab === 'matriz' && (
-              <div className="hidden sm:block overflow-x-auto border border-border-subtle rounded-xl bg-white dark:bg-slate-900 shadow-xs">
+              <div className="hidden sm:block overflow-x-auto border border-border-subtle rounded-xl bg-white dark:bg-white shadow-xs">
                 <table className="w-full text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50 dark:bg-slate-850 font-bold text-text-secondary border-b border-border-subtle">
+                  <thead className="bg-slate-50 dark:bg-slate-50 font-bold text-text-secondary border-b border-border-subtle">
                     <tr>
                       <th className="px-6 py-3 cursor-pointer select-none" onClick={() => requestSort('role')}>
                         FUNÇÃO / CARGO {sortKey === 'role' && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
@@ -816,8 +816,8 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         return (
                           <tr 
                             key={group.key} 
-                            className={`hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors 
-                              ${!isAtivo && !isIncompleta ? 'opacity-65 bg-slate-50/50 dark:bg-slate-900/40' : ''} 
+                            className={`hover:bg-slate-50 dark:hover:bg-slate-50/30 transition-colors 
+                              ${!isAtivo && !isIncompleta ? 'opacity-65 bg-slate-50/50 dark:bg-white/40' : ''} 
                               ${isIncompleta ? 'border-l-4 border-amber-500 bg-amber-50/5 dark:bg-amber-950/5' : ''}`}
                           >
                             <td className="px-6 py-3.5 font-bold">{group.role}</td>
@@ -945,9 +945,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
 
             {/* TABLE OUTROS MODELOS */}
             {subTab === 'outros' && (
-              <div className="hidden sm:block overflow-x-auto border border-border-subtle rounded-xl bg-white dark:bg-slate-900 shadow-xs">
+              <div className="hidden sm:block overflow-x-auto border border-border-subtle rounded-xl bg-white dark:bg-white shadow-xs">
                 <table className="w-full text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50 dark:bg-slate-850 font-bold text-text-secondary border-b border-border-subtle">
+                  <thead className="bg-slate-50 dark:bg-slate-50 font-bold text-text-secondary border-b border-border-subtle">
                     <tr>
                       <th className="px-6 py-3 cursor-pointer select-none" onClick={() => requestSort('role')}>
                         FUNÇÃO / CARGO {sortKey === 'role' && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
@@ -994,8 +994,8 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         return (
                           <tr 
                             key={group.key} 
-                            className={`hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors 
-                              ${!isAtivo ? 'opacity-65 bg-slate-50/50 dark:bg-slate-900/40' : ''}`}
+                            className={`hover:bg-slate-50 dark:hover:bg-slate-50/30 transition-colors 
+                              ${!isAtivo ? 'opacity-65 bg-slate-50/50 dark:bg-white/40' : ''}`}
                           >
                             <td className="px-6 py-3.5 font-bold">{group.role}</td>
                             <td className="px-6 py-3.5 text-text-secondary font-semibold">{group.seniority}</td>
@@ -1114,7 +1114,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
             {/* MOBILE CARDS VIEW */}
             <div className="block sm:hidden space-y-4 pt-2">
               {sortedGroupedPolicies.length === 0 ? (
-                <div className="p-8 text-center text-text-secondary italic bg-white dark:bg-slate-900 border border-border-subtle rounded-xl">
+                <div className="p-8 text-center text-text-secondary italic bg-white dark:bg-white border border-border-subtle rounded-xl">
                   Nenhuma diretriz de política cadastrada com os filtros informados.
                 </div>
               ) : (
@@ -1125,7 +1125,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                   return (
                     <div 
                       key={group.key} 
-                      className={`p-4 bg-white dark:bg-slate-900 border rounded-2xl space-y-3 relative shadow-xs
+                      className={`p-4 bg-white dark:bg-white border rounded-2xl space-y-3 relative shadow-xs
                         ${isIncompleta ? 'border-amber-400 border-l-4' : 'border-border-subtle'}
                         ${!isAtivo && !isIncompleta ? 'opacity-65' : ''}`}
                     >
@@ -1137,7 +1137,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border 
                           ${isAtivo ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900' : 
                             isIncompleta ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900' :
-                            'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'}`}>
+                            'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-50 dark:text-[var(--text-disabled)] dark:border-slate-200'}`}>
                           {group.status}
                         </span>
                       </div>
@@ -1207,7 +1207,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             {isIncompleta && (
                               <button
                                 onClick={() => openEditModal(group)}
-                                className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2 py-1 rounded text-[9px] cursor-pointer"
+                                className="bg-amber-600 hover:bg-amber-700 text-[var(--text-primary)] font-bold px-2 py-1 rounded text-[9px] cursor-pointer"
                               >
                                 Completar
                               </button>
@@ -1258,7 +1258,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                   const delta = neg.negotiatedValue - ceiling;
 
                   return (
-                    <div key={neg.id} className="p-4 border border-border-subtle rounded-xl bg-surface dark:bg-slate-800/15 space-y-3 text-xs">
+                    <div key={neg.id} className="p-4 border border-border-subtle rounded-xl bg-surface dark:bg-slate-50/15 space-y-3 text-xs">
                       <div className="flex md:flex-row flex-col justify-between items-start gap-2">
                         <div>
                           <strong className="text-text-primary text-sm">{freela?.name}</strong>
@@ -1270,13 +1270,13 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                           <div className="flex gap-1.5 self-end md:self-start">
                             <button
                               onClick={() => handleDecision(neg.id, true)}
-                              className="bg-status-success text-white font-bold p-1 px-3 rounded-lg flex items-center gap-1 hover:brightness-95 cursor-pointer"
+                              className="bg-status-success text-[var(--text-primary)] font-bold p-1 px-3 rounded-lg flex items-center gap-1 hover:brightness-95 cursor-pointer"
                             >
                               <Check className="w-3.5 h-3.5" /> Aprovar Exceção
                             </button>
                             <button
                               onClick={() => handleDecision(neg.id, false)}
-                              className="bg-status-error text-white font-bold p-1 px-3 rounded-lg flex items-center gap-1 hover:brightness-95 cursor-pointer"
+                              className="bg-status-error text-[var(--text-primary)] font-bold p-1 px-3 rounded-lg flex items-center gap-1 hover:brightness-95 cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5" /> Rejeitar Exceção
                             </button>
@@ -1289,7 +1289,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                       </div>
 
                       {/* comparative summary card */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-white dark:bg-slate-800 border border-border-subtle rounded-lg text-[11px]">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-white dark:bg-slate-50 border border-border-subtle rounded-lg text-[11px]">
                         <div>
                           <span className="text-text-secondary block">Cargo de Referência</span>
                           <span className="font-semibold text-text-primary">{job?.roleNeeded} ({job?.seniorityNeeded})</span>
@@ -1332,7 +1332,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Beverages */}
-              <div className="border border-border-subtle p-4 rounded-xl bg-surface dark:bg-slate-800/20 space-y-2">
+              <div className="border border-border-subtle p-4 rounded-xl bg-surface dark:bg-slate-50/20 space-y-2">
                 <h4 className="font-bold text-xs text-text-primary flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-status-success"></span> Bebidas / Alimentos (FMCG)
                 </h4>
@@ -1340,7 +1340,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
               </div>
 
               {/* Technologies */}
-              <div className="border border-border-subtle p-4 rounded-xl bg-surface dark:bg-slate-800/20 space-y-2">
+              <div className="border border-border-subtle p-4 rounded-xl bg-surface dark:bg-slate-50/20 space-y-2">
                 <h4 className="font-bold text-xs text-text-primary flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-action-cyan"></span> Tecnologia & Games
                 </h4>
@@ -1348,7 +1348,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
               </div>
 
               {/* Automotive */}
-              <div className="border border-border-subtle p-4 rounded-xl bg-surface dark:bg-slate-800/20 space-y-2">
+              <div className="border border-border-subtle p-4 rounded-xl bg-surface dark:bg-slate-50/20 space-y-2">
                 <h4 className="font-bold text-xs text-text-primary flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-status-warning"></span> Automotivos & Estrutura Agro
                 </h4>
@@ -1361,9 +1361,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
 
       {/* POLICY CREATE/EDIT/DUPLICATE MODAL */}
       {isPolicyModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-xs">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-up">
-            <div className="p-5 bg-sidebar-navy text-white flex justify-between items-center">
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-xs">
+          <div className="bg-white dark:bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-up">
+            <div className="p-5 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
               <h3 className="font-bold text-sm flex items-center gap-2">
                 <Scale className="w-5 h-5 text-action-cyan" />
                 <span>
@@ -1374,7 +1374,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
               </h3>
               <button 
                 onClick={() => setIsPolicyModalOpen(false)}
-                className="text-white hover:text-action-cyan cursor-pointer"
+                className="text-[var(--text-primary)] hover:text-action-cyan cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1387,7 +1387,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                   <select 
                     value={formRole} 
                     onChange={e => setFormRole(e.target.value)} 
-                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                     required
                   >
                     <option value="Diretor de Arte">Diretor de Arte</option>
@@ -1408,7 +1408,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                   <select 
                     value={formSeniority} 
                     onChange={e => setFormSeniority(e.target.value as any)} 
-                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                     required
                   >
                     <option value="Júnior">Júnior</option>
@@ -1448,7 +1448,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                 <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-action-cyan">Diária e Mensalidade</h4>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
+                  <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
                     <span className="font-bold text-text-primary block text-[11px]">DIÁRIA</span>
                     <div>
                       <label className="text-[10px] text-text-secondary font-bold block mb-0.5">Referência (R$)</label>
@@ -1457,7 +1457,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formDailyRef} 
                         onChange={e => setFormDailyRef(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 500"
-                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                     </div>
                     <div>
@@ -1467,12 +1467,12 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formDailyCeiling} 
                         onChange={e => setFormDailyCeiling(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 700"
-                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
+                  <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
                     <span className="font-bold text-text-primary block text-[11px]">MENSAL / SALÁRIO</span>
                     <div>
                       <label className="text-[10px] text-text-secondary font-bold block mb-0.5">Referência (R$)</label>
@@ -1481,7 +1481,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formMonthlyRef} 
                         onChange={e => setFormMonthlyRef(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 5000"
-                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                     </div>
                     <div>
@@ -1491,7 +1491,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formMonthlyCeiling} 
                         onChange={e => setFormMonthlyCeiling(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 7000"
-                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                     </div>
                   </div>
@@ -1503,7 +1503,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                 <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-action-cyan">Outros Modelos de Remuneração</h4>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
+                  <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
                     <span className="font-bold text-text-primary block text-[11px]">HORA</span>
                     <div>
                       <label className="text-[10px] text-text-secondary font-bold block mb-0.5">Referência (R$)</label>
@@ -1512,7 +1512,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formHourlyRef} 
                         onChange={e => setFormHourlyRef(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 80"
-                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                     </div>
                     <div>
@@ -1522,12 +1522,12 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formHourlyCeiling} 
                         onChange={e => setFormHourlyCeiling(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 120"
-                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
+                  <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
                     <span className="font-bold text-text-primary block text-[11px]">JOB FECHADO</span>
                     <div>
                       <label className="text-[10px] text-text-secondary font-bold block mb-0.5">Referência (R$)</label>
@@ -1536,7 +1536,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formFixedRef} 
                         onChange={e => setFormFixedRef(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 3000"
-                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                     </div>
                     <div>
@@ -1546,7 +1546,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formFixedCeiling} 
                         onChange={e => setFormFixedCeiling(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 5000"
-                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                     </div>
                   </div>
@@ -1556,7 +1556,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
               {/* Seção 3: Success Fee */}
               <div className="border-t border-border-subtle pt-4 space-y-4">
                 <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-action-cyan">Bônus por Performance (Success Fee)</h4>
-                <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-xl border border-border-subtle space-y-2 max-w-xs">
+                <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-2 max-w-xs">
                   <span className="font-bold text-text-primary block text-[11px]">PERCENTUAL MÁXIMO</span>
                   <div>
                     <label className="text-[10px] text-text-secondary font-bold block mb-0.5">Teto Autorizado (%)</label>
@@ -1569,7 +1569,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                         value={formSuccessFeeMaxPercent} 
                         onChange={e => setFormSuccessFeeMaxPercent(e.target.value === '' ? '' : Number(e.target.value))} 
                         placeholder="Ex: 15"
-                        className="w-full border border-border-subtle p-1.5 pr-7 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
+                        className="w-full border border-border-subtle p-1.5 pr-7 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan text-[11px] font-semibold"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-text-secondary select-none">%</span>
                     </div>
@@ -1584,7 +1584,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                   value={formNotes}
                   onChange={e => setFormNotes(e.target.value)}
                   placeholder="Justificativa técnica da política ou data de vigência acordada..."
-                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-800 focus:outline-none focus:border-action-cyan h-20"
+                  className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white dark:bg-slate-50 focus:outline-none focus:border-action-cyan h-20"
                 />
               </div>
 
@@ -1592,13 +1592,13 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                 <button
                   type="button"
                   onClick={() => setIsPolicyModalOpen(false)}
-                  className="bg-slate-150 hover:bg-slate-200 text-slate-700 font-bold p-2.5 px-4 rounded-xl transition cursor-pointer dark:bg-slate-800 dark:text-slate-350 dark:hover:bg-slate-700"
+                  className="bg-slate-150 hover:bg-slate-200 text-slate-700 font-bold p-2.5 px-4 rounded-xl transition cursor-pointer dark:bg-slate-50 dark:text-slate-600 dark:hover:bg-slate-700"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-white font-extrabold p-2.5 px-6 rounded-xl transition cursor-pointer"
+                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition cursor-pointer"
                 >
                   Salvar Diretriz
                 </button>

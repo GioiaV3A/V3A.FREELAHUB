@@ -297,12 +297,12 @@ export default function PublicFreelancerForm({
           <Check className="w-10 h-10 text-emerald-400" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-xl font-extrabold text-white">Sucesso!</h3>
-          <p className="text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+          <h3 className="text-xl font-extrabold text-[var(--text-primary)]">Sucesso!</h3>
+          <p className="text-sm text-[var(--text-muted)] max-w-md mx-auto leading-relaxed">
             {successMsg}
           </p>
         </div>
-        <p className="text-xs text-slate-500 pt-6 border-t border-white/5 uppercase tracking-wider">
+        <p className="text-xs text-[var(--text-disabled)] pt-6 border-t border-[var(--border-subtle)] uppercase tracking-wider">
           Este link foi invalidado por motivos de segurança.
         </p>
       </div>
@@ -317,11 +317,11 @@ export default function PublicFreelancerForm({
     <div className="space-y-6">
       {/* Progress display */}
       <div className="space-y-2 select-none">
-        <div className="flex justify-between text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+        <div className="flex justify-between text-[10px] text-[var(--text-disabled)] font-extrabold uppercase tracking-wider">
           <span>Passo {step} de {stepsCount}</span>
           <span className="text-action-cyan">{Math.round(progressPercent)}% Concluído</span>
         </div>
-        <div className="w-full h-1.5 bg-[#081528] rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-[var(--bg-sidebar)] rounded-full overflow-hidden">
           <div 
             className="h-full bg-action-cyan transition-all duration-300 rounded-full shadow-sm shadow-action-cyan/30"
             style={{ width: `${progressPercent}%` }}
@@ -340,40 +340,40 @@ export default function PublicFreelancerForm({
         {/* STEP 1: DADOS BÁSICOS */}
         {step === 1 && (
           <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
               <Contact className="w-4 h-4 text-action-cyan" />
-              <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Dados Básicos de Contato</h3>
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Dados Básicos de Contato</h3>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Nome Completo *</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Nome Completo *</label>
               <input
                 type="text"
                 name="full_name"
                 required
                 value={formData.full_name}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan transition-colors"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan transition-colors"
                 placeholder="Insira seu nome completo"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">E-mail *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">E-mail *</label>
                 <input
                   type="email"
                   name="email"
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan transition-colors"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan transition-colors"
                   placeholder="exemplo@email.com"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">WhatsApp *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">WhatsApp *</label>
                 <PhoneInputWithCountryCode
                   selectedCountry={countries.find(c => c.iso2 === formData.country_code) || countries.find(c => c.iso2 === 'BR')!}
                   value={formData.whatsapp}
@@ -392,7 +392,7 @@ export default function PublicFreelancerForm({
             {/* CNPJ / Foreign Tax ID */}
             {formData.country_code === 'BR' ? (
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">CNPJ *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">CNPJ *</label>
                 <CnpjInput
                   value={formData.cnpj_normalized}
                   onChange={(val) => setFormData(prev => ({ ...prev, cnpj_normalized: val }))}
@@ -401,14 +401,14 @@ export default function PublicFreelancerForm({
               </div>
             ) : (
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Identificador Fiscal Estrangeiro *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Identificador Fiscal Estrangeiro *</label>
                 <input
                   type="text"
                   name="foreign_tax_id"
                   required
                   value={formData.foreign_tax_id}
                   onChange={handleInputChange}
-                  className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan transition-colors"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan transition-colors"
                   placeholder="ID fiscal ou equivalente estrangeiro"
                 />
               </div>
@@ -416,7 +416,7 @@ export default function PublicFreelancerForm({
 
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Cidade *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Cidade *</label>
                 <CityAutocomplete
                   value={formData.city}
                   onChange={(val) => setFormData(prev => ({ ...prev, city: val }))}
@@ -426,7 +426,7 @@ export default function PublicFreelancerForm({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Estado *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Estado *</label>
                 <input
                   type="text"
                   name="state"
@@ -434,20 +434,20 @@ export default function PublicFreelancerForm({
                   maxLength={2}
                   value={formData.state}
                   onChange={handleInputChange}
-                  className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan uppercase text-center"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan uppercase text-center"
                   placeholder="UF"
                 />
               </div>
             </div>
             
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">País de Residência *</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">País de Residência *</label>
               <select
                 name="country_code"
                 required
                 value={formData.country_code}
                 onChange={handleCountryChange}
-                className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-slate-200 outline-none focus:border-action-cyan cursor-pointer"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-secondary)] outline-none focus:border-action-cyan cursor-pointer"
               >
                 <option value="">Selecione seu país...</option>
                 {countries.map(c => (
@@ -461,19 +461,19 @@ export default function PublicFreelancerForm({
         {/* STEP 2: PERFIL PROFISSIONAL */}
         {step === 2 && (
           <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
               <Briefcase className="w-4 h-4 text-action-cyan" />
-              <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Perfil Profissional</h3>
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Perfil Profissional</h3>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Função Principal *</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Função Principal *</label>
               <select
                 name="main_function_id"
                 required
                 value={formData.main_function_id}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-slate-200 outline-none focus:border-action-cyan cursor-pointer"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-secondary)] outline-none focus:border-action-cyan cursor-pointer"
               >
                 <option value="">Selecione sua função...</option>
                 {functions.map(f => (
@@ -484,13 +484,13 @@ export default function PublicFreelancerForm({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Senioridade *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Senioridade *</label>
                 <select
                   name="seniority"
                   required
                   value={formData.seniority}
                   onChange={handleInputChange}
-                  className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-slate-200 outline-none focus:border-action-cyan cursor-pointer"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-secondary)] outline-none focus:border-action-cyan cursor-pointer"
                 >
                   <option value="junior">Júnior</option>
                   <option value="pleno">Pleno</option>
@@ -500,13 +500,13 @@ export default function PublicFreelancerForm({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Disponibilidade *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Disponibilidade *</label>
                 <select
                   name="availability"
                   required
                   value={formData.availability}
                   onChange={handleInputChange}
-                  className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-slate-200 outline-none focus:border-action-cyan cursor-pointer"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-secondary)] outline-none focus:border-action-cyan cursor-pointer"
                 >
                   <option value="disponivel">Imediata</option>
                   <option value="conflito_parcial">15 dias</option>
@@ -516,13 +516,13 @@ export default function PublicFreelancerForm({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Situação Atual *</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Situação Atual *</label>
                 <select
                   name="current_situation"
                   required
                   value={formData.current_situation}
                   onChange={handleInputChange}
-                  className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-slate-200 outline-none focus:border-action-cyan cursor-pointer"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-secondary)] outline-none focus:border-action-cyan cursor-pointer"
                 >
                   <option value="100% Freela">100% Freelancer</option>
                   <option value="CLT com disponibilidade">CLT com disponibilidade</option>
@@ -534,21 +534,21 @@ export default function PublicFreelancerForm({
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">Segmentos / Indústrias de Experiência</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-[#0B1E38] p-4 rounded-2xl border border-white/5 max-h-48 overflow-y-auto">
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">Segmentos / Indústrias de Experiência</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-[var(--bg-input)] p-4 rounded-2xl border border-[var(--border-subtle)] max-h-48 overflow-y-auto">
                 {industries.map(ind => {
                   const isChecked = formData.industries.includes(ind.id);
                   return (
                     <label 
                       key={ind.id} 
                       className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition select-none
-                        ${isChecked ? 'bg-action-cyan/10 text-action-cyan font-bold' : 'text-slate-300 hover:bg-white/5'}`}
+                        ${isChecked ? 'bg-action-cyan/10 text-action-cyan font-bold' : 'text-[var(--text-muted)] hover:bg-white/5'}`}
                     >
                       <input
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => handleIndustryChange(ind.id)}
-                        className="rounded border-white/10 text-action-cyan focus:ring-action-cyan bg-[#0B1E38]"
+                        className="rounded border-[var(--border-default)] text-action-cyan focus:ring-action-cyan bg-[var(--bg-input)]"
                       />
                       <span className="truncate">{ind.name}</span>
                     </label>
@@ -562,18 +562,18 @@ export default function PublicFreelancerForm({
         {/* STEP 3: EXPERIÊNCIA V3A */}
         {step === 3 && (
           <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
               <Layers className="w-4 h-4 text-action-cyan" />
-              <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Experiência com Eventos & V3A</h3>
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Experiência com Eventos & V3A</h3>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Já trabalhou com a agência V3A?</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Já trabalhou com a agência V3A?</label>
               <select
                 name="has_worked_with_v3a"
                 value={formData.has_worked_with_v3a}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-slate-200 outline-none focus:border-action-cyan cursor-pointer"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-secondary)] outline-none focus:border-action-cyan cursor-pointer"
               >
                 <option value="Nunca">Nunca trabalhei</option>
                 <option value="Uma vez">Já trabalhei uma vez</option>
@@ -583,25 +583,25 @@ export default function PublicFreelancerForm({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">Se sim, quais projetos da V3A realizou?</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">Se sim, quais projetos da V3A realizou?</label>
               <textarea
                 name="v3a_projects"
                 rows={3}
                 value={formData.v3a_projects}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan resize-none"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan resize-none"
                 placeholder="Ex: Coca-Cola Rock in Rio, Lançamento AutoCorp, etc."
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">Principais marcas atendidas na carreira</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">Principais marcas atendidas na carreira</label>
               <textarea
                 name="brands_worked"
                 rows={2}
                 value={formData.brands_worked}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan resize-none"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan resize-none"
                 placeholder="Ex: Samsung, Red Bull, Ambev, etc."
               />
             </div>
@@ -611,21 +611,21 @@ export default function PublicFreelancerForm({
         {/* STEP 4: PORTFÓLIO E REDES */}
         {step === 4 && (
           <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
               <LinkIcon className="w-4 h-4 text-action-cyan" />
-              <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Portfólio & Redes Sociais</h3>
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Portfólio & Redes Sociais</h3>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Website ou Portfólio Online (URL)</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Website ou Portfólio Online (URL)</label>
               <div className="relative">
-                <LinkIcon className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                <LinkIcon className="absolute left-3.5 top-3.5 w-4 h-4 text-[var(--text-disabled)]" />
                 <input
                   type="url"
                   name="portfolio_url"
                   value={formData.portfolio_url}
                   onChange={handleInputChange}
-                  className="w-full bg-[#0B1E38] border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-action-cyan"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 pl-10 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan"
                   placeholder="https://behance.net/seu-perfil"
                 />
               </div>
@@ -633,30 +633,30 @@ export default function PublicFreelancerForm({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">LinkedIn URL</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">LinkedIn URL</label>
                 <div className="relative">
-                  <Linkedin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                  <Linkedin className="absolute left-3.5 top-3.5 w-4 h-4 text-[var(--text-disabled)]" />
                   <input
                     type="url"
                     name="linkedin_url"
                     value={formData.linkedin_url}
                     onChange={handleInputChange}
-                    className="w-full bg-[#0B1E38] border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-action-cyan"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 pl-10 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan"
                     placeholder="https://linkedin.com/in/seu-perfil"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Instagram URL</label>
+                <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Instagram URL</label>
                 <div className="relative">
-                  <Instagram className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                  <Instagram className="absolute left-3.5 top-3.5 w-4 h-4 text-[var(--text-disabled)]" />
                   <input
                     type="url"
                     name="instagram_url"
                     value={formData.instagram_url}
                     onChange={handleInputChange}
-                    className="w-full bg-[#0B1E38] border border-white/10 p-3 pl-10 rounded-xl text-white outline-none focus:border-action-cyan"
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 pl-10 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan"
                     placeholder="https://instagram.com/seu-perfil"
                   />
                 </div>
@@ -665,10 +665,10 @@ export default function PublicFreelancerForm({
 
             {/* Upload de arquivo portfólio */}
             <div className="space-y-2 pt-2">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">Upload de Portfólio (PDF ou ZIP - Máx 20MB)</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">Upload de Portfólio (PDF ou ZIP - Máx 20MB)</label>
               
               {!formData.portfolio_file_url ? (
-                <label className={`border border-dashed border-white/10 hover:border-action-cyan/40 bg-[#0B1E38] rounded-2xl p-6 text-center cursor-pointer block transition duration-200 select-none
+                <label className={`border border-dashed border-[var(--border-default)] hover:border-action-cyan/40 bg-[var(--bg-input)] rounded-2xl p-6 text-center cursor-pointer block transition duration-200 select-none
                   ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <input
                     type="file"
@@ -680,31 +680,31 @@ export default function PublicFreelancerForm({
                   {isUploading ? (
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-8 h-8 text-action-cyan animate-spin" />
-                      <span className="text-[11px] text-slate-300">Enviando arquivo seguro para a nuvem...</span>
+                      <span className="text-[11px] text-[var(--text-muted)]">Enviando arquivo seguro para a nuvem...</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2">
                       <Upload className="w-7 h-7 text-action-cyan" />
-                      <span className="text-[11px] text-slate-200 font-bold">Escolha um arquivo</span>
-                      <span className="text-[10px] text-slate-400">Arraste ou clique para selecionar</span>
+                      <span className="text-[11px] text-[var(--text-secondary)] font-bold">Escolha um arquivo</span>
+                      <span className="text-[10px] text-[var(--text-disabled)]">Arraste ou clique para selecionar</span>
                     </div>
                   )}
                 </label>
               ) : (
-                <div className="flex items-center justify-between bg-[#0B1E38] border border-white/10 p-4 rounded-2xl select-none animate-fade-in">
+                <div className="flex items-center justify-between bg-[var(--bg-input)] border border-[var(--border-default)] p-4 rounded-2xl select-none animate-fade-in">
                   <div className="flex items-center gap-3 truncate">
                     <div className="w-9 h-9 rounded-xl bg-action-cyan/10 border border-action-cyan/20 flex items-center justify-center shrink-0">
                       <FileText className="w-5 h-5 text-action-cyan" />
                     </div>
                     <div className="truncate">
-                      <p className="font-bold text-slate-200 truncate">{formData.portfolio_file_name}</p>
+                      <p className="font-bold text-[var(--text-secondary)] truncate">{formData.portfolio_file_name}</p>
                       <span className="text-[9px] text-[#A2E9F2]">Upload seguro realizado</span>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={handleRemoveFile}
-                    className="p-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-rose-300 hover:text-white rounded-xl transition cursor-pointer"
+                    className="p-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-rose-300 hover:text-[var(--text-primary)] rounded-xl transition cursor-pointer"
                     title="Excluir arquivo"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -718,27 +718,27 @@ export default function PublicFreelancerForm({
         {/* STEP 5: OBSERVAÇÕES E CONFIRMAÇÃO */}
         {step === 5 && (
           <div className="space-y-4 animate-fade-in">
-            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
               <CheckSquare className="w-4 h-4 text-action-cyan" />
-              <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">Observações e Confirmação</h3>
+              <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Observações e Confirmação</h3>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">Observações adicionais ou comentários</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">Observações adicionais ou comentários</label>
               <textarea
                 name="observations"
                 rows={4}
                 value={formData.observations}
                 onChange={handleInputChange}
-                className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan"
                 placeholder="Informações adicionais que julgar pertinentes..."
               />
             </div>
 
             {/* Checklist items summary for review */}
-            <div className="bg-[#0B1E38]/50 border border-white/5 p-4 rounded-2xl space-y-2 select-none">
-              <h4 className="text-[10px] text-slate-300 font-extrabold uppercase tracking-wider">Resumo do Perfil</h4>
-              <ul className="space-y-1.5 text-[11px] text-slate-300">
+            <div className="bg-[var(--bg-input)]/50 border border-[var(--border-subtle)] p-4 rounded-2xl space-y-2 select-none">
+              <h4 className="text-[10px] text-[var(--text-muted)] font-extrabold uppercase tracking-wider">Resumo do Perfil</h4>
+              <ul className="space-y-1.5 text-[11px] text-[var(--text-muted)]">
                 <li>&bull; <strong>Nome:</strong> {formData.full_name}</li>
                 <li>&bull; <strong>E-mail:</strong> {formData.email}</li>
                 <li>&bull; <strong>Contato:</strong> {formData.whatsapp}</li>
@@ -760,9 +760,9 @@ export default function PublicFreelancerForm({
                   required
                   checked={consentChecked}
                   onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-0.5 rounded border-white/10 text-action-cyan focus:ring-action-cyan bg-[#0B1E38]"
+                  className="mt-0.5 rounded border-[var(--border-default)] text-action-cyan focus:ring-action-cyan bg-[var(--bg-input)]"
                 />
-                <span className="text-[10px] sm:text-[11px] text-slate-350 leading-relaxed font-semibold">
+                <span className="text-[10px] sm:text-[11px] text-slate-600 leading-relaxed font-semibold">
                   Confirmo que as informações fornecidas são verdadeiras e autorizo a V3A a analisá-las para fins de cadastro em sua base de freelancers.
                 </span>
               </label>
@@ -773,9 +773,9 @@ export default function PublicFreelancerForm({
                   required
                   checked={lgpdChecked}
                   onChange={(e) => setLgpdChecked(e.target.checked)}
-                  className="mt-0.5 rounded border-white/10 text-action-cyan focus:ring-action-cyan bg-[#0B1E38]"
+                  className="mt-0.5 rounded border-[var(--border-default)] text-action-cyan focus:ring-action-cyan bg-[var(--bg-input)]"
                 />
-                <span className="text-[10px] sm:text-[11px] text-slate-350 leading-relaxed font-semibold">
+                <span className="text-[10px] sm:text-[11px] text-slate-600 leading-relaxed font-semibold">
                   Li e concordo com a{' '}
                   <a
                     href="/politica-privacidade.pdf"
@@ -794,13 +794,13 @@ export default function PublicFreelancerForm({
         )}
 
         {/* Step Buttons */}
-        <div className="flex justify-between items-center pt-4 border-t border-white/5">
+        <div className="flex justify-between items-center pt-4 border-t border-[var(--border-subtle)]">
           {step > 1 ? (
             <button
               type="button"
               onClick={handleBack}
               disabled={isSubmitting}
-              className="px-5 py-3 border border-white/10 hover:bg-white/5 text-slate-300 font-bold rounded-xl cursor-pointer transition select-none disabled:opacity-50"
+              className="px-5 py-3 border border-[var(--border-default)] hover:bg-white/5 text-[var(--text-muted)] font-bold rounded-xl cursor-pointer transition select-none disabled:opacity-50"
             >
               Voltar
             </button>

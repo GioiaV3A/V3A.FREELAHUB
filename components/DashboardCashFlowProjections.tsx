@@ -450,33 +450,33 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
   // ── Restricted Access Render ──
   if (!isAuthorized) {
     return (
-      <div id="dashboard-cashflow-projections-panel" className="bg-slate-900 rounded-2xl shadow-xl border border-slate-800 p-8 text-center space-y-4">
+      <div id="dashboard-cashflow-projections-panel" className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center space-y-4">
         <div className="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto border border-amber-500/20">
           <Lock className="w-6 h-6" />
         </div>
-        <h3 className="text-lg font-bold text-white">Acesso Restrito à Gestão Executiva</h3>
-        <p className="text-xs text-slate-400 max-w-md mx-auto">
-          O painel de Projeção de Fluxo de Caixa / Pagamentos (Supply) é visível exclusivamente para os perfis <strong className="text-slate-200">MASTER</strong>, <strong className="text-slate-200">RH</strong> e <strong className="text-slate-200">C-LEVEL</strong>.
+        <h3 className="text-lg font-bold text-[var(--text-primary)]">Acesso Restrito à Gestão Executiva</h3>
+        <p className="text-xs text-[var(--text-disabled)] max-w-md mx-auto">
+          O painel de Projeção de Fluxo de Caixa / Pagamentos (Supply) é visível exclusivamente para os perfis <strong className="text-[var(--text-secondary)]">MASTER</strong>, <strong className="text-[var(--text-secondary)]">RH</strong> e <strong className="text-[var(--text-secondary)]">C-LEVEL</strong>.
         </p>
       </div>
     );
   }
 
   return (
-    <div id="dashboard-cashflow-projections-panel" className="bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-800/80 p-6 md:p-8 space-y-7 transition-all duration-300">
+    <div id="dashboard-cashflow-projections-panel" className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-200/80 p-6 md:p-8 space-y-7 transition-all duration-300">
       
       {/* ── 1. HEADER EXECUTIVE TITLE ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between border-b border-slate-800 pb-5 gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between border-b border-slate-200 pb-5 gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-action-cyan/10 border border-action-cyan/30 text-action-cyan flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.25)]">
               <Wallet className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-white text-lg tracking-tight flex items-center gap-2">
+              <h3 className="font-extrabold text-[var(--text-primary)] text-lg tracking-tight flex items-center gap-2">
                 <span>Projeção de Fluxo de Caixa / Pagamentos (Supply)</span>
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--text-disabled)] mt-0.5">
                 Linha do tempo executiva e previsão operacional de desembolsos consolidados por mês de referência.
               </p>
             </div>
@@ -488,7 +488,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
             <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
             <span>Previsão Operacional Ativa</span>
           </span>
-          <span className="text-[11px] font-bold text-slate-300 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full">
+          <span className="text-[11px] font-bold text-[var(--text-muted)] bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full">
             Perfil: <strong className="text-action-cyan">{userRole}</strong>
           </span>
         </div>
@@ -497,13 +497,13 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       {/* ── 2. EXECUTIVE KPI SUMMARY GRID ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* KPI 1: Volume Total */}
-        <div className="bg-slate-800/60 border border-slate-700/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
+        <div className="bg-slate-50/60 border border-slate-200/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
           <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Volume Total Projetado</span>
-            <span className="text-lg font-black text-white block mt-1 tracking-tight">
+            <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">Volume Total Projetado</span>
+            <span className="text-lg font-black text-[var(--text-primary)] block mt-1 tracking-tight">
               {formatCurrencyBR(totalVolume)}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+            <span className="text-[10px] text-[var(--text-disabled)] font-medium block mt-0.5">
               Ref. alocações homologadas
             </span>
           </div>
@@ -513,13 +513,13 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         </div>
 
         {/* KPI 2: Total de Parcelas */}
-        <div className="bg-slate-800/60 border border-slate-700/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
+        <div className="bg-slate-50/60 border border-slate-200/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
           <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Total de Parcelas</span>
-            <span className="text-lg font-black text-white block mt-1 tracking-tight">
+            <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">Total de Parcelas</span>
+            <span className="text-lg font-black text-[var(--text-primary)] block mt-1 tracking-tight">
               {totalParcels} {totalParcels === 1 ? 'parcela' : 'parcelas'}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+            <span className="text-[10px] text-[var(--text-disabled)] font-medium block mt-0.5">
               Em {uniqueJobsCount} {uniqueJobsCount === 1 ? 'job impactado' : 'jobs impactados'}
             </span>
           </div>
@@ -529,13 +529,13 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         </div>
 
         {/* KPI 3: Mês de Maior Desembolso */}
-        <div className="bg-slate-800/60 border border-slate-700/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
+        <div className="bg-slate-50/60 border border-slate-200/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
           <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Pico de Desembolso</span>
+            <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">Pico de Desembolso</span>
             <span className="text-base font-extrabold text-amber-400 block mt-1 truncate max-w-[140px]">
               {peakMonthObj ? peakMonthObj.monthLabel : '—'}
             </span>
-            <span className="text-[11px] font-bold text-slate-300 block mt-0.5">
+            <span className="text-[11px] font-bold text-[var(--text-muted)] block mt-0.5">
               {peakMonthObj ? formatCurrencyBR(peakMonthObj.totalAmount) : 'R$ 0,00'}
             </span>
           </div>
@@ -545,18 +545,18 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         </div>
 
         {/* KPI 4: Alertas de Risco RC */}
-        <div className="bg-slate-800/60 border border-slate-700/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
+        <div className="bg-slate-50/60 border border-slate-200/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
           <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Prazos de RC em Risco</span>
+            <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">Prazos de RC em Risco</span>
             <div className="flex items-baseline gap-1.5 mt-1">
               <span className={`text-lg font-black ${riskAlertsCount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                 {riskAlertsCount}
               </span>
-              <span className="text-[10px] font-bold text-slate-400">
+              <span className="text-[10px] font-bold text-[var(--text-disabled)]">
                 ({criticalAlertsCount} crít. / {urgentAlertsCount} urg.)
               </span>
             </div>
-            <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+            <span className="text-[10px] text-[var(--text-disabled)] font-medium block mt-0.5">
               Requer atenção operacional
             </span>
           </div>
@@ -566,13 +566,13 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         </div>
 
         {/* KPI 5: Núcleos Ativos */}
-        <div className="bg-slate-800/60 border border-slate-700/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
+        <div className="bg-slate-50/60 border border-slate-200/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
           <div>
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Núcleos Envolvidos</span>
-            <span className="text-lg font-black text-white block mt-1 tracking-tight">
+            <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">Núcleos Envolvidos</span>
+            <span className="text-lg font-black text-[var(--text-primary)] block mt-1 tracking-tight">
               {nucleosBreakdown.length} {nucleosBreakdown.length === 1 ? 'núcleo' : 'núcleos'}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+            <span className="text-[10px] text-[var(--text-disabled)] font-medium block mt-0.5">
               {clientsBreakdown.length} clientes ativos
             </span>
           </div>
@@ -583,33 +583,33 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       </div>
 
       {/* ── 3. CONTROLS & FILTERS BAR ── */}
-      <div className="bg-slate-850/80 border border-slate-750 p-4 rounded-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-slate-50/80 border border-slate-750 p-4 rounded-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Left: View Tabs */}
-        <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-1.5 bg-white/90 p-1 rounded-xl border border-slate-200">
           <button
             onClick={() => setActiveTab('timeline')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'timeline' ? 'bg-action-cyan text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'timeline' ? 'bg-action-cyan text-slate-950 shadow-md' : 'text-[var(--text-disabled)] hover:text-[var(--text-primary)]'}`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
             <span>Linha do Tempo</span>
           </button>
           <button
             onClick={() => setActiveTab('nucleos')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'nucleos' ? 'bg-action-cyan text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'nucleos' ? 'bg-action-cyan text-slate-950 shadow-md' : 'text-[var(--text-disabled)] hover:text-[var(--text-primary)]'}`}
           >
             <Building className="w-3.5 h-3.5" />
             <span>Por Núcleo (Gráfico)</span>
           </button>
           <button
             onClick={() => setActiveTab('clients')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'clients' ? 'bg-action-cyan text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'clients' ? 'bg-action-cyan text-slate-950 shadow-md' : 'text-[var(--text-disabled)] hover:text-[var(--text-primary)]'}`}
           >
             <Users className="w-3.5 h-3.5" />
             <span>Por Cliente (Gráfico)</span>
           </button>
           <button
             onClick={() => setActiveTab('table')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'table' ? 'bg-action-cyan text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'}`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeTab === 'table' ? 'bg-action-cyan text-slate-950 shadow-md' : 'text-[var(--text-disabled)] hover:text-[var(--text-primary)]'}`}
           >
             <Table className="w-3.5 h-3.5" />
             <span>Tabela Analítica</span>
@@ -620,11 +620,11 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         <div className="flex flex-wrap items-center gap-3">
           {/* Núcleo Select */}
           <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <Filter className="w-3.5 h-3.5 text-[var(--text-disabled)]" />
             <select
               value={selectedNucleo}
               onChange={e => setSelectedNucleo(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 focus:border-action-cyan focus:outline-none"
+              className="bg-white border border-slate-200 text-xs text-[var(--text-primary)] rounded-lg px-2.5 py-1.5 focus:border-action-cyan focus:outline-none"
             >
               <option value="all">Todos os Núcleos</option>
               {availableNucleos.map(n => (
@@ -637,7 +637,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           <select
             value={selectedClient}
             onChange={e => setSelectedClient(e.target.value)}
-            className="bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 focus:border-action-cyan focus:outline-none"
+            className="bg-white border border-slate-200 text-xs text-[var(--text-primary)] rounded-lg px-2.5 py-1.5 focus:border-action-cyan focus:outline-none"
           >
             <option value="all">Todos os Clientes</option>
             {availableClients.map(c => (
@@ -649,7 +649,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           <select
             value={timeHorizon}
             onChange={e => setTimeHorizon(e.target.value as any)}
-            className="bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 focus:border-action-cyan focus:outline-none"
+            className="bg-white border border-slate-200 text-xs text-[var(--text-primary)] rounded-lg px-2.5 py-1.5 focus:border-action-cyan focus:outline-none"
           >
             <option value="all">Todos os Meses</option>
             <option value="6">Próximos 6 meses</option>
@@ -659,7 +659,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           {/* Risk Filter Toggle */}
           <button
             onClick={() => setRiskOnlyFilter(!riskOnlyFilter)}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${riskOnlyFilter ? 'bg-red-500/20 text-red-300 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white'}`}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${riskOnlyFilter ? 'bg-red-500/20 text-red-300 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-white text-[var(--text-disabled)] border-slate-200 hover:text-[var(--text-primary)]'}`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>Apenas Alertas RC</span>
@@ -673,31 +673,31 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       {activeTab === 'timeline' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h4 className="font-extrabold text-xs text-white uppercase tracking-wider flex items-center gap-2">
+            <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
               <Clock className="w-4 h-4 text-action-cyan" />
               <span>Evolução Mensal das Projeções (Curvas por Núcleo Contratante)</span>
             </h4>
 
             {/* Carousel / Navigation Controls */}
             {monthlyAggregates.list.length > windowSize && (
-              <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-200">
                 <button
                   disabled={monthWindowOffset === 0}
                   onClick={() => setMonthWindowOffset(prev => Math.max(0, prev - 1))}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-action-cyan hover:text-slate-950 transition-all duration-300 flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-50 text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-action-cyan hover:text-slate-950 transition-all duration-300 flex items-center gap-1"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Anterior</span>
                 </button>
 
-                <span className="text-[11px] font-bold text-slate-300 px-2 select-none">
+                <span className="text-[11px] font-bold text-[var(--text-muted)] px-2 select-none">
                   {visibleMonthList[0]?.monthLabel} — {visibleMonthList[visibleMonthList.length - 1]?.monthLabel}
                 </span>
 
                 <button
                   disabled={monthWindowOffset >= maxOffset}
                   onClick={() => setMonthWindowOffset(prev => Math.min(maxOffset, prev + 1))}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-action-cyan hover:text-slate-950 transition-all duration-300 flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-50 text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-action-cyan hover:text-slate-950 transition-all duration-300 flex items-center gap-1"
                 >
                   <span>Próximo</span>
                   <ChevronRight className="w-4 h-4" />
@@ -707,7 +707,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                   <button
                     onClick={() => setMonthWindowOffset(0)}
                     title="Reiniciar navegação para o início"
-                    className="p-1 rounded-lg text-slate-400 hover:text-white transition-colors"
+                    className="p-1 rounded-lg text-[var(--text-disabled)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
@@ -717,17 +717,17 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           </div>
 
           {monthlyAggregates.list.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-xs italic bg-slate-900/50 rounded-2xl border border-slate-800">
+            <div className="text-center py-12 text-[var(--text-disabled)] text-xs italic bg-white/50 rounded-2xl border border-slate-200">
               Nenhuma projeção financeira cadastrada ou correspondente aos filtros selecionados.
             </div>
           ) : (
             <div className="space-y-6">
               {/* Interactive SVG Timeline Curve with Multi-Color Nuclei Lines */}
-              <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-6 relative overflow-hidden transition-all duration-500 space-y-4">
+              <div className="bg-slate-950/90 border border-slate-200 rounded-2xl p-6 relative overflow-hidden transition-all duration-500 space-y-4">
                 
                 {/* ── MULTI-COLOR NUCLEI INTERACTIVE LEGEND BAR ── */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+                  <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider flex items-center gap-1.5">
                     <Layers3 className="w-3.5 h-3.5 text-action-cyan" />
                     <span>Legenda de Núcleos no Gráfico</span>
                   </span>
@@ -736,7 +736,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                     {/* Total Consolidated Badge */}
                     <button
                       onClick={() => setHighlightedNucleoName(null)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${highlightedNucleoName === null ? 'bg-slate-800 border-action-cyan text-white shadow-xs' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'}`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${highlightedNucleoName === null ? 'bg-slate-50 border-action-cyan text-[var(--text-primary)] shadow-xs' : 'bg-white border-slate-200 text-[var(--text-disabled)] hover:text-[var(--text-primary)]'}`}
                     >
                       <div className="w-2.5 h-2.5 rounded-full bg-action-cyan" />
                       <span>Total Consolidado</span>
@@ -747,12 +747,12 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                       <button
                         key={n.name}
                         onClick={() => setHighlightedNucleoName(highlightedNucleoName === n.name ? null : n.name)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${highlightedNucleoName === n.name ? 'bg-slate-800 border-white text-white shadow-md scale-105' : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'}`}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${highlightedNucleoName === n.name ? 'bg-slate-50 border-white text-[var(--text-primary)] shadow-md scale-105' : 'bg-white border-slate-200 text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                         style={{ borderColor: highlightedNucleoName === n.name ? n.color : undefined }}
                       >
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: n.color }} />
                         <span>{n.name}</span>
-                        <span className="text-[10px] text-slate-400 font-normal">({formatCurrencyBR(n.totalAmount)})</span>
+                        <span className="text-[10px] text-[var(--text-disabled)] font-normal">({formatCurrencyBR(n.totalAmount)})</span>
                       </button>
                     ))}
                   </div>
@@ -761,7 +761,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                 {/* SVG Visual Canvas with Y-Axis & X-Axis */}
                 <div className="flex gap-4 pt-1">
                   {/* Y-Axis Monetary Reference Labels Column */}
-                  <div className="w-24 flex flex-col justify-between text-[10px] font-extrabold text-slate-400 text-right pr-2 py-1 select-none border-r border-slate-800/80 shrink-0">
+                  <div className="w-24 flex flex-col justify-between text-[10px] font-extrabold text-[var(--text-disabled)] text-right pr-2 py-1 select-none border-r border-slate-200/80 shrink-0">
                     {yAxisTicks.map((tick, idx) => (
                       <span key={idx} className="block tracking-tight truncate">
                         {tick.label}
@@ -775,7 +775,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                       {/* Horizontal Gridlines matching Y ticks */}
                       <div className="absolute inset-0 flex flex-col justify-between pointer-events-none py-1">
                         {yAxisTicks.map((_, idx) => (
-                          <div key={idx} className="w-full border-b border-dashed border-slate-800/70" />
+                          <div key={idx} className="w-full border-b border-dashed border-slate-200/70" />
                         ))}
                       </div>
 
@@ -916,7 +916,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                             >
                               {/* Total Top Glow Node */}
                               <div
-                                className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-300 shadow-[0_0_10px_rgba(6,182,212,0.4)] ${isHovered ? 'bg-white border-action-cyan scale-150 z-30 ring-4 ring-action-cyan/40' : 'bg-slate-900 border-action-cyan/70 opacity-60'}`}
+                                className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-300 shadow-[0_0_10px_rgba(6,182,212,0.4)] ${isHovered ? 'bg-white border-action-cyan scale-150 z-30 ring-4 ring-action-cyan/40' : 'bg-white border-action-cyan/70 opacity-60'}`}
                                 style={{ marginBottom: `${Math.max(10, (m.totalAmount / monthlyAggregates.maxVal) * 145)}px` }}
                               />
                             </div>
@@ -926,7 +926,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                     </div>
 
                     {/* X-Axis Reference Month Labels Row */}
-                    <div className="flex justify-between items-center px-2 pt-3 border-t border-slate-800 text-[11px] font-extrabold text-slate-300 select-none">
+                    <div className="flex justify-between items-center px-2 pt-3 border-t border-slate-200 text-[11px] font-extrabold text-[var(--text-muted)] select-none">
                       {visibleMonthList.map((m) => {
                         const isHovered = hoveredMonthKey === m.monthKey;
                         return (
@@ -934,7 +934,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                             key={m.monthKey}
                             onMouseEnter={() => setHoveredMonthKey(m.monthKey)}
                             onMouseLeave={() => setHoveredMonthKey(null)}
-                            className={`cursor-pointer transition-all duration-300 text-center px-1 py-0.5 rounded-md ${isHovered ? 'text-action-cyan bg-action-cyan/10 scale-110' : 'hover:text-white'}`}
+                            className={`cursor-pointer transition-all duration-300 text-center px-1 py-0.5 rounded-md ${isHovered ? 'text-action-cyan bg-action-cyan/10 scale-110' : 'hover:text-[var(--text-primary)]'}`}
                           >
                             <span>{m.monthLabel}</span>
                           </div>
@@ -946,7 +946,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
 
                 {/* ── CLEAN EXECUTIVE FOCUS BANNER (No Text Overlap) ── */}
                 {activeFocusMonth && (
-                  <div className="mt-6 bg-slate-900/90 border border-action-cyan/40 rounded-xl p-4 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 animate-fadeIn">
+                  <div className="mt-6 bg-white/90 border border-action-cyan/40 rounded-xl p-4 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 animate-fadeIn">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-action-cyan/10 border border-action-cyan/30 text-action-cyan flex items-center justify-center shrink-0">
                         <Sparkles className="w-5 h-5" />
@@ -954,7 +954,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-extrabold text-action-cyan uppercase tracking-wider">Mês em Foco</span>
-                          <span className="text-white font-extrabold text-sm">{activeFocusMonth.monthLabel}</span>
+                          <span className="text-[var(--text-primary)] font-extrabold text-sm">{activeFocusMonth.monthLabel}</span>
                           {activeFocusMonth.momPercent !== 0 && (
                             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border flex items-center gap-0.5 ${activeFocusMonth.momPercent > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
                               {activeFocusMonth.momPercent > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -962,9 +962,9 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-slate-300 mt-0.5">
+                        <div className="text-xs text-[var(--text-muted)] mt-0.5">
                           <strong className="text-emerald-400 font-extrabold text-sm">{formatCurrencyBR(activeFocusMonth.totalAmount)}</strong>
-                          <span className="text-slate-400 ml-2">({activeFocusMonth.parcelCount} parcelas · {activeFocusMonth.jobsSet.size} jobs)</span>
+                          <span className="text-[var(--text-disabled)] ml-2">({activeFocusMonth.parcelCount} parcelas · {activeFocusMonth.jobsSet.size} jobs)</span>
                         </div>
                       </div>
                     </div>
@@ -974,16 +974,16 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                       {Object.entries(activeFocusMonth.nucleosMap).map(([nName, nAmt]) => {
                         const nObj = visibleNucleosMap.find(v => v.name === nName);
                         return (
-                          <div key={nName} className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center gap-2">
+                          <div key={nName} className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2">
                             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: nObj?.color || '#a855f7' }} />
-                            <span className="text-[10px] text-slate-400 uppercase">{nName}:</span>
-                            <strong className="text-white font-bold">{formatCurrencyBR(nAmt)}</strong>
+                            <span className="text-[10px] text-[var(--text-disabled)] uppercase">{nName}:</span>
+                            <strong className="text-[var(--text-primary)] font-bold">{formatCurrencyBR(nAmt)}</strong>
                           </div>
                         );
                       })}
 
-                      <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center gap-1.5">
-                        <span className="text-[10px] text-slate-400 uppercase">Alertas RC:</span>
+                      <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1.5">
+                        <span className="text-[10px] text-[var(--text-disabled)] uppercase">Alertas RC:</span>
                         {activeFocusMonth.alertCounts.critical > 0 ? (
                           <span className="text-red-400 font-bold">🚨 {activeFocusMonth.alertCounts.critical} crít.</span>
                         ) : activeFocusMonth.alertCounts.urgent > 0 ? (
@@ -1007,12 +1007,12 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                         key={m.monthKey}
                         onMouseEnter={() => setHoveredMonthKey(m.monthKey)}
                         onMouseLeave={() => setHoveredMonthKey(null)}
-                        className={`bg-slate-900/90 border rounded-2xl p-4 transition-all duration-300 flex flex-col justify-between gap-3 shadow-md relative group cursor-pointer ${isHovered ? 'border-action-cyan ring-2 ring-action-cyan/30 bg-slate-850 shadow-[0_0_20px_rgba(6,182,212,0.2)] -translate-y-1' : 'border-slate-800 hover:border-slate-700'}`}
+                        className={`bg-white/90 border rounded-2xl p-4 transition-all duration-300 flex flex-col justify-between gap-3 shadow-md relative group cursor-pointer ${isHovered ? 'border-action-cyan ring-2 ring-action-cyan/30 bg-slate-50 shadow-[0_0_20px_rgba(6,182,212,0.2)] -translate-y-1' : 'border-slate-200 hover:border-slate-200'}`}
                       >
                         {/* Month Header */}
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-black text-white text-base tracking-tight">{m.monthLabel}</span>
+                            <span className="font-black text-[var(--text-primary)] text-base tracking-tight">{m.monthLabel}</span>
                             {m.momPercent !== 0 && (
                               <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border flex items-center gap-0.5 ${m.momPercent > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
                                 {m.momPercent > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -1027,7 +1027,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                         </div>
 
                         {/* Visual Progress Bar */}
-                        <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div className="w-full bg-slate-50 rounded-full h-2 overflow-hidden">
                           <div
                             className="bg-gradient-to-r from-action-cyan to-emerald-400 h-full rounded-full transition-all duration-500"
                             style={{ width: `${pctBar}%` }}
@@ -1035,25 +1035,25 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                         </div>
 
                         {/* Month Stats Sub-row */}
-                        <div className="space-y-1.5 text-xs border-t border-slate-800/80 pt-2.5">
-                          <div className="flex justify-between text-slate-400 text-[10.5px]">
+                        <div className="space-y-1.5 text-xs border-t border-slate-200/80 pt-2.5">
+                          <div className="flex justify-between text-[var(--text-disabled)] text-[10.5px]">
                             <span>Parcelas:</span>
-                            <span className="font-bold text-white">
+                            <span className="font-bold text-[var(--text-primary)]">
                               {m.parcelCount} ({m.jobsSet.size} jobs)
                             </span>
                           </div>
 
                           {/* Multi-Nucleus Breakdown Badges in Card */}
-                          <div className="space-y-1 pt-1 border-t border-slate-800/50">
+                          <div className="space-y-1 pt-1 border-t border-slate-200/50">
                             {Object.entries(m.nucleosMap).map(([nName, nAmt]) => {
                               const nObj = visibleNucleosMap.find(v => v.name === nName);
                               return (
                                 <div key={nName} className="flex justify-between text-[10px] truncate">
-                                  <span className="flex items-center gap-1 font-bold text-slate-300 truncate">
+                                  <span className="flex items-center gap-1 font-bold text-[var(--text-muted)] truncate">
                                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: nObj?.color || '#a855f7' }} />
                                     <span className="truncate">{nName}</span>
                                   </span>
-                                  <span className="font-bold text-white shrink-0">{formatCurrencyBR(nAmt)}</span>
+                                  <span className="font-bold text-[var(--text-primary)] shrink-0">{formatCurrencyBR(nAmt)}</span>
                                 </div>
                               );
                             })}
@@ -1091,24 +1091,24 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       {/* TAB 2: RICH GRAPHICAL NUCLEUS CONCENTRATION BREAKDOWN */}
       {activeTab === 'nucleos' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h4 className="font-extrabold text-xs text-white uppercase tracking-wider flex items-center gap-2">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
               <Building className="w-4 h-4 text-action-cyan" />
               <span>Análise Gráfica de Concentração por Núcleo Contratante</span>
             </h4>
-            <span className="text-[11px] text-slate-400 font-medium">
+            <span className="text-[11px] text-[var(--text-disabled)] font-medium">
               Proporção acumulada e volume financeiro por Núcleo
             </span>
           </div>
 
           {/* 1. Proportional Segmented Visual Bar Chart */}
-          <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+          <div className="bg-slate-950/90 border border-slate-200 rounded-2xl p-6 space-y-4">
+            <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">
               Distribuição Proporcional do Volume Total (100%)
             </span>
 
             {/* Stacked Bar */}
-            <div className="w-full bg-slate-900 rounded-xl h-6 flex overflow-hidden p-1 gap-1 border border-slate-800">
+            <div className="w-full bg-white rounded-xl h-6 flex overflow-hidden p-1 gap-1 border border-slate-200">
               {nucleosBreakdown.map((n) => (
                 <div
                   key={n.name}
@@ -1125,10 +1125,10 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
             {/* Legend Chips */}
             <div className="flex flex-wrap items-center gap-3 pt-1">
               {nucleosBreakdown.map((n) => (
-                <div key={n.name} className="flex items-center gap-2 text-xs bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+                <div key={n.name} className="flex items-center gap-2 text-xs bg-white px-3 py-1.5 rounded-lg border border-slate-200">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: n.color }} />
-                  <span className="font-bold text-white">{n.name}</span>
-                  <span className="text-slate-400 font-semibold">{n.percentage.toFixed(1)}%</span>
+                  <span className="font-bold text-[var(--text-primary)]">{n.name}</span>
+                  <span className="text-[var(--text-disabled)] font-semibold">{n.percentage.toFixed(1)}%</span>
                 </div>
               ))}
             </div>
@@ -1137,18 +1137,18 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           {/* 2. Graphical Ranking Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {nucleosBreakdown.map((n, idx) => (
-              <div key={n.name} className="bg-slate-900/90 border border-slate-800 hover:border-action-cyan/40 rounded-2xl p-5 space-y-4 transition-all duration-300 shadow-lg">
+              <div key={n.name} className="bg-white/90 border border-slate-200 hover:border-action-cyan/40 rounded-2xl p-5 space-y-4 transition-all duration-300 shadow-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-md"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-[var(--text-primary)] text-sm shadow-md"
                       style={{ backgroundColor: n.color + '25', color: n.color, border: `1px solid ${n.color}50` }}
                     >
                       #{idx + 1}
                     </div>
                     <div>
-                      <h5 className="font-extrabold text-white text-base">{n.name}</h5>
-                      <span className="text-[11px] text-slate-400 font-medium">
+                      <h5 className="font-extrabold text-[var(--text-primary)] text-base">{n.name}</h5>
+                      <span className="text-[11px] text-[var(--text-disabled)] font-medium">
                         {n.jobsCount} {n.jobsCount === 1 ? 'job impactado' : 'jobs impactados'} · {n.parcelCount} parcelas
                       </span>
                     </div>
@@ -1156,7 +1156,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
 
                   <div className="text-right">
                     <div className="text-lg font-black text-emerald-400">{formatCurrencyBR(n.amount)}</div>
-                    <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-slate-800 text-action-cyan border border-slate-700">
+                    <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-slate-50 text-action-cyan border border-slate-200">
                       {n.percentage.toFixed(1)}% do total
                     </span>
                   </div>
@@ -1164,7 +1164,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
 
                 {/* Progress Bar Visual */}
                 <div className="space-y-1">
-                  <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden p-0.5 border border-slate-800">
+                  <div className="w-full bg-slate-950 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200">
                     <div
                       className="h-full rounded-full transition-all duration-500 shadow-sm"
                       style={{
@@ -1173,7 +1173,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                       }}
                     />
                   </div>
-                  <div className="flex justify-between text-[10px] text-slate-400 font-medium pt-1">
+                  <div className="flex justify-between text-[10px] text-[var(--text-disabled)] font-medium pt-1">
                     <span>Média por parcela: {formatCurrencyBR(n.parcelCount > 0 ? n.amount / n.parcelCount : 0)}</span>
                     <span>Proporção em relação ao orçamento global</span>
                   </div>
@@ -1187,20 +1187,20 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       {/* TAB 3: RICH GRAPHICAL CLIENT CONCENTRATION BREAKDOWN */}
       {activeTab === 'clients' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h4 className="font-extrabold text-xs text-white uppercase tracking-wider flex items-center gap-2">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+            <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
               <Users className="w-4 h-4 text-action-cyan" />
               <span>Análise Gráfica de Concentração por Cliente / Projeto</span>
             </h4>
-            <span className="text-[11px] text-slate-400 font-medium">
+            <span className="text-[11px] text-[var(--text-disabled)] font-medium">
               Ranking consolidado e desduplicado de marcas contratantes
             </span>
           </div>
 
           {/* Top 5 Visual Ranking Horizontal Bar Chart */}
-          <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <div className="bg-slate-950/90 border border-slate-200 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider flex items-center gap-1.5">
                 <Award className="w-4 h-4 text-amber-400" />
                 <span>Ranking dos Maiores Clientes por Volume Projetado</span>
               </span>
@@ -1212,9 +1212,9 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                 <div key={c.name} className="space-y-1.5">
                   <div className="flex justify-between text-xs items-center">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 font-black text-slate-400 text-right">#{idx + 1}</span>
-                      <span className="font-bold text-white text-sm">{c.name}</span>
-                      <span className="text-[10px] text-slate-400">({c.jobsCount} jobs · {c.parcelCount} parcelas)</span>
+                      <span className="w-5 font-black text-[var(--text-disabled)] text-right">#{idx + 1}</span>
+                      <span className="font-bold text-[var(--text-primary)] text-sm">{c.name}</span>
+                      <span className="text-[10px] text-[var(--text-disabled)]">({c.jobsCount} jobs · {c.parcelCount} parcelas)</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="font-extrabold text-emerald-400 text-sm">{formatCurrencyBR(c.amount)}</span>
@@ -1224,7 +1224,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                     </div>
                   </div>
 
-                  <div className="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                  <div className="w-full bg-white rounded-full h-2.5 overflow-hidden border border-slate-200">
                     <div
                       className="bg-gradient-to-r from-action-cyan to-emerald-400 h-full rounded-full transition-all duration-500"
                       style={{ width: `${Math.max(2, c.percentage)}%` }}
@@ -1238,15 +1238,15 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           {/* Cards Grid for All Clients */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {clientsBreakdown.map((c, idx) => (
-              <div key={c.name} className="bg-slate-900/90 border border-slate-800 hover:border-action-cyan/40 rounded-2xl p-4 space-y-3 transition-all duration-300 shadow-md">
+              <div key={c.name} className="bg-white/90 border border-slate-200 hover:border-action-cyan/40 rounded-2xl p-4 space-y-3 transition-all duration-300 shadow-md">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-action-cyan font-black text-xs flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 text-action-cyan font-black text-xs flex items-center justify-center">
                       #{idx + 1}
                     </div>
                     <div>
-                      <h5 className="font-bold text-white text-sm truncate max-w-[140px]">{c.name}</h5>
-                      <span className="text-[10px] text-slate-400">{c.nucleosCount} {c.nucleosCount === 1 ? 'núcleo' : 'núcleos'}</span>
+                      <h5 className="font-bold text-[var(--text-primary)] text-sm truncate max-w-[140px]">{c.name}</h5>
+                      <span className="text-[10px] text-[var(--text-disabled)]">{c.nucleosCount} {c.nucleosCount === 1 ? 'núcleo' : 'núcleos'}</span>
                     </div>
                   </div>
 
@@ -1256,14 +1256,14 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                   </div>
                 </div>
 
-                <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-200">
                   <div
                     className="bg-action-cyan h-full rounded-full transition-all duration-500"
                     style={{ width: `${Math.max(2, c.percentage)}%` }}
                   />
                 </div>
 
-                <div className="flex justify-between text-[11px] text-slate-400 pt-0.5">
+                <div className="flex justify-between text-[11px] text-[var(--text-disabled)] pt-0.5">
                   <span>{c.jobsCount} {c.jobsCount === 1 ? 'job' : 'jobs'}</span>
                   <span>{c.parcelCount} {c.parcelCount === 1 ? 'parcela' : 'parcelas'}</span>
                 </div>
@@ -1277,28 +1277,28 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       {activeTab === 'table' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h4 className="font-extrabold text-xs text-white uppercase tracking-wider flex items-center gap-2">
+            <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
               <Table className="w-4 h-4 text-action-cyan" />
               <span>Tabela Analítica de Projeções de Pagamento</span>
             </h4>
 
             {/* Search Input */}
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-disabled)]" />
               <input
                 type="text"
                 placeholder="Buscar por job, cliente, núcleo ou freela..."
                 value={tableSearchQuery}
                 onChange={e => setTableSearchQuery(e.target.value)}
-                className="bg-slate-900 border border-slate-700 text-xs text-white pl-8 pr-3 py-1.5 rounded-lg focus:border-action-cyan focus:outline-none w-full sm:w-64"
+                className="bg-white border border-slate-200 text-xs text-[var(--text-primary)] pl-8 pr-3 py-1.5 rounded-lg focus:border-action-cyan focus:outline-none w-full sm:w-64"
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto border border-slate-800 rounded-xl">
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-950 text-slate-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <tr className="bg-slate-950 text-[var(--text-disabled)] font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
                   <th className="p-3">Job / Cliente</th>
                   <th className="p-3">Núcleo</th>
                   <th className="p-3">Freelancer</th>
@@ -1309,20 +1309,20 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                   <th className="p-3 text-right">Valor Previsto</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 bg-slate-900/60">
+              <tbody className="divide-y divide-slate-800/60 bg-white/60">
                 {tableFilteredItems.map(item => (
-                  <tr key={item.id} className="hover:bg-slate-800/80 transition-colors">
-                    <td className="p-3 font-semibold text-white">
+                  <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-3 font-semibold text-[var(--text-primary)]">
                       <div>{item.jobTitle}</div>
-                      <div className="text-[10px] text-slate-400 font-normal">{item.clientName}</div>
+                      <div className="text-[10px] text-[var(--text-disabled)] font-normal">{item.clientName}</div>
                     </td>
                     <td className="p-3 text-purple-300 font-medium">{item.nucleoName}</td>
-                    <td className="p-3 text-slate-300">{item.freelancerName}</td>
+                    <td className="p-3 text-[var(--text-muted)]">{item.freelancerName}</td>
                     <td className="p-3 font-bold text-action-cyan">{item.referenceMonth}</td>
-                    <td className="p-3 text-slate-300 font-medium">
+                    <td className="p-3 text-[var(--text-muted)] font-medium">
                       {item.suggestedPaymentDate.split('T')[0].split('-').reverse().join('/')}
                     </td>
-                    <td className="p-3 text-slate-300 font-medium">
+                    <td className="p-3 text-[var(--text-muted)] font-medium">
                       {item.suggestedRcDeadline.split('T')[0].split('-').reverse().join('/')}
                     </td>
                     <td className="p-3">
@@ -1349,7 +1349,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       )}
 
       {/* ── 5. MANDATORY COMPLIANCE DISCLAIMER ── */}
-      <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-slate-300 flex items-start gap-3 shadow-md">
+      <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-[var(--text-muted)] flex items-start gap-3 shadow-md">
         <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
         <div className="leading-relaxed">
           <strong className="text-amber-300 font-extrabold block mb-0.5">Aviso Obrigatório de Governança de Supply:</strong>

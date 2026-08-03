@@ -971,17 +971,17 @@ export default function NucleosPanel({ db }: { db: any }) {
               <div className="flex items-center gap-2">
                 <Plus className="w-5 h-5" style={{ color: '#00BCD4' }} />
                 <div>
-                  <h3 id="register-nucleo-title" className="font-extrabold text-base text-white">
+                  <h3 id="register-nucleo-title" className="font-extrabold text-base text-[var(--text-primary)]">
                     Registrar Novo Núcleo
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-[var(--text-disabled)] mt-0.5">
                     Cadastre a unidade operacional e defina o Head responsável.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsRegisterModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-white transition cursor-pointer"
+                className="p-2 rounded-xl text-[var(--text-disabled)] hover:text-[var(--text-primary)] transition cursor-pointer"
                 aria-label="Fechar modal"
               >
                 <X className="w-5 h-5" />
@@ -1154,9 +1154,9 @@ export default function NucleosPanel({ db }: { db: any }) {
             <div className="px-6 py-5 flex items-center justify-between border-b" style={{ background: '#0A192F', borderColor: '#122035' }}>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5" style={{ color: '#00BCD4' }} />
-                <h3 className="font-extrabold text-base text-white">Criar Usuário do Head (Retroativo)</h3>
+                <h3 className="font-extrabold text-base text-[var(--text-primary)]">Criar Usuário do Head (Retroativo)</h3>
               </div>
-              <button onClick={() => setIsRetroactiveModalOpen(false)} className="p-2 rounded-xl text-slate-400 hover:text-white transition cursor-pointer" aria-label="Fechar">
+              <button onClick={() => setIsRetroactiveModalOpen(false)} className="p-2 rounded-xl text-[var(--text-disabled)] hover:text-[var(--text-primary)] transition cursor-pointer" aria-label="Fechar">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1246,9 +1246,9 @@ export default function NucleosPanel({ db }: { db: any }) {
             <div className="px-6 py-5 flex items-center justify-between border-b" style={{ background: '#0A192F', borderColor: '#122035' }}>
               <div className="flex items-center gap-2">
                 <Edit2 className="w-5 h-5" style={{ color: '#00BCD4' }} />
-                <h3 className="font-extrabold text-base text-white">Editar Cadastro de Núcleo</h3>
+                <h3 className="font-extrabold text-base text-[var(--text-primary)]">Editar Cadastro de Núcleo</h3>
               </div>
-              <button onClick={() => setIsEditModalOpen(false)} className="p-2 rounded-xl text-slate-400 hover:text-white transition cursor-pointer" aria-label="Fechar">
+              <button onClick={() => setIsEditModalOpen(false)} className="p-2 rounded-xl text-[var(--text-disabled)] hover:text-[var(--text-primary)] transition cursor-pointer" aria-label="Fechar">
                 <X className="w-5 h-5" />
               </button>
             </div>

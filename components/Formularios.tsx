@@ -396,7 +396,7 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
         </div>
         <div className="flex justify-end gap-2 pt-4">
           <button type="button" onClick={onCancel} className="border border-border-subtle p-2 px-4 rounded-xl hover:bg-surface font-semibold text-text-primary">Cancelar</button>
-          <button type="submit" className="bg-action-cyan hover:bg-action-cyan/90 text-white font-bold p-2 px-5 rounded-xl flex items-center gap-1 shadow-sm">
+          <button type="submit" className="bg-action-cyan hover:bg-action-cyan/90 text-[var(--text-primary)] font-bold p-2 px-5 rounded-xl flex items-center gap-1 shadow-sm">
             <Save className="w-4 h-4" /> Cadastrar Profissional
           </button>
         </div>
@@ -1094,13 +1094,13 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
   // ── Shared style atoms ────────────────────────────────────────────────────
   const inputCls = [
     'w-full border border-border-subtle rounded-xl px-4 py-3 text-sm',
-    'text-text-primary bg-white dark:bg-slate-800',
+    'text-text-primary bg-white dark:bg-slate-50',
     'focus:outline-none focus:ring-2 focus:ring-action-cyan/30 focus:border-action-cyan',
     'transition-colors duration-150 min-h-[44px]',
   ].join(' ');
   const selectCls = inputCls + ' cursor-pointer';
   const labelCls = 'block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide';
-  const sectionCls = 'bg-white dark:bg-slate-900 border border-border-subtle rounded-2xl p-6 shadow-xs space-y-5';
+  const sectionCls = 'bg-white dark:bg-white border border-border-subtle rounded-2xl p-6 shadow-xs space-y-5';
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 md:px-6 pb-10">
@@ -1128,7 +1128,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         <div className="sticky top-0 z-30 h-0 overflow-visible pointer-events-none">
           {isSticky && (
             <div
-              className="bg-white/95 dark:bg-slate-900/95 text-text-primary p-4 rounded-2xl border border-border-subtle shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 animate-fade-in pointer-events-auto"
+              className="bg-white/95 dark:bg-white/95 text-text-primary p-4 rounded-2xl border border-border-subtle shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 animate-fade-in pointer-events-auto"
               style={{ backdropFilter: 'blur(8px)' }}
             >
               <div className="space-y-1 text-left">
@@ -1348,7 +1348,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                 type="button"
                 onClick={handleGenerateAIScope}
                 disabled={isGeneratingAI}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-action-cyan via-cyan-600 to-purple-600 hover:from-action-cyan hover:to-purple-500 text-white shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50 border border-action-cyan/40 shrink-0"
+                className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-action-cyan via-cyan-600 to-purple-600 hover:from-action-cyan hover:to-purple-500 text-[var(--text-primary)] shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50 border border-action-cyan/40 shrink-0"
                 title="Gerar sugestão técnica estruturada com IA com base na função, senioridade e histórico de jobs"
               >
                 <span className={`text-amber-300 text-sm ${isGeneratingAI ? 'animate-spin inline-block' : ''}`}>✨</span>
@@ -1587,20 +1587,20 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
               </label>
               <div className="relative group ml-1.5">
                 <HelpCircle className="w-3.5 h-3.5 text-text-muted hover:text-action-cyan transition-colors cursor-help" />
-                <div className="absolute bottom-full right-0 mb-2 w-72 p-3 rounded-xl bg-[#0a1628] border border-action-cyan/30 text-white text-[11px] leading-relaxed shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                <div className="absolute bottom-full right-0 mb-2 w-72 p-3 rounded-xl bg-[var(--bg-panel)] border border-action-cyan/30 text-[var(--text-primary)] text-[11px] leading-relaxed shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
                   <strong className="text-action-cyan block mb-1">💰 Success Fee (Bônus)</strong>
-                  <span className="text-slate-300">
-                    Cria um <strong className="text-white">valor financeiro adicional</strong> condicionado ao atingimento de um gatilho mensurável (ex: vitória na concorrência, KPI de projeto, meta de entrega).
-                    <span className="block mt-1.5 text-slate-400 italic">O bônus só é pago se o resultado for marcado como &quot;Atingido&quot;. Pode ser valor fixo ou percentual sobre o fee-base.</span>
+                  <span className="text-[var(--text-muted)]">
+                    Cria um <strong className="text-[var(--text-primary)]">valor financeiro adicional</strong> condicionado ao atingimento de um gatilho mensurável (ex: vitória na concorrência, KPI de projeto, meta de entrega).
+                    <span className="block mt-1.5 text-[var(--text-disabled)] italic">O bônus só é pago se o resultado for marcado como &quot;Atingido&quot;. Pode ser valor fixo ou percentual sobre o fee-base.</span>
                   </span>
-                  <div className="absolute top-full right-1.5 w-2 h-2 bg-[#0a1628] border-r border-b border-action-cyan/30 rotate-45 -mt-1"></div>
+                  <div className="absolute top-full right-1.5 w-2 h-2 bg-[var(--bg-panel)] border-r border-b border-action-cyan/30 rotate-45 -mt-1"></div>
                 </div>
               </div>
             </div>
           </div>
 
           {successFeeEnabled && (
-            <div className="bg-slate-50 dark:bg-slate-800/40 border border-border-subtle rounded-xl p-5 space-y-5">
+            <div className="bg-slate-50 dark:bg-slate-50/40 border border-border-subtle rounded-xl p-5 space-y-5">
               {/* Mandatory Choice: Application Mode */}
               <div>
                 <label className={labelCls}>Forma de Aplicação do Success Fee *</label>
@@ -1614,7 +1614,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     className={`p-3.5 rounded-xl border text-xs font-bold text-left flex items-start gap-3 transition-all cursor-pointer ${
                       successFeeCalcMode === 'dilute'
                         ? 'bg-action-cyan/15 border-action-cyan text-action-cyan ring-2 ring-action-cyan/30 shadow-md'
-                        : 'bg-white dark:bg-slate-900 border-border-subtle text-text-secondary hover:border-action-cyan/50'
+                        : 'bg-white dark:bg-white border-border-subtle text-text-secondary hover:border-action-cyan/50'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
@@ -1637,7 +1637,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     className={`p-3.5 rounded-xl border text-xs font-bold text-left flex items-start gap-3 transition-all cursor-pointer ${
                       successFeeCalcMode === 'increment_budget'
                         ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/30 shadow-md'
-                        : 'bg-white dark:bg-slate-900 border-border-subtle text-text-secondary hover:border-emerald-500/50'
+                        : 'bg-white dark:bg-white border-border-subtle text-text-secondary hover:border-emerald-500/50'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
@@ -1925,7 +1925,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                       </button>
 
                       {isMemoryOpen && (
-                        <div className="mt-3 bg-white/40 dark:bg-slate-900/40 p-4 rounded-xl border border-border-subtle/50 text-[11px] space-y-2 font-mono text-text-primary leading-relaxed shadow-inner">
+                        <div className="mt-3 bg-white/40 dark:bg-white/40 p-4 rounded-xl border border-border-subtle/50 text-[11px] space-y-2 font-mono text-text-primary leading-relaxed shadow-inner">
                           <div className="flex justify-between border-b border-border-subtle/20 pb-1">
                             <span>Período:</span>
                             <span className="font-semibold">{isoToBR(startDate)} a {isoToBR(endDate)}</span>
@@ -1956,7 +1956,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                               <HelpCircle className="w-3.5 h-3.5 text-text-secondary" />
                             </span>
                             <span className="font-semibold">{discountPercent}%</span>
-                            <div className="absolute bottom-full mb-1.5 left-0 hidden group-hover:block bg-slate-900 text-white text-[10px] rounded p-2.5 shadow-lg z-50 max-w-[280px] font-sans normal-case leading-normal">
+                            <div className="absolute bottom-full mb-1.5 left-0 hidden group-hover:block bg-white text-[var(--text-primary)] text-[10px] rounded p-2.5 shadow-lg z-50 max-w-[280px] font-sans normal-case leading-normal">
                               Desconto aplicado porque contratações por pacote/job fechado tendem a consolidar escopo e reduzir custo proporcional em relação à diária cheia.
                             </div>
                           </div>
@@ -2012,7 +2012,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         })()}
 
         {/* ── Financial summary ── */}
-        <div className="forecast-card rounded-xl p-5 bg-slate-50/50 dark:bg-slate-900/30 border border-border-subtle">
+        <div className="forecast-card rounded-xl p-5 bg-slate-50/50 dark:bg-white/30 border border-border-subtle">
           <p className="forecast-title text-[10px] font-bold uppercase tracking-wider mb-4">Resumo da Previsão</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* Budget */}

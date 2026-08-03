@@ -89,7 +89,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
         <div className="flex gap-2">
           <button 
             onClick={() => db.setActiveTab('Criar Oportunidade')} 
-            className="bg-action-cyan hover:bg-action-cyan/85 text-white font-bold p-1.5 px-3 rounded-lg text-xs"
+            className="bg-action-cyan hover:bg-action-cyan/85 text-[var(--text-primary)] font-bold p-1.5 px-3 rounded-lg text-xs"
           >
             + Nova Demanda / Job
           </button>

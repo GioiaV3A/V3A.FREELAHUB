@@ -55,7 +55,7 @@ export default function ScoreStars({
         // Half star — use a Unicode half-star or split color trick
         stars.push(
           <span key={i} className="relative leading-none" aria-hidden="true">
-            <span className="text-slate-300">★</span>
+            <span className="text-[var(--text-muted)]">★</span>
             <span
               className="absolute inset-0 overflow-hidden text-amber-400"
               style={{ width: '50%' }}
@@ -67,7 +67,7 @@ export default function ScoreStars({
       } else {
         // Empty star
         stars.push(
-          <span key={i} className="text-slate-300 leading-none">★</span>
+          <span key={i} className="text-[var(--text-muted)] leading-none">★</span>
         );
       }
     }

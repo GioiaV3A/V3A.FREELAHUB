@@ -95,6 +95,7 @@ Atenciosamente,
 Equipe FREELA HUB | V3A Live Marketing
 `.trim();
 
+    const appUrl = process.env.FREELAHUB_PUBLIC_APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? 'https://' + process.env.VERCEL_PROJECT_PRODUCTION_URL : (process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'https://v3-a-freelahub.vercel.app'));
     const emailHtmlBody = `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -238,7 +239,7 @@ Equipe FREELA HUB | V3A Live Marketing
 <body>
   <div class="container">
     <div class="header">
-      <img src="cid:logov3a" alt="FREELA HUB | V3A" />
+      <img src="${appUrl}/brand/v3a-logo-yellow.png" alt="FREELA HUB | V3A" />
       <p>Proposta Oficial de Oportunidade</p>
     </div>
     <div class="content">
@@ -339,13 +340,7 @@ Equipe FREELA HUB | V3A Live Marketing
       subject: emailSubject,
       text: emailBodyText,
       html: emailHtmlBody,
-      attachments: [
-        {
-          filename: 'logo-v3a.png',
-          path: path.join(process.cwd(), 'public', 'logo-v3a.png'),
-          cid: 'logov3a' // same cid value as in the html img src
-        }
-      ]
+      attachments: []
     });
 
     console.log(`[EmailService] Email sent successfully! MessageId: ${info.messageId}`);
@@ -420,6 +415,7 @@ export async function sendProposalResponseNotificationEmail(params: SendProposal
       statusColor = '#ef4444'; // red-500
     }
 
+    const appUrl = process.env.FREELAHUB_PUBLIC_APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? 'https://' + process.env.VERCEL_PROJECT_PRODUCTION_URL : (process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'https://v3-a-freelahub.vercel.app'));
     const emailHtmlBody = `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -448,7 +444,7 @@ export async function sendProposalResponseNotificationEmail(params: SendProposal
 <body>
   <div class="container">
     <div class="header">
-      <img src="cid:logov3a" alt="FREELA HUB | V3A" />
+      <img src="${appUrl}/brand/v3a-logo-yellow.png" alt="FREELA HUB | V3A" />
       <p>Atualização de Proposta</p>
     </div>
     <div class="content">
@@ -505,13 +501,7 @@ FREELA HUB | V3A Live Marketing
       subject: `[Freela Hub] Resposta de Proposta - ${params.freelancerName} (${params.jobCode})`,
       text: emailBodyText,
       html: emailHtmlBody,
-      attachments: [
-        {
-          filename: 'logo-v3a.png',
-          path: path.join(process.cwd(), 'public', 'logo-v3a.png'),
-          cid: 'logov3a'
-        }
-      ]
+      attachments: []
     });
 
     console.log('[EmailService] Notification email sent:', info.messageId);

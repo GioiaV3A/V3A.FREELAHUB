@@ -78,19 +78,19 @@ export default function QRCodeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#081121]/80 backdrop-blur-xs animate-fade-in font-sans text-xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-app)]/80 backdrop-blur-xs animate-fade-in font-sans text-xs">
       <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-100 flex flex-col relative animate-scale-up">
         {/* Header */}
         <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div>
             <h3 className="font-extrabold text-slate-800 text-sm">QR Code Gerado</h3>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+            <p className="text-[10px] text-[var(--text-disabled)] font-bold uppercase tracking-wider mt-0.5">
               {linkType === 'new_freelancer' ? 'Pré-cadastro de Novo Freela' : 'Atualização de Cadastro'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-slate-200 text-slate-400 hover:text-slate-700 rounded-xl transition cursor-pointer"
+            className="p-1.5 hover:bg-slate-200 text-[var(--text-disabled)] hover:text-slate-700 rounded-xl transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -112,14 +112,14 @@ export default function QRCodeModal({
           {/* Link status info */}
           <div className="w-full bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1 text-left select-none text-[10px]">
             <div className="flex justify-between">
-              <span className="text-slate-400 font-bold uppercase">Status:</span>
+              <span className="text-[var(--text-disabled)] font-bold uppercase">Status:</span>
               <span className="text-emerald-600 font-extrabold uppercase bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                 {status === 'active' ? 'Ativo' : status}
               </span>
             </div>
             {expiresAt && (
               <div className="flex justify-between">
-                <span className="text-slate-400 font-bold uppercase">Expira em:</span>
+                <span className="text-[var(--text-disabled)] font-bold uppercase">Expira em:</span>
                 <span className="text-slate-700 font-bold">
                   {new Date(expiresAt).toLocaleString('pt-BR')}
                 </span>
@@ -149,7 +149,7 @@ export default function QRCodeModal({
         <div className="p-4 border-t border-slate-100 bg-slate-50 flex gap-3">
           <button
             onClick={handleDownloadQR}
-            className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer"
+            className="flex-1 bg-slate-50 hover:bg-slate-700 text-[var(--text-primary)] font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer"
           >
             <Download className="w-4 h-4" /> Baixar PNG
           </button>

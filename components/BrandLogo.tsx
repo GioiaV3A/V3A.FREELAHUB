@@ -8,36 +8,32 @@ interface BrandLogoProps {
 }
 
 export default function BrandLogo({ variant = 'compact', className = '' }: BrandLogoProps) {
-  const [imgSrc, setImgSrc] = useState<string>('/brand/v3a-logo.png');
+  const [imgSrc, setImgSrc] = useState<string>(
+    variant === 'login' ? '/brand/v3a-logo-yellow.png' : '/brand/v3a-mark-yellow.png'
+  );
   const [hasError, setHasError] = useState(false);
 
   const handleError = () => {
-    if (imgSrc === '/brand/v3a-logo.png') {
-      // Fallback to SVG
-      setImgSrc('/brand/v3a-logo.svg');
-    } else {
-      // If both PNG and SVG fail, use textual fallback
-      setHasError(true);
-    }
+    setHasError(true);
   };
 
   const renderTextFallback = () => {
     switch (variant) {
       case 'login':
         return (
-          <div className="h-14 w-14 rounded-2xl bg-action-cyan/20 flex items-center justify-center border border-action-cyan/40 text-white font-black text-xl tracking-wider select-none">
+          <div className="h-14 w-14 rounded-2xl bg-action-cyan/20 flex items-center justify-center border border-action-cyan/40 text-[var(--text-primary)] font-black text-xl tracking-wider select-none">
             V3A
           </div>
         );
       case 'sidebar':
         return (
-          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 text-white font-black text-sm tracking-wider select-none">
+          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center border border-[var(--border-strong)] text-[var(--text-primary)] font-black text-sm tracking-wider select-none">
             V3A
           </div>
         );
       case 'report':
         return (
-          <div className="h-12 w-12 rounded-xl bg-[#0F2342]/10 flex items-center justify-center border border-[#0F2342]/20 text-[#0F2342] font-black text-base tracking-wider select-none">
+          <div className="h-12 w-12 rounded-xl bg-[var(--bg-surface)]/10 flex items-center justify-center border border-[#0F2342]/20 text-[#0F2342] font-black text-base tracking-wider select-none">
             V3A
           </div>
         );
@@ -60,11 +56,11 @@ export default function BrandLogo({ variant = 'compact', className = '' }: Brand
 
   switch (variant) {
     case 'login':
-      imgClass = 'h-14 w-14 object-contain rounded-2xl shadow-lg border border-white/10';
+      imgClass = 'h-14 w-14 object-contain rounded-2xl shadow-lg border border-[var(--border-default)]';
       containerClass = 'flex items-center justify-center';
       break;
     case 'sidebar':
-      imgClass = 'h-10 w-10 object-contain rounded-xl shadow-md border border-white/5';
+      imgClass = 'h-10 w-10 object-contain rounded-xl shadow-md border border-[var(--border-subtle)]';
       containerClass = 'flex items-center justify-start';
       break;
     case 'report':

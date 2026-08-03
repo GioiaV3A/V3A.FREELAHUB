@@ -126,7 +126,7 @@ export default function PrintPaymentRequestPage() {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-905 font-sans antialiased pb-12">
         {/* Header Toolbar */}
-        <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-10 no-print">
+        <div className="bg-white dark:bg-white border-b border-slate-200 dark:border-slate-200 p-4 sticky top-0 z-10 no-print">
           <div className="max-w-4xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold text-sidebar-navy dark:text-action-cyan uppercase tracking-wider">
@@ -163,12 +163,12 @@ export default function PrintPaymentRequestPage() {
           )}
 
           <div className="space-y-6">
-            <div className="flex justify-between items-start border-b-2 border-slate-800 pb-6">
+            <div className="flex justify-between items-start border-b-2 border-slate-200 pb-6">
               <div>
                 <div className="font-extrabold text-lg text-slate-900 tracking-wider">
-                  V3A <span className="text-slate-500">| FREELA HUB</span>
+                  V3A <span className="text-slate-600">| FREELA HUB</span>
                 </div>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+                <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-1">
                   Plataforma de Alocação e Auditoria Comercial
                 </p>
               </div>
@@ -176,7 +176,7 @@ export default function PrintPaymentRequestPage() {
                 <span className="bg-slate-100 text-slate-900 font-mono text-xs font-bold px-3 py-1 rounded border border-slate-200">
                   {allocationData.allocation_code}
                 </span>
-                <div className="text-[10px] text-slate-400 mt-2">
+                <div className="text-[10px] text-slate-600 mt-2">
                   Gerado em: <strong>{new Date().toLocaleDateString('pt-BR')}</strong>
                 </div>
               </div>
@@ -186,47 +186,47 @@ export default function PrintPaymentRequestPage() {
               <h1 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
                 Relatório Unificado de Faturamento
               </h1>
-              <p className="text-[10px] text-slate-500 mt-0.5">
+              <p className="text-[10px] text-slate-600 mt-0.5">
                 Este relatório compila todas as parcelas e solicitações de faturamento programadas para esta alocação.
               </p>
             </div>
 
             {/* Section 1: Project Details */}
             <div className="space-y-2 text-left">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-800 pl-2">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-200 pl-2">
                 1. Dados da Oportunidade e Alocação
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl text-[11px] border border-slate-150">
                 <div>
-                  <span className="text-slate-500 block">Job / Projeto:</span>
+                  <span className="text-slate-600 block">Job / Projeto:</span>
                   <strong className="text-slate-900">{job?.title || '—'}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Cliente Final:</span>
+                  <span className="text-slate-600 block">Cliente Final:</span>
                   <strong className="text-slate-900">{job?.client_name || '—'}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Núcleo Responsável:</span>
+                  <span className="text-slate-600 block">Núcleo Responsável:</span>
                   <strong className="text-slate-900">{nucleo?.name || '—'}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Período Contrato:</span>
+                  <span className="text-slate-600 block">Período Contrato:</span>
                   <strong className="text-slate-900">
                     {formatISODateToBR(allocationData.start_date)} a {formatISODateToBR(allocationData.end_date)}
                   </strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Modelo de Pagamento:</span>
+                  <span className="text-slate-600 block">Modelo de Pagamento:</span>
                   <strong className="text-slate-900 uppercase">
                     {allocationData.payment_model === 'monthly_recurring' ? 'Recorrente Mensal' : 'Pagamento Único'}
                   </strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Condições de Pagamento:</span>
+                  <span className="text-slate-600 block">Condições de Pagamento:</span>
                   <strong className="text-slate-900">{allocationData.payment_terms || '—'}</strong>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-slate-500 block">Valor Total Homologado:</span>
+                  <span className="text-slate-600 block">Valor Total Homologado:</span>
                   <strong className="text-slate-900 text-sm font-bold font-mono">
                     {formatCurrencyBRL(totalValue)}
                   </strong>
@@ -236,12 +236,12 @@ export default function PrintPaymentRequestPage() {
 
             {/* Section 2: Freelancer Details */}
             <div className="space-y-2 text-left">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-800 pl-2">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-200 pl-2">
                 2. Informações Cadastrais do Profissional
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl text-[11px] border border-slate-150">
                 <div className="sm:col-span-2">
-                  <span className="text-slate-500 block">Nome Completo:</span>
+                  <span className="text-slate-600 block">Nome Completo:</span>
                   <strong className="text-slate-900">{freelancer?.full_name}</strong>
                 </div>
                 <div className="sm:col-span-2">
@@ -249,7 +249,7 @@ export default function PrintPaymentRequestPage() {
                   <strong className="text-slate-900">{freelancer?.email}</strong>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">WhatsApp:</span>
+                  <span className="text-slate-600 block">WhatsApp:</span>
                   <strong className="text-slate-900">{freelancer?.whatsapp}</strong>
                 </div>
                 <div>
@@ -259,14 +259,14 @@ export default function PrintPaymentRequestPage() {
                 <div>
                   {(!freelancer?.tax_country_code || freelancer?.tax_country_code === 'BR') ? (
                     <>
-                      <span className="text-slate-500 block">CNPJ:</span>
+                      <span className="text-slate-600 block">CNPJ:</span>
                       <strong className="text-slate-900 font-mono">
                         {freelancer?.cnpj_normalized ? formatCnpj(freelancer.cnpj_normalized) : 'Não informado'}
                       </strong>
                     </>
                   ) : (
                     <>
-                      <span className="text-slate-500 block">Tax ID Estrangeiro:</span>
+                      <span className="text-slate-600 block">Tax ID Estrangeiro:</span>
                       <strong className="text-slate-900 font-mono">
                         {freelancer?.foreign_tax_id || 'Não informado'}
                       </strong>
@@ -278,13 +278,13 @@ export default function PrintPaymentRequestPage() {
 
             {/* Section 3: Periodic Installments Details Table */}
             <div className="space-y-2 text-left">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-800 pl-2">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-200 pl-2">
                 3. Detalhamento do Cronograma de Parcelas
               </h3>
               <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <table className="w-full text-left text-[11px] border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase">
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase">
                       <th className="p-2.5">Parcela</th>
                       <th className="p-2.5">Período de Ref.</th>
                       <th className="p-2.5">Vencimento</th>
@@ -334,7 +334,7 @@ export default function PrintPaymentRequestPage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-350 pt-6 mt-12 text-center text-[10px] text-slate-400 space-y-1">
+          <div className="border-t border-slate-350 pt-6 mt-12 text-center text-[10px] text-slate-600 space-y-1">
             <p>Este relatório unificado foi gerado e homologado digitalmente através da plataforma V3A Freela Hub.</p>
             <p>&copy; {new Date().getFullYear()} V3A Live Marketing S.A. Todos os direitos reservados.</p>
           </div>
@@ -348,7 +348,7 @@ export default function PrintPaymentRequestPage() {
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 font-sans antialiased pb-12">
       {/* 1. Header Toolbar (Hidden during Print) */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-10 no-print">
+      <div className="bg-white dark:bg-white border-b border-slate-200 dark:border-slate-200 p-4 sticky top-0 z-10 no-print">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-sidebar-navy dark:text-action-cyan uppercase tracking-wider">
@@ -386,13 +386,13 @@ export default function PrintPaymentRequestPage() {
         
         {/* Document Header */}
         <div className="space-y-6">
-          <div className="flex justify-between items-start border-b-2 border-slate-800 pb-6">
+          <div className="flex justify-between items-start border-b-2 border-slate-200 pb-6">
             <div>
               {/* Logo / Company Info */}
               <div className="font-extrabold text-lg text-slate-900 tracking-wider">
-                V3A <span className="text-slate-500">| FREELA HUB</span>
+                V3A <span className="text-slate-600">| FREELA HUB</span>
               </div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+              <p className="text-[10px] text-slate-600 uppercase tracking-widest mt-1">
                 Plataforma de Alocação e Auditoria Comercial
               </p>
             </div>
@@ -400,7 +400,7 @@ export default function PrintPaymentRequestPage() {
               <span className="bg-slate-100 text-slate-900 font-mono text-xs font-bold px-3 py-1 rounded border border-slate-200">
                 {requestData.request_code}
               </span>
-              <div className="text-[10px] text-slate-400 mt-2">
+              <div className="text-[10px] text-slate-600 mt-2">
                 Emissão: <strong>{new Date(requestData.created_at).toLocaleDateString('pt-BR')}</strong>
               </div>
             </div>
@@ -410,31 +410,31 @@ export default function PrintPaymentRequestPage() {
             <h1 className="text-base font-extrabold text-slate-900 uppercase tracking-wide">
               Solicitação Operacional de Pagamento de Freelancer
             </h1>
-            <p className="text-[10px] text-slate-500 mt-0.5">
+            <p className="text-[10px] text-slate-600 mt-0.5">
               Este documento formaliza as tranches operacionais acordadas para envio ao departamento financeiro.
             </p>
           </div>
 
           {/* Section 1: Project Details */}
           <div className="space-y-2">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-800 pl-2">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-200 pl-2">
               1. Dados da Oportunidade e Alocação
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl text-[11px] border border-slate-150">
               <div>
-                <span className="text-slate-500 block">Job / Projeto:</span>
+                <span className="text-slate-600 block">Job / Projeto:</span>
                 <strong className="text-slate-900">{job?.title}</strong>
               </div>
               <div>
-                <span className="text-slate-500 block">Cliente Final:</span>
+                <span className="text-slate-600 block">Cliente Final:</span>
                 <strong className="text-slate-900">{job?.client_name}</strong>
               </div>
               <div>
-                <span className="text-slate-500 block">Núcleo Responsável:</span>
+                <span className="text-slate-600 block">Núcleo Responsável:</span>
                 <strong className="text-slate-900">{nucleo?.name}</strong>
               </div>
               <div>
-                <span className="text-slate-500 block">Código Alocação:</span>
+                <span className="text-slate-600 block">Código Alocação:</span>
                 <strong className="text-slate-900 font-mono">{allocation?.allocation_code}</strong>
               </div>
             </div>
@@ -442,12 +442,12 @@ export default function PrintPaymentRequestPage() {
 
           {/* Section 2: Freelancer Details */}
           <div className="space-y-2">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-800 pl-2">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-200 pl-2">
               2. Informações Cadastrais do Profissional
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl text-[11px] border border-slate-150">
               <div className="sm:col-span-2">
-                <span className="text-slate-500 block">Nome Completo:</span>
+                <span className="text-slate-600 block">Nome Completo:</span>
                 <strong className="text-slate-900">{freelancer?.full_name}</strong>
               </div>
               <div className="sm:col-span-2">
@@ -455,7 +455,7 @@ export default function PrintPaymentRequestPage() {
                 <strong className="text-slate-900">{freelancer?.email}</strong>
               </div>
               <div>
-                <span className="text-slate-500 block">WhatsApp:</span>
+                <span className="text-slate-600 block">WhatsApp:</span>
                 <strong className="text-slate-900">{freelancer?.whatsapp}</strong>
               </div>
               <div>
@@ -493,7 +493,7 @@ export default function PrintPaymentRequestPage() {
 
           {/* Section 3: Financial & Commercial Data */}
           <div className="space-y-2">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-800 pl-2">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-200 pl-2">
               3. Dados Fiscais & Comerciais
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl text-[11px] border border-slate-150">
@@ -539,7 +539,7 @@ export default function PrintPaymentRequestPage() {
 
           {/* Section 4: Audit & Authorization details */}
           <div className="space-y-2">
-            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-800 pl-2">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-800 border-l-4 border-slate-200 pl-2">
               4. Auditoria e Controle de Alocação
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl text-[11px] border border-slate-150">
@@ -566,7 +566,7 @@ export default function PrintPaymentRequestPage() {
         </div>
 
         {/* Footer info (Standard A4 footer) */}
-        <div className="border-t border-slate-350 pt-6 mt-12 text-center text-[10px] text-slate-400 space-y-1">
+        <div className="border-t border-slate-350 pt-6 mt-12 text-center text-[10px] text-slate-600 space-y-1">
           <p>Este documento foi emitido e homologado digitalmente através da plataforma V3A Freela Hub.</p>
           <p>&copy; {new Date().getFullYear()} V3A Live Marketing S.A. Todos os direitos reservados.</p>
         </div>

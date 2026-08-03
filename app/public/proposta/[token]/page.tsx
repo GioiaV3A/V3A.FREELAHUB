@@ -91,9 +91,9 @@ export default function PublicProposalPage() {
     <PublicFormLayout title="Avaliação de Proposta — V3A">
       <div className="max-w-3xl mx-auto space-y-8">
         {loading ? (
-          <div className="bg-[#0f172a] border border-white/5 rounded-3xl p-16 text-center text-slate-400 space-y-4 shadow-2xl">
+          <div className="bg-[#0f172a] border border-white/5 rounded-3xl p-16 text-center text-slate-600 space-y-4 shadow-2xl">
             <div className="inline-block animate-spin w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full shadow-[0_0_15px_rgba(6,182,212,0.5)]" />
-            <p className="font-medium text-slate-300 text-lg">Preparando sua proposta oficial...</p>
+            <p className="font-medium text-slate-700 text-lg">Preparando sua proposta oficial...</p>
           </div>
         ) : errorMessage ? (
           <div className="bg-[#0f172a] border border-rose-500/20 rounded-3xl p-10 text-center space-y-5 shadow-2xl">
@@ -101,7 +101,7 @@ export default function PublicProposalPage() {
               <AlertTriangle size={40} />
             </div>
             <h2 className="text-2xl font-bold text-white">Ops! Não foi possível acessar a proposta</h2>
-            <p className="text-slate-400 text-base max-w-md mx-auto">{errorMessage}</p>
+            <p className="text-slate-600 text-base max-w-md mx-auto">{errorMessage}</p>
           </div>
         ) : submittedSuccess ? (
           <div className="bg-gradient-to-b from-[#0f172a] to-[#0A192F] border border-emerald-500/20 rounded-3xl p-12 text-center space-y-6 shadow-[0_20px_50px_-12px_rgba(16,185,129,0.15)]">
@@ -109,10 +109,10 @@ export default function PublicProposalPage() {
               <CheckCircle2 size={48} />
             </div>
             <h2 className="text-3xl font-black text-white tracking-tight">Resposta Registrada!</h2>
-            <p className="text-slate-300 max-w-lg mx-auto text-base leading-relaxed font-light">
+            <p className="text-slate-700 max-w-lg mx-auto text-base leading-relaxed font-light">
               Muito obrigado por responder à proposta da V3A. A equipe responsável foi notificada em tempo real e dará andamento aos próximos passos.
             </p>
-            <div className="pt-6 mt-2 border-t border-white/5 text-[10px] text-slate-500 font-bold tracking-widest uppercase">
+            <div className="pt-6 mt-2 border-t border-white/5 text-[10px] text-slate-600 font-bold tracking-widest uppercase">
               FREELA HUB | V3A Live Marketing
             </div>
           </div>
@@ -129,7 +129,7 @@ export default function PublicProposalPage() {
                   Proposta Oficial
                 </span>
                 <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">{proposalData.job_title}</h1>
-                <p className="text-base text-slate-400 flex items-center gap-2.5 font-light">
+                <p className="text-base text-slate-600 flex items-center gap-2.5 font-light">
                   <User size={16} className="text-cyan-500" /> Olá, <strong className="text-white font-bold">{proposalData.freelancer_name}</strong>
                 </p>
               </div>
@@ -143,22 +143,22 @@ export default function PublicProposalPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
                 <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.03]">
-                  <div className="p-2.5 bg-slate-800/50 rounded-xl text-slate-300">
+                  <div className="p-2.5 bg-slate-50/50 rounded-xl text-slate-700">
                     <Building className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold mb-0.5">Cliente</span>
-                    <strong className="text-slate-100 text-base">{proposalData.client_name}</strong>
+                    <span className="text-[10px] text-slate-600 block uppercase tracking-widest font-bold mb-0.5">Cliente</span>
+                    <strong className="text-slate-800 text-base">{proposalData.client_name}</strong>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.03]">
-                  <div className="p-2.5 bg-slate-800/50 rounded-xl text-slate-300">
+                  <div className="p-2.5 bg-slate-50/50 rounded-xl text-slate-700">
                     <Building className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold mb-0.5">Núcleo</span>
-                    <strong className="text-slate-100 text-base">{proposalData.nucleo_name}</strong>
+                    <span className="text-[10px] text-slate-600 block uppercase tracking-widest font-bold mb-0.5">Núcleo</span>
+                    <strong className="text-slate-800 text-base">{proposalData.nucleo_name}</strong>
                   </div>
                 </div>
 
@@ -167,9 +167,9 @@ export default function PublicProposalPage() {
                     <Calendar className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block uppercase tracking-widest font-bold mb-0.5">Período</span>
-                    <strong className="text-slate-100 text-base block">{formatDate(proposalData.start_date)}</strong>
-                    <strong className="text-slate-100 text-base block">a {formatDate(proposalData.end_date)}</strong>
+                    <span className="text-[10px] text-slate-600 block uppercase tracking-widest font-bold mb-0.5">Período</span>
+                    <strong className="text-slate-800 text-base block">{formatDate(proposalData.start_date)}</strong>
+                    <strong className="text-slate-800 text-base block">a {formatDate(proposalData.end_date)}</strong>
                   </div>
                 </div>
 
@@ -190,8 +190,8 @@ export default function PublicProposalPage() {
               {/* Description & Scope */}
               {proposalData.description && (
                 <div className="space-y-2 pt-2">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">Descrição do Escopo / Atividades</span>
-                  <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 text-slate-300 text-sm whitespace-pre-line leading-relaxed">
+                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider block">Descrição do Escopo / Atividades</span>
+                  <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-200 text-slate-700 text-sm whitespace-pre-line leading-relaxed">
                     {proposalData.description}
                   </div>
                 </div>
@@ -207,8 +207,8 @@ export default function PublicProposalPage() {
             </div>
 
             {/* Actions Card */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
-              <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-xl">
+              <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider border-b border-slate-200 pb-3">
                 Sua Resposta à Proposta
               </h3>
 
@@ -218,7 +218,7 @@ export default function PublicProposalPage() {
                     Motivo da Recusa *
                   </label>
                   <select
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-rose-500"
+                    className="w-full bg-slate-950 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700 focus:outline-none focus:border-rose-500"
                     value={refusalReason}
                     onChange={(e) => setRefusalReason(e.target.value)}
                   >
@@ -231,9 +231,9 @@ export default function PublicProposalPage() {
                   </select>
 
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Observações adicionais (opcional)</label>
+                    <label className="block text-xs text-slate-600 mb-1">Observações adicionais (opcional)</label>
                     <textarea
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-slate-600"
+                      className="w-full bg-slate-950 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-700 focus:outline-none focus:border-slate-600"
                       rows={2}
                       placeholder="Detalhes adicionais sobre a recusa..."
                       value={freelancerNotes}
@@ -253,7 +253,7 @@ export default function PublicProposalPage() {
                     <button
                       type="button"
                       onClick={() => setResponseType(null)}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl text-sm"
+                      className="px-4 py-2.5 bg-slate-50 hover:bg-slate-700 text-slate-700 font-medium rounded-xl text-sm"
                     >
                       Cancelar
                     </button>
@@ -267,7 +267,7 @@ export default function PublicProposalPage() {
                     Descreva suas ressalvas de valores ou condições *
                   </label>
                   <textarea
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-slate-950 border border-slate-200 rounded-lg p-3 text-sm text-slate-700 focus:outline-none focus:border-amber-500"
                     rows={3}
                     placeholder="Informe sua contraproposta de diária/valor ou observações sobre o período..."
                     value={freelancerNotes}
@@ -286,7 +286,7 @@ export default function PublicProposalPage() {
                     <button
                       type="button"
                       onClick={() => setResponseType(null)}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl text-sm"
+                      className="px-4 py-2.5 bg-slate-50 hover:bg-slate-700 text-slate-700 font-medium rounded-xl text-sm"
                     >
                       Cancelar
                     </button>

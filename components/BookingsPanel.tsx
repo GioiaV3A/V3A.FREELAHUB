@@ -23,7 +23,7 @@ import {
 function ReverseEvalBadge({ status }: { status?: string }) {
   if (!status || status === 'not_generated') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-slate-600/40 bg-slate-800/30 text-slate-400">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-slate-600/40 bg-slate-50/30 text-[var(--text-disabled)]">
         <span className="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block" />
         Não gerada
       </span>
@@ -60,7 +60,7 @@ function ReverseEvalBadge({ status }: { status?: string }) {
 function EvalBadge({ alloc }: { alloc: any }) {
   if (alloc.evaluationStatus === 'locked') {
     return (
-      <span className="text-[9px] text-slate-500 font-medium">Aguardando Pgto</span>
+      <span className="text-[9px] text-[var(--text-disabled)] font-medium">Aguardando Pgto</span>
     );
   }
   const evalCount = (alloc.evaluatedFreelancer ? 1 : 0) + (alloc.evaluatedDelivery ? 1 : 0);
@@ -259,7 +259,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
   if (selectedJobId) {
     return (
       <div className="space-y-4 animate-fade-in">
-        <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-border-subtle shadow-xs">
+        <div className="flex justify-between items-center bg-white dark:bg-white p-4 rounded-2xl border border-border-subtle shadow-xs">
           <button 
             onClick={() => setSelectedJobId(null)}
             className="bg-bg-panel hover:bg-bg-hover text-sidebar-navy dark:text-action-cyan font-bold p-2 px-4 rounded-xl text-xs border border-border-subtle shadow-xs transition flex items-center gap-2 cursor-pointer"
@@ -275,7 +275,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                 return (
                   <button
                     onClick={() => handleOpenConcludeModal(alloc.id)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Concluir Execução do Job</span>
@@ -311,7 +311,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white dark:bg-slate-900/80 border border-border-subtle p-3.5 rounded-2xl shadow-xs grid grid-cols-1 md:grid-cols-12 gap-3 backdrop-blur-sm">
+      <div className="bg-white dark:bg-white/80 border border-border-subtle p-3.5 rounded-2xl shadow-xs grid grid-cols-1 md:grid-cols-12 gap-3 backdrop-blur-sm">
         <div className="md:col-span-8 relative">
           <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-text-muted" />
           <input
@@ -343,7 +343,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
       </div>
 
       {/* Bookings Table */}
-      <div className="bg-white dark:bg-slate-900/90 border border-border-subtle rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-white/90 border border-border-subtle rounded-2xl shadow-sm overflow-hidden">
         {filteredBookings.length === 0 ? (
           <div className="p-14 text-center text-text-secondary text-xs italic space-y-3">
             <Calendar className="w-10 h-10 mx-auto text-text-muted opacity-40" />
@@ -355,7 +355,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
             <table className="w-full text-left text-xs whitespace-nowrap border-collapse">
               {/* STICKY THEAD */}
               <thead
-                className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-border-subtle"
+                className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-disabled)] dark:text-[var(--text-disabled)] border-b border-border-subtle"
                 style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--color-bg-surface, #0f1117)' }}
               >
                 <tr>
@@ -369,8 +369,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                     <div className="flex flex-col items-center gap-0.5">
                       <span className="text-[9px] text-action-cyan/70 font-bold uppercase tracking-widest">Avaliação 360°</span>
                       <div className="flex items-center gap-3">
-                        <span title="Avaliação da V3A ao Freelancer" className="text-[9px] leading-none text-slate-400 whitespace-nowrap">V3A → Freela</span>
-                        <span title="Avaliação do Freelancer à V3A" className="text-[9px] leading-none text-slate-400 whitespace-nowrap">Freela → V3A</span>
+                        <span title="Avaliação da V3A ao Freelancer" className="text-[9px] leading-none text-[var(--text-disabled)] whitespace-nowrap">V3A → Freela</span>
+                        <span title="Avaliação do Freelancer à V3A" className="text-[9px] leading-none text-[var(--text-disabled)] whitespace-nowrap">Freela → V3A</span>
                       </div>
                     </div>
                   </th>
@@ -402,7 +402,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                       className={`group transition-colors duration-100 ${
                         isCancelled
                           ? 'opacity-50 hover:opacity-70'
-                          : 'hover:bg-slate-800/20 dark:hover:bg-slate-800/30'
+                          : 'hover:bg-slate-50/20 dark:hover:bg-slate-50/30'
                       }`}
                     >
                       {/* Allocation code + Project */}
@@ -417,7 +417,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                             </p>
                             <p className="text-[10px] text-text-secondary mt-0.5 truncate max-w-[180px]">
                               {job?.client && <span>{job.client}</span>}
-                              {nucleo?.name && <span className="ml-1 text-slate-500">• {nucleo.name}</span>}
+                              {nucleo?.name && <span className="ml-1 text-[var(--text-disabled)]">• {nucleo.name}</span>}
                             </p>
                           </div>
                         </div>
@@ -457,7 +457,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                             ? 'bg-emerald-950/40 text-emerald-400 border-emerald-600/30'
                             : (alloc.paymentRequestStatus as any) === 'exported'
                               ? 'bg-blue-950/40 text-blue-400 border-blue-600/30'
-                              : 'bg-slate-800/40 text-slate-400 border-slate-600/30'
+                              : 'bg-slate-50/40 text-[var(--text-disabled)] border-slate-600/30'
                         }`}>
                           <CreditCard className="w-3 h-3" />
                           {(alloc.paymentRequestStatus as any) === 'paid' ? 'Pago' :
@@ -502,7 +502,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                             onClick={() => setSelectedJobId(alloc.jobId)}
                             title="Ver detalhes"
                             className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-bold border
-                              bg-slate-800/60 border-slate-600/40 text-slate-300
+                              bg-slate-50/60 border-slate-600/40 text-[var(--text-muted)]
                               hover:bg-action-cyan/10 hover:border-action-cyan/40 hover:text-action-cyan
                               transition-all duration-150 cursor-pointer flex-shrink-0"
                           >
@@ -518,7 +518,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                               title="Concluir Job"
                               className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
                                 bg-emerald-950/60 border-emerald-600/40 text-emerald-400
-                                hover:bg-emerald-600 hover:border-emerald-500 hover:text-white
+                                hover:bg-emerald-600 hover:border-emerald-500 hover:text-[var(--text-primary)]
                                 disabled:opacity-40 disabled:cursor-not-allowed
                                 transition-all duration-150 cursor-pointer flex-shrink-0"
                             >
@@ -536,8 +536,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                               onClick={() => handleReopenBooking(alloc.id)}
                               title="Reabrir booking"
                               className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
-                                bg-slate-800/60 border-slate-500/40 text-slate-400
-                                hover:bg-slate-600 hover:border-slate-400 hover:text-white
+                                bg-slate-50/60 border-slate-500/40 text-[var(--text-disabled)]
+                                hover:bg-slate-600 hover:border-slate-400 hover:text-[var(--text-primary)]
                                 disabled:opacity-40 disabled:cursor-not-allowed
                                 transition-all duration-150 cursor-pointer flex-shrink-0"
                             >
@@ -556,7 +556,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                               title="Cancelar booking"
                               className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
                                 bg-red-950/40 border-red-600/30 text-red-400
-                                hover:bg-red-600 hover:border-red-500 hover:text-white
+                                hover:bg-red-600 hover:border-red-500 hover:text-[var(--text-primary)]
                                 disabled:opacity-40 disabled:cursor-not-allowed
                                 transition-all duration-150 cursor-pointer flex-shrink-0"
                             >
@@ -618,7 +618,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
           </div>
 
           {/* Job details box */}
-          <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-border-subtle space-y-2">
+          <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-2xl border border-border-subtle space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="text-[10px] text-text-secondary uppercase font-semibold">Campanha / Cliente</span>
@@ -642,7 +642,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
             <div className="space-y-2.5">
               <span className="font-bold text-[11px] text-text-primary uppercase tracking-wider block">Checklist de Entregáveis obrigatórios</span>
               
-              <label className="flex items-start gap-3 p-3 rounded-xl border border-border-subtle hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer">
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-border-subtle hover:bg-slate-50 dark:hover:bg-slate-50/30 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={checklist1}
@@ -655,7 +655,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                 </div>
               </label>
 
-              <label className="flex items-start gap-3 p-3 rounded-xl border border-border-subtle hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer">
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-border-subtle hover:bg-slate-50 dark:hover:bg-slate-50/30 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={checklist2}
@@ -668,7 +668,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                 </div>
               </label>
 
-              <label className="flex items-start gap-3 p-3 rounded-xl border border-border-subtle hover:bg-slate-50 dark:hover:bg-slate-800/30 cursor-pointer">
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-border-subtle hover:bg-slate-50 dark:hover:bg-slate-50/30 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={checklist3}
@@ -706,7 +706,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
               <button
                 type="submit"
                 disabled={!checklist1 || !checklist2 || !checklist3 || loadingActionId !== null}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-5 py-2.5 rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] font-bold px-5 py-2.5 rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
               >
                 {loadingActionId === concludeAllocId ? (
                   <Sliders className="w-4 h-4 animate-spin" />

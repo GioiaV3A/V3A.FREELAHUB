@@ -42,12 +42,12 @@ export default async function PublicNovoFreelaPage({ params }: PageProps) {
           </div>
           <div className="space-y-2">
             <h3 className="text-lg font-extrabold text-white uppercase tracking-wider">{errorTitle}</h3>
-            <p className="text-xs text-slate-350 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               {errorMessage}
             </p>
           </div>
           <div className="pt-6 border-t border-white/5">
-            <p className="text-[9px] text-slate-500 font-extrabold uppercase tracking-widest">
+            <p className="text-[9px] text-slate-600 font-extrabold uppercase tracking-widest">
               Plataforma V3A Freela Hub
             </p>
           </div>

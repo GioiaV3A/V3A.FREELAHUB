@@ -102,12 +102,12 @@ export default function NegotiationFinancialSummary({
 
   // Visual Styling Mapping based on financial status
   let themeStyles = {
-    bg: 'bg-slate-50 dark:bg-slate-800/40',
-    border: 'border-slate-200 dark:border-slate-700/50',
-    text: 'text-slate-700 dark:text-slate-350',
-    accentText: 'text-slate-900 dark:text-slate-200',
-    badgeBg: 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700',
-    icon: <DollarSign className="w-5 h-5 text-slate-500" />,
+    bg: 'bg-slate-50 dark:bg-slate-50/40',
+    border: 'border-slate-200 dark:border-slate-200/50',
+    text: 'text-slate-700 dark:text-slate-600',
+    accentText: 'text-slate-900 dark:text-[var(--text-secondary)]',
+    badgeBg: 'bg-slate-100 dark:bg-slate-50 text-slate-800 dark:text-[var(--text-muted)] border-slate-300 dark:border-slate-200',
+    icon: <DollarSign className="w-5 h-5 text-[var(--text-disabled)]" />,
     label: 'Sem cálculo',
     statusLabel: 'not_calculated'
   };
@@ -125,12 +125,12 @@ export default function NegotiationFinancialSummary({
     };
   } else if (deltaStatus === 'neutral') {
     themeStyles = {
-      bg: 'bg-slate-50 dark:bg-slate-800/40',
-      border: 'border-slate-200 dark:border-slate-700/50',
-      text: 'text-slate-700 dark:text-slate-350',
-      accentText: 'text-slate-900 dark:text-slate-200',
-      badgeBg: 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700',
-      icon: <CheckCircle className="w-5 h-5 text-slate-600 dark:text-slate-400" />,
+      bg: 'bg-slate-50 dark:bg-slate-50/40',
+      border: 'border-slate-200 dark:border-slate-200/50',
+      text: 'text-slate-700 dark:text-slate-600',
+      accentText: 'text-slate-900 dark:text-[var(--text-secondary)]',
+      badgeBg: 'bg-slate-100 dark:bg-slate-50 text-slate-800 dark:text-[var(--text-muted)] border-slate-300 dark:border-slate-200',
+      icon: <CheckCircle className="w-5 h-5 text-slate-600 dark:text-[var(--text-disabled)]" />,
       label: 'Sem saving',
       statusLabel: 'Sem saving'
     };
@@ -165,7 +165,7 @@ export default function NegotiationFinancialSummary({
         <div className="flex justify-between items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5">
             {themeStyles.icon}
-            <span className="text-xs font-bold text-sidebar-navy dark:text-white uppercase tracking-wider">
+            <span className="text-xs font-bold text-sidebar-navy dark:text-[var(--text-primary)] uppercase tracking-wider">
               Resumo Financeiro
             </span>
           </div>
@@ -177,11 +177,11 @@ export default function NegotiationFinancialSummary({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
           <div>
             <span className="text-[10px] text-text-secondary block">Total Negociado:</span>
-            <strong className="text-sidebar-navy dark:text-white font-extrabold">{formatCurrencyBRL(negotiatedTotal)}</strong>
+            <strong className="text-sidebar-navy dark:text-[var(--text-primary)] font-extrabold">{formatCurrencyBRL(negotiatedTotal)}</strong>
           </div>
           <div>
             <span className="text-[10px] text-text-secondary block">Budget Job:</span>
-            <strong className="text-sidebar-navy dark:text-white font-bold">{formatCurrencyBRL(budget)}</strong>
+            <strong className="text-sidebar-navy dark:text-[var(--text-primary)] font-bold">{formatCurrencyBRL(budget)}</strong>
           </div>
           <div className="col-span-2">
             <span className="text-[10px] text-text-secondary block">
@@ -215,7 +215,7 @@ export default function NegotiationFinancialSummary({
         <div className="flex items-center gap-2">
           {themeStyles.icon}
           <div>
-            <h4 className="font-extrabold text-sidebar-navy dark:text-white text-xs uppercase tracking-wider">
+            <h4 className="font-extrabold text-sidebar-navy dark:text-[var(--text-primary)] text-xs uppercase tracking-wider">
               Resumo Financeiro da Negociação
             </h4>
             <p className="text-[10px] text-text-secondary">Comparação do rate acordado com o budget planejado.</p>
@@ -230,18 +230,18 @@ export default function NegotiationFinancialSummary({
       </div>
 
       {/* Main Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-dashed border-slate-200 dark:border-slate-700/50 pb-4">
-        <div className="bg-white/40 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800/30">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-b border-dashed border-slate-200 dark:border-slate-200/50 pb-4">
+        <div className="bg-white/40 dark:bg-white/30 p-3 rounded-xl border border-slate-200/50 dark:border-slate-200/30">
           <span className="text-[10px] text-text-secondary block uppercase font-bold tracking-wider mb-0.5">Budget do Job</span>
-          <div className="text-base font-extrabold text-sidebar-navy dark:text-white">{formatCurrencyBRL(budget)}</div>
+          <div className="text-base font-extrabold text-sidebar-navy dark:text-[var(--text-primary)]">{formatCurrencyBRL(budget)}</div>
           <span className="text-[10px] text-text-secondary">
             Ref. Diária: <strong>{formatCurrencyBRL(dailyBudgetReference)}</strong>
           </span>
         </div>
 
-        <div className="bg-white/40 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800/30">
+        <div className="bg-white/40 dark:bg-white/30 p-3 rounded-xl border border-slate-200/50 dark:border-slate-200/30">
           <span className="text-[10px] text-text-secondary block uppercase font-bold tracking-wider mb-0.5">Total Negociado</span>
-          <div className="text-base font-extrabold text-sidebar-navy dark:text-white">
+          <div className="text-base font-extrabold text-sidebar-navy dark:text-[var(--text-primary)]">
             {negotiatedTotal !== null ? formatCurrencyBRL(negotiatedTotal) : '—'}
           </div>
           <span className="text-[10px] text-text-secondary">
@@ -249,7 +249,7 @@ export default function NegotiationFinancialSummary({
           </span>
         </div>
 
-        <div className="bg-white/40 dark:bg-slate-900/30 p-3 rounded-xl border border-slate-200/50 dark:border-slate-800/30">
+        <div className="bg-white/40 dark:bg-white/30 p-3 rounded-xl border border-slate-200/50 dark:border-slate-200/30">
           <span className="text-[10px] text-text-secondary block uppercase font-bold tracking-wider mb-0.5">
             {deltaStatus === 'over_budget' ? 'Estouro de Budget' : 'Saving Gerado'}
           </span>
@@ -258,7 +258,7 @@ export default function NegotiationFinancialSummary({
               ? 'text-red-650 dark:text-red-400' 
               : deltaStatus === 'saving' 
                 ? 'text-emerald-650 dark:text-emerald-400' 
-                : 'text-slate-600 dark:text-slate-300'
+                : 'text-slate-600 dark:text-[var(--text-muted)]'
           }`}>
             {deltaStatus === 'over_budget' 
               ? `-${formatCurrencyBRL(savingAmount !== null ? Math.abs(savingAmount) : null)}` 
@@ -280,15 +280,15 @@ export default function NegotiationFinancialSummary({
             Detalhamento de Remuneração com Success Fee
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="bg-white/50 dark:bg-slate-900/40 p-3 rounded-lg border border-border-subtle">
+            <div className="bg-white/50 dark:bg-white/40 p-3 rounded-lg border border-border-subtle">
               <span className="text-[10px] text-text-secondary block font-bold mb-0.5">Valor-Base Garantido</span>
-              <div className="text-sm font-extrabold text-sidebar-navy dark:text-white">
+              <div className="text-sm font-extrabold text-sidebar-navy dark:text-[var(--text-primary)]">
                 {formatCurrencyBRL(baseTotal)}
               </div>
               <span className="text-[9px] text-text-muted">Valor garantido por contrato</span>
             </div>
 
-            <div className="bg-white/50 dark:bg-slate-900/40 p-3 rounded-lg border border-border-subtle">
+            <div className="bg-white/50 dark:bg-white/40 p-3 rounded-lg border border-border-subtle">
               <span className="text-[10px] text-indigo-700 dark:text-indigo-400 block font-bold mb-0.5">+ Success Fee Potencial</span>
               <div className="text-sm font-extrabold text-indigo-700 dark:text-indigo-400">
                 {formatCurrencyBRL(successFeeAmount)}
@@ -318,7 +318,7 @@ export default function NegotiationFinancialSummary({
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="flex sm:hidden w-full items-center justify-between p-2 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold text-sidebar-navy dark:text-white transition-colors"
+            className="flex sm:hidden w-full items-center justify-between p-2 bg-slate-100 dark:bg-slate-50 rounded-lg font-bold text-sidebar-navy dark:text-[var(--text-primary)] transition-colors"
           >
             <span>{isOpen ? 'Ocultar Detalhes' : 'Ver Cálculo Detalhado'}</span>
             {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -326,26 +326,26 @@ export default function NegotiationFinancialSummary({
 
           {/* Table Container - Visible always on Desktop, Toggleable on Mobile */}
           <div className={`${isOpen ? 'block' : 'hidden sm:block'} pt-2 sm:pt-0 space-y-2`}>
-            <div className="bg-white/20 dark:bg-slate-900/10 border border-slate-200/60 dark:border-slate-800/25 rounded-xl overflow-hidden">
+            <div className="bg-white/20 dark:bg-white/10 border border-slate-200/60 dark:border-slate-200/25 rounded-xl overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <tbody>
-                  <tr className="border-b border-slate-100 dark:border-slate-800/50">
+                  <tr className="border-b border-slate-100 dark:border-slate-200/50">
                     <td className="p-2.5 text-text-secondary font-medium">Período considerado:</td>
-                    <td className="p-2.5 text-right font-semibold text-sidebar-navy dark:text-white flex justify-end items-center gap-1">
+                    <td className="p-2.5 text-right font-semibold text-sidebar-navy dark:text-[var(--text-primary)] flex justify-end items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-text-secondary" />
                       <span>{formattedPeriod}</span>
                     </td>
                   </tr>
-                  <tr className="border-b border-slate-100 dark:border-slate-800/50">
+                  <tr className="border-b border-slate-100 dark:border-slate-200/50">
                     <td className="p-2.5 text-text-secondary font-medium">Dias alocados:</td>
-                    <td className="p-2.5 text-right font-semibold text-sidebar-navy dark:text-white">
+                    <td className="p-2.5 text-right font-semibold text-sidebar-navy dark:text-[var(--text-primary)]">
                       {allocationDays} {allocationDays === 1 ? 'dia' : 'dias'}
                     </td>
                   </tr>
                   {remunerationModel?.toLowerCase() === 'hora' && (
-                    <tr className="border-b border-slate-100 dark:border-slate-800/50">
+                    <tr className="border-b border-slate-100 dark:border-slate-200/50">
                       <td className="p-2.5 text-text-secondary font-medium">Horas estimadas:</td>
-                      <td className="p-2.5 text-right font-semibold text-sidebar-navy dark:text-white">
+                      <td className="p-2.5 text-right font-semibold text-sidebar-navy dark:text-[var(--text-primary)]">
                         {estimatedHours ? `${estimatedHours}h` : <span className="text-red-500 font-bold">Não informada</span>}
                       </td>
                     </tr>

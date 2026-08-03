@@ -137,9 +137,9 @@ function JobDescriptionFormatted({ description }: { description: string }) {
   const lines = description.split('\n');
 
   return (
-    <div className="w-full mt-2 pt-2 border-t border-slate-700/70">
+    <div className="w-full mt-2 pt-2 border-t border-slate-200/70">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Descrição Técnico-Operacional</span>
+        <span className="text-[10px] uppercase font-bold text-[var(--text-disabled)] tracking-wider">Descrição Técnico-Operacional</span>
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -153,7 +153,7 @@ function JobDescriptionFormatted({ description }: { description: string }) {
         </button>
       </div>
 
-      <div className={`mt-1.5 text-xs text-slate-300 leading-relaxed font-sans transition-all duration-300 ${!isExpanded ? 'max-h-16 overflow-hidden relative' : ''}`}>
+      <div className={`mt-1.5 text-xs text-[var(--text-muted)] leading-relaxed font-sans transition-all duration-300 ${!isExpanded ? 'max-h-16 overflow-hidden relative' : ''}`}>
         {!isExpanded && (
           <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-800 to-transparent pointer-events-none" />
         )}
@@ -840,7 +840,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             }`}>
               {job.status}
             </span>
-            <span className="bg-slate-100 dark:bg-slate-800 text-text-secondary font-bold px-2 py-0.5 rounded-full text-[9px]">
+            <span className="bg-slate-100 dark:bg-slate-50 text-text-secondary font-bold px-2 py-0.5 rounded-full text-[9px]">
               {shCount} freelas
             </span>
           </div>
@@ -861,8 +861,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               onClick={() => handleSelectJob(job.id)}
               className={`font-bold py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 rounded-lg text-[10.5px] border transition-all cursor-pointer whitespace-nowrap truncate ${
                 isSelected 
-                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' 
-                  : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
+                  ? 'bg-emerald-600 border-emerald-600 text-[var(--text-primary)] shadow-sm' 
+                  : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
               }`}
             >
               {isSelected ? (
@@ -959,8 +959,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             onClick={() => handleSelectJob(job.id)}
             className={`font-bold px-4 py-2 rounded-xl text-xs border transition-all cursor-pointer w-full text-center ${
               isSelected 
-                ? 'bg-emerald-600 border-emerald-600 text-white' 
-                : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
+                ? 'bg-emerald-600 border-emerald-600 text-[var(--text-primary)]' 
+                : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
             }`}
           >
             {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar Oportunidade'}
@@ -1177,7 +1177,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     const isBelowSeniorityButCompatRole = fRank < jobRank && (hasExactRole || hasNormalizedRole);
 
     // Score badge style
-    let scoreBadgeStyle = "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20";
+    let scoreBadgeStyle = "bg-slate-500/10 text-slate-700 dark:text-[var(--text-muted)] border-slate-500/20";
     if (score >= 75) {
       scoreBadgeStyle = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20";
     } else if (score >= 50) {
@@ -1278,8 +1278,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               isAdded 
                 ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-450 dark:text-emerald-400 font-semibold cursor-default' 
                 : activeJob?.selectedFreelancerId
-                  ? 'bg-slate-800 border border-slate-700 text-slate-500 cursor-not-allowed'
-                  : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
+                  ? 'bg-slate-50 border border-slate-200 text-[var(--text-disabled)] cursor-not-allowed'
+                  : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan'
             }`}
           >
             {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}
@@ -2008,22 +2008,22 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       
       {/* -------------------- STEPPER COMPONENT — só exibe quando um job foi selecionado -------------------- */}
       {activeStep > 1 && selectedJobIdLocal && (
-        <div className="bg-[#0f172a]/80 backdrop-blur-md border border-slate-800 rounded-2xl shadow-xl">
+        <div className="bg-[#0f172a]/80 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4">
 
             {/* Left: Title & Subtitle */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className="p-2.5 bg-slate-800/80 rounded-xl border border-slate-700/50">
+              <div className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/50">
                 <Scale className="w-5 h-5 text-action-cyan" />
               </div>
               <div>
-                <h2 className="text-sm font-extrabold text-white leading-none tracking-wide">Workflow de Shortlist & Negociação</h2>
-                <p className="text-[11px] text-slate-400 mt-1 font-medium">Ciclo completo desde a triagem até a contratação e alocação.</p>
+                <h2 className="text-sm font-extrabold text-[var(--text-primary)] leading-none tracking-wide">Workflow de Shortlist & Negociação</h2>
+                <p className="text-[11px] text-[var(--text-disabled)] mt-1 font-medium">Ciclo completo desde a triagem até a contratação e alocação.</p>
               </div>
             </div>
 
             {/* Right: Modern Connective Stepper */}
-            <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto shrink-0 bg-slate-950/60 p-1.5 rounded-xl border border-slate-800/80 w-full lg:w-auto">
+            <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto shrink-0 bg-slate-950/60 p-1.5 rounded-xl border border-slate-200/80 w-full lg:w-auto">
               
               {/* Step 1 — Seleção do Job */}
               {(() => {
@@ -2036,12 +2036,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       active
                         ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
                         : done
-                          ? 'text-emerald-400 hover:bg-slate-800/50 cursor-pointer hover:text-emerald-300'
-                          : 'text-slate-500 cursor-default'
+                          ? 'text-emerald-400 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-300'
+                          : 'text-[var(--text-disabled)] cursor-default'
                     }`}
                   >
                     <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-50 text-[var(--text-disabled)]'
                     }`}>
                       {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '1'}
                     </span>
@@ -2063,12 +2063,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       active
                         ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
                         : done
-                          ? 'text-emerald-400 hover:bg-slate-800/50 cursor-pointer hover:text-emerald-300'
-                          : 'text-slate-500 cursor-default'
+                          ? 'text-emerald-400 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-300'
+                          : 'text-[var(--text-disabled)] cursor-default'
                     }`}
                   >
                     <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-50 text-[var(--text-disabled)]'
                     }`}>
                       {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '2'}
                     </span>
@@ -2090,12 +2090,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       active
                         ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
                         : done
-                          ? 'text-emerald-400 hover:bg-slate-800/50 cursor-pointer hover:text-emerald-300'
-                          : 'text-slate-500 cursor-default'
+                          ? 'text-emerald-400 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-300'
+                          : 'text-[var(--text-disabled)] cursor-default'
                     }`}
                   >
                     <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-50 text-[var(--text-disabled)]'
                     }`}>
                       {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '3'}
                     </span>
@@ -2117,12 +2117,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       active
                         ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
                         : done
-                          ? 'text-emerald-400 hover:bg-slate-800/50 cursor-pointer hover:text-emerald-300'
-                          : 'text-slate-500 cursor-default'
+                          ? 'text-emerald-400 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-300'
+                          : 'text-[var(--text-disabled)] cursor-default'
                     }`}
                   >
                     <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'
+                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-50 text-[var(--text-disabled)]'
                     }`}>
                       {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '4'}
                     </span>
@@ -2174,7 +2174,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => setJobTabFilter('ativas')}
                 className={`p-2 px-4 rounded-xl text-xs font-bold transition-all border ${
                   jobTabFilter === 'ativas'
-                    ? 'bg-sidebar-navy text-white border-sidebar-navy'
+                    ? 'bg-sidebar-navy text-[var(--text-primary)] border-sidebar-navy'
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
@@ -2184,7 +2184,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => setJobTabFilter('bookadas')}
                 className={`p-2 px-4 rounded-xl text-xs font-bold transition-all border ${
                   jobTabFilter === 'bookadas'
-                    ? 'bg-sidebar-navy text-white border-sidebar-navy'
+                    ? 'bg-sidebar-navy text-[var(--text-primary)] border-sidebar-navy'
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
@@ -2194,7 +2194,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => setJobTabFilter('encerradas')}
                 className={`p-2 px-4 rounded-xl text-xs font-bold transition-all border ${
                   jobTabFilter === 'encerradas'
-                    ? 'bg-sidebar-navy text-white border-sidebar-navy'
+                    ? 'bg-sidebar-navy text-[var(--text-primary)] border-sidebar-navy'
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
@@ -2204,7 +2204,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => setJobTabFilter('todas')}
                 className={`p-2 px-4 rounded-xl text-xs font-bold transition-all border ${
                   jobTabFilter === 'todas'
-                    ? 'bg-sidebar-navy text-white border-sidebar-navy'
+                    ? 'bg-sidebar-navy text-[var(--text-primary)] border-sidebar-navy'
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
@@ -2411,8 +2411,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           onClick={() => handleSelectJob(job.id)}
                           className={`font-bold w-[110px] h-[32px] flex items-center justify-center rounded-lg text-xs border transition-all ${
                             isSelected 
-                              ? 'bg-emerald-600 border-emerald-600 text-white' 
-                              : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-white hover:border-action-cyan text-sidebar-navy'
+                              ? 'bg-emerald-600 border-emerald-600 text-[var(--text-primary)]' 
+                              : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-sidebar-navy'
                           }`}
                         >
                           {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
@@ -2430,7 +2430,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               {activeJob.selectedFreelancerId ? (
                 <button
                   onClick={() => handleNavigateStep(4)}
-                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
                 >
                   <span>Avançar para Alocação</span>
                   <ArrowRight className="w-4 h-4 text-action-cyan" />
@@ -2438,7 +2438,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               ) : (
                 <button
                   onClick={() => handleNavigateStep(2)}
-                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
                 >
                   <span>Avançar para Shortlist</span>
                   <ArrowRight className="w-4 h-4 text-action-cyan" />
@@ -2486,27 +2486,27 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
             return (
               <div
-                className="bg-slate-900/95 text-slate-100 p-5 rounded-2xl border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between gap-6 job-meta-header sticky top-0 z-30 transition-all duration-300"
+                className="bg-white/95 text-slate-800 p-5 rounded-2xl border border-slate-200/80 shadow-xl flex flex-col md:flex-row justify-between gap-6 job-meta-header sticky top-0 z-30 transition-all duration-300"
                 style={{ backdropFilter: 'blur(10px)' }}
               >
                 <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-950 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-800">
+                    <span className="bg-slate-950 text-[var(--text-disabled)] font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
                     <span className="text-[11px] uppercase font-extrabold text-action-cyan tracking-wider">Oportunidade Selecionada</span>
                     <span className="bg-blue-950 text-blue-300 border border-blue-800/80 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
                   </div>
 
-                  <h3 className="text-base font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+                  <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">[{activeJob.client}] {activeJob.name}</h3>
 
-                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-300">
-                    <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
-                    <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
-                    <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
+                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[var(--text-muted)]">
+                    <div>Núcleo: <strong className="text-[var(--text-primary)]">{nucleoName}</strong></div>
+                    <div>Função: <strong className="text-[var(--text-primary)]">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
+                    <div>Período: <strong className="text-[var(--text-primary)]">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
                     <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
-                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
+                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-[var(--text-primary)]">Dia {paymentDay}</strong></div>}
                     {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
 
@@ -2518,11 +2518,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                 <div className="flex flex-col justify-between items-end gap-3 min-w-[180px] shrink-0">
                   <div className="text-right">
-                    <div className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Budget Máximo do Job</div>
+                    <div className="text-[10px] uppercase font-extrabold text-[var(--text-disabled)] tracking-wider">Budget Máximo do Job</div>
                     <div className="text-lg font-black text-action-cyan">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    <div className="text-[10px] text-[var(--text-disabled)] font-medium mt-0.5">
                       Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
                     </div>
                   </div>
@@ -2530,7 +2530,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="flex gap-2">
                     <button
                       onClick={handleClearJob}
-                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold p-2 px-3.5 rounded-xl text-xs transition-all border border-slate-700 cursor-pointer shadow-xs"
+                      className="bg-slate-50 hover:bg-slate-700 text-[var(--text-secondary)] font-bold p-2 px-3.5 rounded-xl text-xs transition-all border border-slate-200 cursor-pointer shadow-xs"
                     >
                       Trocar Job
                     </button>
@@ -2691,7 +2691,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         onClick={() => setCandidateV3aExp(p => p === null ? true : p === true ? false : null)}
                         className={`p-1.5 px-3 rounded-lg text-[10px] font-bold border transition-all ${
                           candidateV3aExp === true 
-                            ? 'bg-sidebar-navy border-sidebar-navy text-white' 
+                            ? 'bg-sidebar-navy border-sidebar-navy text-[var(--text-primary)]' 
                             : candidateV3aExp === false 
                               ? 'bg-slate-200 border-slate-300 text-slate-800' 
                               : 'bg-white border-border-subtle text-text-secondary'
@@ -2823,10 +2823,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="accordion-match accordion-neutral border border-slate-600/40 rounded-xl overflow-hidden shadow-xs">
                     <button 
                       onClick={() => setExpandOtherMatches(!expandOtherMatches)}
-                      className="w-full bg-slate-700/40 p-3 flex justify-between items-center text-xs font-bold text-slate-300 border-b border-slate-600/40 hover:bg-slate-700/60 transition-colors"
+                      className="w-full bg-slate-700/40 p-3 flex justify-between items-center text-xs font-bold text-[var(--text-muted)] border-b border-slate-600/40 hover:bg-slate-700/60 transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-slate-400" />
+                        <Users className="w-4 h-4 text-[var(--text-disabled)]" />
                         <span>👥 Outras Opções ({matches.other.length})</span>
                       </span>
                       {expandOtherMatches ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -2968,14 +2968,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <button
                   disabled={isDispatchingEmails}
                   onClick={handleConfirmShortlistAndDispatchProposals}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-md disabled:opacity-50 transition-all"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-md disabled:opacity-50 transition-all"
                 >
                   <Mail className="w-4 h-4" />
                   <span>{isDispatchingEmails ? 'Confirmando & Disparando...' : 'Confirmar Shortlist Oficial & Disparar Propostas'}</span>
                 </button>
                 <button
                   onClick={() => handleNavigateStep(3)}
-                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-5 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-[var(--text-primary)] font-bold p-3 px-5 rounded-xl flex items-center gap-2 text-xs shadow-xs"
                 >
                   <span>Negociação</span>
                   <ArrowRight className="w-4 h-4 text-action-cyan" />
@@ -3023,27 +3023,27 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
             return (
               <div
-                className="bg-slate-900/95 text-slate-100 p-4 rounded-2xl border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between gap-4 job-meta-header sticky top-0 z-30 transition-all duration-300"
+                className="bg-white/95 text-slate-800 p-4 rounded-2xl border border-slate-200/80 shadow-xl flex flex-col md:flex-row justify-between gap-4 job-meta-header sticky top-0 z-30 transition-all duration-300"
                 style={{ backdropFilter: 'blur(10px)' }}
               >
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-950 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-800">
+                    <span className="bg-slate-950 text-[var(--text-disabled)] font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
                     <span className="text-[10px] uppercase font-extrabold text-action-cyan tracking-wider">Negociação Individual</span>
                     <span className="bg-blue-950 text-blue-300 border border-blue-800/80 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
                   </div>
 
-                  <h3 className="text-sm font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+                  <h3 className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">[{activeJob.client}] {activeJob.name}</h3>
 
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-300">
-                    <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
-                    <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
-                    <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--text-muted)]">
+                    <div>Núcleo: <strong className="text-[var(--text-primary)]">{nucleoName}</strong></div>
+                    <div>Função: <strong className="text-[var(--text-primary)]">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
+                    <div>Período: <strong className="text-[var(--text-primary)]">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
                     <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
-                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
+                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-[var(--text-primary)]">Dia {paymentDay}</strong></div>}
                     {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
 
@@ -3055,18 +3055,18 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                 <div className="flex flex-col justify-between items-end gap-2 shrink-0">
                   <div className="text-right">
-                    <div className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Budget Máximo do Job</div>
+                    <div className="text-[10px] uppercase font-extrabold text-[var(--text-disabled)] tracking-wider">Budget Máximo do Job</div>
                     <div className="text-base font-black text-action-cyan">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    <div className="text-[10px] text-[var(--text-disabled)] font-medium mt-0.5">
                       Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
                     </div>
                   </div>
 
                   <button
                     onClick={() => handleNavigateStep(2)}
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-700 whitespace-nowrap cursor-pointer shadow-xs"
+                    className="bg-slate-50 hover:bg-slate-700 text-[var(--text-secondary)] font-bold p-2 px-3 rounded-lg text-xs transition-all border border-slate-200 whitespace-nowrap cursor-pointer shadow-xs"
                   >
                     Voltar para Shortlist
                   </button>
@@ -3077,26 +3077,26 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
           {/* COMPARISON GRID BETWEEN FREELANCERS */}
           {jobShortlists.length > 1 && (
-            <div className="bg-[#1E293B] border border-slate-700/50 p-6 rounded-2xl shadow-lg space-y-4">
+            <div className="bg-[#1E293B] border border-slate-200/50 p-6 rounded-2xl shadow-lg space-y-4">
               <div className="flex justify-between items-center flex-wrap gap-4">
                 <div>
-                  <h4 className="font-extrabold text-white text-sm uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="font-extrabold text-[var(--text-primary)] text-sm uppercase tracking-wider flex items-center gap-1.5">
                     <SlidersHorizontal className="w-5 h-5 text-action-cyan" />
                     <span>Painel Comparativo de Propostas</span>
                   </h4>
-                  <p className="text-xs text-slate-350">RH, Master e Heads de Núcleo podem comparar o impacto financeiro de cada opção.</p>
+                  <p className="text-xs text-slate-600">RH, Master e Heads de Núcleo podem comparar o impacto financeiro de cada opção.</p>
                 </div>
 
                 {/* Sorting Controls */}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="text-slate-400 font-bold">Ordenar por:</span>
+                  <span className="text-[var(--text-disabled)] font-bold">Ordenar por:</span>
                   <button
                     type="button"
                     onClick={() => setCompareSortKey('default')}
                     className={`p-2 px-3 rounded-lg font-bold transition-all border ${
                       compareSortKey === 'default'
                         ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
-                        : 'bg-slate-800 text-slate-300 border-slate-750 hover:bg-slate-750'
+                        : 'bg-slate-50 text-[var(--text-muted)] border-slate-750 hover:bg-slate-750'
                     }`}
                   >
                     Status
@@ -3107,7 +3107,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     className={`p-2 px-3 rounded-lg font-bold transition-all border ${
                       compareSortKey === 'saving'
                         ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
-                        : 'bg-slate-800 text-slate-300 border-slate-750 hover:bg-slate-750'
+                        : 'bg-slate-50 text-[var(--text-muted)] border-slate-750 hover:bg-slate-750'
                     }`}
                   >
                     Maior Saving
@@ -3118,7 +3118,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     className={`p-2 px-3 rounded-lg font-bold transition-all border ${
                       compareSortKey === 'total'
                         ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
-                        : 'bg-slate-800 text-slate-300 border-slate-750 hover:bg-slate-750'
+                        : 'bg-slate-50 text-[var(--text-muted)] border-slate-750 hover:bg-slate-750'
                     }`}
                   >
                     Menor Total
@@ -3129,7 +3129,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     className={`p-2 px-3 rounded-lg font-bold transition-all border ${
                       compareSortKey === 'score'
                         ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
-                        : 'bg-slate-800 text-slate-300 border-slate-750 hover:bg-slate-750'
+                        : 'bg-slate-50 text-[var(--text-muted)] border-slate-750 hover:bg-slate-750'
                     }`}
                   >
                     Melhor Score
@@ -3141,7 +3141,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               <div className="hidden md:block rounded-xl border border-slate-750 overflow-visible">
                 <table className="w-full text-left text-xs border-collapse sticky-table-header">
                   <thead>
-                    <tr className="bg-slate-800 border-b border-slate-750 text-slate-200">
+                    <tr className="bg-slate-50 border-b border-slate-750 text-[var(--text-secondary)]">
                       <th className="p-3.5 font-bold uppercase tracking-wider">Freelancer</th>
                       <th className="p-3.5 font-bold uppercase tracking-wider">Status Negociação</th>
                       <th className="p-3.5 font-bold uppercase tracking-wider text-right">Rate Negociado</th>
@@ -3152,12 +3152,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       <th className="p-3.5 font-bold uppercase tracking-wider text-center">Agenda</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 bg-slate-900/30 text-slate-300">
+                  <tbody className="divide-y divide-slate-800/60 bg-white/30 text-[var(--text-muted)]">
                     {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict }) => (
-                      <tr key={sl.id} className={`hover:bg-slate-800/30 transition-colors ${sl.candidateStatus === 'Não aceitou' ? 'opacity-40 grayscale' : ''}`}>
+                      <tr key={sl.id} className={`hover:bg-slate-50/30 transition-colors ${sl.candidateStatus === 'Não aceitou' ? 'opacity-40 grayscale' : ''}`}>
                         <td className="p-3.5">
-                          <div className="font-bold text-white">{cand?.name || '—'}</div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">{cand?.seniority} &bull; {cand?.mainRole}</div>
+                          <div className="font-bold text-[var(--text-primary)]">{cand?.name || '—'}</div>
+                          <div className="text-[10px] text-[var(--text-disabled)] mt-0.5">{cand?.seniority} &bull; {cand?.mainRole}</div>
                         </td>
                         <td className="p-3.5">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -3167,7 +3167,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
                                 : sl.candidateStatus === 'Bloqueado por conflito de agenda' || sl.candidateStatus === 'Não aceitou'
                                   ? 'bg-red-950 text-red-400 border border-red-800/50'
-                                  : 'bg-slate-800 text-slate-300 border border-slate-700/60'
+                                  : 'bg-slate-50 text-[var(--text-muted)] border border-slate-200/60'
                           }`}>
                             {sl.candidateStatus}
                           </span>
@@ -3175,7 +3175,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         <td className="p-3.5 text-right font-semibold">
                           {formatCurrencyBRL(rate)}/{billing === 'Hora' ? 'h' : billing === 'Diária' ? 'dia' : 'job'}
                         </td>
-                        <td className="p-3.5 text-right font-bold text-white">
+                        <td className="p-3.5 text-right font-bold text-[var(--text-primary)]">
                           {formatCurrencyBRL(negotiatedTotal)}
                         </td>
                         <td className={`p-3.5 text-right font-bold ${
@@ -3183,7 +3183,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             ? 'text-emerald-450' 
                             : savingAmount < 0 
                               ? 'text-red-400' 
-                              : 'text-slate-300'
+                              : 'text-[var(--text-muted)]'
                         }`}>
                           {savingAmount < 0 
                             ? `-${formatCurrencyBRL(Math.abs(savingAmount))}` 
@@ -3195,7 +3195,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             ? 'text-emerald-450' 
                             : savingAmount < 0 
                               ? 'text-red-400' 
-                              : 'text-slate-300'
+                              : 'text-[var(--text-muted)]'
                         }`}>
                           {savingAmount < 0 
                             ? `${Math.abs(Math.round(savingPercentage))}% acima` 
@@ -3225,11 +3225,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               {/* Cards Wrapper for Mobile */}
               <div className="md:hidden space-y-3">
                 {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict }) => (
-                  <div key={sl.id} className={`bg-slate-900/40 p-4 rounded-xl border border-slate-750 space-y-3 ${sl.candidateStatus === 'Não aceitou' ? 'opacity-40 grayscale' : ''}`}>
+                  <div key={sl.id} className={`bg-white/40 p-4 rounded-xl border border-slate-750 space-y-3 ${sl.candidateStatus === 'Não aceitou' ? 'opacity-40 grayscale' : ''}`}>
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-bold text-white text-xs">{cand?.name || '—'}</div>
-                        <div className="text-[10px] text-slate-400">{cand?.seniority} &bull; {cand?.mainRole}</div>
+                        <div className="font-bold text-[var(--text-primary)] text-xs">{cand?.name || '—'}</div>
+                        <div className="text-[10px] text-[var(--text-disabled)]">{cand?.seniority} &bull; {cand?.mainRole}</div>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
                         sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head'
@@ -3238,7 +3238,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
                             : sl.candidateStatus === 'Bloqueado por conflito de agenda' || sl.candidateStatus === 'Não aceitou'
                               ? 'bg-red-950 text-red-400 border border-red-800/50'
-                              : 'bg-slate-800 text-slate-350'
+                              : 'bg-slate-50 text-slate-600'
                       }`}>
                         {sl.candidateStatus}
                       </span>
@@ -3246,16 +3246,16 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div>
-                        <span className="text-slate-400 block">Rate Negociado:</span>
-                        <strong className="text-white">{formatCurrencyBRL(rate)}/{billing === 'Hora' ? 'h' : billing === 'Diária' ? 'dia' : 'job'}</strong>
+                        <span className="text-[var(--text-disabled)] block">Rate Negociado:</span>
+                        <strong className="text-[var(--text-primary)]">{formatCurrencyBRL(rate)}/{billing === 'Hora' ? 'h' : billing === 'Diária' ? 'dia' : 'job'}</strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block">Total Negociado:</span>
-                        <strong className="text-white">{formatCurrencyBRL(negotiatedTotal)}</strong>
+                        <span className="text-[var(--text-disabled)] block">Total Negociado:</span>
+                        <strong className="text-[var(--text-primary)]">{formatCurrencyBRL(negotiatedTotal)}</strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block">Saving Gerado:</span>
-                        <strong className={savingAmount > 0 ? 'text-emerald-400' : savingAmount < 0 ? 'text-red-400' : 'text-slate-300'}>
+                        <span className="text-[var(--text-disabled)] block">Saving Gerado:</span>
+                        <strong className={savingAmount > 0 ? 'text-emerald-400' : savingAmount < 0 ? 'text-red-400' : 'text-[var(--text-muted)]'}>
                           {savingAmount < 0 
                             ? `-${formatCurrencyBRL(Math.abs(savingAmount))}` 
                             : formatCurrencyBRL(savingAmount)
@@ -3263,8 +3263,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         </strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block">Saving %:</span>
-                        <strong className={savingAmount > 0 ? 'text-emerald-400' : savingAmount < 0 ? 'text-red-400' : 'text-slate-300'}>
+                        <span className="text-[var(--text-disabled)] block">Saving %:</span>
+                        <strong className={savingAmount > 0 ? 'text-emerald-400' : savingAmount < 0 ? 'text-red-400' : 'text-[var(--text-muted)]'}>
                           {savingAmount < 0 
                             ? `${Math.abs(Math.round(savingPercentage))}% acima` 
                             : formatPercentage(savingPercentage)
@@ -3273,7 +3273,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800/80 flex flex-wrap gap-2 text-[9px] font-bold">
+                    <div className="pt-2 border-t border-slate-200/80 flex flex-wrap gap-2 text-[9px] font-bold">
                       <span className={`p-1 px-2 rounded ${exceedsCeiling ? 'bg-red-950 text-red-400' : 'bg-emerald-950 text-emerald-400'}`}>
                         Política: {exceedsCeiling ? 'Excedeu' : 'Dentro'}
                       </span>
@@ -3385,7 +3385,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   <button
                                     type="button"
                                     onClick={() => handleRequestApproval(sl.id, cand.id, 'schedule_conflict')}
-                                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
+                                    className="bg-red-600 hover:bg-red-700 text-[var(--text-primary)] font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
                                   >
                                     Solicitar aprovação RH
                                   </button>
@@ -3427,7 +3427,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           loading: false,
                                           error: null
                                         })}
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
                                       >
                                         Aprovar
                                       </button>
@@ -3442,7 +3442,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           loading: false,
                                           error: null
                                         })}
-                                        className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
+                                        className="bg-red-600 hover:bg-red-700 text-[var(--text-primary)] font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
                                       >
                                         Reprovar
                                       </button>
@@ -3455,7 +3455,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   <button
                                     type="button"
                                     onClick={() => handleRequestApproval(sl.id, cand.id, 'value_exception', rate)}
-                                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
+                                    className="bg-red-600 hover:bg-red-700 text-[var(--text-primary)] font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
                                   >
                                     Solicitar aprovação Head
                                   </button>
@@ -3586,7 +3586,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         return (
                           <div className="sm:col-span-2 space-y-4">
                             {/* Contract dates and terms */}
-                            <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3 text-left">
+                            <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-xl border border-border-subtle space-y-3 text-left">
                               <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
                                 Informações Contratuais & Operacionais
                               </span>
@@ -3706,21 +3706,21 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   </div>
 
                                   {/* Read-Only Application Mode Badge (Bloqueado da Oportunidade) */}
-                                  <div className="bg-slate-900/80 border border-slate-750 p-2.5 rounded-lg flex items-center justify-between text-xs">
+                                  <div className="bg-white/80 border border-slate-750 p-2.5 rounded-lg flex items-center justify-between text-xs">
                                     <div>
-                                      <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-400 block">Forma de Aplicação do Success Fee</span>
+                                      <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--text-disabled)] block">Forma de Aplicação do Success Fee</span>
                                       <strong className="text-action-cyan font-extrabold text-xs">
                                         {calcMode === 'increment_budget' ? 'INCREMENTAR E ATUALIZAR O BUDGET' : 'DILUIR SUCCESS FEE NAS PROJEÇÕES'}
                                       </strong>
                                     </div>
-                                    <span className="bg-slate-800 text-slate-300 text-[9.5px] font-bold px-2 py-0.5 rounded border border-slate-700">Fixado no Job</span>
+                                    <span className="bg-slate-50 text-[var(--text-muted)] text-[9.5px] font-bold px-2 py-0.5 rounded border border-slate-200">Fixado no Job</span>
                                   </div>
 
                                   {candNeg.successFeeEnabled && (
                                     <div className="space-y-3 pt-2 border-t border-indigo-200/30 text-xs">
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
-                                          <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Tipo de Taxa *</label>
+                                          <label className="text-[10px] font-bold text-text-secondary dark:text-[var(--text-muted)] block mb-0.5">Tipo de Taxa *</label>
                                           <select
                                             disabled={isLocked}
                                             value={candNeg.successFeeType}
@@ -3735,7 +3735,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                                 successFeePercent: cappedPercent
                                               });
                                             }}
-                                            className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-white"
+                                            className="w-full bg-white dark:bg-white border border-border-subtle dark:border-slate-200 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-[var(--text-primary)]"
                                           >
                                             <option value="percentage">Percentual (%)</option>
                                             <option value="fixed">Valor Fixo (R$)</option>
@@ -3744,7 +3744,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                                         {candNeg.successFeeType === 'percentage' ? (
                                           <div>
-                                            <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">
+                                            <label className="text-[10px] font-bold text-text-secondary dark:text-[var(--text-muted)] block mb-0.5">
                                               Percentual (%) {jobMaxPercent > 0 && <span className="text-amber-400 font-normal">(Teto: {Math.round(jobMaxPercent * 10) / 10}%)</span>} *
                                             </label>
                                             <input
@@ -3757,13 +3757,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                                 const capped = jobMaxPercent > 0 ? Math.min(val, jobMaxPercent) : val;
                                                 updateCandidateNeg(cand.id, { successFeePercent: capped });
                                               }}
-                                              className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-white"
+                                              className="w-full bg-white dark:bg-white border border-border-subtle dark:border-slate-200 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-[var(--text-primary)]"
                                               placeholder={`Ex: ${Math.round(jobMaxPercent) || 8}`}
                                             />
                                           </div>
                                         ) : (
                                           <div>
-                                            <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">
+                                            <label className="text-[10px] font-bold text-text-secondary dark:text-[var(--text-muted)] block mb-0.5">
                                               Valor Fixo (R$) {jobMaxFixed > 0 && <span className="text-amber-400 font-normal">(Teto: R$ {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(jobMaxFixed)})</span>} *
                                             </label>
                                             <div className="relative">
@@ -3794,7 +3794,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                                     updateCandidateNeg(cand.id, { successFeeFixedAmountVisual: formatted });
                                                   }
                                                 }}
-                                                className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-white"
+                                                className="w-full bg-white dark:bg-white border border-border-subtle dark:border-slate-200 p-1.5 pl-7 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-500 text-text-primary dark:text-[var(--text-primary)]"
                                                 placeholder="0,00"
                                               />
                                             </div>
@@ -3804,30 +3804,30 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div>
-                                          <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Gatilho de Sucesso *</label>
+                                          <label className="text-[10px] font-bold text-text-secondary dark:text-[var(--text-muted)] block mb-0.5">Gatilho de Sucesso *</label>
                                           <input
                                             type="text"
                                             disabled={isLocked}
                                             value={candNeg.successFeeTrigger}
                                             onChange={(e) => updateCandidateNeg(cand.id, { successFeeTrigger: e.target.value })}
-                                            className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                            className="w-full bg-white dark:bg-white border border-border-subtle dark:border-slate-200 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-[var(--text-primary)]"
                                             placeholder="Ex: V3A ganhar a concorrência"
                                           />
                                         </div>
                                         <div>
-                                          <label className="text-[10px] font-bold text-text-secondary dark:text-slate-300 block mb-0.5">Condições Complementares</label>
+                                          <label className="text-[10px] font-bold text-text-secondary dark:text-[var(--text-muted)] block mb-0.5">Condições Complementares</label>
                                           <input
                                             type="text"
                                             disabled={isLocked}
                                             value={candNeg.successFeeTerms}
                                             onChange={(e) => updateCandidateNeg(cand.id, { successFeeTerms: e.target.value })}
-                                            className="w-full bg-white dark:bg-slate-900 border border-border-subtle dark:border-slate-700 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-white"
+                                            className="w-full bg-white dark:bg-white border border-border-subtle dark:border-slate-200 p-1.5 rounded-lg text-[11px] font-bold focus:outline-none focus:border-indigo-55 text-text-primary dark:text-[var(--text-primary)]"
                                             placeholder="Condições ou termos extras..."
                                           />
                                         </div>
                                       </div>
 
-                                      <div className="bg-indigo-50/50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-indigo-100 dark:border-slate-850 flex items-center justify-between mt-2">
+                                      <div className="bg-indigo-50/50 dark:bg-white/50 p-2.5 rounded-lg border border-indigo-100 dark:border-slate-200 flex items-center justify-between mt-2">
                                         <label className="flex items-center gap-2 text-xs font-bold text-indigo-950 dark:text-indigo-350 cursor-pointer select-none">
                                           <input
                                             type="checkbox"
@@ -3881,15 +3881,36 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               Voltar para Shortlist
             </button>
 
-            {jobShortlists.some(sl => ['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus)) && (
+            {(() => {
+              const hasValidCandidate = jobShortlists.some(sl => {
+                if (!['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus)) return false;
+                
+                const hasConflict = activeJob ? hasScheduleConflict(sl.freelancerId, activeJob.startDate, activeJob.endDate) : false;
+                if (hasConflict) {
+                  const approvedException = db.approvals?.find((ap: any) => 
+                    ap.jobId === activeJob?.id && 
+                    ap.freelancerId === sl.freelancerId && 
+                    ap.approvalType === 'agenda_conflict' && 
+                    ap.status === 'approved'
+                  );
+                  if (!approvedException) return false;
+                }
+                return true;
+              });
+
+              if (!hasValidCandidate) return null;
+
+              return (
+
               <button
                 onClick={() => handleNavigateStep(4)}
-                className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
               >
                 <span>Avançar para Homologação</span>
                 <ArrowRight className="w-4 h-4 text-action-cyan" />
               </button>
-            )}
+              );
+            })()}
           </div>
         </div>
       )}
@@ -3931,27 +3952,27 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
             return (
               <div
-                className="bg-slate-900/95 text-slate-100 p-5 rounded-2xl border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between gap-6 job-meta-header sticky top-0 z-30 transition-all duration-300"
+                className="bg-white/95 text-slate-800 p-5 rounded-2xl border border-slate-200/80 shadow-xl flex flex-col md:flex-row justify-between gap-6 job-meta-header sticky top-0 z-30 transition-all duration-300"
                 style={{ backdropFilter: 'blur(10px)' }}
               >
                 <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-950 text-slate-400 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-800">
+                    <span className="bg-slate-950 text-[var(--text-disabled)] font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
                     <span className="text-[11px] uppercase font-extrabold text-action-cyan tracking-wider">Homologação da Alocação</span>
                     <span className="bg-emerald-950 text-emerald-300 border border-emerald-800/90 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
                   </div>
 
-                  <h3 className="text-base font-extrabold text-white leading-tight">[{activeJob.client}] {activeJob.name}</h3>
+                  <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">[{activeJob.client}] {activeJob.name}</h3>
 
-                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-300">
-                    <div>Núcleo: <strong className="text-white">{nucleoName}</strong></div>
-                    <div>Função: <strong className="text-white">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-slate-200'}>{activeJob.urgency}</strong></div>
-                    <div>Período: <strong className="text-white">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
+                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[var(--text-muted)]">
+                    <div>Núcleo: <strong className="text-[var(--text-primary)]">{nucleoName}</strong></div>
+                    <div>Função: <strong className="text-[var(--text-primary)]">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
+                    <div>Período: <strong className="text-[var(--text-primary)]">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
                     <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
-                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-white">Dia {paymentDay}</strong></div>}
+                    {paymentDay && <div>Vencimento Preferencial: <strong className="text-[var(--text-primary)]">Dia {paymentDay}</strong></div>}
                     {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
 
@@ -3963,11 +3984,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                 <div className="flex flex-col justify-between items-end gap-3 min-w-[180px] shrink-0">
                   <div className="text-right">
-                    <div className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Budget Máximo do Job</div>
+                    <div className="text-[10px] uppercase font-extrabold text-[var(--text-disabled)] tracking-wider">Budget Máximo do Job</div>
                     <div className="text-lg font-black text-action-cyan">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    <div className="text-[10px] text-[var(--text-disabled)] font-medium mt-0.5">
                       Média diária: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateDailyAverage(activeJob))}
                     </div>
                   </div>
@@ -3975,7 +3996,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleNavigateStep(3)}
-                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold p-2 px-3.5 rounded-xl text-xs transition-all border border-slate-700 cursor-pointer shadow-xs"
+                      className="bg-slate-50 hover:bg-slate-700 text-[var(--text-secondary)] font-bold p-2 px-3.5 rounded-xl text-xs transition-all border border-slate-200 cursor-pointer shadow-xs"
                     >
                       Voltar para Negociação
                     </button>
@@ -4014,7 +4035,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               <div className="bg-amber-50 border border-amber-300 rounded-2xl p-5 space-y-4 animate-fade-in">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-amber-500 rounded-lg">
-                    <AlertTriangle className="w-4 h-4 text-white" />
+                    <AlertTriangle className="w-4 h-4 text-[var(--text-primary)]" />
                   </div>
                   <div>
                     <h4 className="font-extrabold text-amber-900 text-sm">Exceções de Valor Pendentes de Aprovação</h4>
@@ -4073,7 +4094,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 const el = document.getElementById(`head-comment-${ap.id}`) as HTMLTextAreaElement;
                                 handleHeadDecision(ap.id, 'reject', el?.value || '');
                               }}
-                              className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                              className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-[var(--text-primary)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5" />
                               Rejeitar
@@ -4084,7 +4105,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 const el = document.getElementById(`head-comment-${ap.id}`) as HTMLTextAreaElement;
                                 handleHeadDecision(ap.id, 'approve', el?.value || '');
                               }}
-                              className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                              className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
                               Aprovar Exceção
@@ -4138,7 +4159,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                 {/* Allocation details contract details */}
                 <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-emerald-300 shadow-xs space-y-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-bold p-1 px-4 rounded-bl-xl uppercase tracking-wider">
+                  <div className="absolute top-0 right-0 bg-emerald-600 text-[var(--text-primary)] text-[10px] font-bold p-1 px-4 rounded-bl-xl uppercase tracking-wider">
                     Alocação Consolidada
                   </div>
 
@@ -4196,7 +4217,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') ? (
                       <button
                         onClick={handleReopenJob}
-                        className="bg-status-error hover:bg-status-error/95 text-white font-bold p-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
+                        className="bg-status-error hover:bg-status-error/95 text-[var(--text-primary)] font-bold p-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
                       >
                         <Unlock className="w-4 h-4" />
                         <span>Cancelar Alocação / Reabrir</span>
@@ -4204,7 +4225,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     ) : (
                       <button
                         disabled
-                        className="bg-slate-100 text-slate-400 border border-slate-200 font-bold p-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shrink-0 cursor-not-allowed"
+                        className="bg-slate-100 text-[var(--text-disabled)] border border-slate-200 font-bold p-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shrink-0 cursor-not-allowed"
                       >
                         <Lock className="w-4 h-4" />
                         <span>Reabertura Restrita ao RH</span>
@@ -4312,7 +4333,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       const isButtonDisabled = isHoursMissing || isJustificationMissing || isConflictPending || isBudgetPending;
 
                       return (
-                        <div key={sl.id} className="border border-border-subtle hover:border-emerald-500/50 p-6 rounded-2xl bg-white dark:bg-slate-900/60 shadow-sm space-y-6 transition-all text-left">
+                        <div key={sl.id} className="border border-border-subtle hover:border-emerald-500/50 p-6 rounded-2xl bg-white dark:bg-white/60 shadow-sm space-y-6 transition-all text-left">
                           {/* GRID LAYOUT (Left Column: Candidate & Commercial | Right Column: Supply Projections) */}
                           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                             
@@ -4322,8 +4343,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 {/* Candidate Header */}
                                 <div className="flex justify-between items-start pb-3 border-b border-border-subtle">
                                   <div>
-                                    <strong className="text-sidebar-navy dark:text-white font-extrabold text-base block">{cand.name}</strong>
-                                    <p className="text-xs text-text-secondary dark:text-slate-400 mt-0.5">{cand.mainRole} ({cand.seniority})</p>
+                                    <strong className="text-sidebar-navy dark:text-[var(--text-primary)] font-extrabold text-base block">{cand.name}</strong>
+                                    <p className="text-xs text-text-secondary dark:text-[var(--text-disabled)] mt-0.5">{cand.mainRole} ({cand.seniority})</p>
                                   </div>
                                   <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${
                                     isButtonDisabled
@@ -4365,13 +4386,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   };
 
                                   return (
-                                    <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-border-subtle space-y-3">
+                                    <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-xl border border-border-subtle space-y-3">
                                       <div className="flex items-center justify-between">
                                         <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
                                           Condições Comerciais & Faturamento
                                         </span>
                                         {totalDays > 0 && (
-                                          <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                          <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-[var(--text-secondary)]">
                                             {totalDays} {totalDays === 1 ? 'dia' : 'dias'}
                                           </span>
                                         )}
@@ -4380,13 +4401,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                       <div className="space-y-2 text-xs">
                                         <div className="flex justify-between border-b border-border-subtle/50 pb-1.5">
                                           <span className="text-[10px] uppercase font-bold text-text-secondary">Período</span>
-                                          <strong className="text-sidebar-navy dark:text-white">
+                                          <strong className="text-sidebar-navy dark:text-[var(--text-primary)]">
                                             {formatISOToBR(startDateStr)} a {formatISOToBR(endDateStr)}
                                           </strong>
                                         </div>
                                         <div className="flex justify-between border-b border-border-subtle/50 pb-1.5">
                                           <span className="text-[10px] uppercase font-bold text-text-secondary">Modelo</span>
-                                          <strong className="text-sidebar-navy dark:text-white">
+                                          <strong className="text-sidebar-navy dark:text-[var(--text-primary)]">
                                             {(() => {
                                               const bModel = billing?.toLowerCase() || '';
                                               if (bModel.includes('mensal') || bModel === 'monthly_salary' || bModel === 'monthly') {
@@ -4404,7 +4425,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         </div>
                                         <div className="flex justify-between">
                                           <span className="text-[10px] uppercase font-bold text-text-secondary">Obs.</span>
-                                          <strong className="text-sidebar-navy dark:text-white truncate max-w-[200px]">
+                                          <strong className="text-sidebar-navy dark:text-[var(--text-primary)] truncate max-w-[200px]">
                                             {candNeg.paymentNotes || 'Sem observações'}
                                           </strong>
                                         </div>
@@ -4463,7 +4484,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         placeholder="Explique o motivo do teto ultrapassado (ex: profissional sênior com alta aderência técnica)..."
                                         value={sl.notes || ''}
                                         onChange={(e) => handleUpdateNegotiation(cand.id, { notes: e.target.value })}
-                                        className="w-full bg-white dark:bg-slate-800 border border-border-subtle p-2 rounded-lg text-xs focus:outline-none focus:border-action-cyan text-text-primary dark:text-white resize-none"
+                                        className="w-full bg-white dark:bg-slate-50 border border-border-subtle p-2 rounded-lg text-xs focus:outline-none focus:border-action-cyan text-text-primary dark:text-[var(--text-primary)] resize-none"
                                         rows={2}
                                       />
                                     </div>
@@ -4518,17 +4539,17 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 return (
                                   <div className="space-y-4 flex-1 flex flex-col justify-between">
                                     {/* Supply Payment Projections Section (Sec. 5.2 & 5.3) */}
-                                    <div className="bg-slate-900/90 text-white p-5 rounded-2xl border border-slate-700/80 shadow-md space-y-4 flex-1">
-                                      <div className="flex items-center justify-between pb-3 border-b border-slate-700/80">
+                                    <div className="bg-white/90 text-[var(--text-primary)] p-5 rounded-2xl border border-slate-200/80 shadow-md space-y-4 flex-1">
+                                      <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
                                         <div className="flex items-center gap-2.5">
                                           <div className="p-2 rounded-lg bg-action-cyan/10 border border-action-cyan/30 text-action-cyan">
                                             <Clock className="w-4 h-4" />
                                           </div>
                                           <div>
-                                            <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">
+                                            <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider">
                                               Projeções de Pagamento & Supply
                                             </h4>
-                                            <p className="text-[10px] text-slate-400">Diretrizes da Política de Supply v2.0</p>
+                                            <p className="text-[10px] text-[var(--text-disabled)]">Diretrizes da Política de Supply v2.0</p>
                                           </div>
                                         </div>
                                       </div>
@@ -4541,27 +4562,27 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                             const cycleDays = (p as any).daysInCycle || (p.startDate && p.endDate ? Math.round((new Date(p.endDate).getTime() - new Date(p.startDate).getTime()) / 86400000) + 1 : 0);
 
                                             return (
-                                              <div key={idx} className="bg-slate-800/90 border border-slate-700/90 rounded-xl p-4 space-y-3 text-xs shadow-xs">
-                                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/60 pb-2.5">
+                                              <div key={idx} className="bg-slate-50/90 border border-slate-200/90 rounded-xl p-4 space-y-3 text-xs shadow-xs">
+                                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
                                                   <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-white text-[11px] bg-slate-700/90 border border-slate-600 px-2.5 py-0.5 rounded">
+                                                    <span className="font-bold text-[var(--text-primary)] text-[11px] bg-slate-700/90 border border-slate-600 px-2.5 py-0.5 rounded">
                                                       {projections.length > 1 ? `Parcela ${p.cycleNumber}/${projections.length}` : 'Parcela Única'}
                                                     </span>
                                                     <span className="text-[11px] text-action-cyan font-extrabold">
                                                       Mês de Referência: {monthLabel}
                                                     </span>
                                                   </div>
-                                                  <span className="text-[10px] text-slate-400 font-medium">
+                                                  <span className="text-[10px] text-[var(--text-disabled)] font-medium">
                                                     {cycleDays} dias de alocação
                                                   </span>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                                                  <div className="bg-slate-900/60 border border-slate-700/80 rounded-xl p-3 flex flex-col justify-between">
-                                                    <span className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">
+                                                  <div className="bg-white/60 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between">
+                                                    <span className="block text-[9px] font-extrabold uppercase tracking-wider text-[var(--text-disabled)] mb-1">
                                                       PERÍODO DO CICLO
                                                     </span>
-                                                    <span className="text-xs font-bold text-white block">
+                                                    <span className="text-xs font-bold text-[var(--text-primary)] block">
                                                       {formatISOToBR(p.startDate)} a {formatISOToBR(p.endDate)}
                                                     </span>
                                                   </div>
@@ -4582,13 +4603,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           })}
                                         </div>
                                       ) : (
-                                        <p className="text-xs text-slate-400 italic">
+                                        <p className="text-xs text-[var(--text-disabled)] italic">
                                           Defina o período do contrato para gerar as projeções de pagamento conforme a política de Supply.
                                         </p>
                                       )}
 
                                       {/* Mandatory Notice Disclaimer */}
-                                      <div className="pt-3 border-t border-slate-700/80 text-[11px] text-amber-300 bg-amber-950/30 border border-amber-900/40 rounded-xl p-3.5 space-y-1">
+                                      <div className="pt-3 border-t border-slate-200/80 text-[11px] text-amber-300 bg-amber-950/30 border border-amber-900/40 rounded-xl p-3.5 space-y-1">
                                         <strong className="block font-bold text-amber-400 text-[11.5px] flex items-center gap-1.5">
                                           <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
                                           <span>Aviso Obrigatório da Política de Supply</span>
@@ -4607,8 +4628,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         onClick={() => handleFinalAllocation(cand.id, sl.id, rate, billing, sl.notes || '', sl)}
                                         className={`font-extrabold px-6 py-3 rounded-xl text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer ${
                                           isButtonDisabled 
-                                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60' 
-                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
+                                            ? 'bg-slate-100 text-[var(--text-disabled)] border border-slate-200 cursor-not-allowed opacity-60' 
+                                            : 'bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] shadow-emerald-900/20'
                                         }`}
                                       >
                                         <CheckCircle className="w-4 h-4" />
@@ -4641,23 +4662,23 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       )}      {/* Custom Approval Request Modal */}
       {approvalModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs font-sans">
-          <div className="bg-[#0b1329] border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
+          <div className="bg-[#0b1329] border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
             {/* Header */}
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-[#0e172e]">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-[#0e172e]">
               <div>
-                <h3 className="font-extrabold text-white text-sm">
+                <h3 className="font-extrabold text-[var(--text-primary)] text-sm">
                   {approvalModal.type === 'schedule_conflict' 
                     ? 'Solicitar aprovação RH' 
                     : 'Solicitar aprovação Head'}
                 </h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                <p className="text-[10px] text-[var(--text-disabled)] font-bold uppercase tracking-wider mt-0.5">
                   Fluxo de Exceção Operacional
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setApprovalModal(prev => ({ ...prev, isOpen: false }))}
-                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition cursor-pointer"
+                className="p-1.5 hover:bg-slate-50 text-[var(--text-disabled)] hover:text-[var(--text-secondary)] rounded-xl transition cursor-pointer"
                 disabled={approvalModal.loading}
               >
                 <X className="w-4 h-4" />
@@ -4666,25 +4687,25 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
             {/* Body */}
             <div className="p-6 flex flex-col gap-4 text-xs">
-              <p className="text-slate-300 leading-relaxed">
+              <p className="text-[var(--text-muted)] leading-relaxed">
                 {approvalModal.type === 'schedule_conflict'
                   ? 'Este freelancer possui conflito de agenda no período do job. Informe a justificativa para solicitar uma exceção ao RH.'
                   : 'Este freelancer está com valor acordado acima do teto da política comercial. Informe a justificativa para solicitar uma exceção ao Head.'}
               </p>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+                <label className="text-[10.5px] font-bold text-[var(--text-disabled)] uppercase tracking-wider">
                   Justificativa da solicitação <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={approvalModal.reason}
                   onChange={(e) => setApprovalModal(prev => ({ ...prev, reason: e.target.value, error: null }))}
                   placeholder="Descreva detalhadamente a justificativa técnica para esta contratação excepcional (mínimo 10 caracteres)..."
-                  className="w-full h-32 px-3 py-2 text-xs bg-[#121c38] border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-action-cyan placeholder-slate-500 resize-none transition-all"
+                  className="w-full h-32 px-3 py-2 text-xs bg-[#121c38] border border-slate-200 rounded-lg text-[var(--text-secondary)] focus:outline-none focus:border-action-cyan placeholder-slate-500 resize-none transition-all"
                   maxLength={1000}
                   disabled={approvalModal.loading}
                 />
-                <div className="flex justify-between items-center text-[10px] text-slate-400 font-medium px-1">
+                <div className="flex justify-between items-center text-[10px] text-[var(--text-disabled)] font-medium px-1">
                   <span>Mínimo 10, máx. 1000 caracteres</span>
                   <span>{approvalModal.reason.length}/1000</span>
                 </div>
@@ -4698,11 +4719,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-[#0e172e] border-t border-slate-800 flex justify-end gap-2.5">
+            <div className="p-4 bg-[#0e172e] border-t border-slate-200 flex justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setApprovalModal(prev => ({ ...prev, isOpen: false }))}
-                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-[var(--text-disabled)] hover:text-[var(--text-secondary)] hover:bg-slate-50 rounded-lg transition-all cursor-pointer"
                 disabled={approvalModal.loading}
               >
                 Cancelar
@@ -4710,7 +4731,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               <button
                 type="button"
                 onClick={handleSubmitApprovalRequest}
-                className="px-4 py-2 text-xs font-bold bg-[#00BCD4] hover:bg-[#00BCD4]/95 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-xs font-bold bg-[#00BCD4] hover:bg-[#00BCD4]/95 text-[var(--text-primary)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={approvalModal.loading}
               >
                 {approvalModal.loading ? (
@@ -4730,23 +4751,23 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       {/* Head Decision Modal */}
       {headDecisionModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/70 backdrop-blur-xs font-sans">
-          <div className="bg-[#0b1329] border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
+          <div className="bg-[#0b1329] border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
             {/* Header */}
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-[#0e172e]">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-[#0e172e]">
               <div>
-                <h3 className="font-extrabold text-white text-sm">
+                <h3 className="font-extrabold text-[var(--text-primary)] text-sm">
                   {headDecisionModal.decision === 'approve' 
                     ? 'Aprovar Exceção de Valor' 
                     : 'Reprovar Exceção de Valor'}
                 </h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                <p className="text-[10px] text-[var(--text-disabled)] font-bold uppercase tracking-wider mt-0.5">
                   Decisão do Head do Núcleo &bull; {headDecisionModal.freelancerName}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setHeadDecisionModal(prev => ({ ...prev, isOpen: false }))}
-                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition cursor-pointer"
+                className="p-1.5 hover:bg-slate-50 text-[var(--text-disabled)] hover:text-[var(--text-secondary)] rounded-xl transition cursor-pointer"
                 disabled={headDecisionModal.loading}
               >
                 <X className="w-4 h-4" />
@@ -4755,25 +4776,25 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
             {/* Body */}
             <div className="p-6 flex flex-col gap-4 text-xs font-sans">
-              <p className="text-slate-300 leading-relaxed">
+              <p className="text-[var(--text-muted)] leading-relaxed">
                 {headDecisionModal.decision === 'approve'
                   ? 'Você está aprovando esta contratação com taxas comerciais fora da política padrão. Justifique detalhadamente por que esta exceção é válida.'
                   : 'Descreva a justificativa para reprovar a solicitação de exceção de valor para esta contratação.'}
               </p>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
+                <label className="text-[10.5px] font-bold text-[var(--text-disabled)] uppercase tracking-wider">
                   Comentários / Justificativa da decisão <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={headDecisionModal.comment}
                   onChange={(e) => setHeadDecisionModal(prev => ({ ...prev, comment: e.target.value, error: null }))}
                   placeholder="Informe os detalhes da sua decisão (mínimo 5 caracteres)..."
-                  className="w-full h-32 px-3 py-2 text-xs bg-[#121c38] border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-action-cyan placeholder-slate-500 resize-none transition-all"
+                  className="w-full h-32 px-3 py-2 text-xs bg-[#121c38] border border-slate-200 rounded-lg text-[var(--text-secondary)] focus:outline-none focus:border-action-cyan placeholder-slate-500 resize-none transition-all"
                   maxLength={1000}
                   disabled={headDecisionModal.loading}
                 />
-                <div className="flex justify-between items-center text-[10px] text-slate-400 font-medium px-1">
+                <div className="flex justify-between items-center text-[10px] text-[var(--text-disabled)] font-medium px-1">
                   <span>Mínimo 5, máx. 1000 caracteres</span>
                   <span>{headDecisionModal.comment.length}/1000</span>
                 </div>
@@ -4787,11 +4808,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-[#0e172e] border-t border-slate-800 flex justify-end gap-2.5">
+            <div className="p-4 bg-[#0e172e] border-t border-slate-200 flex justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setHeadDecisionModal(prev => ({ ...prev, isOpen: false }))}
-                className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-all cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-[var(--text-disabled)] hover:text-[var(--text-secondary)] hover:bg-slate-50 rounded-lg transition-all cursor-pointer"
                 disabled={headDecisionModal.loading}
               >
                 Cancelar
@@ -4799,7 +4820,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               <button
                 type="button"
                 onClick={handleSubmitHeadDecision}
-                className={`px-4 py-2 text-xs font-bold text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`px-4 py-2 text-xs font-bold text-[var(--text-primary)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   headDecisionModal.decision === 'approve'
                     ? 'bg-emerald-600 hover:bg-emerald-700'
                     : 'bg-red-600 hover:bg-red-700'
@@ -4822,10 +4843,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
       {/* Toast Alert UI */}
       {toast && (
-        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 p-4 px-5 rounded-2xl shadow-xl border text-white animate-fade-in
-          ${toast.type === 'success' ? 'bg-[#0b1329] border-[#00BCD4] text-white' : 'bg-red-900 border-red-650'}`}>
+        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 p-4 px-5 rounded-2xl shadow-xl border text-[var(--text-primary)] animate-fade-in
+          ${toast.type === 'success' ? 'bg-[#0b1329] border-[#00BCD4] text-[var(--text-primary)]' : 'bg-red-900 border-red-650'}`}>
           <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 
-            ${toast.type === 'success' ? 'bg-[#00BCD4]/15 text-[#00BCD4]' : 'bg-white/10 text-white'}`}>
+            ${toast.type === 'success' ? 'bg-[#00BCD4]/15 text-[#00BCD4]' : 'bg-white/10 text-[var(--text-primary)]'}`}>
             <CheckCircle className="w-4 h-4" />
           </div>
           <p className="text-xs font-semibold">{toast.message}</p>

@@ -236,7 +236,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
               setSelectedSubmission(null);
             }}
             className={`px-4 py-2 rounded-xl font-bold transition cursor-pointer
-              ${activeSubTab === 'new' ? 'bg-[#0F2342] text-white' : 'text-text-secondary hover:text-text-primary'}`}
+              ${activeSubTab === 'new' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]' : 'text-text-secondary hover:text-text-primary'}`}
           >
             Novos Freelas
           </button>
@@ -246,7 +246,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
               setSelectedSubmission(null);
             }}
             className={`px-4 py-2 rounded-xl font-bold transition cursor-pointer
-              ${activeSubTab === 'update' ? 'bg-[#0F2342] text-white' : 'text-text-secondary hover:text-text-primary'}`}
+              ${activeSubTab === 'update' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]' : 'text-text-secondary hover:text-text-primary'}`}
           >
             Atualizações Cadastrais
           </button>
@@ -256,7 +256,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
               setSelectedSubmission(null);
             }}
             className={`px-4 py-2 rounded-xl font-bold transition cursor-pointer
-              ${activeSubTab === 'approved' ? 'bg-[#0F2342] text-white' : 'text-text-secondary hover:text-text-primary'}`}
+              ${activeSubTab === 'approved' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]' : 'text-text-secondary hover:text-text-primary'}`}
           >
             Aprovados
           </button>
@@ -266,7 +266,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
               setSelectedSubmission(null);
             }}
             className={`px-4 py-2 rounded-xl font-bold transition cursor-pointer
-              ${activeSubTab === 'rejected' ? 'bg-[#0F2342] text-white' : 'text-text-secondary hover:text-text-primary'}`}
+              ${activeSubTab === 'rejected' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]' : 'text-text-secondary hover:text-text-primary'}`}
           >
             Rejeitados
           </button>
@@ -293,14 +293,14 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
 
           <div className="overflow-x-auto min-h-64">
             {isLoading ? (
-              <div className="h-64 flex items-center justify-center text-slate-400 select-none">
+              <div className="h-64 flex items-center justify-center text-[var(--text-disabled)] select-none">
                 <Loader2 className="w-8 h-8 text-action-cyan animate-spin" />
               </div>
             ) : sortedSubmissions.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-center text-text-secondary select-none">
-                <ListFilter className="w-10 h-10 text-slate-350 mb-2" />
+                <ListFilter className="w-10 h-10 text-slate-600 mb-2" />
                 <p className="font-bold">Nenhuma submissão nesta aba.</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Aguardando novos preenchimentos externos.</p>
+                <p className="text-[10px] text-[var(--text-disabled)] mt-0.5">Aguardando novos preenchimentos externos.</p>
               </div>
             ) : (
               <table className="w-full text-left border-collapse min-w-[600px]">
@@ -312,7 +312,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                     <SortableHeader label="WhatsApp" sortKey="candidateWhatsapp" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
                     <SortableHeader label="Data Envio" sortKey="created_at" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
                     <SortableHeader label="Status" sortKey="status" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="p-3" />
-                    <th className="p-3 text-[9px] text-slate-500 font-extrabold uppercase tracking-wider text-right">Ação</th>
+                    <th className="p-3 text-[9px] text-[var(--text-disabled)] font-extrabold uppercase tracking-wider text-right">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -383,7 +383,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
         {/* Modal Overlay: Detailed review pane */}
         {selectedSubmission && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/60 backdrop-blur-xs overflow-y-auto animate-fade-in"
             onClick={() => setSelectedSubmission(null)}
           >
             <div 
@@ -403,7 +403,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                 </div>
                 <button
                   onClick={() => setSelectedSubmission(null)}
-                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition"
+                  className="p-1.5 hover:bg-slate-100 rounded-lg text-[var(--text-disabled)] hover:text-slate-700 transition"
                   aria-label="Fechar"
                 >
                   <X className="w-5 h-5" />
@@ -431,7 +431,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                   <AlertTriangle className="w-4.5 h-4.5 shrink-0 text-amber-600 animate-bounce" />
                   <div className="text-[10px] leading-relaxed">
                     <p className="font-extrabold text-amber-955 text-xs">Possível Duplicidade Encontrada!</p>
-                    <p className="text-slate-700 dark:text-slate-350 mt-0.5">
+                    <p className="text-slate-700 dark:text-slate-600 mt-0.5">
                       Já existe um cadastro ativo com e-mail, WhatsApp ou Nome + Função idênticos:
                       <br /><strong>{dupFreelancer.name}</strong> ({dupFreelancer.mainRole}).
                     </p>
@@ -453,7 +453,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                     <button
                       onClick={() => handleReview('approve', { mergeToFreelancerId: dupFreelancer.id })}
                       disabled={isActionLoading}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 transition text-[10px] cursor-pointer disabled:opacity-50"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-extrabold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 transition text-[10px] cursor-pointer disabled:opacity-50"
                     >
                       {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                       Mesclar Dados
@@ -461,14 +461,14 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
 
                     <button
                       onClick={() => setShowForceCreateInput(!showForceCreateInput)}
-                      className="bg-slate-700 hover:bg-slate-800 text-white border border-slate-650 font-extrabold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 transition text-[10px] cursor-pointer"
+                      className="bg-slate-700 hover:bg-slate-50 text-[var(--text-primary)] border border-slate-650 font-extrabold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 transition text-[10px] cursor-pointer"
                     >
                       Criar Mesmo Assim
                     </button>
                   </div>
 
                   {showForceCreateInput && (
-                    <div className="space-y-2 mt-2 p-3 bg-white/60 dark:bg-slate-900/60 rounded-xl border border-amber-500/25 animate-scale-up">
+                    <div className="space-y-2 mt-2 p-3 bg-white/60 dark:bg-white/60 rounded-xl border border-amber-500/25 animate-scale-up">
                       <label className="text-[9px] text-amber-955 font-bold uppercase tracking-wider block">
                         Justificativa Administrativa *
                       </label>
@@ -482,7 +482,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                       <button
                         onClick={() => handleReview('approve', { bypassDuplicateCheck: true, justification: forceCreateJustification })}
                         disabled={isActionLoading || !forceCreateJustification.trim()}
-                        className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-1.5 rounded-lg flex items-center justify-center gap-1 transition text-[10px] disabled:opacity-50 cursor-pointer"
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-[var(--text-primary)] font-black py-1.5 rounded-lg flex items-center justify-center gap-1 transition text-[10px] disabled:opacity-50 cursor-pointer"
                       >
                         {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                         Confirmar Inclusão Forçada
@@ -514,7 +514,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                   {/* Basic information */}
                   <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-3">
                     <h4 className="font-bold text-slate-800 pb-1 border-b border-slate-200 uppercase tracking-wider text-[9px] flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-slate-500" /> Dados Pessoais & Contato
+                      <User className="w-3.5 h-3.5 text-[var(--text-disabled)]" /> Dados Pessoais & Contato
                     </h4>
                     <div className="space-y-1.5 text-slate-700">
                       <p><strong>Nome Completo:</strong> {selectedSubmission.submitted_data.full_name}</p>
@@ -523,16 +523,16 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                       ) : selectedSubmission.submitted_data.foreign_tax_id ? (
                         <p><strong>Identificação Fiscal:</strong> {selectedSubmission.submitted_data.foreign_tax_id} ({selectedSubmission.submitted_data.tax_country_code || 'Estrangeiro'})</p>
                       ) : null}
-                      <p className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-slate-400" /> {selectedSubmission.submitted_data.email}</p>
-                      <p className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-slate-400" /> {selectedSubmission.submitted_data.whatsapp}</p>
-                      <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-400" /> {selectedSubmission.submitted_data.city}/{selectedSubmission.submitted_data.state} {selectedSubmission.submitted_data.location_text && `(${selectedSubmission.submitted_data.location_text})`}</p>
+                      <p className="flex items-center gap-1"><Mail className="w-3.5 h-3.5 text-[var(--text-disabled)]" /> {selectedSubmission.submitted_data.email}</p>
+                      <p className="flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-[var(--text-disabled)]" /> {selectedSubmission.submitted_data.whatsapp}</p>
+                      <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-[var(--text-disabled)]" /> {selectedSubmission.submitted_data.city}/{selectedSubmission.submitted_data.state} {selectedSubmission.submitted_data.location_text && `(${selectedSubmission.submitted_data.location_text})`}</p>
                     </div>
                   </div>
 
                   {/* Professional profile details */}
                   <div className="bg-slate-50 border border-slate-100 p-4 rounded-2xl space-y-3">
                     <h4 className="font-bold text-slate-800 pb-1 border-b border-slate-200 uppercase tracking-wider text-[9px] flex items-center gap-1">
-                      <FileText className="w-3.5 h-3.5 text-slate-500" /> Perfil Profissional & Disponibilidade
+                      <FileText className="w-3.5 h-3.5 text-[var(--text-disabled)]" /> Perfil Profissional & Disponibilidade
                     </h4>
                     <div className="space-y-1.5 text-slate-700">
                       <p>
@@ -596,7 +596,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                             href={selectedSubmission.submitted_data.portfolio_file_url} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="bg-slate-800 text-white hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition text-[10px] font-extrabold"
+                            className="bg-slate-50 text-[var(--text-primary)] hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition text-[10px] font-extrabold"
                           >
                             <FileText className="w-3.5 h-3.5" /> Baixar Anexo
                           </a>
@@ -621,7 +621,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
             {/* Review actions & notes field */}
             <div className="space-y-4 pt-3 border-t border-slate-100 bg-slate-50/50 p-4 rounded-2xl">
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">
+                <label className="text-[10px] text-[var(--text-disabled)] font-bold uppercase tracking-wider block">
                   Notas de Revisão {activeSubTab === 'rejected' || selectedSubmission.status === 'pending_review' ? '*' : ''}
                 </label>
                 {selectedSubmission.status === 'pending_review' || selectedSubmission.status === 'under_review' ? (
@@ -636,7 +636,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                   <div className="bg-white p-3 rounded-xl border border-border-subtle select-none">
                     <p className="font-bold text-slate-800">Notas de Revisão:</p>
                     <p className="text-slate-600 mt-1 italic">{selectedSubmission.review_notes || 'Nenhuma nota registrada.'}</p>
-                    <p className="text-[10px] text-slate-400 mt-2">Revisado por: {selectedSubmission.reviewer?.full_name || 'Sistema'}</p>
+                    <p className="text-[10px] text-[var(--text-disabled)] mt-2">Revisado por: {selectedSubmission.reviewer?.full_name || 'Sistema'}</p>
                   </div>
                 )}
               </div>
@@ -646,7 +646,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                   <button
                     onClick={() => handleReview('reject')}
                     disabled={isActionLoading}
-                    className="flex-1 bg-white dark:bg-slate-900 hover:bg-red-50 dark:hover:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition select-none cursor-pointer disabled:opacity-50"
+                    className="flex-1 bg-white dark:bg-white hover:bg-red-50 dark:hover:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition select-none cursor-pointer disabled:opacity-50"
                   >
                     <X className="w-4 h-4 text-red-500" /> Rejeitar
                   </button>

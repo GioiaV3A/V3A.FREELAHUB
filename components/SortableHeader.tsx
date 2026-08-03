@@ -39,7 +39,7 @@ export function SortableHeader({
     <th
       style={style}
       onClick={() => onSort(sortKey)}
-      className={`px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors select-none text-[10px] uppercase tracking-wider font-bold text-text-secondary ${thAlignClass} ${className}`}
+      className={`px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-50 transition-colors select-none text-[10px] uppercase tracking-wider font-bold text-text-secondary ${thAlignClass} ${className}`}
       aria-sort={isSorted ? (direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none') : 'none'}
     >
       <div className={`flex items-center gap-1 ${alignClass}`}>

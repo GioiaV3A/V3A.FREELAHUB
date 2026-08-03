@@ -342,7 +342,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
             className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs transition border cursor-pointer
               ${star <= value 
                 ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 dark:bg-amber-500/20' 
-                : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-slate-900 dark:border-slate-800'
+                : 'bg-slate-50 border-slate-200 text-[var(--text-disabled)] dark:bg-white dark:border-slate-200'
               }
               hover:scale-105 active:scale-95
             `}
@@ -357,38 +357,38 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
   return (
     <div className="space-y-6 font-sans text-xs">
       {/* Banner */}
-      <div className="bg-sidebar-navy text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#1e293b]">
+      <div className="bg-sidebar-navy text-[var(--text-primary)] p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#1e293b]">
         <div className="space-y-1">
           <h3 className="font-bold text-sm text-action-cyan uppercase tracking-widest flex items-center gap-2">
             <Award className="w-4 h-4" /> Governança & Avaliação 360°
           </h3>
-          <p className="text-xs text-slate-300 leading-relaxed font-medium">
+          <p className="text-xs text-[var(--text-muted)] leading-relaxed font-medium">
             Avalie o profissional em 9 critérios para liberar o faturamento. O freela também receberá um link anônimo para avaliar o núcleo.
           </p>
         </div>
-        <div className="shrink-0 bg-white/15 p-2 px-3 border border-white/10 rounded-xl flex items-center gap-1.5 text-xs font-bold">
+        <div className="shrink-0 bg-white/15 p-2 px-3 border border-[var(--border-default)] rounded-xl flex items-center gap-1.5 text-xs font-bold">
           <ShieldCheck className="w-4 h-4 text-action-cyan" /> Pagamento Vinculado à Avaliação
         </div>
       </div>
 
       {!selectedAllocationId ? (
         /* LIST OF PENDING EVALUATIONS */
-        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-2xl overflow-hidden shadow-xs">
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-150 dark:border-slate-850 flex justify-between items-center">
-            <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">Profissionais Aguardando Avaliação</h4>
-            <span className="text-slate-500 text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+        <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+          <div className="p-4 bg-slate-50 dark:bg-white/50 border-b border-slate-150 dark:border-slate-200 flex justify-between items-center">
+            <h4 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-sm">Profissionais Aguardando Avaliação</h4>
+            <span className="text-[var(--text-disabled)] text-[11px] font-semibold bg-slate-100 dark:bg-slate-50 px-2.5 py-1 rounded-full">
               {pendingCodes.length} pendências
             </span>
           </div>
 
           <div className="overflow-x-auto">
             {pendingCodes.length === 0 ? (
-              <div className="p-12 text-center text-slate-500 italic">
+              <div className="p-12 text-center text-[var(--text-disabled)] italic">
                 Nenhum profissional com status &ldquo;Aguardando avaliação&rdquo;.
               </div>
             ) : (
               <table className="w-full text-left whitespace-nowrap">
-                <thead className="bg-slate-50 dark:bg-slate-900/30 text-slate-500 font-bold border-b border-slate-150 dark:border-slate-850">
+                <thead className="bg-slate-50 dark:bg-white/30 text-[var(--text-disabled)] font-bold border-b border-slate-150 dark:border-slate-200">
                   <tr>
                     <th className="px-4 py-3">Código Alocação</th>
                     <th className="px-4 py-3">Profissional</th>
@@ -407,27 +407,27 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                     if (!alloc) return null;
 
                     return (
-                      <tr key={code.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/20 transition-colors">
-                        <td className="px-4 py-4 font-mono font-bold text-slate-800 dark:text-slate-200">
+                      <tr key={code.id} className="hover:bg-slate-50 dark:hover:bg-white/20 transition-colors">
+                        <td className="px-4 py-4 font-mono font-bold text-slate-800 dark:text-[var(--text-secondary)]">
                           {code.allocationCode}
                         </td>
-                        <td className="px-4 py-4 font-semibold text-slate-850 dark:text-slate-100">
+                        <td className="px-4 py-4 font-semibold text-slate-850 dark:text-slate-800">
                           {freela?.name || 'Carregando...'}
                         </td>
                         <td className="px-4 py-4">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200">{job?.name || 'Job'}</div>
-                          <div className="text-[10px] text-slate-500">Cliente: {job?.client || 'N/A'}</div>
+                          <div className="font-semibold text-slate-800 dark:text-[var(--text-secondary)]">{job?.name || 'Job'}</div>
+                          <div className="text-[10px] text-[var(--text-disabled)]">Cliente: {job?.client || 'N/A'}</div>
                         </td>
-                        <td className="px-4 py-4 text-slate-600 dark:text-slate-400 font-medium">
+                        <td className="px-4 py-4 text-slate-600 dark:text-[var(--text-disabled)] font-medium">
                           {alloc.startDate ? alloc.startDate.split('T')[0].split('-').reverse().join('/') : ''} a {alloc.endDate ? alloc.endDate.split('T')[0].split('-').reverse().join('/') : ''}
                         </td>
-                        <td className="px-4 py-4 font-bold text-slate-800 dark:text-slate-100">
+                        <td className="px-4 py-4 font-bold text-slate-800 dark:text-slate-800">
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(code.approvedValue)}
                         </td>
                         <td className="px-4 py-4 text-right">
                           <button
                             onClick={() => handleOpenEvaluate(alloc.id)}
-                            className="bg-status-error hover:bg-status-error-dark text-white font-extrabold p-2 px-3.5 rounded-xl flex items-center gap-1.5 inline-flex shadow-2xs hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
+                            className="bg-status-error hover:bg-status-error-dark text-[var(--text-primary)] font-extrabold p-2 px-3.5 rounded-xl flex items-center gap-1.5 inline-flex shadow-2xs hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
                           >
                             <ClipboardCheck className="w-3.5 h-3.5" /> Avaliar & Desbloquear
                           </button>
@@ -442,18 +442,18 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
         </div>
       ) : evaluationToken ? (
         /* SUCCESS SCREEN WITH PUBLIC LINK & QR CODE */
-        <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-2xl p-6 shadow-sm space-y-6 max-w-2xl mx-auto animate-fade-in">
+        <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-2xl p-6 shadow-sm space-y-6 max-w-2xl mx-auto animate-fade-in">
           <div className="flex flex-col items-center text-center space-y-3">
             <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/50">
               <Check className="w-7 h-7 text-emerald-500" />
             </div>
-            <h3 className="font-extrabold text-lg text-slate-800 dark:text-slate-200">Avaliação Enviada com Sucesso!</h3>
-            <p className="text-slate-500 max-w-md">
+            <h3 className="font-extrabold text-lg text-slate-800 dark:text-[var(--text-secondary)]">Avaliação Enviada com Sucesso!</h3>
+            <p className="text-[var(--text-disabled)] max-w-md">
               A avaliação do profissional foi registrada e o código de faturamento <strong>{selectedAlloc?.allocationCode}</strong> foi desbloqueado no financeiro.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50 dark:bg-slate-900/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-850 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50 dark:bg-white/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-200 items-center">
             {/* Left Col: QR Code */}
             <div className="md:col-span-5 flex flex-col items-center space-y-2.5">
               <div className="p-3 bg-white rounded-xl shadow-2xs border border-slate-100">
@@ -461,7 +461,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
               </div>
               <button
                 onClick={handlePrintQRCode}
-                className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                className="text-slate-600 hover:text-slate-900 dark:text-[var(--text-disabled)] dark:hover:text-[var(--text-secondary)] font-bold flex items-center gap-1 hover:underline cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" /> Imprimir QR Code
               </button>
@@ -470,22 +470,22 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
             {/* Right Col: Details & Link */}
             <div className="md:col-span-7 space-y-4 text-left">
               <div>
-                <h5 className="font-bold text-slate-800 dark:text-slate-200 text-sm">Link de Avaliação Reversa</h5>
-                <p className="text-slate-500 mt-1">
+                <h5 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-sm">Link de Avaliação Reversa</h5>
+                <p className="text-[var(--text-disabled)] mt-1">
                   Compartilhe este link de token único com o freelancer para que ele avalie anonimamente o projeto/núcleo.
                 </p>
               </div>
 
-              <div className="flex items-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden pr-2">
+              <div className="flex items-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-200 rounded-xl overflow-hidden pr-2">
                 <input
                   type="text"
                   readOnly
                   value={typeof window !== 'undefined' ? `${window.location.origin}/public/avaliacao/${evaluationToken}` : ''}
-                  className="flex-1 bg-transparent p-3 outline-none font-mono text-[10px] text-slate-600 dark:text-slate-400 truncate border-none"
+                  className="flex-1 bg-transparent p-3 outline-none font-mono text-[10px] text-slate-600 dark:text-[var(--text-disabled)] truncate border-none"
                 />
                 <button
                   onClick={handleCopyLink}
-                  className="p-2 bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg shadow-3xs shrink-0 cursor-pointer"
+                  className="p-2 bg-slate-50 border border-slate-200 dark:bg-white dark:border-slate-200 hover:bg-slate-100 dark:hover:bg-slate-50 text-slate-600 dark:text-[var(--text-disabled)] rounded-lg shadow-3xs shrink-0 cursor-pointer"
                   title="Copiar Link"
                 >
                   {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
@@ -497,7 +497,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                   href={typeof window !== 'undefined' ? `/public/avaliacao/${evaluationToken}` : '#'}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 bg-slate-800 dark:bg-slate-200 dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 text-white font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition text-center"
+                  className="flex-1 bg-slate-50 dark:bg-slate-200 dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 text-[var(--text-primary)] font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition text-center"
                 >
                   Visualizar Formulário <ArrowRight className="w-4 h-4" />
                 </a>
@@ -505,10 +505,10 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
             </div>
           </div>
 
-          <div className="flex justify-center border-t border-slate-100 dark:border-slate-850 pt-4">
+          <div className="flex justify-center border-t border-slate-100 dark:border-slate-200 pt-4">
             <button
               onClick={() => setSelectedAllocationId(null)}
-              className="bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-extrabold py-2.5 px-6 rounded-xl transition cursor-pointer"
+              className="bg-slate-100 dark:bg-slate-50 hover:bg-slate-200 dark:hover:bg-slate-50 text-slate-700 dark:text-[var(--text-secondary)] font-extrabold py-2.5 px-6 rounded-xl transition cursor-pointer"
             >
               Voltar para a Lista
             </button>
@@ -518,21 +518,21 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
         /* DETAILED EVALUATION FORM */
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start animate-fade-in">
           {/* Left Column: Form Inputs */}
-          <div className="xl:col-span-8 bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-2xl p-5 shadow-xs space-y-6">
-            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-850 pb-3">
+          <div className="xl:col-span-8 bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-2xl p-5 shadow-xs space-y-6">
+            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-200 pb-3">
               <div>
-                <h4 className="font-extrabold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
+                <h4 className="font-extrabold text-slate-800 dark:text-[var(--text-secondary)] text-sm flex items-center gap-1.5">
                   <ClipboardCheck className="w-4 h-4 text-status-error" />
                   <span>Formulário de Avaliação Pós-Job</span>
                 </h4>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  Profissional: <span className="font-bold text-slate-700 dark:text-slate-350">{selectedFreela?.name}</span> &bull; 
-                  Campanha: <span className="font-bold text-slate-700 dark:text-slate-350">{selectedJob?.name}</span>
+                <p className="text-[10px] text-[var(--text-disabled)] mt-1">
+                  Profissional: <span className="font-bold text-slate-700 dark:text-slate-600">{selectedFreela?.name}</span> &bull; 
+                  Campanha: <span className="font-bold text-slate-700 dark:text-slate-600">{selectedJob?.name}</span>
                 </p>
               </div>
               <button 
                 onClick={() => setSelectedAllocationId(null)} 
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-extrabold text-sm p-1 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+                className="text-[var(--text-disabled)] hover:text-slate-600 dark:hover:text-[var(--text-secondary)] font-extrabold text-sm p-1 rounded-lg hover:bg-slate-50 dark:hover:bg-white cursor-pointer"
               >
                 Cancelar
               </button>
@@ -541,18 +541,18 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Criterion 9 WEIGHTED GROUP */}
               <div className="space-y-4">
-                <h5 className="font-extrabold text-slate-800 dark:text-slate-200 border-b border-slate-50 dark:border-slate-900 pb-1 flex items-center gap-1.5 text-xs">
+                <h5 className="font-extrabold text-slate-800 dark:text-[var(--text-secondary)] border-b border-slate-50 dark:border-slate-900 pb-1 flex items-center gap-1.5 text-xs">
                   <Scale className="w-3.5 h-3.5 text-action-cyan" /> 1. Critérios de Desempenho Ponderados
                 </h5>
 
                 {/* Qualidade Técnica */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Qualidade Técnica</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Qualidade Técnica</span>
                       <span className="bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 25%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Nível técnico, refino estético e precisão da entrega.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Nível técnico, refino estético e precisão da entrega.</p>
                   </div>
                   <RatingSelector value={technicalQuality} onChange={setTechnicalQuality} />
                 </div>
@@ -564,7 +564,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                       <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
                       O que comprometeu a qualidade técnica? <span className="text-rose-500">*</span>
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 dark:text-slate-300">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 dark:text-[var(--text-muted)]">
                       {[
                         'Erros técnicos ou de execução frequentes',
                         'Entregas parciais / incompletas',
@@ -583,74 +583,74 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                       ))}
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-500 dark:text-slate-400 block">Outro motivo técnico:</label>
+                      <label className="text-[10px] text-[var(--text-disabled)] dark:text-[var(--text-disabled)] block">Outro motivo técnico:</label>
                       <input
                         type="text"
                         value={techIssueOther}
                         onChange={(e) => setTechIssueOther(e.target.value)}
                         placeholder="Especifique o motivo..."
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 outline-none focus:border-status-error/45 text-xs text-slate-800 dark:text-slate-200"
+                        className="w-full bg-white dark:bg-white border border-slate-200 dark:border-slate-200 rounded-xl p-2.5 outline-none focus:border-status-error/45 text-xs text-slate-800 dark:text-[var(--text-secondary)]"
                       />
                     </div>
                   </div>
                 )}
 
                 {/* Aderência ao Briefing */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Aderência ao Briefing</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Aderência ao Briefing</span>
                       <span className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 15%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Respeito às diretrizes, escopo e restrições do job.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Respeito às diretrizes, escopo e restrições do job.</p>
                   </div>
                   <RatingSelector value={briefingAdherence} onChange={setBriefingAdherence} />
                 </div>
 
                 {/* Cumprimento de Prazos */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Cumprimento de Prazos</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Cumprimento de Prazos</span>
                       <span className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 15%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Pontualidade nas entregas parciais e final.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Pontualidade nas entregas parciais e final.</p>
                   </div>
                   <RatingSelector value={deadline} onChange={setDeadline} />
                 </div>
 
                 {/* Autonomia */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Autonomia</span>
-                      <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 10%</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Autonomia</span>
+                      <span className="bg-slate-200 dark:bg-slate-50 text-slate-600 dark:text-[var(--text-disabled)] font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 10%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Resolução independente de problemas sem microgestão.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Resolução independente de problemas sem microgestão.</p>
                   </div>
                   <RatingSelector value={autonomy} onChange={setAutonomy} />
                 </div>
 
                 {/* Comunicação */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Comunicação</span>
-                      <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 10%</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Comunicação</span>
+                      <span className="bg-slate-200 dark:bg-slate-50 text-slate-600 dark:text-[var(--text-disabled)] font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 10%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Clareza, agilidade nas respostas e proatividade no contato.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Clareza, agilidade nas respostas e proatividade no contato.</p>
                   </div>
                   <RatingSelector value={communication} onChange={setCommunication} />
                 </div>
 
                 {/* Postura e Comportamento */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Postura e Comportamento</span>
-                      <span className="bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 10%</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Postura e Comportamento</span>
+                      <span className="bg-slate-200 dark:bg-slate-50 text-slate-600 dark:text-[var(--text-disabled)] font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 10%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Profissionalismo, respeito com a equipe e postura corporativa.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Profissionalismo, respeito com a equipe e postura corporativa.</p>
                   </div>
                   <RatingSelector value={behavior} onChange={setBehavior} />
                 </div>
@@ -662,7 +662,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                       <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
                       Qual foi o problema comportamental observado? <span className="text-rose-500">*</span>
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 dark:text-slate-300">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700 dark:text-[var(--text-muted)]">
                       {[
                         'Falta de postura profissional / postura inadequada',
                         'Conflitos ou atritos com a equipe de coordenação',
@@ -681,50 +681,50 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                       ))}
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-500 dark:text-slate-400 block">Outro motivo comportamental:</label>
+                      <label className="text-[10px] text-[var(--text-disabled)] dark:text-[var(--text-disabled)] block">Outro motivo comportamental:</label>
                       <input
                         type="text"
                         value={behaviorIssueOther}
                         onChange={(e) => setBehaviorIssueOther(e.target.value)}
                         placeholder="Especifique o comportamento..."
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 outline-none focus:border-status-error/45 text-xs text-slate-800 dark:text-slate-200"
+                        className="w-full bg-white dark:bg-white border border-slate-200 dark:border-slate-200 rounded-xl p-2.5 outline-none focus:border-status-error/45 text-xs text-slate-800 dark:text-[var(--text-secondary)]"
                       />
                     </div>
                   </div>
                 )}
 
                 {/* Colaboração */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Colaboração</span>
-                      <span className="bg-slate-200 dark:bg-slate-850 text-slate-500 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 5%</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Colaboração</span>
+                      <span className="bg-slate-200 dark:bg-slate-50 text-[var(--text-disabled)] font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 5%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Facilidade de trabalhar em equipe e apoiar colegas.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Facilidade de trabalhar em equipe e apoiar colegas.</p>
                   </div>
                   <RatingSelector value={collaboration} onChange={setCollaboration} />
                 </div>
 
                 {/* Flexibilidade */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Flexibilidade</span>
-                      <span className="bg-slate-200 dark:bg-slate-850 text-slate-500 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 5%</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Flexibilidade</span>
+                      <span className="bg-slate-200 dark:bg-slate-50 text-[var(--text-disabled)] font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 5%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Adaptação a eventuais mudanças razoáveis de escopo.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Adaptação a eventuais mudanças razoáveis de escopo.</p>
                   </div>
                   <RatingSelector value={flexibility} onChange={setFlexibility} />
                 </div>
 
                 {/* Custo-benefício */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-100 dark:border-slate-850/50">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white/40 rounded-xl border border-slate-100 dark:border-slate-200/50">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">Custo-benefício</span>
-                      <span className="bg-slate-200 dark:bg-slate-850 text-slate-500 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 5%</span>
+                      <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Custo-benefício</span>
+                      <span className="bg-slate-200 dark:bg-slate-50 text-[var(--text-disabled)] font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 5%</span>
                     </div>
-                    <p className="text-[10px] text-slate-500">Retorno em valor da entrega frente à taxa cobrada.</p>
+                    <p className="text-[10px] text-[var(--text-disabled)]">Retorno em valor da entrega frente à taxa cobrada.</p>
                   </div>
                   <RatingSelector value={costBenefit} onChange={setCostBenefit} />
                 </div>
@@ -732,19 +732,19 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
               </div>
 
               {/* SECTION 2: ADITIONAL OPERATIONAL QUESTIONS */}
-              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-850">
-                <h5 className="font-extrabold text-slate-800 dark:text-slate-200 pb-1 flex items-center gap-1.5 text-xs">
+              <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-200">
+                <h5 className="font-extrabold text-slate-800 dark:text-[var(--text-secondary)] pb-1 flex items-center gap-1.5 text-xs">
                   <FileText className="w-3.5 h-3.5 text-action-cyan" /> 2. Aspectos Operacionais & Faturamento
                 </h5>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Rework Level */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Nível de Refação:</label>
+                    <label className="font-bold text-slate-700 dark:text-[var(--text-muted)]">Nível de Refação:</label>
                     <select
                       value={reworkLevel}
                       onChange={(e: any) => setReworkLevel(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-xl p-2.5 outline-none focus:border-action-cyan/45 text-xs font-semibold text-slate-800 dark:text-slate-250 cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 dark:bg-white dark:border-slate-200 rounded-xl p-2.5 outline-none focus:border-action-cyan/45 text-xs font-semibold text-slate-800 dark:text-slate-250 cursor-pointer"
                     >
                       <option value="nao">Não houve refação significativa</option>
                       <option value="baixa">Refação baixa (ajustes pontuais)</option>
@@ -755,11 +755,11 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
 
                   {/* Would hire again */}
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Recontrataria este profissional?</label>
+                    <label className="font-bold text-slate-700 dark:text-[var(--text-muted)]">Recontrataria este profissional?</label>
                     <select
                       value={wouldHireAgain}
                       onChange={(e: any) => setWouldHireAgain(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-xl p-2.5 outline-none focus:border-action-cyan/45 text-xs font-semibold text-slate-800 dark:text-slate-250 cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 dark:bg-white dark:border-slate-200 rounded-xl p-2.5 outline-none focus:border-action-cyan/45 text-xs font-semibold text-slate-800 dark:text-slate-250 cursor-pointer"
                     >
                       <option value="sim">Sim, com certeza</option>
                       <option value="talvez">Talvez, dependendo da demanda</option>
@@ -770,10 +770,10 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
 
                 {/* Recommendation Selector */}
                 <div className="space-y-2.5">
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block">Recomendação Geral de Governança:</label>
+                  <label className="font-bold text-slate-700 dark:text-[var(--text-muted)] block">Recomendação Geral de Governança:</label>
                   <div className="flex gap-4">
                     {['Sim', 'Sim, com restrição', 'Não'].map((recOption) => (
-                      <label key={recOption} className="flex items-center gap-1.5 font-bold cursor-pointer text-slate-750 dark:text-slate-300">
+                      <label key={recOption} className="flex items-center gap-1.5 font-bold cursor-pointer text-slate-750 dark:text-[var(--text-muted)]">
                         <input
                           type="radio"
                           name="recommendation"
@@ -796,11 +796,11 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-500 block">Tipo de Restrição:</label>
+                        <label className="text-[10px] text-[var(--text-disabled)] block">Tipo de Restrição:</label>
                         <select
                           value={restrictionType}
                           onChange={(e: any) => setRestrictionType(e.target.value)}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 outline-none text-xs cursor-pointer text-slate-800 dark:text-slate-200"
+                          className="w-full bg-white dark:bg-white border border-slate-200 dark:border-slate-200 rounded-xl p-2 outline-none text-xs cursor-pointer text-slate-800 dark:text-[var(--text-secondary)]"
                         >
                           <option value="Técnica">Técnica</option>
                           <option value="Comportamental">Comportamental</option>
@@ -809,11 +809,11 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[10px] text-slate-500 block">Escopo da Restrição:</label>
+                        <label className="text-[10px] text-[var(--text-disabled)] block">Escopo da Restrição:</label>
                         <select
                           value={restrictionScope}
                           onChange={(e: any) => setRestrictionScope(e.target.value)}
-                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2 outline-none text-xs cursor-pointer text-slate-800 dark:text-slate-200"
+                          className="w-full bg-white dark:bg-white border border-slate-200 dark:border-slate-200 rounded-xl p-2 outline-none text-xs cursor-pointer text-slate-800 dark:text-[var(--text-secondary)]"
                         >
                           <option value="Apenas para este núcleo">Apenas para este núcleo ({selectedJob?.nucleoId ? db.nucleos.find(n=>n.id===selectedJob.nucleoId)?.name : 'Meu Núcleo'})</option>
                           <option value="Para toda a V3A">Bloqueio para toda a V3A</option>
@@ -821,13 +821,13 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] text-slate-500 block">Justificativa Detalhada (Mínimo 15 caracteres):</label>
+                      <label className="text-[10px] text-[var(--text-disabled)] block">Justificativa Detalhada (Mínimo 15 caracteres):</label>
                       <textarea
                         value={restrictionJustification}
                         onChange={(e) => setRestrictionJustification(e.target.value)}
                         placeholder="Explique o motivo pelo qual este profissional possui restrições para novos agendamentos..."
                         rows={3}
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5 outline-none focus:border-orange-500/40 text-xs text-slate-800 dark:text-slate-200 font-medium"
+                        className="w-full bg-white dark:bg-white border border-slate-200 dark:border-slate-200 rounded-xl p-2.5 outline-none focus:border-orange-500/40 text-xs text-slate-800 dark:text-[var(--text-secondary)] font-medium"
                       />
                     </div>
                   </div>
@@ -853,7 +853,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                         onChange={(e) => setCriticalProblemDetails(e.target.value)}
                         placeholder="Forneça detalhes precisos sobre o incidente ocorrido..."
                         rows={3}
-                        className="w-full bg-slate-50 border-2 border-rose-200 dark:bg-slate-900 dark:border-rose-950/30 rounded-xl p-2.5 outline-none focus:border-rose-500 text-xs text-slate-850 dark:text-slate-100 font-medium"
+                        className="w-full bg-slate-50 border-2 border-rose-200 dark:bg-white dark:border-rose-950/30 rounded-xl p-2.5 outline-none focus:border-rose-500 text-xs text-slate-850 dark:text-slate-800 font-medium"
                       />
                     </div>
                   )}
@@ -861,23 +861,23 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
 
                 {/* General Comment */}
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block">Observações & Feedback Geral:</label>
+                  <label className="font-bold text-slate-700 dark:text-[var(--text-muted)] block">Observações & Feedback Geral:</label>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     placeholder="Deixe uma nota de avaliação livre sobre o desempenho do freelancer..."
                     rows={4}
-                    className="w-full bg-slate-50 border border-slate-200 dark:bg-slate-900 dark:border-slate-800 rounded-xl p-3 outline-none focus:border-action-cyan/45 text-xs text-slate-850 dark:text-slate-200 font-medium"
+                    className="w-full bg-slate-50 border border-slate-200 dark:bg-white dark:border-slate-200 rounded-xl p-3 outline-none focus:border-action-cyan/45 text-xs text-slate-850 dark:text-[var(--text-secondary)] font-medium"
                   />
                 </div>
               </div>
 
               {/* ACTION ACTIONS */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-850 flex gap-3">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-200 flex gap-3">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 bg-status-error hover:bg-status-error-dark text-white font-extrabold py-3 rounded-xl flex items-center justify-center gap-1.5 transition text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
+                  className="flex-1 bg-status-error hover:bg-status-error-dark text-[var(--text-primary)] font-extrabold py-3 rounded-xl flex items-center justify-center gap-1.5 transition text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
                 >
                   {isSubmitting ? (
                     <>
@@ -896,17 +896,17 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
           {/* Right Column: Score Display & Policy Rules Card */}
           <div className="xl:col-span-4 space-y-6 self-start">
             {/* SCORE DISPLAY CARD */}
-            <div className="bg-[#0b1322] text-white p-5 rounded-2xl border border-slate-850 space-y-4">
-              <h5 className="font-bold text-xs uppercase tracking-wider text-slate-400">Score da Avaliação Atual</h5>
+            <div className="bg-[var(--bg-surface-elevated)] text-[var(--text-primary)] p-5 rounded-2xl border border-slate-200 space-y-4">
+              <h5 className="font-bold text-xs uppercase tracking-wider text-[var(--text-disabled)]">Score da Avaliação Atual</h5>
               
               <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full border-4 border-slate-800 flex flex-col items-center justify-center bg-slate-900/50 shadow-inner">
-                  <span className="text-2xl font-black text-white">{currentScores.score}</span>
-                  <span className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Score</span>
+                <div className="w-20 h-20 rounded-full border-4 border-slate-200 flex flex-col items-center justify-center bg-white/50 shadow-inner">
+                  <span className="text-2xl font-black text-[var(--text-primary)]">{currentScores.score}</span>
+                  <span className="text-[8px] text-[var(--text-disabled)] font-bold uppercase tracking-widest">Score</span>
                 </div>
 
                 <div className="space-y-1 flex-1">
-                  <p className="text-[10px] text-slate-400 font-bold">Média Ponderada: <span className="text-white">{currentScores.average} / 5.0</span></p>
+                  <p className="text-[10px] text-[var(--text-disabled)] font-bold">Média Ponderada: <span className="text-[var(--text-primary)]">{currentScores.average} / 5.0</span></p>
                   <div className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-extrabold border ${currentScores.colorClass}`}>
                     <span className={`w-2 h-2 rounded-full mr-1.5 ${currentScores.badgeColor}`}></span>
                     {currentScores.label}
@@ -915,34 +915,34 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
               </div>
 
               {/* Weight list breakdown summary */}
-              <div className="space-y-1.5 bg-slate-900/35 border border-slate-850 p-3 rounded-xl text-[10px] text-slate-400 font-medium">
+              <div className="space-y-1.5 bg-white/35 border border-slate-200 p-3 rounded-xl text-[10px] text-[var(--text-disabled)] font-medium">
                 <div className="flex justify-between">
                   <span>Qualidade Técnica (25%)</span>
-                  <span className="font-bold text-slate-200">{technicalQuality}</span>
+                  <span className="font-bold text-[var(--text-secondary)]">{technicalQuality}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Aderência ao Briefing (15%)</span>
-                  <span className="font-bold text-slate-200">{briefingAdherence}</span>
+                  <span className="font-bold text-[var(--text-secondary)]">{briefingAdherence}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Cumprimento de Prazos (15%)</span>
-                  <span className="font-bold text-slate-200">{deadline}</span>
+                  <span className="font-bold text-[var(--text-secondary)]">{deadline}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Autonomia (10%)</span>
-                  <span className="font-bold text-slate-200">{autonomy}</span>
+                  <span className="font-bold text-[var(--text-secondary)]">{autonomy}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Comunicação (10%)</span>
-                  <span className="font-bold text-slate-200">{communication}</span>
+                  <span className="font-bold text-[var(--text-secondary)]">{communication}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Postura e Comportamento (10%)</span>
-                  <span className="font-bold text-slate-200">{behavior}</span>
+                  <span className="font-bold text-[var(--text-secondary)]">{behavior}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Colaboração / Flexibilidade / Cust. (15%)</span>
-                  <span className="font-bold text-slate-200">
+                  <span className="font-bold text-[var(--text-secondary)]">
                     {Number(((collaboration * 0.05 + flexibility * 0.05 + costBenefit * 0.05) / 0.15).toFixed(1))}
                   </span>
                 </div>
@@ -950,11 +950,11 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
             </div>
 
             {/* DIRECTIVES BANNER */}
-            <div className="bg-white dark:bg-[#0d1627] border border-slate-150 dark:border-slate-850 rounded-2xl p-5 space-y-3 shadow-xs">
-              <h5 className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-2xl p-5 space-y-3 shadow-xs">
+              <h5 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-500" /> Diretrizes de Compliance
               </h5>
-              <ul className="space-y-2 text-slate-500 list-disc list-inside leading-relaxed font-medium">
+              <ul className="space-y-2 text-[var(--text-disabled)] list-disc list-inside leading-relaxed font-medium">
                 <li>O faturamento é desbloqueado no financeiro assim que você finalizar o preenchimento.</li>
                 <li>Qualidade Técnica ≤ 2 ou Postura ≤ 2 exigem preenchimento de justificativas estruturadas obrigatórias para auditoria do RH.</li>
                 <li>Caso o freelancer receba classificação &ldquo;Restrito&rdquo; ou &ldquo;Não recomendado&rdquo;, novos agendamentos dele serão travados para toda a V3A.</li>

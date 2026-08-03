@@ -96,17 +96,17 @@ export default function CityAutocomplete({
         value={value}
         onChange={(e) => handleSearch(e.target.value)}
         onBlur={handleBlur}
-        className="w-full bg-[#0B1E38] border border-white/10 p-3 rounded-xl text-white outline-none focus:border-action-cyan transition-colors"
+        className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan transition-colors"
         placeholder="Digite para buscar a cidade..."
         autoComplete="off"
       />
       {isOpen && suggestions.length > 0 && (
-        <ul className="absolute z-55 left-0 right-0 mt-1 bg-[#0B1E38] border border-white/15 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-white/5 select-none">
+        <ul className="absolute z-55 left-0 right-0 mt-1 bg-[var(--bg-input)] border border-white/15 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-white/5 select-none">
           {suggestions.map((city) => (
             <li
               key={city.id}
               onClick={() => handleSelect(city)}
-              className="p-3 text-slate-200 hover:bg-white/5 hover:text-white cursor-pointer flex justify-between items-center transition-colors text-xs font-semibold"
+              className="p-3 text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)] cursor-pointer flex justify-between items-center transition-colors text-xs font-semibold"
             >
               <span>{city.city_name}</span>
               <span className="text-[10px] text-action-cyan font-extrabold uppercase border border-action-cyan/30 px-1.5 py-0.5 rounded">

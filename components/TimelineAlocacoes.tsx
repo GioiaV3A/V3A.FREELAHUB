@@ -356,7 +356,7 @@ function getAllocationColors(status: string, hasConflict: boolean): StatusColors
     return {
       bg: 'bg-slate-400/15 dark:bg-slate-400/10',
       border: 'border-slate-400/40 dark:border-slate-400/30',
-      text: 'text-slate-700 dark:text-slate-300',
+      text: 'text-slate-700 dark:text-[var(--text-muted)]',
       hoverBg: 'hover:bg-slate-400/25',
     };
   }
@@ -427,7 +427,7 @@ function Initials({ name, size = 32 }: { name: string; size?: number }) {
   const colorIdx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
   return (
     <div
-      className={`rounded-full flex items-center justify-center text-white font-bold shrink-0 ${colors[colorIdx]}`}
+      className={`rounded-full flex items-center justify-center text-[var(--text-primary)] font-bold shrink-0 ${colors[colorIdx]}`}
       style={{ width: size, height: size, fontSize: size * 0.35 }}
       aria-hidden="true"
     >
@@ -760,7 +760,7 @@ function AllocationHoverCard({
             e.stopPropagation();
             onFocusAllocation();
           }}
-          className="w-full text-left bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-white text-[var(--accent)] font-bold py-1.5 px-3 rounded-lg text-[10px] flex items-center justify-between transition cursor-pointer"
+          className="w-full text-left bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-[var(--text-primary)] text-[var(--accent)] font-bold py-1.5 px-3 rounded-lg text-[10px] flex items-center justify-between transition cursor-pointer"
         >
           <span>Centralizar na Timeline</span>
           <ChevronRight className="w-3 h-3" />
@@ -774,7 +774,7 @@ function AllocationHoverCard({
                 onSelectJobForShortlist(allocation.jobId);
               }
             }}
-            className="w-full text-left bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-bold py-1.5 px-3 rounded-lg text-[10px] border border-amber-500/40 flex items-center justify-between transition cursor-pointer"
+            className="w-full text-left bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-[var(--text-primary)] font-bold py-1.5 px-3 rounded-lg text-[10px] border border-amber-500/40 flex items-center justify-between transition cursor-pointer"
           >
             <span>Ir para Shortlist (Alocar Talentos)</span>
             <ChevronRight className="w-3 h-3" />
@@ -891,7 +891,7 @@ function AllocationDrawer({ allocation: a, onClose, onOpenJob, canViewPaymentReq
         <div className="p-5 border-t border-[var(--border-subtle)] space-y-2 mt-auto">
           <button
             onClick={onOpenJob}
-            className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition"
+            className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--text-primary)] font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition"
           >
             Ver detalhes do Job <ChevronRight className="w-4 h-4" />
           </button>
@@ -1162,7 +1162,7 @@ function ResourceCell({
                 onMouseLeave={() => {
                   if (onHoverAllocation) onHoverAllocation(null, null);
                 }}
-                className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white font-extrabold border border-amber-500/40 cursor-pointer transition"
+                className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-[var(--text-primary)] font-extrabold border border-amber-500/40 cursor-pointer transition"
                 title={`Localizar vaga na Timeline (Início: ${formatShortDate(a.startDate)})`}
               >
                 Localizar na Timeline
@@ -1210,8 +1210,8 @@ function ResourceCell({
                   }}
                   className={`mt-0.5 px-2.5 py-0.5 text-[9px] font-extrabold rounded-full transition w-max cursor-pointer focus:outline-none ${
                     isUnallocated
-                      ? 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-white border border-amber-500/30'
-                      : 'bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-white text-[var(--accent)]'
+                      ? 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-[var(--text-primary)] border border-amber-500/30'
+                      : 'bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-[var(--text-primary)] text-[var(--accent)]'
                   }`}
                 >
                   {allocations.length} {isUnallocated ? 'vagas abertas' : 'alocações'}
@@ -2110,7 +2110,7 @@ function SingleMonthGrid({
                   >
                     <div className="flex justify-end">
                       <span className={`text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full
-                        ${isToday ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-secondary)]'}`}>
+                        ${isToday ? 'bg-[var(--accent)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}>
                         {day.getDate()}
                       </span>
                     </div>
@@ -2589,7 +2589,7 @@ function MobileAgendaView({ allocations, today, anchor, onClickAllocation }: Mob
           {ptBRDate(anchor, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
         </p>
         {anchor.toDateString() === today.toDateString() && (
-          <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-[var(--accent)] text-white">Hoje</span>
+          <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-[var(--accent)] text-[var(--text-primary)]">Hoje</span>
         )}
       </div>
       {dayAllocs.length === 0 ? (
@@ -2653,7 +2653,7 @@ function EmptyState({ onClearFilters, onGoToday }: { onClearFilters: () => void;
         </button>
         <button
           onClick={onGoToday}
-          className="text-xs font-bold px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white transition"
+          className="text-xs font-bold px-4 py-2 rounded-xl bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--text-primary)] transition"
         >
           Ir para hoje
         </button>
@@ -3137,7 +3137,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === mode ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === mode ? 'bg-[var(--accent)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                 aria-pressed={viewMode === mode}
               >
                 <Icon className="w-3.5 h-3.5" /> {label}
@@ -3269,7 +3269,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
           {/* Filters button */}
           <button
             onClick={() => setShowFilters(prev => !prev)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${showFilters ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-[var(--bg-panel)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'}`}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${showFilters ? 'bg-[var(--accent)] text-[var(--text-primary)] border-[var(--accent)]' : 'bg-[var(--bg-panel)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'}`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" /> Filtros
           </button>
@@ -3277,7 +3277,7 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
           {/* Apenas ativas */}
           <button
             onClick={() => setFilters(f => ({ ...f, activeOnly: !f.activeOnly }))}
-            className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${filters.activeOnly ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-[var(--bg-panel)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'}`}
+            className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${filters.activeOnly ? 'bg-[var(--accent)] text-[var(--text-primary)] border-[var(--accent)]' : 'bg-[var(--bg-panel)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'}`}
           >
             Apenas ativas
           </button>

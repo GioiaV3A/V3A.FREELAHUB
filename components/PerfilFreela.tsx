@@ -103,7 +103,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
           <button
             onClick={handleGenerateUpdateLink}
             disabled={isGeneratingLink}
-            className="flex items-center gap-1.5 text-xs bg-[#0F2342] hover:bg-[#152e54] text-white font-bold py-2 px-3 rounded-xl transition-colors cursor-pointer select-none disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs bg-[var(--bg-surface)] hover:bg-[#152e54] text-[var(--text-primary)] font-bold py-2 px-3 rounded-xl transition-colors cursor-pointer select-none disabled:opacity-50"
           >
             {isGeneratingLink ? (
               <>
@@ -121,7 +121,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
       {/* Main Identity Header Card */}
       <div className="bg-white border border-border-subtle rounded-2xl p-6 shadow-xs relative overflow-hidden">
         {f.status === 'Bloqueado' && (
-          <div className="absolute top-0 left-0 right-0 bg-status-error text-white text-center py-1 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
+          <div className="absolute top-0 left-0 right-0 bg-status-error text-[var(--text-primary)] text-center py-1 text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5" /> Profissional possui bloqueio ativo por inconformidade com governança
           </div>
         )}
@@ -129,7 +129,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
         <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-6 ${f.status === 'Bloqueado' ? 'pt-4' : ''}`}>
           <div className="flex items-center gap-4">
             {/* Avatar block */}
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white uppercase shrink-0 
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-[var(--text-primary)] uppercase shrink-0 
               ${f.status === 'Bloqueado' ? 'bg-status-error/40' : 'bg-sidebar-navy'}`}>
               {f.name.charAt(0)}{f.name.split(' ').length > 1 ? f.name.split(' ')[1].charAt(0) : ''}
             </div>
@@ -160,7 +160,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
 
           {/* Score & Operational Governance Badges */}
           <div className="flex flex-wrap items-center gap-4 border-l border-border-subtle pl-0 md:pl-6 text-xs">
-            <div className="text-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 px-3.5 rounded-xl min-w-[80px] shadow-3xs">
+            <div className="text-center bg-slate-50 dark:bg-white border border-slate-200 dark:border-slate-200 p-2 px-3.5 rounded-xl min-w-[80px] shadow-3xs">
               <span className="text-[9px] text-text-secondary block font-bold uppercase tracking-wider">Score</span>
               <span className="text-lg font-black text-text-primary">
                 {f.consolidatedScore !== undefined && f.consolidatedScore > 0 
@@ -339,7 +339,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                     <a
                       href={f.portfolioUrl.startsWith('http') ? f.portfolioUrl : `https://${f.portfolioUrl}`}
                       target="_blank" rel="noreferrer"
-                      className="bg-action-cyan hover:bg-action-cyan/90 text-white font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+                      className="bg-action-cyan hover:bg-action-cyan/90 text-[var(--text-primary)] font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
                     >
                       Abrir <ExternalLink className="w-3 h-3" />
                     </a>
@@ -358,7 +358,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                     <a
                       href={(f as any).linkedinUrl.startsWith('http') ? (f as any).linkedinUrl : `https://${(f as any).linkedinUrl}`}
                       target="_blank" rel="noreferrer"
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+                      className="bg-blue-600 hover:bg-blue-700 text-[var(--text-primary)] font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
                     >
                       Abrir <ExternalLink className="w-3 h-3" />
                     </a>
@@ -377,7 +377,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                     <a
                       href={(f as any).instagramUrl.startsWith('http') ? (f as any).instagramUrl : `https://instagram.com/${(f as any).instagramUrl.replace('@','')}`}
                       target="_blank" rel="noreferrer"
-                      className="bg-gradient-to-tr from-pink-600 to-orange-400 text-white font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+                      className="bg-gradient-to-tr from-pink-600 to-orange-400 text-[var(--text-primary)] font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
                     >
                       Abrir <ExternalLink className="w-3 h-3" />
                     </a>
@@ -395,7 +395,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                       <a
                         href={(f as any).portfolioFileUrl}
                         target="_blank" rel="noreferrer"
-                        className="bg-sidebar-navy hover:bg-sidebar-navy/90 text-white font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+                        className="bg-sidebar-navy hover:bg-sidebar-navy/90 text-[var(--text-primary)] font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
                       >
                         Download <ExternalLink className="w-3 h-3" />
                       </a>

@@ -173,7 +173,7 @@ export default function RelatoriosPanel({ db }: { db: DatabaseProps }) {
               </button>
               <button
                 onClick={() => handleExport('PDF')}
-                className="bg-sidebar-navy text-white hover:brightness-110 font-bold p-2 px-4 rounded-xl flex items-center gap-1.5"
+                className="bg-sidebar-navy text-[var(--text-primary)] hover:brightness-110 font-bold p-2 px-4 rounded-xl flex items-center gap-1.5"
               >
                 Gerar PDF Fiscal
               </button>

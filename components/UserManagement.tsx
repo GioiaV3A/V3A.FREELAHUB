@@ -308,10 +308,10 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       
       {/* Toast Alert UI */}
       {toastMessage && (
-        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 p-4 px-5 rounded-2xl shadow-xl border text-white animate-fade-in
-          ${toastType === 'success' ? 'bg-sidebar-navy border-action-cyan text-white' : 'bg-red-600 border-red-500'}`}>
+        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 p-4 px-5 rounded-2xl shadow-xl border text-[var(--text-primary)] animate-fade-in
+          ${toastType === 'success' ? 'bg-sidebar-navy border-action-cyan text-[var(--text-primary)]' : 'bg-red-600 border-red-500'}`}>
           <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 
-            ${toastType === 'success' ? 'bg-action-cyan/15 text-action-cyan' : 'bg-white/10 text-white'}`}>
+            ${toastType === 'success' ? 'bg-action-cyan/15 text-action-cyan' : 'bg-white/10 text-[var(--text-primary)]'}`}>
             <CheckCircle className="w-4 h-4" />
           </div>
           <p className="text-xs font-semibold">{toastMessage}</p>
@@ -331,7 +331,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
         {hasEditPermission && (
           <button
             onClick={openCreateModal}
-            className="bg-action-cyan hover:bg-action-cyan/90 text-white font-extrabold p-2 px-4 rounded-xl flex items-center gap-1.5 transition-all text-xs shadow-xs"
+            className="bg-action-cyan hover:bg-action-cyan/90 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl flex items-center gap-1.5 transition-all text-xs shadow-xs"
           >
             <UserPlus className="w-4 h-4" /> Novo Usuário
           </button>
@@ -422,7 +422,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       <div className="bg-white rounded-2xl border border-border-subtle overflow-hidden shadow-xs animate-fade-in">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs whitespace-nowrap">
-            <thead className="bg-[#0A192F] text-white font-semibold border-b border-border-subtle">
+            <thead className="bg-[var(--bg-app)] text-[var(--text-primary)] font-semibold border-b border-border-subtle">
               <tr>
                 <SortableHeader label="Membro / E-mail" sortKey="name" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="px-5 py-3" />
                 <SortableHeader label="Perfil de Acesso" sortKey="profile" activeSortKey={sortKey} direction={sortDirection} onSort={requestSort} className="px-5 py-3" />
@@ -590,14 +590,14 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
 
       {/* MODAL 1: CREATE USER */}
       {isNewUserModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-lg text-xs animate-scale-up">
-            <div className="p-5 bg-sidebar-navy text-white flex justify-between items-center">
+            <div className="p-5 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Plus className="w-5 h-5 text-action-cyan" />
                 <h3 className="font-extrabold text-sm">Criar Novo Usuário Interno</h3>
               </div>
-              <button onClick={() => setIsNewUserModalOpen(false)} className="text-white hover:text-action-cyan transition">
+              <button onClick={() => setIsNewUserModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -809,7 +809,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 </button>
                 <button
                   type="submit"
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-white font-extrabold p-2.5 px-6 rounded-xl transition shadow-xs"
+                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition shadow-xs"
                 >
                   Criar Usuário
                 </button>
@@ -821,14 +821,14 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
 
       {/* MODAL 2: EDIT USER */}
       {isEditUserModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-lg text-xs animate-scale-up">
-            <div className="p-5 bg-sidebar-navy text-white flex justify-between items-center">
+            <div className="p-5 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Edit2 className="w-5 h-5 text-action-cyan" />
                 <h3 className="font-extrabold text-sm">Editar Cadastro de Usuário</h3>
               </div>
-              <button onClick={() => setIsEditUserModalOpen(false)} className="text-white hover:text-action-cyan transition">
+              <button onClick={() => setIsEditUserModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -871,7 +871,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                       if (getRoleLabel(prof) === 'RH' || getRoleLabel(prof) === 'C-LEVEL' || getRoleLabel(prof) === 'OPERAÇÕES' || getRoleLabel(prof) === 'OPERAÇÃO') setFormNucleoId('');
                       else if (!formNucleoId && nucleos.length > 0) setFormNucleoId(nucleos[0].id);
                     }}
-                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white focus:outline-none focus:border-action-cyan disabled:bg-slate-100 disabled:text-slate-500 font-semibold"
+                    className="w-full border border-border-subtle p-2 rounded-lg text-text-primary bg-white focus:outline-none focus:border-action-cyan disabled:bg-slate-100 disabled:text-[var(--text-disabled)] font-semibold"
                   >
                     {getRoleLabel(currentUser.profile) === 'MASTER' && (
                       <>
@@ -1020,7 +1020,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 </button>
                 <button
                   type="submit"
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-white font-extrabold p-2.5 px-6 rounded-xl transition"
+                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition"
                 >
                   Salvar Alterações
                 </button>
@@ -1032,14 +1032,14 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
 
       {/* MODAL 3: REDEFINE INITIAL PASSWORD */}
       {isResetPasswordModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-sm text-xs animate-scale-up">
-            <div className="p-4 bg-sidebar-navy text-white flex justify-between items-center">
+            <div className="p-4 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-action-cyan" />
                 <h3 className="font-extrabold text-xs uppercase tracking-wider">Redefinir Senha Inicial</h3>
               </div>
-              <button onClick={() => setIsResetPasswordModalOpen(false)} className="text-white hover:text-action-cyan">
+              <button onClick={() => setIsResetPasswordModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1087,7 +1087,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 </button>
                 <button
                   type="submit"
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-white font-extrabold p-2 px-4 rounded-lg flex items-center gap-1"
+                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-lg flex items-center gap-1"
                 >
                   Redefinir e Forçar Troca
                 </button>
@@ -1099,13 +1099,13 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
 
       {/* MODAL 4: DETAILS MODEL */}
       {isDetailsModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-sm text-xs animate-scale-up">
-            <div className="p-4 bg-sidebar-navy text-white flex justify-between items-center">
+            <div className="p-4 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
               <h3 className="font-extrabold text-xs uppercase tracking-wider flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-action-cyan" /> Detalhes do Usuário
               </h3>
-              <button onClick={() => setIsDetailsModalOpen(false)} className="text-white hover:text-action-cyan">
+              <button onClick={() => setIsDetailsModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1190,7 +1190,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               <div className="pt-3 border-t border-slate-100 flex justify-end">
                 <button
                   onClick={() => setIsDetailsModalOpen(false)}
-                  className="bg-sidebar-navy hover:bg-slate-800 text-white font-bold p-2 px-5 rounded-lg"
+                  className="bg-sidebar-navy hover:bg-slate-50 text-[var(--text-primary)] font-bold p-2 px-5 rounded-lg"
                 >
                   OK, Fechar
                 </button>

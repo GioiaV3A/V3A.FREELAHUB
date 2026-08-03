@@ -18,7 +18,7 @@ export default function SubmissionDiffViewer({
 }: SubmissionDiffViewerProps) {
   if (!currentData) {
     return (
-      <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-slate-500 text-center select-none">
+      <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl text-[var(--text-disabled)] text-center select-none">
         Nenhum snapshot de dados anteriores disponível.
       </div>
     );
@@ -53,7 +53,7 @@ export default function SubmissionDiffViewer({
   // Resolve values to user friendly strings (e.g. resolve UUIDs to names)
   const formatValue = (key: string, value: any) => {
     if (value === null || value === undefined || value === '') {
-      return <span className="text-slate-400 italic font-semibold">Vazio</span>;
+      return <span className="text-[var(--text-disabled)] italic font-semibold">Vazio</span>;
     }
 
     if (key === 'cnpj_normalized' && value && value.length === 14) {
@@ -62,11 +62,11 @@ export default function SubmissionDiffViewer({
 
     if (key === 'main_function_id') {
       const func = functions.find(f => f.id === value);
-      return func ? func.name : <span className="text-slate-500 font-bold">{value}</span>;
+      return func ? func.name : <span className="text-[var(--text-disabled)] font-bold">{value}</span>;
     }
 
     if (key === 'industries') {
-      if (!Array.isArray(value) || value.length === 0) return <span className="text-slate-400 italic">Nenhum</span>;
+      if (!Array.isArray(value) || value.length === 0) return <span className="text-[var(--text-disabled)] italic">Nenhum</span>;
       const names = value
         .map(id => industries.find(i => i.id === id)?.name)
         .filter(Boolean);
@@ -117,7 +117,7 @@ export default function SubmissionDiffViewer({
   return (
     <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-xs text-xs select-none">
       {/* Table header */}
-      <div className="grid grid-cols-3 bg-slate-50 p-3 border-b border-slate-100 font-extrabold text-slate-500 uppercase tracking-wider text-[10px]">
+      <div className="grid grid-cols-3 bg-slate-50 p-3 border-b border-slate-100 font-extrabold text-[var(--text-disabled)] uppercase tracking-wider text-[10px]">
         <span>Campo / Atributo</span>
         <span>Dado Atual (Banco Oficial)</span>
         <span>Dado Proposto (Alterado)</span>
@@ -139,7 +139,7 @@ export default function SubmissionDiffViewer({
                 ${changed ? 'bg-amber-50/25' : 'hover:bg-slate-50/30'}`}
             >
               {/* Field Label */}
-              <span className={`font-bold ${changed ? 'text-slate-800' : 'text-slate-500'}`}>
+              <span className={`font-bold ${changed ? 'text-slate-800' : 'text-[var(--text-disabled)]'}`}>
                 {label}
               </span>
 

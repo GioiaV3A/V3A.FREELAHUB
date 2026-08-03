@@ -1725,8 +1725,8 @@ export default function Home() {
   // 1. LOGIN SCREEN RENDER
   if (!isLoggedIn || !currentUser) {
     return (
-      <div id="login-container" className="min-h-screen bg-[#0A192F] flex items-center justify-center p-4 selection:bg-action-cyan selection:text-white">
-        <div className="w-full max-w-sm bg-[#0F2342] rounded-3xl overflow-hidden border border-white/5 shadow-2xl p-8 space-y-6 animate-fade-in relative">
+      <div id="login-container" className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4 selection:bg-action-cyan selection:text-\[var(--v3a-black)\]">
+        <div className="w-full max-w-sm bg-[var(--bg-surface)] rounded-3xl overflow-hidden border border-[var(--border-subtle)] shadow-2xl p-8 space-y-6 animate-fade-in relative">
           
           <div className="absolute top-0 right-0 w-32 h-32 bg-action-cyan/10 blur-2xl rounded-full"></div>
           
@@ -1734,11 +1734,11 @@ export default function Home() {
           <div className="text-center space-y-3 relative z-10 flex flex-col items-center">
             <BrandLogo variant="login" />
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-white select-none mt-2">
+              <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] select-none mt-2">
                 Freela <span className="text-action-cyan">Hub</span>
               </h1>
-              <p className="text-xs text-slate-300 font-medium select-none mt-1">Gestão centralizada de freelancers</p>
-              <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider mt-1">Plataforma interna V3A</p>
+              <p className="text-xs text-[var(--text-muted)] font-medium select-none mt-1">Gestão centralizada de freelancers</p>
+              <p className="text-[10px] text-[var(--text-disabled)] font-extrabold uppercase tracking-wider mt-1">Plataforma interna V3A</p>
             </div>
           </div>
 
@@ -1754,26 +1754,26 @@ export default function Home() {
           <form onSubmit={handleManualLogin} className="space-y-4 text-xs">
             
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">E-mail Corporativo</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">E-mail Corporativo</label>
               <input
                 type="email"
                 required
                 placeholder="nome@v3a.ag"
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
-                className="w-full bg-[#0B1E38] border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-action-cyan text-xs transition-colors"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-2.5 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan text-xs transition-colors"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Senha de Segurança</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Senha de Segurança</label>
               <input
                 type="password"
                 required
                 placeholder="Insira sua senha..."
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-[#0B1E38] border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-action-cyan text-xs transition-colors"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-2.5 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan text-xs transition-colors"
               />
             </div>
 
@@ -1789,7 +1789,7 @@ export default function Home() {
 
           {/* Visual Link Only */}
           <div className="text-center pt-2">
-            <span className="text-[10px] text-slate-400 font-semibold cursor-not-allowed hover:underline">
+            <span className="text-[10px] text-[var(--text-disabled)] font-semibold cursor-not-allowed hover:underline">
               Esqueci minha senha
             </span>
           </div>
@@ -1802,15 +1802,15 @@ export default function Home() {
   // 2. COMPULSORY PASSWORD CHANGE SCREEN (First Login Access Check)
   if (currentUser.firstAccessPending) {
     return (
-      <div id="compulsory-password-container" className="min-h-screen bg-[#0A192F] flex items-center justify-center p-4 selection:bg-action-cyan">
-        <div className="w-full max-w-sm bg-[#0F2342] border border-white/5 p-8 rounded-3xl shadow-2xl text-xs space-y-5 relative">
+      <div id="compulsory-password-container" className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4 selection:bg-action-cyan">
+        <div className="w-full max-w-sm bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-8 rounded-3xl shadow-2xl text-xs space-y-5 relative">
           
           <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/10 blur-2xl rounded-full"></div>
           
           <div className="text-center space-y-1 relative z-10">
             <Lock className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-            <h2 className="text-lg font-bold text-white uppercase tracking-wider">Primeiro Acesso Pendente</h2>
-            <p className="text-[11px] text-slate-300">Olá <strong>{currentUser.name}</strong>, para garantir a segurança cibernética corporativa da agência, cadastre uma nova senha pessoal.</p>
+            <h2 className="text-lg font-bold text-[var(--text-primary)] uppercase tracking-wider">Primeiro Acesso Pendente</h2>
+            <p className="text-[11px] text-[var(--text-muted)]">Olá <strong>{currentUser.name}</strong>, para garantir a segurança cibernética corporativa da agência, cadastre uma nova senha pessoal.</p>
           </div>
 
           {compulsoryError && (
@@ -1823,38 +1823,38 @@ export default function Home() {
           <form onSubmit={handleCompulsoryPasswordSubmit} className="space-y-4">
             
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">Senha Inicial (Atual)</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">Senha Inicial (Atual)</label>
               <input
                 type="password"
                 required
                 placeholder="Insira a senha recebida..."
                 value={compulsoryCurrentPassword}
                 onChange={e => setCompulsoryCurrentPassword(e.target.value)}
-                className="w-full bg-[#0B1E38] border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-action-cyan"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-2.5 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">Nova Senha Pessoal</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">Nova Senha Pessoal</label>
               <input
                 type="password"
                 required
                 placeholder="Crie sua nova senha..."
                 value={compulsoryNewPassword}
                 onChange={e => setCompulsoryNewPassword(e.target.value)}
-                className="w-full bg-[#0B1E38] border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-action-cyan"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-2.5 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">Confirmar Nova Senha</label>
+              <label className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider block">Confirmar Nova Senha</label>
               <input
                 type="password"
                 required
                 placeholder="Confirme sua nova senha..."
                 value={compulsoryConfirmPassword}
                 onChange={e => setCompulsoryConfirmPassword(e.target.value)}
-                className="w-full bg-[#0B1E38] border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-action-cyan"
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] p-2.5 rounded-xl text-[var(--text-primary)] outline-none focus:border-action-cyan"
               />
             </div>
 
@@ -1871,7 +1871,7 @@ export default function Home() {
           <div className="text-center pt-2">
             <button
               onClick={handleLogOut}
-              className="text-slate-400 hover:text-white transition underline"
+              className="text-[var(--text-disabled)] hover:text-[var(--text-primary)] transition underline"
             >
               Cancelar e Voltar ao Login
             </button>
@@ -1887,7 +1887,7 @@ export default function Home() {
     <div 
       id="app-workspace" 
       style={{ '--sidebar-width': isSidebarCollapsed ? '80px' : '256px' } as React.CSSProperties}
-      className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] selection:bg-action-cyan selection:text-white"
+      className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] selection:bg-action-cyan selection:text-\[var(--v3a-black)\]"
     >
       
       {/* ============ MOBILE BACKDROP ============ */}
@@ -1905,7 +1905,7 @@ export default function Home() {
         className={`
           fixed inset-y-0 left-0 z-50 w-72
           md:relative md:z-40
-          bg-sidebar-navy flex flex-col text-slate-100 shrink-0
+          bg-sidebar-navy flex flex-col text-slate-800 shrink-0
           border-r border-[#1e293b]
           overflow-y-auto overflow-x-hidden
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -1916,7 +1916,7 @@ export default function Home() {
       >
         {/* Brand header */}
         <div className={`
-          border-b border-[#14233c] flex bg-[#081528] transition-[height,padding] duration-300 ease-in-out
+          border-b border-[#14233c] flex bg-[var(--bg-sidebar)] transition-[height,padding] duration-300 ease-in-out
           ${isSidebarCollapsed 
             ? 'h-[100px] flex-col justify-center items-center gap-3 py-4 px-2' 
             : 'h-[120px] items-center justify-between px-6 py-5'}
@@ -1927,7 +1927,7 @@ export default function Home() {
             {/* Collapse button — desktop only */}
             <button
               onClick={toggleSidebar}
-              className="hidden md:flex p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              className="hidden md:flex p-1.5 rounded-lg text-[var(--text-disabled)] hover:text-[var(--text-primary)] hover:bg-white/10 transition-colors cursor-pointer"
               aria-label={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
               title={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
             >
@@ -1937,7 +1937,7 @@ export default function Home() {
             {/* Close button — mobile only */}
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="md:hidden p-1.5 rounded-lg text-[var(--text-disabled)] hover:text-[var(--text-primary)] hover:bg-white/10 transition-colors"
               aria-label="Fechar menu"
             >
               <XIcon className="w-5 h-5" />
@@ -1958,16 +1958,16 @@ export default function Home() {
                   className={`w-full text-left p-3 rounded-xl flex items-center transition-all cursor-pointer min-h-[44px]
                     ${isSelected 
                       ? 'bg-action-cyan text-[#0F2342] shadow-sm font-extrabold' 
-                      : 'text-slate-350 hover:bg-white/5 hover:text-white'}
+                      : 'text-slate-600 hover:bg-white/5 hover:text-[var(--text-primary)]'}
                     ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}
                   aria-label={item.name}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#0F2342]' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#0F2342]' : 'text-[var(--text-disabled)]'}`} />
                   {!isSidebarCollapsed && <span>{item.name}</span>}
                 </button>
 
                 {isSidebarCollapsed && (
-                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1.5 bg-slate-900 text-white text-[11px] font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50 whitespace-nowrap border border-white/10">
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1.5 bg-white text-[var(--text-primary)] text-[11px] font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50 whitespace-nowrap border border-[var(--border-default)]">
                     {item.name}
                   </div>
                 )}
@@ -1977,13 +1977,13 @@ export default function Home() {
         </nav>
 
         {/* Static Sidebar Identity Card */}
-        <div className={`p-4 border-t border-[#1e293b] bg-[#081528] text-xs safe-bottom flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}>
+        <div className={`p-4 border-t border-[#1e293b] bg-[var(--bg-sidebar)] text-xs safe-bottom flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}>
           <div className="w-7 h-7 rounded-full bg-action-cyan/15 flex items-center justify-center font-bold text-action-cyan text-[10px] uppercase shrink-0" title={`${currentUser.name} (Perfil: ${getRoleLabel(currentUser.profile)})`}>
             {currentUser.name.slice(0, 2)}
           </div>
           {!isSidebarCollapsed && (
             <div className="truncate">
-              <p className="font-bold text-white leading-tight truncate">{currentUser.name}</p>
+              <p className="font-bold text-[var(--text-primary)] leading-tight truncate">{currentUser.name}</p>
               <span className="text-[9px] text-[#A2E9F2] font-semibold block mt-0.5">
                 PERFIL: {getRoleLabel(currentUser.profile)}
               </span>
@@ -2025,7 +2025,7 @@ export default function Home() {
           <div className="flex items-center gap-2 md:gap-4 relative">
             
             {/* Informative Static Profile Label */}
-            <span className="bg-[#0F2342] text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
+            <span className="bg-[var(--bg-surface)] text-[var(--text-primary)] text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
               Perfil: {getRoleLabel(currentUser.profile)}
             </span>
 
@@ -2055,13 +2055,13 @@ export default function Home() {
                     onClick={() => { setActiveTab('Meu Perfil'); setIsHeaderMenuOpen(false); }}
                     className="w-full text-left p-3 hover:bg-slate-50 flex items-center gap-2 text-text-primary min-h-[44px]"
                   >
-                    <UserSquare2 className="w-4 h-4 text-slate-500" /> Meu Perfil
+                    <UserSquare2 className="w-4 h-4 text-[var(--text-disabled)]" /> Meu Perfil
                   </button>
                   <button 
                     onClick={() => { setActiveTab('Meu Perfil'); setIsHeaderMenuOpen(false); }}
                     className="w-full text-left p-3 hover:bg-slate-50 flex items-center gap-2 text-text-primary border-b border-border-subtle min-h-[44px]"
                   >
-                    <Key className="w-4 h-4 text-slate-500" /> Alterar Senha
+                    <Key className="w-4 h-4 text-[var(--text-disabled)]" /> Alterar Senha
                   </button>
                   <div className="p-2.5 border-b border-border-subtle bg-slate-50/50">
                     <p className="text-[10px] text-text-secondary px-1 mb-2 uppercase tracking-wider font-bold">Tema da Interface</p>
@@ -2070,7 +2070,7 @@ export default function Home() {
                         onClick={() => setTheme('light')}
                         className={`py-1.5 rounded-md text-[10px] font-bold transition flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                           theme === 'light'
-                            ? 'bg-[#00BCD4] text-white shadow-xs'
+                            ? 'bg-[#00BCD4] text-[var(--text-primary)] shadow-xs'
                             : 'text-text-secondary hover:bg-slate-50'
                         }`}
                         title="Tema Claro"
@@ -2082,7 +2082,7 @@ export default function Home() {
                         onClick={() => setTheme('dark')}
                         className={`py-1.5 rounded-md text-[10px] font-bold transition flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                           theme === 'dark'
-                            ? 'bg-[#00BCD4] text-white shadow-xs'
+                            ? 'bg-[#00BCD4] text-[var(--text-primary)] shadow-xs'
                             : 'text-text-secondary hover:bg-slate-50'
                         }`}
                         title="Tema Escuro"
@@ -2094,7 +2094,7 @@ export default function Home() {
                         onClick={() => setTheme('system')}
                         className={`py-1.5 rounded-md text-[10px] font-bold transition flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                           theme === 'system'
-                            ? 'bg-[#00BCD4] text-white shadow-xs'
+                            ? 'bg-[#00BCD4] text-[var(--text-primary)] shadow-xs'
                             : 'text-text-secondary hover:bg-slate-50'
                         }`}
                         title="Usar preferência do sistema"

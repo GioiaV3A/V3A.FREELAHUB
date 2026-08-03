@@ -137,16 +137,16 @@ export default function PaymentCodesPanel({ db }: { db: DatabaseProps }) {
   return (
     <div id="payment-codes-panel-container" className="space-y-6">
       {/* Visual Rule info banner */}
-      <div className="bg-sidebar-navy text-white p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#1e293b]">
+      <div className="bg-sidebar-navy text-[var(--text-primary)] p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#1e293b]">
         <div className="space-y-1">
           <h3 className="font-bold text-sm text-action-cyan uppercase tracking-widest flex items-center gap-2">
             <Key className="w-4 h-4" /> Diretriz de Governança B2B V3A
           </h3>
-          <p className="text-xs text-slate-300 leading-relaxed font-medium">
+          <p className="text-xs text-[var(--text-muted)] leading-relaxed font-medium">
             &ldquo;Nenhum pagamento de freelancer será auditado ou processado pelo financeiro sem um Código de Alocação homologado por este portal.&rdquo;
           </p>
         </div>
-        <div className="shrink-0 bg-white/15 p-2 px-3 border border-white/10 rounded-xl flex items-center gap-1.5 text-xs font-bold">
+        <div className="shrink-0 bg-white/15 p-2 px-3 border border-[var(--border-default)] rounded-xl flex items-center gap-1.5 text-xs font-bold">
           <ShieldCheck className="w-4 h-4 text-action-cyan" /> Compliance Fiscal Ativo
         </div>
       </div>
@@ -205,7 +205,7 @@ export default function PaymentCodesPanel({ db }: { db: DatabaseProps }) {
                             {code.paymentStatus === 'Aguardando avaliação' ? (
                               <button
                                 onClick={() => alloc && handleOpenEvaluate(alloc.id)}
-                                className="bg-status-error hover:bg-status-error-dark text-white font-bold p-1 px-2 text-[10px] rounded-lg flex items-center gap-1 inline-flex shrink-0 shadow-xs"
+                                className="bg-status-error hover:bg-status-error-dark text-[var(--text-primary)] font-bold p-1 px-2 text-[10px] rounded-lg flex items-center gap-1 inline-flex shrink-0 shadow-xs"
                               >
                                 <FilePenLine className="w-3.5 h-3.5" /> Avaliar & Desbloquear
                               </button>
@@ -383,7 +383,7 @@ export default function PaymentCodesPanel({ db }: { db: DatabaseProps }) {
                 </button>
                 <button
                   type="submit"
-                  className="bg-status-error hover:bg-status-error-dark text-white font-bold p-1.5 px-4 rounded-lg shadow-sm"
+                  className="bg-status-error hover:bg-status-error-dark text-[var(--text-primary)] font-bold p-1.5 px-4 rounded-lg shadow-sm"
                 >
                   Confirmar Avaliação e Liberar Pagamento
                 </button>

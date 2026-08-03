@@ -680,7 +680,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
         const emailVal = link.submission?.submitted_data?.email || link.freelancer?.email || '';
         return (
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0 bg-slate-100 dark:bg-slate-800">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg shrink-0 bg-slate-100 dark:bg-slate-50">
               {link.link_type === 'new_freelancer' ? (
                 <Plus className="w-4 h-4 text-info-500" />
               ) : (
@@ -782,7 +782,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
             {clearToken && getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleCopyLink(clearToken, link.link_type, link.id)}
-                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-50"
                 style={{ background: 'var(--neutral-bg)', color: 'var(--neutral-text)' }}
                 title="Copiar URL"
                 aria-label="Copiar link"
@@ -793,7 +793,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
             {getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleOpenQRModal(link)}
-                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-50"
                 style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
                 title="Ver QR Code"
                 aria-label="Ver QR Code"

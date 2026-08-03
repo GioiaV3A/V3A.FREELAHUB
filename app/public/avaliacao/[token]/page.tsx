@@ -141,18 +141,18 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
     onChange: (v: number) => void 
   }) => {
     return (
-      <div className="p-4 bg-slate-900/35 border border-slate-800 rounded-2xl space-y-3">
+      <div className="p-4 bg-white/35 border border-slate-200 rounded-2xl space-y-3">
         <div className="flex justify-between items-start">
           <div className="space-y-0.5">
-            <h4 className="font-bold text-slate-200 text-xs sm:text-sm">{label}</h4>
-            <p className="text-[10px] sm:text-xs text-slate-400">{description}</p>
+            <h4 className="font-bold text-slate-700 text-xs sm:text-sm">{label}</h4>
+            <p className="text-[10px] sm:text-xs text-slate-600">{description}</p>
           </div>
           <span className="font-black text-sm text-action-cyan bg-action-cyan/10 px-3 py-1 rounded-lg border border-action-cyan/20">
             {value} ★
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-[10px] text-slate-500 font-bold uppercase select-none">1 (Fraco)</span>
+          <span className="text-[10px] text-slate-600 font-bold uppercase select-none">1 (Fraco)</span>
           <input
             type="range"
             min="1"
@@ -160,9 +160,9 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
             step="1"
             value={value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-action-cyan"
+            className="flex-1 h-1.5 bg-slate-50 rounded-lg appearance-none cursor-pointer accent-action-cyan"
           />
-          <span className="text-[10px] text-slate-500 font-bold uppercase select-none">5 (Excelente)</span>
+          <span className="text-[10px] text-slate-600 font-bold uppercase select-none">5 (Excelente)</span>
         </div>
       </div>
     );
@@ -173,7 +173,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
       <div className="min-h-screen bg-[#070d19] flex flex-col items-center justify-center p-6 text-white font-sans text-xs">
         <div className="flex flex-col items-center space-y-3">
           <Loader2 className="w-10 h-10 text-action-cyan animate-spin" />
-          <p className="text-slate-400 font-bold">Validando link de avaliação...</p>
+          <p className="text-slate-600 font-bold">Validando link de avaliação...</p>
         </div>
       </div>
     );
@@ -182,15 +182,15 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
   if (validatingError) {
     return (
       <div className="min-h-screen bg-[#070d19] flex flex-col items-center justify-center p-6 text-white font-sans text-xs">
-        <div className="max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
+        <div className="max-w-md bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
           <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto">
             <AlertTriangle className="w-6 h-6 text-rose-500" />
           </div>
           <div className="space-y-2">
-            <h3 className="font-extrabold text-slate-200 text-lg">Erro ao Acessar Avaliação</h3>
-            <p className="text-slate-400 text-xs leading-relaxed">{validatingError}</p>
+            <h3 className="font-extrabold text-slate-700 text-lg">Erro ao Acessar Avaliação</h3>
+            <p className="text-slate-600 text-xs leading-relaxed">{validatingError}</p>
           </div>
-          <div className="text-[10px] text-slate-500 border-t border-slate-800/80 pt-4 font-semibold uppercase tracking-wider">
+          <div className="text-[10px] text-slate-600 border-t border-slate-200/80 pt-4 font-semibold uppercase tracking-wider">
             V3A Freela Hub B2B
           </div>
         </div>
@@ -201,17 +201,17 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
   if (submittedSuccess) {
     return (
       <div className="min-h-screen bg-[#070d19] flex flex-col items-center justify-center p-6 text-white font-sans text-xs">
-        <div className="max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
+        <div className="max-w-md bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
           <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto">
             <CheckCircle className="w-7 h-7 text-emerald-500" />
           </div>
           <div className="space-y-2">
-            <h3 className="font-extrabold text-slate-200 text-lg">Avaliação Enviada!</h3>
-            <p className="text-slate-400 text-xs leading-relaxed">
+            <h3 className="font-extrabold text-slate-700 text-lg">Avaliação Enviada!</h3>
+            <p className="text-slate-600 text-xs leading-relaxed">
               Obrigado por compartilhar seu feedback sobre a V3A. Suas respostas foram coletadas de forma 100% anônima e nos ajudam a evoluir nossos núcleos.
             </p>
           </div>
-          <div className="text-[10px] text-slate-500 border-t border-slate-800/80 pt-4 font-semibold uppercase tracking-wider flex items-center justify-center gap-1">
+          <div className="text-[10px] text-slate-600 border-t border-slate-200/80 pt-4 font-semibold uppercase tracking-wider flex items-center justify-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-action-cyan" /> Compliance de Anonimato Ativo
           </div>
         </div>
@@ -220,40 +220,40 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
   }
 
   return (
-    <div className="min-h-screen bg-[#070d19] text-slate-200 font-sans py-12 px-4 text-xs">
+    <div className="min-h-screen bg-[#070d19] text-slate-700 font-sans py-12 px-4 text-xs">
       <div className="max-w-3xl mx-auto space-y-8">
         
         {/* HEADER BRAND */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-1.5 rounded-full text-[10px] font-bold text-action-cyan uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-1.5 rounded-full text-[10px] font-bold text-action-cyan uppercase tracking-widest">
             <Sparkles className="w-3.5 h-3.5" /> Avaliação Reversa de Projeto
           </div>
           <h1 className="text-2xl font-black tracking-tight text-white">Freela Hub V3A</h1>
-          <p className="text-xs text-slate-400 max-w-xl mx-auto leading-relaxed">
+          <p className="text-xs text-slate-600 max-w-xl mx-auto leading-relaxed">
             Sua opinião é fundamental para aprimorarmos nossa organização, condições de trabalho e liderança. Este formulário é totalmente <strong>anônimo</strong>.
           </p>
         </div>
 
         {/* DETAILS CARD */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl grid grid-cols-1 md:grid-cols-2 gap-4 text-left border-l-4 border-l-action-cyan">
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xl grid grid-cols-1 md:grid-cols-2 gap-4 text-left border-l-4 border-l-action-cyan">
           <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Campanha / Job</p>
+            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Campanha / Job</p>
             <h3 className="text-sm font-extrabold text-white mt-0.5">{tokenDetails?.jobTitle}</h3>
-            <p className="text-xs text-slate-400 mt-1">Cliente: {tokenDetails?.clientName}</p>
+            <p className="text-xs text-slate-600 mt-1">Cliente: {tokenDetails?.clientName}</p>
           </div>
           <div>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Núcleo & Coordenação</p>
+            <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Núcleo & Coordenação</p>
             <h3 className="text-sm font-extrabold text-white mt-0.5">{tokenDetails?.nucleoName}</h3>
-            <p className="text-xs text-slate-400 mt-1">Líder Relacionado: {tokenDetails?.leaderName}</p>
+            <p className="text-xs text-slate-600 mt-1">Líder Relacionado: {tokenDetails?.leaderName}</p>
           </div>
         </div>
 
         {/* EVALUATION FORM */}
-        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-8">
+        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xl space-y-8">
           
           {/* Section 1: 8 sliders */}
           <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
+            <h3 className="text-sm font-extrabold text-white border-b border-slate-200 pb-2 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-action-cyan"></span>
               1. Critérios de Experiência no Projeto
             </h3>
@@ -311,8 +311,8 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
           </div>
 
           {/* Section 2: CSAT, CES, NPS */}
-          <div className="space-y-6 pt-6 border-t border-slate-800">
-            <h3 className="text-sm font-extrabold text-white border-b border-slate-800 pb-2 flex items-center gap-2">
+          <div className="space-y-6 pt-6 border-t border-slate-200">
+            <h3 className="text-sm font-extrabold text-white border-b border-slate-200 pb-2 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-action-cyan"></span>
               2. Satisfação Geral & Métricas de Relacionamento
             </h3>
@@ -320,10 +320,10 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* CSAT (Satisfação) */}
-              <div className="p-5 bg-slate-900/35 border border-slate-800 rounded-2xl space-y-4 text-center">
+              <div className="p-5 bg-white/35 border border-slate-200 rounded-2xl space-y-4 text-center">
                 <div className="space-y-1">
-                  <h4 className="font-bold text-slate-200 text-xs sm:text-sm">Satisfação Geral (CSAT)</h4>
-                  <p className="text-[10px] text-slate-400">Qual o seu nível de satisfação geral com este job?</p>
+                  <h4 className="font-bold text-slate-700 text-xs sm:text-sm">Satisfação Geral (CSAT)</h4>
+                  <p className="text-[10px] text-slate-600">Qual o seu nível de satisfação geral com este job?</p>
                 </div>
                 <StarRating value={csatProject} onChange={setCsatProject} />
                 <div className="text-[11px] font-black text-amber-400 capitalize">
@@ -332,14 +332,14 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
               </div>
 
               {/* CES (Esforço) */}
-              <div className="p-5 bg-slate-900/35 border border-slate-800 rounded-2xl space-y-4 flex flex-col justify-between">
+              <div className="p-5 bg-white/35 border border-slate-200 rounded-2xl space-y-4 flex flex-col justify-between">
                 <div className="space-y-1 text-center sm:text-left">
-                  <h4 className="font-bold text-slate-200 text-xs sm:text-sm">Índice de Esforço (CES)</h4>
-                  <p className="text-[10px] text-slate-400">Quão fácil foi realizar seu trabalho operacional e administrativo com o núcleo?</p>
+                  <h4 className="font-bold text-slate-700 text-xs sm:text-sm">Índice de Esforço (CES)</h4>
+                  <p className="text-[10px] text-slate-600">Quão fácil foi realizar seu trabalho operacional e administrativo com o núcleo?</p>
                 </div>
                 
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase">
+                  <div className="flex justify-between items-center text-[10px] text-slate-600 font-bold uppercase">
                     <span>1 (Muito Difícil)</span>
                     <span className="text-action-cyan bg-action-cyan/10 px-2 py-0.5 rounded border border-action-cyan/15 font-black">
                       {getCesLabel(cesOperational)}
@@ -353,7 +353,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
                     step="1"
                     value={cesOperational}
                     onChange={(e) => setCesOperational(Number(e.target.value))}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-action-cyan"
+                    className="w-full h-1.5 bg-slate-50 rounded-lg appearance-none cursor-pointer accent-action-cyan"
                   />
                 </div>
               </div>
@@ -361,10 +361,10 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
             </div>
 
             {/* NPS (Recomendação) */}
-            <div className="p-5 bg-slate-900/35 border border-slate-800 rounded-2xl space-y-4">
+            <div className="p-5 bg-white/35 border border-slate-200 rounded-2xl space-y-4">
               <div className="text-center md:text-left space-y-0.5">
-                <h4 className="font-bold text-slate-200 text-xs sm:text-sm">Probabilidade de Recomendação (NPS)</h4>
-                <p className="text-[10px] text-slate-400">Qual a probabilidade de você recomendar trabalhar com este núcleo a um colega freelancer?</p>
+                <h4 className="font-bold text-slate-700 text-xs sm:text-sm">Probabilidade de Recomendação (NPS)</h4>
+                <p className="text-[10px] text-slate-600">Qual a probabilidade de você recomendar trabalhar com este núcleo a um colega freelancer?</p>
               </div>
 
               <div className="flex flex-wrap justify-between gap-1.5 md:flex-nowrap">
@@ -376,7 +376,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
                     className={`flex-1 h-9 rounded-xl font-black transition text-xs border cursor-pointer
                       ${npsProject === score 
                         ? 'bg-action-cyan border-action-cyan text-slate-900 scale-105 shadow-md shadow-action-cyan/10' 
-                        : 'bg-slate-950/45 border-slate-800 text-slate-400 hover:border-slate-600'
+                        : 'bg-slate-950/45 border-slate-200 text-slate-600 hover:border-slate-600'
                       }
                     `}
                   >
@@ -384,7 +384,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
                   </button>
                 ))}
               </div>
-              <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+              <div className="flex justify-between text-[9px] text-slate-600 font-bold uppercase tracking-wider">
                 <span>0 (Jamais recomendaria)</span>
                 <span>10 (Recomendaria com certeza)</span>
               </div>
@@ -392,7 +392,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
 
             {/* Suggestions / Observations */}
             <div className="space-y-1.5">
-              <label className="font-bold text-slate-350 block flex items-center gap-1.5">
+              <label className="font-bold text-slate-600 block flex items-center gap-1.5">
                 <MessageSquare className="w-4 h-4 text-action-cyan" />
                 Comentários ou Sugestões de Melhoria (Opcional):
               </label>
@@ -401,15 +401,15 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
                 onChange={(e) => setObservations(e.target.value)}
                 placeholder="Compartilhe feedbacks livres ou observações sobre o projeto. Não se preocupe, suas observações não serão associadas ao seu nome."
                 rows={4}
-                className="w-full bg-slate-950/65 border border-slate-800 rounded-2xl p-3 outline-none focus:border-action-cyan/45 text-slate-200 font-medium"
+                className="w-full bg-slate-950/65 border border-slate-200 rounded-2xl p-3 outline-none focus:border-action-cyan/45 text-slate-700 font-medium"
               />
             </div>
 
           </div>
 
           {/* Submit */}
-          <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <div className="pt-6 border-t border-slate-200 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-2 text-[10px] text-slate-600 font-bold uppercase tracking-wider">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
               Sua avaliação é anônima e segura
             </div>
@@ -433,7 +433,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
         </form>
 
         {/* footer */}
-        <div className="text-center text-[10px] text-slate-500 font-bold uppercase tracking-wider py-4 border-t border-slate-900">
+        <div className="text-center text-[10px] text-slate-600 font-bold uppercase tracking-wider py-4 border-t border-slate-900">
           V3A Freela Hub &bull; Portal de Governança e Qualidade
         </div>
 
