@@ -406,8 +406,6 @@ export async function sendProposalResponseNotificationEmail(params: SendProposal
       auth: { user, pass },
     });
 
-    const logoUrl = 'https://vehkccapjpsebtmoezfm.supabase.co/storage/v1/object/public/system-assets/V3A_Aplica%C3%A7%C3%B5es%20Prim%C3%A1rias-03.png';
-
     let statusText = '';
     let statusColor = '';
     
@@ -450,7 +448,7 @@ export async function sendProposalResponseNotificationEmail(params: SendProposal
 <body>
   <div class="container">
     <div class="header">
-      <img src="${logoUrl}" alt="FREELA HUB | V3A" />
+      <img src="cid:logov3a" alt="FREELA HUB | V3A" />
       <p>Atualização de Proposta</p>
     </div>
     <div class="content">
@@ -507,6 +505,13 @@ FREELA HUB | V3A Live Marketing
       subject: `[Freela Hub] Resposta de Proposta - ${params.freelancerName} (${params.jobCode})`,
       text: emailBodyText,
       html: emailHtmlBody,
+      attachments: [
+        {
+          filename: 'logo-v3a.png',
+          path: path.join(process.cwd(), 'public', 'logo-v3a.png'),
+          cid: 'logov3a'
+        }
+      ]
     });
 
     console.log('[EmailService] Notification email sent:', info.messageId);
