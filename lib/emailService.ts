@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import path from "path";
+
 import { supabase, getSupabaseAdmin } from './supabase';
 
 export interface SendProposalEmailParams {
@@ -340,7 +342,7 @@ Equipe FREELA HUB | V3A Live Marketing
       attachments: [
         {
           filename: 'logo-v3a.png',
-          path: process.cwd() + '/public/logo-v3a.png',
+          path: path.join(process.cwd(), 'public', 'logo-v3a.png'),
           cid: 'logov3a' // same cid value as in the html img src
         }
       ]
