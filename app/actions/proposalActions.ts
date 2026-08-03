@@ -149,7 +149,7 @@ export async function confirmOfficialShortlistAction(params: ConfirmShortlistPar
     }
 
     const results = [];
-    const appUrl = process.env.FREELAHUB_PUBLIC_APP_URL || 'https://freelahub.v3a.ag';
+    const appUrl = process.env.FREELAHUB_PUBLIC_APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://v3-a-freelahub.vercel.app')));
 
     for (const freelancerId of selectedFreelancerIds) {
       // Fetch freelancer by ID or fallback
