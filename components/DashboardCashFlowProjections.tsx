@@ -675,24 +675,24 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
 
             {/* Carousel / Navigation Controls */}
             {monthlyAggregates.list.length > windowSize && (
-              <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
                 <button
                   disabled={monthWindowOffset === 0}
                   onClick={() => setMonthWindowOffset(prev => Math.max(0, prev - 1))}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-50 text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-action-cyan hover:text-slate-950 transition-all duration-300 flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-slate-800 border border-slate-200 shadow-xs hover:bg-[#FFCB05] hover:text-black hover:border-[#FFE680] disabled:opacity-40 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span>Anterior</span>
                 </button>
 
-                <span className="text-[11px] font-bold text-[var(--text-muted)] px-2 select-none">
+                <span className="text-xs font-extrabold text-slate-900 px-2.5 select-none font-mono">
                   {visibleMonthList[0]?.monthLabel} — {visibleMonthList[visibleMonthList.length - 1]?.monthLabel}
                 </span>
 
                 <button
                   disabled={monthWindowOffset >= maxOffset}
                   onClick={() => setMonthWindowOffset(prev => Math.min(maxOffset, prev + 1))}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-50 text-[var(--text-primary)] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-action-cyan hover:text-slate-950 transition-all duration-300 flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-white text-slate-800 border border-slate-200 shadow-xs hover:bg-[#FFCB05] hover:text-black hover:border-[#FFE680] disabled:opacity-40 disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer"
                 >
                   <span>Próximo</span>
                   <ChevronRight className="w-4 h-4" />
@@ -969,22 +969,22 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                       {Object.entries(activeFocusMonth.nucleosMap).map(([nName, nAmt]) => {
                         const nObj = visibleNucleosMap.find(v => v.name === nName);
                         return (
-                          <div key={nName} className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: nObj?.color || '#a855f7' }} />
-                            <span className="text-[10px] text-[var(--text-disabled)] uppercase">{nName}:</span>
-                            <strong className="text-[var(--text-primary)] font-bold">{formatCurrencyBR(nAmt)}</strong>
+                          <div key={nName} className="bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-2 shadow-xs">
+                            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: nObj?.color || '#a855f7' }} />
+                            <span className="text-[10px] font-extrabold text-slate-800 uppercase">{nName}:</span>
+                            <strong className="text-slate-900 font-extrabold">{formatCurrencyBR(nAmt)}</strong>
                           </div>
                         );
                       })}
 
-                      <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1.5">
-                        <span className="text-[10px] text-[var(--text-disabled)] uppercase">Alertas RC:</span>
+                      <div className="bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5 shadow-xs">
+                        <span className="text-[10px] font-extrabold text-slate-800 uppercase">Alertas RC:</span>
                         {activeFocusMonth.alertCounts.critical > 0 ? (
-                          <span className="text-red-600 font-bold">🚨 {activeFocusMonth.alertCounts.critical} crít.</span>
+                          <span className="text-rose-800 font-extrabold bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md text-[10px]">🚨 {activeFocusMonth.alertCounts.critical} crít.</span>
                         ) : activeFocusMonth.alertCounts.urgent > 0 ? (
-                          <span className="text-orange-400 font-bold">🔥 {activeFocusMonth.alertCounts.urgent} urg.</span>
+                          <span className="text-amber-800 font-extrabold bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-[10px]">🔥 {activeFocusMonth.alertCounts.urgent} urg.</span>
                         ) : (
-                          <span className="text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Em dia</span>
+                          <span className="text-emerald-800 font-extrabold flex items-center gap-1 text-[10px]"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Em dia</span>
                         )}
                       </div>
                     </div>

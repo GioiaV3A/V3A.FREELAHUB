@@ -120,7 +120,7 @@ export default function PerfilUsuario({ db }: { db: DatabaseProps & { users: Use
             {currentUser.profile === 'NÚCLEO' && (
               <div className="flex justify-between items-center bg-cyan-50/50 p-2.5 border border-cyan-150 rounded-lg">
                 <span className="text-cyan-800 font-bold">Núcleo Vinculado:</span>
-                <span className="text-cyan-900 font-extrabold uppercase">{userNucleo?.name || 'Vínculo Ausente'}</span>
+                <span className="text-cyan-900 font-extrabold uppercase">{userNucleo?.name || (currentUser.isMasterAccount ? 'TODOS OS NÚCLEOS (Modo Master)' : 'Vínculo Ausente')}</span>
               </div>
             )}
 

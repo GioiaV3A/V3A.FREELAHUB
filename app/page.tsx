@@ -120,7 +120,10 @@ import {
   Moon,
   Monitor,
   Menu,
-  X as XIcon
+  X as XIcon,
+  ShieldAlert,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 
 import { useTheme } from '@/components/ThemeProvider';
@@ -245,6 +248,58 @@ export default function Home() {
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Profile Simulation / Role Switcher for MASTER users
+  const [simulatedProfile, setSimulatedProfile] = useState<string | null>(null);
+  const [realMasterUser, setRealMasterUser] = useState<User | null>(null);
+  const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
+
+  // Sync realMasterUser state with currentUser
+  useEffect(() => {
+    if (currentUser) {
+      const currentRole = getRoleLabel(currentUser.profile);
+      if (currentRole === 'MASTER') {
+        if (!realMasterUser || realMasterUser.id !== currentUser.id) {
+          setRealMasterUser(currentUser);
+        }
+      } else {
+        // If currentUser is not MASTER, check if realMasterUser matches this same user ID (meaning MASTER is simulating another role)
+        if (realMasterUser && realMasterUser.id === currentUser.id) {
+          // Keep realMasterUser intact as MASTER is simulating another role
+        } else {
+          // This is a non-MASTER account or a different user -> reset simulation & real master
+          if (realMasterUser) setRealMasterUser(null);
+          if (simulatedProfile) setSimulatedProfile(null);
+        }
+      }
+    } else {
+      if (realMasterUser) setRealMasterUser(null);
+      if (simulatedProfile) setSimulatedProfile(null);
+    }
+  }, [currentUser, realMasterUser, simulatedProfile]);
+
+  const isMasterAccount = Boolean(
+    currentUser && (
+      getRoleLabel(currentUser.profile) === 'MASTER' ||
+      (realMasterUser && realMasterUser.id === currentUser.id && getRoleLabel(realMasterUser.profile) === 'MASTER')
+    )
+  );
+
+  const handleSwitchProfile = (targetProfile: string) => {
+    if (!currentUser || !isMasterAccount) return;
+    if (!realMasterUser && getRoleLabel(currentUser.profile) === 'MASTER') {
+      setRealMasterUser(currentUser);
+    }
+
+    if (targetProfile === 'MASTER') {
+      setSimulatedProfile(null);
+      setCurrentUser(prev => prev ? { ...prev, profile: 'MASTER' as any } : null);
+    } else {
+      setSimulatedProfile(targetProfile);
+      setCurrentUser(prev => prev ? { ...prev, profile: targetProfile as any } : null);
+    }
+    setActiveTab('Dashboard');
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -793,6 +848,9 @@ export default function Home() {
     await safeSignOut(false);
     setIsLoggedIn(false);
     setCurrentUser(null);
+    setRealMasterUser(null);
+    setSimulatedProfile(null);
+    setIsRoleSwitcherOpen(false);
     setEmailInput('');
     setPasswordInput('');
     setLoginError(null);
@@ -1576,7 +1634,11 @@ export default function Home() {
     setSelectedFreelancerId,
     selectedJobId,
     setSelectedJobId,
-    currentUser: currentUser as User,
+    currentUser: currentUser ? {
+      ...currentUser,
+      isMasterAccount,
+      isSimulated: !!simulatedProfile
+    } as User : null as any,
     setCurrentUser,
     users: usersState,
     setUsers: wrapStateSetter(usersState, setUsersState, handleUserInsert, handleUserUpdate)
@@ -1996,7 +2058,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-hidden relative z-10">
         
         {/* Dynamic Top Header Bar */}
-        <header className="bg-white border-b border-border-subtle p-3 px-4 md:p-4 md:px-6 flex justify-between items-center relative z-25 shadow-xs safe-top">
+        <header className="bg-white border-b border-border-subtle p-3 px-4 md:p-4 md:px-6 flex justify-between items-center relative z-[100] shadow-xs safe-top">
           
           {/* Mobile: Hamburger + Logo | Desktop: Breadcrumbs */}
           <div className="flex items-center gap-3">
@@ -2024,13 +2086,57 @@ export default function Home() {
           {/* Unified Safe Identity Indicator & Top Dropdown menu */}
           <div className="flex items-center gap-2 md:gap-4 relative">
             
-            {/* Informative Static Profile Label */}
-            <span className="bg-[var(--bg-surface)] text-[var(--text-primary)] text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
-              Perfil: {getRoleLabel(currentUser.profile)}
-            </span>
+            {/* Role Switcher Selector for MASTER users */}
+            {isMasterAccount ? (
+              <div className="relative z-[100]">
+                <button 
+                  onClick={() => setIsRoleSwitcherOpen(!isRoleSwitcherOpen)}
+                  className="flex items-center gap-1.5 bg-[#FFF6D6] hover:bg-[#FFE680] text-black border border-[#FFE680] text-[10px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider transition cursor-pointer select-none shadow-xs min-h-[36px]"
+                  title="Alternar Perfil de Acesso (Simulação Master)"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-amber-900" />
+                  <span>PERFIL: {getRoleLabel(currentUser.profile)}</span>
+                  <ChevronDown className="w-3 h-3 text-black ml-0.5" />
+                </button>
+
+                {isRoleSwitcherOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[9999] overflow-hidden text-xs font-semibold animate-scale-up p-1.5">
+                    <div className="px-3 py-2 bg-amber-50 border-b border-amber-100 rounded-xl mb-1">
+                      <p className="text-[10px] font-extrabold text-amber-900 uppercase tracking-wider">Alternar Perfil de Acesso</p>
+                      <p className="text-[9px] text-amber-700 font-medium">Modo Administrador Master</p>
+                    </div>
+                    
+                    {['MASTER', 'RH', 'C-LEVEL', 'OPERAÇÕES', 'NÚCLEO'].map((roleKey) => {
+                      const isActive = getRoleLabel(currentUser.profile) === roleKey;
+                      return (
+                        <button
+                          key={roleKey}
+                          onClick={() => {
+                            handleSwitchProfile(roleKey);
+                            setIsRoleSwitcherOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-xl flex items-center justify-between transition text-xs font-bold cursor-pointer my-0.5 ${
+                            isActive 
+                              ? 'bg-[#FFCB05] text-black shadow-xs' 
+                              : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span>{roleKey}</span>
+                          {isActive && <Check className="w-4 h-4 text-black" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="bg-[var(--bg-surface)] text-[var(--text-primary)] text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline-block">
+                Perfil: {getRoleLabel(currentUser.profile)}
+              </span>
+            )}
 
             {/* Profile trigger dropdown button */}
-            <div className="relative">
+            <div className="relative z-[100]">
               <button 
                 onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)}
                 className="flex items-center gap-2 hover:bg-slate-50 p-1.5 px-2 md:px-3 rounded-xl transition text-xs border border-border-subtle cursor-pointer select-none min-h-[44px]"
@@ -2046,11 +2152,43 @@ export default function Home() {
 
               {/* Popover Dropdown menu */}
               {isHeaderMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-border-subtle rounded-xl shadow-lg z-30 overflow-hidden text-xs font-semibold animate-scale-up">
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-border-subtle rounded-xl shadow-lg z-[9999] overflow-hidden text-xs font-semibold animate-scale-up">
                   <div className="p-3 bg-slate-50 border-b border-border-subtle md:hidden">
                     <p className="font-bold text-text-primary">{currentUser.name}</p>
                     <p className="text-[10px] text-text-secondary mt-0.5">Perfil: {getRoleLabel(currentUser.profile)}</p>
                   </div>
+
+                  {/* MASTER Profile Switcher Section in Popover */}
+                  {isMasterAccount && (
+                    <div className="p-2.5 border-b border-border-subtle bg-amber-50/50">
+                      <p className="text-[10px] text-amber-900 px-1 mb-1.5 uppercase tracking-wider font-extrabold flex items-center gap-1">
+                        <ShieldAlert className="w-3.5 h-3.5 text-amber-800" /> ALTERNAR PERFIL DE ACESSO
+                      </p>
+                      <div className="grid grid-cols-1 gap-1">
+                        {['MASTER', 'RH', 'C-LEVEL', 'OPERAÇÕES', 'NÚCLEO'].map((roleKey) => {
+                          const isActive = getRoleLabel(currentUser.profile) === roleKey;
+                          return (
+                            <button
+                              key={roleKey}
+                              onClick={() => {
+                                handleSwitchProfile(roleKey);
+                                setIsHeaderMenuOpen(false);
+                              }}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold transition flex items-center justify-between cursor-pointer ${
+                                isActive 
+                                  ? 'bg-[#FFCB05] text-black shadow-xs' 
+                                  : 'text-slate-700 hover:bg-slate-100 bg-white border border-slate-200'
+                              }`}
+                            >
+                              <span>{roleKey}</span>
+                              {isActive && <Check className="w-3.5 h-3.5 text-black" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <button 
                     onClick={() => { setActiveTab('Meu Perfil'); setIsHeaderMenuOpen(false); }}
                     className="w-full text-left p-3 hover:bg-slate-50 flex items-center gap-2 text-text-primary min-h-[44px]"
@@ -2116,6 +2254,22 @@ export default function Home() {
 
           </div>
         </header>
+
+        {/* Active Simulation Alert Banner */}
+        {isMasterAccount && simulatedProfile && (
+          <div className="bg-[#FFF6D6] border-b border-[#FFE680] px-4 py-2 text-xs flex flex-wrap items-center justify-between text-black font-semibold z-20 gap-2">
+            <div className="flex items-center gap-2">
+              <span className="bg-amber-900 text-white text-[9px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider">Simulação Ativa</span>
+              <span>Você está visualizando a plataforma como perfil: <strong className="uppercase font-black text-amber-950">{simulatedProfile}</strong></span>
+            </div>
+            <button
+              onClick={() => handleSwitchProfile('MASTER')}
+              className="bg-black text-white hover:bg-slate-800 text-[10px] font-extrabold px-3 py-1 rounded-lg transition cursor-pointer shadow-xs"
+            >
+              Restaurar Perfil MASTER ↺
+            </button>
+          </div>
+        )}
 
         {/* 3. SCROLLABLE ROUTE VIEWPORT */}
         <div id="main-scroll-container" className="flex-1 overflow-y-auto px-6 pb-6 focus:outline-none bg-bg-app">

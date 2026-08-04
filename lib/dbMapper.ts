@@ -166,21 +166,30 @@ export function mapCandidateStatusToUI(status: string | null): Shortlist['candid
     case 'em_negociacao':
       return 'Em negociação';
     case 'aguardando_retorno':
+    case 'waiting_response':
       return 'Aguardando retorno';
     case 'valor_fora_politica':
       return 'Valor fora da política';
     case 'aceitou':
     case 'aprovado_rh':
     case 'accepted':
+    case 'approved':
+    case 'aprovado_para_alocacao':
+    case 'selecionado_para_alocacao':
+    case 'approved_by_head':
+    case 'aprovado_pelo_head':
       return 'Aceitou';
     case 'aceitou com ressalva':
     case 'accepted_with_reservations':
+    case 'aceitou_com_ressalva':
       return 'Aceitou com ressalva';
     case 'nao_aceitou':
     case 'não aceitou':
     case 'rejeitado':
     case 'indisponivel':
     case 'refused':
+    case 'rejected_by_head':
+    case 'reprovado_pelo_head':
       return 'Não aceitou';
     case 'bloqueado_conflito_agenda':
       return 'Bloqueado por conflito de agenda';
@@ -188,16 +197,6 @@ export function mapCandidateStatusToUI(status: string | null): Shortlist['candid
       return 'Pendente aprovação RH';
     case 'pendente_aprovacao_head':
       return 'Pendente aprovação Head';
-    case 'approved_by_head':
-    case 'aprovado_pelo_head':
-      return 'Aprovado pelo Head';
-    case 'rejected_by_head':
-    case 'reprovado_pelo_head':
-      return 'Reprovado pelo Head';
-    case 'aprovado_para_alocacao':
-      return 'Aprovado para alocação';
-    case 'selecionado_para_alocacao':
-      return 'Selecionado para alocação';
     default: return 'Selecionado';
   }
 }
@@ -446,6 +445,8 @@ export function mapAllocationToUI(alloc: any): Allocation {
     id: alloc.id,
     allocationCode: alloc.allocation_code || '',
     jobId: alloc.job_id,
+    job_code: alloc.job_code || alloc.jobs?.job_code || alloc.demand_requests?.jobs?.job_code || '',
+    jobCode: alloc.job_code || alloc.jobs?.job_code || alloc.demand_requests?.jobs?.job_code || '',
     freelancerId: alloc.freelancer_id,
     nucleoId: alloc.nucleo_id,
     startDate: alloc.start_date,
@@ -654,6 +655,7 @@ export function mapJobToUI(req: any): Job {
     id: req.id, // request_id represents the demand / UI Job ID
     jobId: req.job_id,
     job_code: req.jobs?.job_code || req.job_code || '',
+    jobCode: req.jobs?.job_code || req.job_code || '',
     name: req.jobs?.title || req.job_title || '',
     client: req.jobs?.client_name || req.client_name || '',
     nucleoId: req.jobs?.nucleo_id || req.nucleo_id || '',

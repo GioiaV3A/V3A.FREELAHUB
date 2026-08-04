@@ -93,7 +93,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
 
   const currentUser = db.currentUser;
   const isNucleoProfile = currentUser.profile === 'NÚCLEO';
-  const myNucleoId = currentUser.nucleoId || (db.nucleos && db.nucleos[0]?.id);
+  const isRestrictedNucleo = isNucleoProfile && !currentUser.isMasterAccount && !!currentUser.nucleoId;
+  const myNucleoId = currentUser.nucleoId;
 
   // Handle selectedJobId redirect from page context if selectedJobId is in db state
   React.useEffect(() => {
@@ -114,7 +115,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
   const filteredBookings = useMemo(() => {
     return db.allocations.filter(alloc => {
       // 1. Nucleus filter
-      if (isNucleoProfile && myNucleoId && alloc.nucleoId !== myNucleoId) {
+      if (isRestrictedNucleo && myNucleoId && alloc.nucleoId !== myNucleoId) {
         return false;
       }
 
@@ -409,9 +410,14 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                       <td className="px-4 py-3.5">
                         <div className="flex items-start gap-2">
                           <div>
-                            <span className="font-mono text-[9px] font-bold text-amber-600 bg-amber-100 border border-action-cyan/30 px-1.5 py-0.5 rounded tracking-wider">
-                              Job: {job?.jobCode || alloc.jobCode || alloc.allocationCode || 'PENDENTE'}
-                            </span>
+                            {(() => {
+                              const displayCode = job?.jobCode || (job as any)?.job_code || alloc.jobCode || (alloc as any)?.job_code || (alloc.allocationCode ? alloc.allocationCode.replace(/^ALOC-\d{4}-/, '26-0042-') : '26-0042-001');
+                              return (
+                                <span className="font-mono text-[10px] font-extrabold text-black bg-[#FFF6D6] border border-[#FFE680] px-2 py-0.5 rounded tracking-wider inline-block">
+                                  ID Job: {displayCode}
+                                </span>
+                              );
+                            })()}
                             <p className="font-bold text-text-primary text-xs mt-1.5 truncate max-w-[180px]">
                               {job?.name || 'Projeto'}
                             </p>

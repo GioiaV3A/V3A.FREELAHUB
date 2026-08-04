@@ -15,6 +15,8 @@ export interface User {
   themePreference?: 'dark' | 'light' | 'system';
   /** Indica se este usuário é Head (responsável) do seu núcleo */
   isNucleusHead?: boolean;
+  isMasterAccount?: boolean;
+  isSimulated?: boolean;
 }
 
 export interface Nucleo {
@@ -287,6 +289,7 @@ export interface Shortlist {
   remunerationModel?: string;
   policyStatus?: string;
   scheduleConflict?: boolean;
+  scheduleConflictApproved?: boolean;
   requiresRhApproval?: boolean;
   requiresHeadApproval?: boolean;
   selectedForAllocation?: boolean;
@@ -774,6 +777,8 @@ export const initialFreelancers: Freelancer[] = [
 export const initialJobs: Job[] = [
   {
     id: 'job-1',
+    jobCode: '26-0042-001',
+    job_code: '26-0042-001',
     name: 'Stand de Lançamento Autotech',
     client: 'AutoCorp Brasil',
     nucleoId: 'nuc-1', // Tecnologia
@@ -790,6 +795,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-2',
+    jobCode: '26-0042-002',
+    job_code: '26-0042-002',
     name: 'Campanha de Ativação Energético',
     client: 'Energy Drinks Ltd',
     nucleoId: 'nuc-2', // Marketing
@@ -806,6 +813,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-3',
+    jobCode: '26-0042-003',
+    job_code: '26-0042-003',
     name: 'Renovação de Identidade Visual Corporativa',
     client: 'Finance Group',
     nucleoId: 'nuc-3', // Design & Criação
@@ -822,6 +831,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-4',
+    jobCode: '26-0042-004',
+    job_code: '26-0042-004',
     name: 'Mega Stand de Games na CCXP',
     client: 'GamerZone S.A.',
     nucleoId: 'nuc-5', // Produção Executiva
@@ -838,6 +849,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-5',
+    jobCode: '26-0042-005',
+    job_code: '26-0042-005',
     name: 'Roteiro e Ativação Copacabana',
     client: 'Cervejaria Premium',
     nucleoId: 'nuc-2', // Marketing
@@ -854,6 +867,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-6',
+    jobCode: '26-0042-006',
+    job_code: '26-0042-006',
     name: 'Palco Futurista AgroFeira',
     client: 'Sementes Brasil',
     nucleoId: 'nuc-3', // Design & Criação
@@ -870,6 +885,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-7',
+    jobCode: '26-0042-007',
+    job_code: '26-0042-007',
     name: 'Lançamento Cosméticos Glow',
     client: 'Glow Cosmetics',
     nucleoId: 'nuc-2', // Marketing
@@ -886,6 +903,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-8',
+    jobCode: '26-0042-008',
+    job_code: '26-0042-008',
     name: 'Convenção de Tecnologia Core',
     client: 'Core Tech',
     nucleoId: 'nuc-1', // Tecnologia
@@ -902,6 +921,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-9',
+    jobCode: '26-0042-009',
+    job_code: '26-0042-009',
     name: 'Roadshow Beleza Rápida',
     client: 'Beleza S.A.',
     nucleoId: 'nuc-3', // Design & Criação
@@ -918,6 +939,8 @@ export const initialJobs: Job[] = [
   },
   {
     id: 'job-10',
+    jobCode: '26-0042-010',
+    job_code: '26-0042-010',
     name: 'Hotsite e Ativação AgroFest',
     client: 'AgroFest Corp',
     nucleoId: 'nuc-1', // Tecnologia
@@ -999,18 +1022,18 @@ export const initialNegotiations: Negotiation[] = [
 
 export const initialAllocations: Allocation[] = [
   // Carlos Silva no Stand Autotech (Active Booking)
-  { id: 'alloc-1', allocationCode: 'ALOC-2026-0001', jobId: 'job-1', freelancerId: 'free-1', nucleoId: 'nuc-1', startDate: '2026-06-10', endDate: '2026-06-25', approvedValue: 850, status: 'Ativo' },
+  { id: 'alloc-1', allocationCode: 'ALOC-2026-0001', jobCode: '26-0042-001', job_code: '26-0042-001', jobId: 'job-1', freelancerId: 'free-1', nucleoId: 'nuc-1', startDate: '2026-06-10', endDate: '2026-06-25', approvedValue: 850, status: 'Ativo' },
   // Fernanda Lima na Campanha Energético (Completed)
-  { id: 'alloc-2', allocationCode: 'ALOC-2026-0002', jobId: 'job-2', freelancerId: 'free-8', nucleoId: 'nuc-2', startDate: '2026-06-12', endDate: '2026-06-20', approvedValue: 480, status: 'Concluído' },
+  { id: 'alloc-2', allocationCode: 'ALOC-2026-0002', jobCode: '26-0042-002', job_code: '26-0042-002', jobId: 'job-2', freelancerId: 'free-8', nucleoId: 'nuc-2', startDate: '2026-06-12', endDate: '2026-06-20', approvedValue: 480, status: 'Concluído' },
   // João Pedro na Renovação Identidade (Completed)
-  { id: 'alloc-3', allocationCode: 'ALOC-2026-0003', jobId: 'job-3', freelancerId: 'free-3', nucleoId: 'nuc-3', startDate: '2026-05-15', endDate: '2026-06-01', approvedValue: 650, status: 'Concluído' },
+  { id: 'alloc-3', allocationCode: 'ALOC-2026-0003', jobCode: '26-0042-003', job_code: '26-0042-003', jobId: 'job-3', freelancerId: 'free-3', nucleoId: 'nuc-3', startDate: '2026-05-15', endDate: '2026-06-01', approvedValue: 650, status: 'Concluído' },
   // Carlos Silva na Convenção Tech (Active Booking - agenda overlaps with alloc-1!)
-  { id: 'alloc-4', allocationCode: 'ALOC-2026-0004', jobId: 'job-8', freelancerId: 'free-1', nucleoId: 'nuc-1', startDate: '2026-06-01', endDate: '2026-06-12', approvedValue: 800, status: 'Ativo' },
+  { id: 'alloc-4', allocationCode: 'ALOC-2026-0004', jobCode: '26-0042-008', job_code: '26-0042-008', jobId: 'job-8', freelancerId: 'free-1', nucleoId: 'nuc-1', startDate: '2026-06-01', endDate: '2026-06-12', approvedValue: 800, status: 'Ativo' },
   // Gisele Bündchen no Roadshow Beleza (Concluído, pendente de avaliação)
-  { id: 'alloc-5', allocationCode: 'ALOC-2026-0005', jobId: 'job-9', freelancerId: 'free-18', nucleoId: 'nuc-3', startDate: '2026-05-10', endDate: '2026-05-28', approvedValue: 1200, status: 'Concluído' },
+  { id: 'alloc-5', allocationCode: 'ALOC-2026-0005', jobCode: '26-0042-009', job_code: '26-0042-009', jobId: 'job-9', freelancerId: 'free-18', nucleoId: 'nuc-3', startDate: '2026-05-10', endDate: '2026-05-28', approvedValue: 1200, status: 'Concluído' },
   // Roberto Alves no megastand ccxp (Pendente)
-  { id: 'alloc-6', allocationCode: 'ALOC-2026-0006', jobId: 'job-4', freelancerId: 'free-7', nucleoId: 'nuc-5', startDate: '2026-06-15', endDate: '2026-06-30', approvedValue: 450, status: 'Pendente' },
-  { id: 'alloc-7', allocationCode: 'ALOC-2026-0007', jobId: 'job-7', freelancerId: 'free-2', nucleoId: 'nuc-2', startDate: '2026-06-03', endDate: '2026-06-18', approvedValue: 550, status: 'Ativo' },
+  { id: 'alloc-6', allocationCode: 'ALOC-2026-0006', jobCode: '26-0042-004', job_code: '26-0042-004', jobId: 'job-4', freelancerId: 'free-7', nucleoId: 'nuc-5', startDate: '2026-06-15', endDate: '2026-06-30', approvedValue: 450, status: 'Pendente' },
+  { id: 'alloc-7', allocationCode: 'ALOC-2026-0007', jobCode: '26-0042-007', job_code: '26-0042-007', jobId: 'job-7', freelancerId: 'free-2', nucleoId: 'nuc-2', startDate: '2026-06-03', endDate: '2026-06-18', approvedValue: 550, status: 'Ativo' },
 ];
 
 export const initialEvaluations: Evaluation[] = [

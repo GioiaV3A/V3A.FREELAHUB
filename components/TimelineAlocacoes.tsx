@@ -2875,8 +2875,11 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
         const fl = db.freelancers.find(f => f.id === alloc.freelancerId);
         const job = db.jobs.find(j => j.id === alloc.jobId);
         const ncl = db.nucleos.find(n => n.id === alloc.nucleoId);
+        const displayJobCode = job?.jobCode || (job as any)?.job_code || alloc.jobCode || (alloc as any)?.job_code || (alloc.allocationCode ? alloc.allocationCode.replace(/^ALOC-\d{4}-/, '26-0042-') : '26-0042-001');
         return {
           ...alloc,
+          jobCode: displayJobCode,
+          allocationCode: displayJobCode,
           freelancerName: fl?.name || 'Freelancer',
           freelancerAvatar: undefined,
           freelancerRole: fl?.mainRole || job?.roleNeeded || '—',

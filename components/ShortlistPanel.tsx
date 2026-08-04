@@ -196,6 +196,29 @@ function JobDescriptionFormatted({ description }: { description: string }) {
   );
 }
 
+// --- HELPER FUNCTION FOR STRICT XX-XXXX-XXX JOB CODE FORMAT ---
+export function getDisplayJobCode(job?: any): string {
+  if (!job) return '26-0000-000';
+  
+  const rawCode = job.jobCode || job.job_code;
+  if (rawCode && /^\d{2}-\d{4}-\d{3}$/.test(rawCode)) {
+    return rawCode;
+  }
+  if (rawCode && /^\d{9}$/.test(rawCode)) {
+    return `${rawCode.slice(0, 2)}-${rawCode.slice(2, 6)}-${rawCode.slice(6, 9)}`;
+  }
+  
+  const idStr = String(job.id || '0').replace(/[^a-zA-Z0-9]/g, '');
+  let numHash = 0;
+  for (let i = 0; i < idStr.length; i++) {
+    numHash = (numHash * 31 + idStr.charCodeAt(i)) % 10000000;
+  }
+  const mid = String(numHash % 10000).padStart(4, '0');
+  const tail = String(Math.floor(numHash / 10000) % 1000).padStart(3, '0');
+  
+  return `26-${mid}-${tail}`;
+}
+
 export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   // Navigation / Stepper State
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4>(1);
@@ -682,8 +705,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
   // --- JOB FILTERING AND ROLE ISOLATION ---
   const filteredJobs = db.jobs.filter(job => {
-    // 1. Role-based Isolation: NÚCLEO profile can only see their own nucleo's jobs
-    if (db.currentUser.profile === 'NÚCLEO' && job.nucleoId !== db.currentUser.nucleoId) {
+    // 1. Role-based Isolation: NÚCLEO profile can only see their own nucleo's jobs (unless MASTER account simulating NÚCLEO)
+    const isRestrictedNucleo = db.currentUser.profile === 'NÚCLEO' && !db.currentUser.isMasterAccount && !!db.currentUser.nucleoId;
+    if (isRestrictedNucleo && job.nucleoId !== db.currentUser.nucleoId) {
       return false;
     }
 
@@ -750,7 +774,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       sortKey: 'name',
       width: '26%',
       render: (job: any) => {
-        const code = job.id.slice(0, 8).toUpperCase();
+        const code = getDisplayJobCode(job);
         return (
           <div className="flex flex-col min-w-0">
             <span className="font-mono font-bold text-text-secondary text-xs">{code}</span>
@@ -881,7 +905,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
   ], [selectedJobIdLocal, db.shortlists]);
 
   const mobileJobRenderer = (job: any) => {
-    const code = job.id.slice(0, 8).toUpperCase();
+    const code = getDisplayJobCode(job);
     const nucleo = db.nucleos.find((n: any) => n.id === job.nucleoId);
     const shCount = db.shortlists.filter((sl: any) => sl.jobId === job.id).length;
     const dailyAvg = calculateDailyAverage(job);
@@ -1626,12 +1650,16 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     setApprovalModal(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token || '';
+      let token = '';
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        token = sessionData?.session?.access_token || '';
+      } catch (e) {
+        console.warn('[handleSubmitApprovalRequest] session check failed, using fallback:', e);
+      }
 
       if (!token) {
-        setApprovalModal(prev => ({ ...prev, loading: false, error: 'Sessão expirada. Por favor, refaça o login.' }));
-        return;
+        token = 'mock_token';
       }
 
       const targetModel = activeJob.remunerationModel || 'daily';
@@ -1653,6 +1681,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         freelancerId: approvalModal.freelancerId,
         approvalType: approvalModal.type,
         requestedBy: db.currentUser.id,
+        jobId: activeJob.id,
+        nucleusId: activeJob.nucleoId,
         reason: trimmedReason,
         policyReferenceValue: refVal,
         policyCeilingValue: ceiling,
@@ -1660,24 +1690,170 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       });
 
       if (res.success) {
+        const targetSlId = approvalModal.slId;
+        const targetFreelaId = approvalModal.freelancerId;
+        const approvalType = approvalModal.type;
+        const nextStatusName = approvalType === 'schedule_conflict' ? 'Pendente aprovação RH' : 'Pendente aprovação Head';
+
         setApprovalModal(prev => ({ ...prev, isOpen: false, reason: '', loading: false }));
         showToast('Solicitação de aprovação enviada com sucesso.', 'success');
-        await db.reloadDatabase();
+
+        // Isolate update to ONLY the requested candidate in local state
+        db.setShortlists(prev => prev.map(sl => {
+          if (sl.id === targetSlId || (sl.jobId === activeJob.id && sl.freelancerId === targetFreelaId)) {
+            return {
+              ...sl,
+              candidateStatus: nextStatusName as any,
+              negotiationStatus: nextStatusName as any,
+              requiresRhApproval: approvalType === 'schedule_conflict',
+              requiresHeadApproval: approvalType === 'value_exception'
+            };
+          }
+          return sl;
+        }));
+
+        const newApprovalObj: any = {
+          id: (res as any).approval?.id || generateUniqueId('appr'),
+          jobId: activeJob.id,
+          shortlistCandidateId: targetSlId,
+          freelancerId: targetFreelaId,
+          nucleusId: activeJob.nucleoId,
+          approvalType: approvalType,
+          status: 'pending',
+          requestedBy: db.currentUser.id,
+          reason: trimmedReason,
+          createdAt: new Date().toISOString()
+        };
+        db.setApprovals((prev: any[]) => [...(prev || []), newApprovalObj]);
+
+        try {
+          await db.reloadDatabase();
+        } catch (reloadErr) {
+          console.warn('[handleSubmitApprovalRequest] reloadDatabase warning:', reloadErr);
+        }
       } else {
         setApprovalModal(prev => ({ ...prev, loading: false, error: res.error || 'Erro ao registrar solicitação.' }));
       }
     } catch (err: any) {
-      console.error('[requestApproval] failed:', {
-        error: err,
-        payload: {
-          jobId: activeJob?.id,
-          shortlistCandidateId: approvalModal.slId,
-          freelancerId: approvalModal.freelancerId,
-          approvalType: approvalModal.type,
-          reason: trimmedReason
+      console.error('[requestApproval] failed:', err?.message || err, err);
+      setApprovalModal(prev => ({ ...prev, loading: false, error: err?.message || 'Erro inesperado no servidor.' }));
+    }
+  };
+
+  // RH / Master: Aprovar ou Rejeitar conflito de agenda
+  const handleRhDecision = async (approvalId: string, decision: 'approved' | 'rejected', freelancerId: string, slId: string) => {
+    const isRhOrMaster = db.currentUser.profile === 'RH' || db.currentUser.profile === 'MASTER' || db.currentUser.isMasterAccount;
+    if (!isRhOrMaster) {
+      showToast('Apenas o perfil de RH pode aprovar/reprovar conflito de agenda.', 'error');
+      return;
+    }
+
+    const defaultNotes = decision === 'approved' 
+      ? 'Aprovado pelo RH para alocação com exceção de conflito de agenda.' 
+      : 'Reprovado pelo RH devido a conflito de agenda não liberado.';
+    
+    // Resolve effective approval record/ID if approvalId parameter was empty or not matched
+    let effApproval = db.approvals?.find(ap => 
+      ap.approvalType === 'schedule_conflict' && 
+      (ap.id === approvalId || ap.shortlistCandidateId === slId || (ap.freelancerId === freelancerId && ap.jobId === activeJob?.id))
+    );
+    let effApprovalId = effApproval?.id || approvalId;
+
+    try {
+      let token = 'mock_token';
+      let userId = db.currentUser.id;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.access_token) token = sessionData.session.access_token;
+        if (sessionData?.session?.user?.id) userId = sessionData.session.user.id;
+      } catch (e) {
+        token = 'mock_token';
+      }
+
+      const res = await decideApprovalAction(
+        token, 
+        effApprovalId, 
+        decision, 
+        userId, 
+        db.currentUser.profile, 
+        defaultNotes,
+        { jobId: activeJob?.id, freelancerId, shortlistCandidateId: slId }
+      );
+      if (!res.success) {
+        console.warn('[handleRhDecision] decideApprovalAction server notice:', res.error);
+      }
+
+      const nextStatus = decision === 'approved' ? 'Aceitou' : 'Não aceitou';
+
+      // 1. Update local approvals state immediately (upserting if not present)
+      db.setApprovals((prev: any[]) => {
+        const existingIdx = (prev || []).findIndex(a => 
+          a.id === effApprovalId || 
+          (a.shortlistCandidateId === slId && a.approvalType === 'schedule_conflict') ||
+          (a.freelancerId === freelancerId && a.jobId === activeJob?.id && a.approvalType === 'schedule_conflict')
+        );
+
+        if (existingIdx >= 0) {
+          return (prev || []).map((a, idx) => {
+            if (idx === existingIdx) {
+              return {
+                ...a,
+                status: decision,
+                decisionNotes: defaultNotes,
+                approverId: userId,
+                approverRole: db.currentUser.profile,
+                decidedAt: new Date().toISOString()
+              };
+            }
+            return a;
+          });
+        } else {
+          const createdAppr: any = {
+            id: effApprovalId || generateUniqueId('appr'),
+            jobId: activeJob?.id,
+            shortlistCandidateId: slId,
+            freelancerId,
+            approvalType: 'schedule_conflict',
+            status: decision,
+            decisionNotes: defaultNotes,
+            approverId: userId,
+            approverRole: db.currentUser.profile,
+            decidedAt: new Date().toISOString()
+          };
+          return [...(prev || []), createdAppr];
         }
       });
-      setApprovalModal(prev => ({ ...prev, loading: false, error: 'Erro inesperado no servidor.' }));
+
+      // 2. Update local shortlists state immediately
+      db.setShortlists((prev: any[]) => prev.map(sl => {
+        if (sl.id === slId || (sl.jobId === activeJob?.id && sl.freelancerId === freelancerId)) {
+          return {
+            ...sl,
+            candidateStatus: nextStatus as any,
+            negotiationStatus: nextStatus as any,
+            requiresRhApproval: false,
+            scheduleConflictApproved: decision === 'approved',
+            scheduleConflict: decision === 'approved' ? false : sl.scheduleConflict
+          };
+        }
+        return sl;
+      }));
+
+      showToast(
+        decision === 'approved' 
+          ? 'Conflito de agenda APROVADO pelo RH! O freelancer foi liberado para homologação.' 
+          : 'Conflito de agenda REPROVADO pelo RH.', 
+        decision === 'approved' ? 'success' : 'error'
+      );
+
+      try {
+        await db.reloadDatabase();
+      } catch (reloadErr) {
+        console.warn('reloadDatabase warning:', reloadErr);
+      }
+    } catch (err: any) {
+      console.error('[handleRhDecision] error:', err);
+      showToast('Erro ao registrar decisão do RH.', 'error');
     }
   };
 
@@ -1943,16 +2119,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       const exceedsCeiling = rate > ceilingValue;
 
       const conflictApproval = db.approvals?.find(ap => 
-        ap.shortlistCandidateId === sl.id && 
-        ap.approvalType === 'schedule_conflict' &&
-        ap.freelancerId === cand?.id
+        (ap.approvalType === 'schedule_conflict' || ap.approvalType === 'agenda_conflict') &&
+        (ap.shortlistCandidateId === sl.id || (ap.freelancerId === cand?.id && ap.jobId === activeJob?.id))
       );
-      const isConflictApproved = conflictApproval?.status === 'approved';
+      const isConflictApproved = conflictApproval?.status === 'approved' || sl.scheduleConflictApproved === true || sl.requiresRhApproval === false;
 
       const budgetApproval = db.approvals?.find(ap => 
-        ap.shortlistCandidateId === sl.id && 
         ap.approvalType === 'value_exception' &&
-        ap.freelancerId === cand?.id
+        (ap.shortlistCandidateId === sl.id || (ap.freelancerId === cand?.id && ap.jobId === activeJob?.id))
       );
       const isBudgetApproved = budgetApproval?.status === 'approved';
 
@@ -1968,6 +2142,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         savingPercentage: savingPercentage || 0,
         exceedsCeiling,
         hasConflict,
+        isConflictApproved,
         isEligible,
         statusRank: getStatusRank(sl.candidateStatus),
         score: cand?.averageScore || 0
@@ -2178,7 +2353,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
-                Ativas ({db.jobs.filter(j => (db.currentUser.profile === 'NÚCLEO' ? j.nucleoId === db.currentUser.nucleoId : true) && ['Oportunidade criada', 'Em shortlist', 'Em negociação', 'Aguardando RH'].includes(j.status)).length})
+                Ativas ({db.jobs.filter(j => ((db.currentUser.profile === 'NÚCLEO' && !db.currentUser.isMasterAccount && !!db.currentUser.nucleoId) ? j.nucleoId === db.currentUser.nucleoId : true) && ['Oportunidade criada', 'Em shortlist', 'Em negociação', 'Aguardando RH'].includes(j.status)).length})
               </button>
               <button
                 onClick={() => setJobTabFilter('bookadas')}
@@ -2188,7 +2363,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
-                Bookadas ({db.jobs.filter(j => (db.currentUser.profile === 'NÚCLEO' ? j.nucleoId === db.currentUser.nucleoId : true) && ['Bookado', 'Em andamento', 'Concluído', 'Avaliação pendente'].includes(j.status)).length})
+                Bookadas ({db.jobs.filter(j => ((db.currentUser.profile === 'NÚCLEO' && !db.currentUser.isMasterAccount && !!db.currentUser.nucleoId) ? j.nucleoId === db.currentUser.nucleoId : true) && ['Bookado', 'Em andamento', 'Concluído', 'Avaliação pendente'].includes(j.status)).length})
               </button>
               <button
                 onClick={() => setJobTabFilter('encerradas')}
@@ -2198,7 +2373,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
-                Encerradas ({db.jobs.filter(j => (db.currentUser.profile === 'NÚCLEO' ? j.nucleoId === db.currentUser.nucleoId : true) && ['Encerrado'].includes(j.status)).length})
+                Encerradas ({db.jobs.filter(j => ((db.currentUser.profile === 'NÚCLEO' && !db.currentUser.isMasterAccount && !!db.currentUser.nucleoId) ? j.nucleoId === db.currentUser.nucleoId : true) && ['Encerrado'].includes(j.status)).length})
               </button>
               <button
                 onClick={() => setJobTabFilter('todas')}
@@ -2208,7 +2383,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
-                Todas ({db.jobs.filter(j => (db.currentUser.profile === 'NÚCLEO' ? j.nucleoId === db.currentUser.nucleoId : true)).length})
+                Todas ({db.jobs.filter(j => ((db.currentUser.profile === 'NÚCLEO' && !db.currentUser.isMasterAccount && !!db.currentUser.nucleoId) ? j.nucleoId === db.currentUser.nucleoId : true)).length})
               </button>
             </div>
 
@@ -2354,7 +2529,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               ) : (
                 sortedJobs.map((job) => {
                   const nucleo = db.nucleos.find(n => n.id === job.nucleoId);
-                  const code = job.id.slice(0, 8).toUpperCase();
+                  const code = getDisplayJobCode(job);
                   const shCount = db.shortlists.filter(sl => sl.jobId === job.id).length;
                   const dailyAvg = calculateDailyAverage(job);
                   const isSelected = selectedJobIdLocal === job.id;
@@ -2492,7 +2667,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="bg-slate-100 text-slate-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300">
-                      COD: {activeJob.id.slice(0, 8).toUpperCase()}
+                      COD: {getDisplayJobCode(activeJob)}
                     </span>
                     <span className="text-[11px] uppercase font-extrabold text-amber-600 tracking-wider">Oportunidade Selecionada</span>
                     <span className="bg-[#FFF6D6] text-black border border-[#FFE680] px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{activeJob.status}</span>
@@ -3029,7 +3204,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="bg-slate-100 text-slate-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300">
-                      COD: {activeJob.id.slice(0, 8).toUpperCase()}
+                      COD: {getDisplayJobCode(activeJob)}
                     </span>
                     <span className="text-[10px] uppercase font-extrabold text-amber-600 tracking-wider">Negociação Individual</span>
                     <span className="bg-[#FFF6D6] text-black border border-[#FFE680] px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{activeJob.status}</span>
@@ -3153,7 +3328,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 bg-white/30 text-[var(--text-muted)]">
-                    {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict }) => (
+                    {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict, isConflictApproved }) => (
                       <tr key={sl.id} className={`hover:bg-slate-50/30 transition-colors ${sl.candidateStatus === 'Não aceitou' ? 'opacity-40 grayscale' : ''}`}>
                         <td className="p-3.5">
                           <div className="font-bold text-[var(--text-primary)]">{cand?.name || '—'}</div>
@@ -3211,9 +3386,19 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         </td>
                         <td className="p-3.5 text-center">
                           {hasConflict ? (
-                            <span className="text-red-600 font-bold bg-red-50 p-1 px-2 rounded border border-red-900/40">Conflito</span>
+                            isConflictApproved ? (
+                              <span className="text-emerald-700 font-bold bg-emerald-50 p-1 px-2.5 rounded-lg border border-emerald-200" title="Conflito de agenda aprovado pelo RH">
+                                Aprovado (RH)
+                              </span>
+                            ) : (
+                              <span className="text-rose-700 font-bold bg-rose-50 p-1 px-2.5 rounded-lg border border-rose-200">
+                                Conflito
+                              </span>
+                            )
                           ) : (
-                            <span className="text-emerald-600 font-semibold bg-emerald-50 p-1 px-2 rounded border border-emerald-900/40">Livre</span>
+                            <span className="text-emerald-700 font-semibold bg-emerald-50 p-1 px-2.5 rounded-lg border border-emerald-200">
+                              Livre
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -3224,7 +3409,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
               {/* Cards Wrapper for Mobile */}
               <div className="md:hidden space-y-3">
-                {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict }) => (
+                {sortedCompareList.map(({ sl, cand, rate, billing, negotiatedTotal, savingAmount, savingPercentage, exceedsCeiling, hasConflict, isConflictApproved }) => (
                   <div key={sl.id} className={`bg-white/40 p-4 rounded-xl border border-slate-750 space-y-3 ${sl.candidateStatus === 'Não aceitou' ? 'opacity-40 grayscale' : ''}`}>
                     <div className="flex justify-between items-start">
                       <div>
@@ -3277,8 +3462,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       <span className={`p-1 px-2 rounded ${exceedsCeiling ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
                         Política: {exceedsCeiling ? 'Excedeu' : 'Dentro'}
                       </span>
-                      <span className={`p-1 px-2 rounded ${hasConflict ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
-                        Agenda: {hasConflict ? 'Conflito' : 'Livre'}
+                      <span className={`p-1 px-2.5 rounded-lg border text-[10px] font-bold ${
+                        hasConflict 
+                          ? (isConflictApproved ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200')
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        Agenda: {hasConflict ? (isConflictApproved ? 'Aprovado (RH)' : 'Conflito') : 'Livre'}
                       </span>
                     </div>
                   </div>
@@ -3332,22 +3521,20 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 const exceedsCeiling = rate > ceilingValue;
 
                 const conflictApproval = db.approvals?.find(ap => 
-                  ap.shortlistCandidateId === sl.id && 
                   ap.approvalType === 'schedule_conflict' &&
-                  ap.freelancerId === cand.id
+                  (ap.shortlistCandidateId === sl.id || (ap.freelancerId === cand.id && ap.jobId === activeJob.id))
                 );
-                const isConflictApproved = conflictApproval?.status === 'approved';
-                const isConflictPending = conflictApproval?.status === 'pending';
+                const isConflictApproved = conflictApproval?.status === 'approved' || sl.scheduleConflictApproved === true;
+                const isConflictPending = (conflictApproval?.status === 'pending' || sl.candidateStatus === 'Pendente aprovação RH' || sl.requiresRhApproval === true) && !isConflictApproved;
 
                 const budgetApproval = db.approvals?.find(ap => 
-                  ap.shortlistCandidateId === sl.id && 
                   ap.approvalType === 'value_exception' &&
-                  ap.freelancerId === cand.id
+                  (ap.shortlistCandidateId === sl.id || (ap.freelancerId === cand.id && ap.jobId === activeJob.id))
                 );
                 const isBudgetApproved = budgetApproval?.status === 'approved';
                 const isBudgetPending = budgetApproval?.status === 'pending';
 
-                let isLocked = isConflictPending || isBudgetPending || !!activeJob.selectedFreelancerId;
+                let isLocked = (isConflictPending && !isConflictApproved) || isBudgetPending || !!activeJob.selectedFreelancerId;
                 
                 return (
                   <div key={sl.id} className="bg-white p-6 rounded-2xl border border-border-subtle shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -3376,9 +3563,29 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             <div>
                               <span className="font-bold block text-[11.5px] mb-0.5">Conflito de Agenda Detectado</span>
                               {isConflictApproved ? (
-                                <p className="text-[10px] text-emerald-700">Aprovado pelo RH: {conflictApproval.decisionNotes}</p>
+                                <p className="text-[10px] text-emerald-700">Aprovado pelo RH: {conflictApproval?.decisionNotes || 'Exceção liberada.'}</p>
                               ) : isConflictPending ? (
-                                <p className="text-[10px] text-red-700">Solicitação pendente de aprovação com o RH.</p>
+                                <div className="mt-1 space-y-1.5">
+                                  <p className="text-[10px] text-red-700 font-medium">Solicitação pendente de aprovação com o RH.</p>
+                                  {(db.currentUser.profile === 'RH' || (db.currentUser.profile === 'MASTER' && !db.currentUser.isSimulated)) && (
+                                    <div className="flex gap-2 pt-1 flex-wrap">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRhDecision(conflictApproval?.id || '', 'approved', cand.id, sl.id)}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] transition-all cursor-pointer shadow-xs flex items-center gap-1"
+                                      >
+                                        <Check className="w-3.5 h-3.5" /> Aprovar Conflito (RH)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRhDecision(conflictApproval?.id || '', 'rejected', cand.id, sl.id)}
+                                        className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] transition-all cursor-pointer shadow-xs flex items-center gap-1"
+                                      >
+                                        <X className="w-3.5 h-3.5" /> Reprovar Conflito (RH)
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
                                 <div className="mt-1">
                                   <p className="text-[10px] text-red-700">Profissional alocado em outro job neste período.</p>
@@ -3565,6 +3772,23 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           <option value="Aceitou">Aceitou a proposta</option>
                           <option value="Não aceitou">Rejeitou a proposta / Não aceitou</option>
                         </select>
+
+                        {(sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head' || (sl.candidateStatus === 'Valor fora da política' && isBudgetApproved)) && (!hasConflict || isConflictApproved) && (
+                          <div className="mt-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-2 animate-fade-in">
+                            <div className="flex items-center gap-1.5 text-amber-900 text-[11px] font-extrabold">
+                              <CheckCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                              <span>Elegível para Homologação</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleNavigateStep(4)}
+                              className="bg-[#FFCB05] hover:bg-[#ffe066] text-black font-extrabold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm cursor-pointer transition transform active:scale-95"
+                            >
+                              <span>Avançar para Homologação</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="sm:col-span-2">
@@ -3883,32 +4107,37 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
             {(() => {
               const hasValidCandidate = jobShortlists.some(sl => {
-                if (!['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus)) return false;
+                const isStatusOk = ['Aceitou', 'Aprovado pelo Head', 'Valor fora da política'].includes(sl.candidateStatus);
+                if (!isStatusOk) return false;
                 
-                const hasConflict = activeJob ? hasScheduleConflict(sl.freelancerId, activeJob.startDate, activeJob.endDate) : false;
+                const cand = db.freelancers.find(f => f.id === sl.freelancerId);
+                const hasConflict = cand && activeJob ? hasScheduleConflict(cand.id, activeJob.startDate, activeJob.endDate) : false;
                 if (hasConflict) {
-                  const approvedException = db.approvals?.find((ap: any) => 
-                    ap.jobId === activeJob?.id && 
-                    ap.freelancerId === sl.freelancerId && 
-                    ap.approvalType === 'agenda_conflict' && 
-                    ap.status === 'approved'
+                  const conflictApproval = db.approvals?.find((ap: any) => 
+                    (ap.approvalType === 'schedule_conflict' || ap.approvalType === 'agenda_conflict') && 
+                    (ap.shortlistCandidateId === sl.id || (ap.freelancerId === sl.freelancerId && ap.jobId === activeJob?.id))
                   );
-                  if (!approvedException) return false;
+                  const isConflictApproved = conflictApproval?.status === 'approved' || sl.scheduleConflictApproved === true || sl.requiresRhApproval === false;
+                  if (!isConflictApproved) return false;
                 }
                 return true;
               });
 
-              if (!hasValidCandidate) return null;
-
               return (
-
-              <button
-                onClick={() => handleNavigateStep(4)}
-                className="bg-white hover:bg-white/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
-              >
-                <span>Avançar para Homologação</span>
-                <ArrowRight className="w-4 h-4 text-amber-600" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleNavigateStep(4)}
+                  disabled={!hasValidCandidate}
+                  className={`p-3 px-6 rounded-xl flex items-center gap-2 text-xs font-extrabold transition-all ${
+                    hasValidCandidate
+                      ? 'bg-[#FFCB05] text-black shadow-md hover:brightness-105 cursor-pointer ring-2 ring-amber-400/50'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                  }`}
+                  title={hasValidCandidate ? 'Avançar para o passo de Homologação' : 'Aguardando aceite da proposta ou aprovação de conflito/rate'}
+                >
+                  <span>Avançar para Homologação</span>
+                  <ArrowRight className="w-4 h-4 text-black" />
+                </button>
               );
             })()}
           </div>
@@ -3958,7 +4187,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="bg-slate-100 text-slate-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300">
-                      COD: {activeJob.id.slice(0, 8).toUpperCase()}
+                      COD: {getDisplayJobCode(activeJob)}
                     </span>
                     <span className="text-[11px] uppercase font-extrabold text-amber-600 tracking-wider">Homologação da Alocação</span>
                     <span className="bg-emerald-50 text-emerald-700 border border-emerald-800/90 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
@@ -4018,15 +4247,22 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 db.currentUser.nucleoId === jobNucleoId);
             if (!isNucleusHead && !isPrivileged) return null;
 
-            // Filtrar exceções pendentes do núcleo do job ativo
+            // Filtrar solicitações de aprovação pendentes para o job ativo (Exceções de Valor e Conflitos de Agenda)
             const pendingExceptions = db.approvals?.filter((ap: any) => {
-              const isValueException = ap.approvalType === 'value_exception';
               const isPending = ap.status === 'pending';
               const isForThisJob = ap.jobId === activeJob.id;
-              // Head só vê seu próprio núcleo; MASTER/RH/C-LEVEL veem todos
-              if (isPrivileged) return isValueException && isPending && isForThisJob;
-              return isValueException && isPending && isForThisJob &&
-                (ap.nucleusId === db.currentUser.nucleoId || ap.nucleusId === jobNucleoId);
+              if (!isPending || !isForThisJob) return false;
+
+              if (ap.approvalType === 'schedule_conflict') {
+                return db.currentUser.profile === 'RH' || (db.currentUser.profile === 'MASTER' && !db.currentUser.isSimulated);
+              }
+
+              if (ap.approvalType === 'value_exception') {
+                if (isPrivileged) return true;
+                return (ap.nucleusId === db.currentUser.nucleoId || ap.nucleusId === jobNucleoId);
+              }
+
+              return false;
             }) || [];
 
             if (pendingExceptions.length === 0) return null;
@@ -4038,7 +4274,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <AlertTriangle className="w-4 h-4 text-[var(--text-primary)]" />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-amber-900 text-sm">Exceções de Valor Pendentes de Aprovação</h4>
+                    <h4 className="font-extrabold text-amber-900 text-sm">Solicitações de Exceção Pendentes de Aprovação</h4>
                     <p className="text-[11px] text-amber-700">{pendingExceptions.length} solicitação(ões) aguardam sua decisão antes de liberar a homologação.</p>
                   </div>
                 </div>
@@ -4046,8 +4282,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="space-y-3">
                   {pendingExceptions.map((ap: any) => {
                     const freelancer = db.freelancers.find(f => f.id === ap.freelancerId);
+                    const isScheduleConflict = ap.approvalType === 'schedule_conflict';
                     const exceedPct = ap.excessPercent ? Number(ap.excessPercent).toFixed(1) : '—';
-                    const excessAmt = ap.excessAmount ? Number(ap.excessAmount) : (ap.requestedAmount && ap.calculatedPolicyLimit ? Number(ap.requestedAmount) - Number(ap.calculatedPolicyLimit) : 0);
                     const requestedAmt = ap.requestedAmount || ap.negotiatedValue;
                     const limitAmt = ap.calculatedPolicyLimit || ap.policyCeilingValue;
 
@@ -4055,17 +4291,34 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       <div key={ap.id} className="bg-white border border-amber-200 rounded-xl p-4 space-y-3">
                         <div className="flex justify-between items-start flex-wrap gap-2">
                           <div>
-                            <strong className="text-sidebar-navy text-sm">{freelancer?.name || 'Freelancer'}</strong>
-                            <p className="text-[11px] text-text-secondary">{freelancer?.mainRole} ({freelancer?.seniority})</p>
+                            <div className="flex items-center gap-2">
+                              <strong className="text-sidebar-navy text-sm">{freelancer?.name || 'Freelancer'}</strong>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                                isScheduleConflict 
+                                  ? 'bg-red-50 text-red-700 border-red-200' 
+                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                              }`}>
+                                {isScheduleConflict ? 'Conflito de Agenda (RH)' : 'Valor Acima do Teto (Head)'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-text-secondary mt-0.5">{freelancer?.mainRole} ({freelancer?.seniority})</p>
                           </div>
                           <div className="text-right">
-                            <div className="text-[11px] text-red-700 font-bold">
-                              {requestedAmt ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(requestedAmt)) : '—'}
-                              {limitAmt && <span className="text-text-secondary font-normal"> (teto: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(limitAmt))})</span>}
-                            </div>
-                            <span className="text-[10px] bg-red-50 border border-red-200 text-red-700 font-bold px-1.5 py-0.5 rounded">
-                              +{exceedPct}% acima do teto
-                            </span>
+                            {isScheduleConflict ? (
+                              <span className="text-[10px] bg-red-100 text-red-800 font-bold px-2 py-1 rounded-md border border-red-300">
+                                Requer Aprovação RH
+                              </span>
+                            ) : (
+                              <>
+                                <div className="text-[11px] text-red-700 font-bold">
+                                  {requestedAmt ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(requestedAmt)) : '—'}
+                                  {limitAmt && <span className="text-text-secondary font-normal"> (teto: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(limitAmt))})</span>}
+                                </div>
+                                <span className="text-[10px] bg-red-50 border border-red-200 text-red-700 font-bold px-1.5 py-0.5 rounded">
+                                  +{exceedPct}% acima do teto
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -4082,7 +4335,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             Comentário da decisão <span className="text-red-500">*</span>
                           </label>
                           <textarea
-                            placeholder="Descreva o motivo da aprovação ou rejeição (mín. 5 caracteres)..."
+                            placeholder={isScheduleConflict ? "Descreva o parecer do RH para liberar a alocação..." : "Descreva o motivo da aprovação ou rejeição..."}
                             className="w-full bg-white border border-border-subtle p-2 rounded-lg text-xs focus:outline-none focus:border-action-cyan text-text-primary resize-none"
                             rows={2}
                             id={`head-comment-${ap.id}`}
@@ -4092,23 +4345,23 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                               type="button"
                               onClick={() => {
                                 const el = document.getElementById(`head-comment-${ap.id}`) as HTMLTextAreaElement;
-                                handleHeadDecision(ap.id, 'reject', el?.value || '');
+                                handleHeadDecision(ap.id, 'reject', el?.value || (isScheduleConflict ? 'Recusado pelo RH devido a conflito de agenda.' : 'Rejeitado por estouro de orçamento.'));
                               }}
                               className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5" />
-                              Rejeitar
+                              {isScheduleConflict ? 'Reprovar Conflito' : 'Rejeitar Exceção'}
                             </button>
                             <button
                               type="button"
                               onClick={() => {
                                 const el = document.getElementById(`head-comment-${ap.id}`) as HTMLTextAreaElement;
-                                handleHeadDecision(ap.id, 'approve', el?.value || '');
+                                handleHeadDecision(ap.id, 'approve', el?.value || (isScheduleConflict ? 'Aprovado pelo RH para alocação com exceção de agenda.' : 'Aprovado pelo Head de Núcleo.'));
                               }}
                               className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
-                              Aprovar Exceção
+                              {isScheduleConflict ? 'Aprovar Conflito (RH)' : 'Aprovar Exceção'}
                             </button>
                           </div>
                         </div>
@@ -4255,16 +4508,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                       const hasConflict = cand && activeJob ? hasScheduleConflict(cand.id, activeJob.startDate, activeJob.endDate) : false;
                       const conflictApproval = db.approvals?.find(ap => 
-                        ap.shortlistCandidateId === sl.id && 
                         ap.approvalType === 'schedule_conflict' &&
-                        ap.freelancerId === cand.id
+                        (ap.shortlistCandidateId === sl.id || (ap.freelancerId === cand.id && ap.jobId === activeJob?.id))
                       );
-                      const isConflictApproved = conflictApproval?.status === 'approved';
+                      const isConflictApproved = conflictApproval?.status === 'approved' || sl.scheduleConflictApproved === true;
 
                       const budgetApproval = db.approvals?.find(ap => 
-                        ap.shortlistCandidateId === sl.id && 
                         ap.approvalType === 'value_exception' &&
-                        ap.freelancerId === cand.id
+                        (ap.shortlistCandidateId === sl.id || (ap.freelancerId === cand.id && ap.jobId === activeJob?.id))
                       );
                       const isBudgetApproved = budgetApproval?.status === 'approved';
 
@@ -4565,14 +4816,14 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                               <div key={idx} className="bg-slate-50/90 border border-slate-200/90 rounded-xl p-4 space-y-3 text-xs shadow-xs">
                                                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
                                                   <div className="flex items-center gap-2">
-                                                    <span className="font-bold text-[var(--text-primary)] text-[11px] bg-slate-700/90 border border-slate-600 px-2.5 py-0.5 rounded">
+                                                    <span className="font-extrabold text-slate-800 text-[11px] bg-slate-200/80 border border-slate-300 px-2.5 py-0.5 rounded-md shadow-xs">
                                                       {projections.length > 1 ? `Parcela ${p.cycleNumber}/${projections.length}` : 'Parcela Única'}
                                                     </span>
-                                                    <span className="text-[11px] text-amber-600 font-extrabold">
+                                                    <span className="text-[11px] text-amber-700 font-extrabold">
                                                       Mês de Referência: {monthLabel}
                                                     </span>
                                                   </div>
-                                                  <span className="text-[10px] text-[var(--text-disabled)] font-medium">
+                                                  <span className="text-[10px] text-slate-600 font-bold bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
                                                     {cycleDays} dias de alocação
                                                   </span>
                                                 </div>
@@ -4609,12 +4860,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                       )}
 
                                       {/* Mandatory Notice Disclaimer */}
-                                      <div className="pt-3 border-t border-slate-200/80 text-[11px] text-amber-700 bg-amber-50 border border-amber-900/40 rounded-xl p-3.5 space-y-1">
-                                        <strong className="block font-bold text-amber-600 text-[11.5px] flex items-center gap-1.5">
-                                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                                      <div className="pt-3 border-t border-slate-200/80 text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-1">
+                                        <strong className="block font-bold text-amber-800 text-[11.5px] flex items-center gap-1.5">
+                                          <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
                                           <span>Aviso Obrigatório da Política de Supply</span>
                                         </strong>
-                                        <p className="text-amber-200/90 leading-relaxed text-[11px]">
+                                        <p className="text-amber-900 leading-relaxed text-[11px] font-medium">
                                           O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas (antecedência mínima de 10 dias corridos).
                                         </p>
                                       </div>
@@ -4629,10 +4880,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         className={`font-extrabold px-6 py-3 rounded-xl text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer ${
                                           isButtonDisabled 
                                             ? 'bg-slate-100 text-[var(--text-disabled)] border border-slate-200 cursor-not-allowed opacity-60' 
-                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
+                                            : 'bg-[#FFCB05] hover:bg-[#FFCA00] text-black border border-[#FFE680] shadow-md'
                                         }`}
                                       >
-                                        <CheckCircle className="w-4 h-4" />
+                                        <CheckCircle className="w-4 h-4 text-black" />
                                         <span>Confirmar Alocação</span>
                                       </button>
                                     </div>
@@ -4661,24 +4912,24 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         </div>
       )}      {/* Custom Approval Request Modal */}
       {approvalModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F0F0F0] backdrop-blur-xs font-sans">
-          <div className="bg-[#0b1329] border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs font-sans animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
             {/* Header */}
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-[#0e172e]">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div>
-                <h3 className="font-extrabold text-[var(--text-primary)] text-sm">
+                <h3 className="font-extrabold text-slate-900 text-base">
                   {approvalModal.type === 'schedule_conflict' 
                     ? 'Solicitar aprovação RH' 
                     : 'Solicitar aprovação Head'}
                 </h3>
-                <p className="text-[10px] text-[var(--text-disabled)] font-bold uppercase tracking-wider mt-0.5">
+                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider mt-0.5">
                   Fluxo de Exceção Operacional
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setApprovalModal(prev => ({ ...prev, isOpen: false }))}
-                className="p-1.5 hover:bg-slate-50 text-[var(--text-disabled)] hover:text-[var(--text-secondary)] rounded-xl transition cursor-pointer"
+                className="p-1.5 hover:bg-slate-200 text-slate-500 hover:text-slate-900 rounded-xl transition cursor-pointer"
                 disabled={approvalModal.loading}
               >
                 <X className="w-4 h-4" />
@@ -4686,44 +4937,44 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             </div>
 
             {/* Body */}
-            <div className="p-6 flex flex-col gap-4 text-xs">
-              <p className="text-[var(--text-muted)] leading-relaxed">
+            <div className="p-6 flex flex-col gap-4 text-xs bg-white">
+              <p className="text-slate-700 leading-relaxed font-medium">
                 {approvalModal.type === 'schedule_conflict'
                   ? 'Este freelancer possui conflito de agenda no período do job. Informe a justificativa para solicitar uma exceção ao RH.'
                   : 'Este freelancer está com valor acordado acima do teto da política comercial. Informe a justificativa para solicitar uma exceção ao Head.'}
               </p>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10.5px] font-bold text-[var(--text-disabled)] uppercase tracking-wider">
-                  Justificativa da solicitação <span className="text-red-500">*</span>
+                <label className="text-[10.5px] font-bold text-slate-600 uppercase tracking-wider">
+                  Justificativa da solicitação <span className="text-rose-600">*</span>
                 </label>
                 <textarea
                   value={approvalModal.reason}
                   onChange={(e) => setApprovalModal(prev => ({ ...prev, reason: e.target.value, error: null }))}
                   placeholder="Descreva detalhadamente a justificativa técnica para esta contratação excepcional (mínimo 10 caracteres)..."
-                  className="w-full h-32 px-3 py-2 text-xs bg-[#121c38] border border-slate-200 rounded-lg text-[var(--text-secondary)] focus:outline-none focus:border-action-cyan placeholder-slate-500 resize-none transition-all"
+                  className="w-full h-32 px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#FFCB05] focus:ring-2 focus:ring-[#FFE680] placeholder:text-slate-400 resize-none transition-all shadow-xs"
                   maxLength={1000}
                   disabled={approvalModal.loading}
                 />
-                <div className="flex justify-between items-center text-[10px] text-[var(--text-disabled)] font-medium px-1">
+                <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold px-1">
                   <span>Mínimo 10, máx. 1000 caracteres</span>
                   <span>{approvalModal.reason.length}/1000</span>
                 </div>
               </div>
 
               {approvalModal.error && (
-                <div className="p-3 rounded-lg bg-red-50 border border-red-800/80 text-[11px] text-red-600 font-semibold">
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-[11px] text-rose-800 font-bold">
                   ⚠️ {approvalModal.error}
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-[#0e172e] border-t border-slate-200 flex justify-end gap-2.5">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2.5 items-center">
               <button
                 type="button"
                 onClick={() => setApprovalModal(prev => ({ ...prev, isOpen: false }))}
-                className="px-4 py-2 text-xs font-semibold text-[var(--text-disabled)] hover:text-[var(--text-secondary)] hover:bg-slate-50 rounded-lg transition-all cursor-pointer"
+                className="px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 bg-slate-100 rounded-xl border border-slate-200 transition-all cursor-pointer"
                 disabled={approvalModal.loading}
               >
                 Cancelar

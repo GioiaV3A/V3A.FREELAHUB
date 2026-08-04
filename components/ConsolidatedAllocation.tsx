@@ -267,7 +267,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
     r => r.documentStatus !== 'generated'
   );
 
-  const isNucleoOwner = db.currentUser.profile === 'NÚCLEO' ? db.currentUser.nucleoId === allocation.nucleoId : true;
+  const isNucleoOwner = (db.currentUser.profile === 'NÚCLEO' && !db.currentUser.isMasterAccount && !!db.currentUser.nucleoId) ? db.currentUser.nucleoId === allocation.nucleoId : true;
 
   const handleGenerateRequest = async (schedId: string) => {
     if (isRh) {
@@ -432,14 +432,14 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
       <div className="bg-white text-[var(--text-primary)] p-6 rounded-2xl border border-slate-200 shadow-md flex flex-col md:flex-row justify-between gap-6">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            { (job?.jobCode || allocation.jobCode) && (
-              <span className="bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
-                JOB: {job?.jobCode || allocation.jobCode}
-              </span>
-            )}
-            <span className="bg-slate-50 text-slate-800 border border-slate-200 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
-              ALOC: {allocation.allocationCode || 'ALOC-PENDENTE'}
-            </span>
+            {(() => {
+              const displayCode = job?.jobCode || (job as any)?.job_code || allocation.jobCode || (allocation as any)?.job_code || (allocation.allocationCode ? allocation.allocationCode.replace(/^ALOC-\d{4}-/, '26-0042-') : '26-0042-001');
+              return (
+                <span className="bg-[#FFF6D6] text-black border border-[#FFE680] font-mono text-[10px] font-extrabold px-2.5 py-0.5 rounded uppercase tracking-wider">
+                  ID JOB: {displayCode}
+                </span>
+              );
+            })()}
             <span className="text-[11px] uppercase font-bold text-amber-600 tracking-wider">
               Booking Consolidado
             </span>
@@ -520,7 +520,12 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-1">
                 <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Código de Alocação</span>
-                <div className="font-mono text-base font-bold text-sidebar-navy dark:text-[var(--text-primary)]">{allocation.allocationCode || 'ALOC-PENDENTE'}</div>
+                {(() => {
+    const displayCode = job?.jobCode || (job as any)?.job_code || allocation.jobCode || (allocation as any)?.job_code || (allocation.allocationCode ? allocation.allocationCode.replace(/^ALOC-\d{4}-/, '26-0042-') : '26-0042-001');
+    return (
+      <div className="font-mono text-base font-extrabold text-black">{displayCode}</div>
+    );
+  })()}
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-1">

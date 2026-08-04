@@ -101,3 +101,64 @@ tr:hover td {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--v3a-gray-100); }
 ::-webkit-scrollbar-thumb { background: var(--v3a-gray-400); border-radius: 4px; }
+
+/* Governance action buttons in tables */
+.btn-gov {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid #E2E3E4;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.btn-gov-details {
+  background-color: #F0F0F0;
+  color: #1E293B;
+  border-color: #CBD5E1;
+}
+.btn-gov-details:hover {
+  background-color: #E2E3E4;
+  color: #000000;
+}
+.btn-gov-edit {
+  background-color: #EFF6FF;
+  color: #1E40AF;
+  border-color: #BFDBFE;
+}
+.btn-gov-edit:hover {
+  background-color: #DBEAFE;
+  color: #1E3A8A;
+}
+.btn-gov-reset {
+  background-color: #FFFBEB;
+  color: #92400E;
+  border-color: #FDE68A;
+}
+.btn-gov-reset:hover {
+  background-color: #FEF3C7;
+  color: #78350F;
+}
+.btn-gov-inactive {
+  background-color: #FEF2F2;
+  color: #991B1B;
+  border-color: #FECDD3;
+}
+.btn-gov-inactive:hover {
+  background-color: #FEE2E2;
+  color: #7F1D1D;
+}
+.btn-gov-active {
+  background-color: #ECFDF5;
+  color: #065F46;
+  border-color: #A7F3D0;
+}
+.btn-gov-active:hover {
+  background-color: #D1FAE5;
+  color: #044E37;
+}

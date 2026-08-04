@@ -207,7 +207,7 @@ export default function BancoFreelas({ db }: { db: any }) {
   };
 
   const handleToggleBlock = (id: string, currentStatus: string) => {
-    if (db.currentUser.profile === 'NÚCLEO') {
+    if (db.currentUser.profile === 'NÚCLEO' && !db.currentUser.isMasterAccount) {
       alert('Erro: Apenas perfis de RH ou MASTER possuem governança para alterar bloqueios cadastrais.');
       return;
     }
