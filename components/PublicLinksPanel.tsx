@@ -757,7 +757,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
               {new Date(link.expires_at).toLocaleDateString('pt-BR')}
             </span>
             {isExpired && (
-              <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-rose-600 dark:bg-rose-950/20 dark:border-rose-900/30 leading-none">
+              <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-rose-600 dark:bg-rose-50 dark:border-rose-900/30 leading-none">
                 EXPIRADO
               </span>
             )}
@@ -804,7 +804,7 @@ export default function PublicLinksPanel({ db }: PublicLinksPanelProps) {
             {isMasterOrRh && getEffectiveLinkStatus(link) === 'active' && (
               <button
                 onClick={() => handleRevokeLink(link.id)}
-                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-950/20"
+                className="p-1.5 rounded-lg transition cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-50"
                 style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)' }}
                 title="Revogar link"
                 aria-label="Revogar link"

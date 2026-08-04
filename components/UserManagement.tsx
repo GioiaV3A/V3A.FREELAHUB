@@ -308,10 +308,10 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       
       {/* Toast Alert UI */}
       {toastMessage && (
-        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 p-4 px-5 rounded-2xl shadow-xl border text-[var(--text-primary)] animate-fade-in
-          ${toastType === 'success' ? 'bg-sidebar-navy border-action-cyan text-[var(--text-primary)]' : 'bg-red-600 border-red-500'}`}>
+        <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 p-4 px-5 rounded-2xl shadow-xl border text-white animate-fade-in
+          ${toastType === 'success' ? 'bg-white border-action-cyan text-[var(--text-primary)]' : 'bg-red-600 border-red-500'}`}>
           <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 
-            ${toastType === 'success' ? 'bg-action-cyan/15 text-action-cyan' : 'bg-white/10 text-[var(--text-primary)]'}`}>
+            ${toastType === 'success' ? 'bg-amber-100 text-amber-600' : 'bg-white/10 text-white'}`}>
             <CheckCircle className="w-4 h-4" />
           </div>
           <p className="text-xs font-semibold">{toastMessage}</p>
@@ -331,7 +331,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
         {hasEditPermission && (
           <button
             onClick={openCreateModal}
-            className="bg-action-cyan hover:bg-action-cyan/90 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl flex items-center gap-1.5 transition-all text-xs shadow-xs"
+            className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl flex items-center gap-1.5 transition-all text-xs shadow-xs"
           >
             <UserPlus className="w-4 h-4" /> Novo Usuário
           </button>
@@ -592,12 +592,12 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       {isNewUserModalOpen && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-lg text-xs animate-scale-up">
-            <div className="p-5 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
+            <div className="p-5 bg-white text-[var(--text-primary)] flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Plus className="w-5 h-5 text-action-cyan" />
+                <Plus className="w-5 h-5 text-amber-600" />
                 <h3 className="font-extrabold text-sm">Criar Novo Usuário Interno</h3>
               </div>
-              <button onClick={() => setIsNewUserModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan transition">
+              <button onClick={() => setIsNewUserModalOpen(false)} className="text-[var(--text-primary)] hover:text-amber-600 transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -809,7 +809,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 </button>
                 <button
                   type="submit"
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition shadow-xs"
+                  className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition shadow-xs"
                 >
                   Criar Usuário
                 </button>
@@ -823,12 +823,12 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       {isEditUserModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-lg text-xs animate-scale-up">
-            <div className="p-5 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
+            <div className="p-5 bg-white text-[var(--text-primary)] flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Edit2 className="w-5 h-5 text-action-cyan" />
+                <Edit2 className="w-5 h-5 text-amber-600" />
                 <h3 className="font-extrabold text-sm">Editar Cadastro de Usuário</h3>
               </div>
-              <button onClick={() => setIsEditUserModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan transition">
+              <button onClick={() => setIsEditUserModalOpen(false)} className="text-[var(--text-primary)] hover:text-amber-600 transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1020,7 +1020,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 </button>
                 <button
                   type="submit"
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition"
+                  className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition"
                 >
                   Salvar Alterações
                 </button>
@@ -1034,12 +1034,12 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       {isResetPasswordModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-sm text-xs animate-scale-up">
-            <div className="p-4 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
+            <div className="p-4 bg-white text-[var(--text-primary)] flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Lock className="w-4 h-4 text-action-cyan" />
+                <Lock className="w-4 h-4 text-amber-600" />
                 <h3 className="font-extrabold text-xs uppercase tracking-wider">Redefinir Senha Inicial</h3>
               </div>
-              <button onClick={() => setIsResetPasswordModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan">
+              <button onClick={() => setIsResetPasswordModalOpen(false)} className="text-[var(--text-primary)] hover:text-amber-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1087,7 +1087,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
                 </button>
                 <button
                   type="submit"
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-lg flex items-center gap-1"
+                  className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-lg flex items-center gap-1"
                 >
                   Redefinir e Forçar Troca
                 </button>
@@ -1101,11 +1101,11 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
       {isDetailsModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-sm text-xs animate-scale-up">
-            <div className="p-4 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
+            <div className="p-4 bg-white text-[var(--text-primary)] flex justify-between items-center">
               <h3 className="font-extrabold text-xs uppercase tracking-wider flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-action-cyan" /> Detalhes do Usuário
+                <ShieldCheck className="w-4 h-4 text-amber-600" /> Detalhes do Usuário
               </h3>
-              <button onClick={() => setIsDetailsModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan">
+              <button onClick={() => setIsDetailsModalOpen(false)} className="text-[var(--text-primary)] hover:text-amber-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1190,7 +1190,7 @@ export default function UserManagement({ db }: { db: DatabaseProps & { users: Us
               <div className="pt-3 border-t border-slate-100 flex justify-end">
                 <button
                   onClick={() => setIsDetailsModalOpen(false)}
-                  className="bg-sidebar-navy hover:bg-slate-50 text-[var(--text-primary)] font-bold p-2 px-5 rounded-lg"
+                  className="bg-white hover:bg-slate-50 text-[var(--text-primary)] font-bold p-2 px-5 rounded-lg"
                 >
                   OK, Fechar
                 </button>

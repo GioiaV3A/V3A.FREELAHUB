@@ -37,16 +37,16 @@ export default async function PublicNovoFreelaPage({ params }: PageProps) {
     return (
       <PublicFormLayout>
         <div className="text-center py-10 space-y-6 max-w-md mx-auto select-none animate-fade-in">
-          <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mx-auto text-red-400">
+          <div className="w-16 h-16 bg-red-500/10 border border-red-200 rounded-full flex items-center justify-center mx-auto text-red-600">
             <Icon className="w-7 h-7" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-lg font-extrabold text-white uppercase tracking-wider">{errorTitle}</h3>
+            <h3 className="text-lg font-extrabold text-slate-900 uppercase tracking-wider">{errorTitle}</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
               {errorMessage}
             </p>
           </div>
-          <div className="pt-6 border-t border-white/5">
+          <div className="pt-6 border-t border-[#E2E3E4]">
             <p className="text-[9px] text-slate-600 font-extrabold uppercase tracking-widest">
               Plataforma V3A Freela Hub
             </p>

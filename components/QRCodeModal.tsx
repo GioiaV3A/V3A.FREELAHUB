@@ -46,7 +46,7 @@ export default function QRCodeModal({
           width: 220,
           margin: 1,
           color: {
-            dark: '#0A192F', // matching V3A dark navy
+            dark: '#636466', // matching V3A dark navy
             light: '#FFFFFF'
           }
         },

@@ -293,8 +293,8 @@ export default function PublicFreelancerForm({
   if (successMsg) {
     return (
       <div className="text-center py-12 space-y-6 animate-fade-in">
-        <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/5">
-          <Check className="w-10 h-10 text-emerald-400" />
+        <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-200 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/5">
+          <Check className="w-10 h-10 text-emerald-600" />
         </div>
         <div className="space-y-2">
           <h3 className="text-xl font-extrabold text-[var(--text-primary)]">Sucesso!</h3>
@@ -319,7 +319,7 @@ export default function PublicFreelancerForm({
       <div className="space-y-2 select-none">
         <div className="flex justify-between text-[10px] text-[var(--text-disabled)] font-extrabold uppercase tracking-wider">
           <span>Passo {step} de {stepsCount}</span>
-          <span className="text-action-cyan">{Math.round(progressPercent)}% Concluído</span>
+          <span className="text-amber-600">{Math.round(progressPercent)}% Concluído</span>
         </div>
         <div className="w-full h-1.5 bg-[var(--bg-sidebar)] rounded-full overflow-hidden">
           <div 
@@ -330,8 +330,8 @@ export default function PublicFreelancerForm({
       </div>
 
       {errorMsg && (
-        <div className="bg-red-500/10 border border-red-500/30 text-rose-200 p-3.5 rounded-xl text-xs flex gap-2.5 animate-shake">
-          <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+        <div className="bg-red-500/10 border border-red-200 text-rose-200 p-3.5 rounded-xl text-xs flex gap-2.5 animate-shake">
+          <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
           <span>{errorMsg}</span>
         </div>
       )}
@@ -341,7 +341,7 @@ export default function PublicFreelancerForm({
         {step === 1 && (
           <div className="space-y-4 animate-fade-in">
             <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
-              <Contact className="w-4 h-4 text-action-cyan" />
+              <Contact className="w-4 h-4 text-amber-600" />
               <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Dados Básicos de Contato</h3>
             </div>
 
@@ -462,7 +462,7 @@ export default function PublicFreelancerForm({
         {step === 2 && (
           <div className="space-y-4 animate-fade-in">
             <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
-              <Briefcase className="w-4 h-4 text-action-cyan" />
+              <Briefcase className="w-4 h-4 text-amber-600" />
               <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Perfil Profissional</h3>
             </div>
 
@@ -542,13 +542,13 @@ export default function PublicFreelancerForm({
                     <label 
                       key={ind.id} 
                       className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition select-none
-                        ${isChecked ? 'bg-action-cyan/10 text-action-cyan font-bold' : 'text-[var(--text-muted)] hover:bg-white/5'}`}
+                        ${isChecked ? 'bg-amber-100 text-amber-600 font-bold' : 'text-[var(--text-muted)] hover:bg-white/5'}`}
                     >
                       <input
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => handleIndustryChange(ind.id)}
-                        className="rounded border-[var(--border-default)] text-action-cyan focus:ring-action-cyan bg-[var(--bg-input)]"
+                        className="rounded border-[var(--border-default)] text-amber-600 focus:ring-action-cyan bg-[var(--bg-input)]"
                       />
                       <span className="truncate">{ind.name}</span>
                     </label>
@@ -563,7 +563,7 @@ export default function PublicFreelancerForm({
         {step === 3 && (
           <div className="space-y-4 animate-fade-in">
             <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
-              <Layers className="w-4 h-4 text-action-cyan" />
+              <Layers className="w-4 h-4 text-amber-600" />
               <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Experiência com Eventos & V3A</h3>
             </div>
 
@@ -612,7 +612,7 @@ export default function PublicFreelancerForm({
         {step === 4 && (
           <div className="space-y-4 animate-fade-in">
             <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
-              <LinkIcon className="w-4 h-4 text-action-cyan" />
+              <LinkIcon className="w-4 h-4 text-amber-600" />
               <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Portfólio & Redes Sociais</h3>
             </div>
 
@@ -679,12 +679,12 @@ export default function PublicFreelancerForm({
                   />
                   {isUploading ? (
                     <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="w-8 h-8 text-action-cyan animate-spin" />
+                      <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
                       <span className="text-[11px] text-[var(--text-muted)]">Enviando arquivo seguro para a nuvem...</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2">
-                      <Upload className="w-7 h-7 text-action-cyan" />
+                      <Upload className="w-7 h-7 text-amber-600" />
                       <span className="text-[11px] text-[var(--text-secondary)] font-bold">Escolha um arquivo</span>
                       <span className="text-[10px] text-[var(--text-disabled)]">Arraste ou clique para selecionar</span>
                     </div>
@@ -693,8 +693,8 @@ export default function PublicFreelancerForm({
               ) : (
                 <div className="flex items-center justify-between bg-[var(--bg-input)] border border-[var(--border-default)] p-4 rounded-2xl select-none animate-fade-in">
                   <div className="flex items-center gap-3 truncate">
-                    <div className="w-9 h-9 rounded-xl bg-action-cyan/10 border border-action-cyan/20 flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-action-cyan" />
+                    <div className="w-9 h-9 rounded-xl bg-amber-100 border border-action-cyan/20 flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5 text-amber-600" />
                     </div>
                     <div className="truncate">
                       <p className="font-bold text-[var(--text-secondary)] truncate">{formData.portfolio_file_name}</p>
@@ -704,7 +704,7 @@ export default function PublicFreelancerForm({
                   <button
                     type="button"
                     onClick={handleRemoveFile}
-                    className="p-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-rose-300 hover:text-[var(--text-primary)] rounded-xl transition cursor-pointer"
+                    className="p-2 bg-red-500/10 hover:bg-red-500/20 border border-red-200 text-rose-700 hover:text-[var(--text-primary)] rounded-xl transition cursor-pointer"
                     title="Excluir arquivo"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -719,7 +719,7 @@ export default function PublicFreelancerForm({
         {step === 5 && (
           <div className="space-y-4 animate-fade-in">
             <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-subtle)]">
-              <CheckSquare className="w-4 h-4 text-action-cyan" />
+              <CheckSquare className="w-4 h-4 text-amber-600" />
               <h3 className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wider">Observações e Confirmação</h3>
             </div>
 
@@ -745,7 +745,7 @@ export default function PublicFreelancerForm({
                 <li>&bull; <strong>Localização:</strong> {formData.city}/{formData.state}</li>
                 <li>
                   &bull; <strong>Função:</strong> {functions.find(f => f.id === formData.main_function_id)?.name || 'Não selecionada'}
-                  <span className="bg-action-cyan/15 text-action-cyan text-[9px] font-bold px-1.5 py-0.5 rounded-md ml-2 uppercase">
+                  <span className="bg-amber-100 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded-md ml-2 uppercase">
                     {formData.seniority}
                   </span>
                 </li>
@@ -754,26 +754,26 @@ export default function PublicFreelancerForm({
 
             {/* Consent checks */}
             <div className="space-y-3">
-              <label className="flex items-start gap-3 bg-action-cyan/5 border border-action-cyan/20 p-4 rounded-2xl cursor-pointer select-none">
+              <label className="flex items-start gap-3 bg-amber-100 border border-action-cyan/20 p-4 rounded-2xl cursor-pointer select-none">
                 <input
                   type="checkbox"
                   required
                   checked={consentChecked}
                   onChange={(e) => setConsentChecked(e.target.checked)}
-                  className="mt-0.5 rounded border-[var(--border-default)] text-action-cyan focus:ring-action-cyan bg-[var(--bg-input)]"
+                  className="mt-0.5 rounded border-[var(--border-default)] text-amber-600 focus:ring-action-cyan bg-[var(--bg-input)]"
                 />
                 <span className="text-[10px] sm:text-[11px] text-slate-600 leading-relaxed font-semibold">
                   Confirmo que as informações fornecidas são verdadeiras e autorizo a V3A a analisá-las para fins de cadastro em sua base de freelancers.
                 </span>
               </label>
 
-              <label className="flex items-start gap-3 bg-action-cyan/5 border border-action-cyan/20 p-4 rounded-2xl cursor-pointer select-none">
+              <label className="flex items-start gap-3 bg-amber-100 border border-action-cyan/20 p-4 rounded-2xl cursor-pointer select-none">
                 <input
                   type="checkbox"
                   required
                   checked={lgpdChecked}
                   onChange={(e) => setLgpdChecked(e.target.checked)}
-                  className="mt-0.5 rounded border-[var(--border-default)] text-action-cyan focus:ring-action-cyan bg-[var(--bg-input)]"
+                  className="mt-0.5 rounded border-[var(--border-default)] text-amber-600 focus:ring-action-cyan bg-[var(--bg-input)]"
                 />
                 <span className="text-[10px] sm:text-[11px] text-slate-600 leading-relaxed font-semibold">
                   Li e concordo com a{' '}
@@ -781,7 +781,7 @@ export default function PublicFreelancerForm({
                     href="/politica-privacidade.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-action-cyan underline hover:text-action-cyan/80 transition-colors"
+                    className="text-amber-600 underline hover:text-amber-600/80 transition-colors"
                     onClick={(e) => e.stopPropagation()}
                   >
                     Política Corporativa de Privacidade e Proteção de Dados Pessoais (LGPD)
@@ -812,7 +812,7 @@ export default function PublicFreelancerForm({
             <button
               type="button"
               onClick={handleNext}
-              className="bg-action-cyan hover:bg-action-cyan/90 text-[#0A192F] px-6 py-3 font-extrabold rounded-xl cursor-pointer transition select-none shadow-sm"
+              className="bg-action-cyan hover:brightness-95 text-black px-6 py-3 font-extrabold rounded-xl cursor-pointer transition select-none shadow-sm"
             >
               Continuar
             </button>
@@ -820,7 +820,7 @@ export default function PublicFreelancerForm({
             <button
               type="submit"
               disabled={isSubmitting || !consentChecked || !lgpdChecked}
-              className="bg-action-cyan hover:bg-action-cyan/90 text-[#0A192F] px-8 py-3 font-extrabold rounded-xl cursor-pointer transition select-none shadow-sm disabled:opacity-50 flex items-center gap-2"
+              className="bg-action-cyan hover:brightness-95 text-black px-8 py-3 font-extrabold rounded-xl cursor-pointer transition select-none shadow-sm disabled:opacity-50 flex items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               {linkType === 'new_freelancer' ? 'Enviar informações para análise' : 'Enviar atualização para análise'}

@@ -137,9 +137,9 @@ export default function PaymentCodesPanel({ db }: { db: DatabaseProps }) {
   return (
     <div id="payment-codes-panel-container" className="space-y-6">
       {/* Visual Rule info banner */}
-      <div className="bg-sidebar-navy text-[var(--text-primary)] p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#1e293b]">
+      <div className="bg-white text-[var(--text-primary)] p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#1e293b]">
         <div className="space-y-1">
-          <h3 className="font-bold text-sm text-action-cyan uppercase tracking-widest flex items-center gap-2">
+          <h3 className="font-bold text-sm text-amber-600 uppercase tracking-widest flex items-center gap-2">
             <Key className="w-4 h-4" /> Diretriz de Governança B2B V3A
           </h3>
           <p className="text-xs text-[var(--text-muted)] leading-relaxed font-medium">
@@ -147,7 +147,7 @@ export default function PaymentCodesPanel({ db }: { db: DatabaseProps }) {
           </p>
         </div>
         <div className="shrink-0 bg-white/15 p-2 px-3 border border-[var(--border-default)] rounded-xl flex items-center gap-1.5 text-xs font-bold">
-          <ShieldCheck className="w-4 h-4 text-action-cyan" /> Compliance Fiscal Ativo
+          <ShieldCheck className="w-4 h-4 text-amber-600" /> Compliance Fiscal Ativo
         </div>
       </div>
 

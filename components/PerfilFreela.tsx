@@ -55,7 +55,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
       <div className="p-8 text-center text-text-secondary bg-white rounded-2xl border border-border-subtle">
         <AlertTriangle className="w-8 h-8 text-status-error mx-auto mb-2" />
         <p className="text-sm font-semibold">Perfil de freelancer não localizado no banco ativo.</p>
-        <button onClick={() => db.setActiveTab('Banco de Freelancers')} className="text-action-cyan hover:underline text-xs mt-4">
+        <button onClick={() => db.setActiveTab('Banco de Freelancers')} className="text-amber-600 hover:underline text-xs mt-4">
           Voltar para buscar freelancers
         </button>
       </div>
@@ -107,11 +107,11 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
           >
             {isGeneratingLink ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-action-cyan shrink-0" /> Gerando Link...
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600 shrink-0" /> Gerando Link...
               </>
             ) : (
               <>
-                <QrCode className="w-3.5 h-3.5 text-action-cyan shrink-0" /> Gerar Link de Atualização
+                <QrCode className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Gerar Link de Atualização
               </>
             )}
           </button>
@@ -130,7 +130,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
           <div className="flex items-center gap-4">
             {/* Avatar block */}
             <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-[var(--text-primary)] uppercase shrink-0 
-              ${f.status === 'Bloqueado' ? 'bg-status-error/40' : 'bg-sidebar-navy'}`}>
+              ${f.status === 'Bloqueado' ? 'bg-status-error/40' : 'bg-white'}`}>
               {f.name.charAt(0)}{f.name.split(' ').length > 1 ? f.name.split(' ')[1].charAt(0) : ''}
             </div>
 
@@ -139,7 +139,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                 <h2 className="text-xl font-bold text-text-primary">{f.name}</h2>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold
                   ${f.status === 'Elegível' ? 'bg-status-success/15 text-status-success' : ''}
-                  ${f.status === 'Em onboarding' ? 'bg-action-cyan/15 text-action-cyan' : ''}
+                  ${f.status === 'Em onboarding' ? 'bg-amber-100 text-amber-600' : ''}
                   ${f.status === 'Em observação' ? 'bg-[#B28900]/10 text-[#B28900]' : ''}
                   ${f.status === 'Bloqueado' ? 'bg-status-error/15 text-status-error border border-status-error/20' : ''}
                   ${f.status === 'Inativo' ? 'bg-disabled text-text-secondary' : ''}
@@ -148,7 +148,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                 </span>
                 {f.experienceWithV3A && (
                   <span className="bg-primary/10 border border-primary/20 text-text-primary text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-action-cyan" /> Legado V3A
+                    <ShieldCheck className="w-3 h-3 text-amber-600" /> Legado V3A
                   </span>
                 )}
               </div>
@@ -173,12 +173,12 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
             <div className="space-y-1">
               <span className="text-[9px] text-text-secondary block font-bold uppercase tracking-wider">Status Operacional</span>
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border
-                ${(f.operationalStatus || 'Elegível') === 'Preferencial' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Preferencial' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-200' : ''}
                 ${(f.operationalStatus || 'Elegível') === 'Recomendado' ? 'bg-teal-500/10 text-teal-500 border-teal-500/20' : ''}
-                ${(f.operationalStatus || 'Elegível') === 'Elegível' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : ''}
-                ${(f.operationalStatus || 'Elegível') === 'Em observação' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Elegível' ? 'bg-blue-500/10 text-blue-500 border-blue-200' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Em observação' ? 'bg-amber-500/10 text-amber-500 border-amber-200' : ''}
                 ${(f.operationalStatus || 'Elegível') === 'Restrito' ? 'bg-orange-500/10 text-orange-500 border-orange-500/20' : ''}
-                ${(f.operationalStatus || 'Elegível') === 'Não recomendado' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' : ''}
+                ${(f.operationalStatus || 'Elegível') === 'Não recomendado' ? 'bg-rose-500/10 text-rose-500 border-rose-200' : ''}
               `}>
                 {f.operationalStatus || 'Elegível'}
               </span>
@@ -216,25 +216,25 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
       <div className="border-b border-border-subtle flex gap-4 text-xs font-semibold">
         <button
           onClick={() => setActiveTab2('geral')}
-          className={`pb-2.5 border-b-2 transition-all ${activeTab === 'geral' ? 'border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+          className={`pb-2.5 border-b-2 transition-all ${activeTab === 'geral' ? 'border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Resumo & Observações
         </button>
         <button
           onClick={() => setActiveTab2('portfolio')}
-          className={`pb-2.5 border-b-2 transition-all ${activeTab === 'portfolio' ? 'border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+          className={`pb-2.5 border-b-2 transition-all ${activeTab === 'portfolio' ? 'border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Portfólio / Niches ({f.industries.length})
         </button>
         <button
           onClick={() => setActiveTab2('alocacoes')}
-          className={`pb-2.5 border-b-2 transition-all ${activeTab === 'alocacoes' ? 'border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+          className={`pb-2.5 border-b-2 transition-all ${activeTab === 'alocacoes' ? 'border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Histórico de Alocações ({myAllocations.length})
         </button>
         <button
           onClick={() => setActiveTab2('avaliacoes')}
-          className={`pb-2.5 border-b-2 transition-all ${activeTab === 'avaliacoes' ? 'border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+          className={`pb-2.5 border-b-2 transition-all ${activeTab === 'avaliacoes' ? 'border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Pesos & Avaliações Operacionais ({myEvaluations.length})
         </button>
@@ -319,7 +319,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
               
               <div className="flex flex-wrap gap-2 pt-2">
                 {f.industries.map(niche => (
-                  <span key={niche} className="bg-action-cyan/10 border border-action-cyan/30 text-text-primary text-[11px] font-bold px-3 py-1 rounded-xl">
+                  <span key={niche} className="bg-amber-100 border border-action-cyan/30 text-text-primary text-[11px] font-bold px-3 py-1 rounded-xl">
                     🏢 Segmento: {niche}
                   </span>
                 ))}
@@ -339,7 +339,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                     <a
                       href={f.portfolioUrl.startsWith('http') ? f.portfolioUrl : `https://${f.portfolioUrl}`}
                       target="_blank" rel="noreferrer"
-                      className="bg-action-cyan hover:bg-action-cyan/90 text-[var(--text-primary)] font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+                      className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
                     >
                       Abrir <ExternalLink className="w-3 h-3" />
                     </a>
@@ -395,7 +395,7 @@ export default function PerfilFreela({ db }: { db: DatabaseProps }) {
                       <a
                         href={(f as any).portfolioFileUrl}
                         target="_blank" rel="noreferrer"
-                        className="bg-sidebar-navy hover:bg-sidebar-navy/90 text-[var(--text-primary)] font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+                        className="bg-white hover:bg-white/90 text-[var(--text-primary)] font-bold text-[10px] p-1.5 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
                       >
                         Download <ExternalLink className="w-3 h-3" />
                       </a>

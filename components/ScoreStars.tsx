@@ -49,7 +49,7 @@ export default function ScoreStars({
       if (i <= Math.floor(rounded)) {
         // Full star
         stars.push(
-          <span key={i} className="text-amber-400 leading-none">★</span>
+          <span key={i} className="text-amber-600 leading-none">★</span>
         );
       } else if (i - 0.5 === rounded) {
         // Half star — use a Unicode half-star or split color trick
@@ -57,7 +57,7 @@ export default function ScoreStars({
           <span key={i} className="relative leading-none" aria-hidden="true">
             <span className="text-[var(--text-muted)]">★</span>
             <span
-              className="absolute inset-0 overflow-hidden text-amber-400"
+              className="absolute inset-0 overflow-hidden text-amber-600"
               style={{ width: '50%' }}
             >
               ★

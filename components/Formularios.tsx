@@ -396,7 +396,7 @@ export function FormFreela({ db, onCancel }: { db: DatabaseProps; onCancel: () =
         </div>
         <div className="flex justify-end gap-2 pt-4">
           <button type="button" onClick={onCancel} className="border border-border-subtle p-2 px-4 rounded-xl hover:bg-surface font-semibold text-text-primary">Cancelar</button>
-          <button type="submit" className="bg-action-cyan hover:bg-action-cyan/90 text-[var(--text-primary)] font-bold p-2 px-5 rounded-xl flex items-center gap-1 shadow-sm">
+          <button type="submit" className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-bold p-2 px-5 rounded-xl flex items-center gap-1 shadow-sm">
             <Save className="w-4 h-4" /> Cadastrar Profissional
           </button>
         </div>
@@ -1107,8 +1107,8 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
 
       {/* ── Page header ── */}
       <div className="flex gap-3 items-center mb-6 pt-1">
-        <div className="w-10 h-10 rounded-2xl bg-action-cyan/10 flex items-center justify-center shrink-0">
-          <Briefcase className="w-5 h-5 text-action-cyan" />
+        <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+          <Briefcase className="w-5 h-5 text-amber-600" />
         </div>
         <div>
           <h2 className="font-extrabold text-text-primary text-lg leading-tight">
@@ -1133,15 +1133,15 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             >
               <div className="space-y-1 text-left">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="bg-action-cyan/15 text-action-cyan font-mono text-[9px] font-extrabold px-2 py-0.5 rounded tracking-wider uppercase">
+                  <span className="bg-amber-100 text-amber-600 font-mono text-[9px] font-extrabold px-2 py-0.5 rounded tracking-wider uppercase">
                     Resumo do Job
                   </span>
                   {urgency && (
                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${urgency === 'Alta'
-                      ? 'bg-red-500/10 text-red-500 dark:text-red-400 border border-red-500/10'
+                      ? 'bg-red-500/10 text-red-500 dark:text-red-600 border border-red-200'
                       : urgency === 'Média'
-                        ? 'bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/10'
-                        : 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/10'
+                        ? 'bg-amber-500/10 text-amber-500 dark:text-amber-600 border border-amber-200'
+                        : 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-600 border border-emerald-200'
                       }`}>
                       Urgência: {urgency}
                     </span>
@@ -1175,18 +1175,18 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
               </div>
 
               <div className={`flex flex-col sm:items-end justify-center shrink-0 px-3 py-1.5 rounded-xl transition-all duration-300 ${isEditingRate || isEditingSuccessFee || isEditingBudget
-                ? 'border border-action-cyan/40 bg-action-cyan/5 ring-1 ring-action-cyan/20 shadow-[0_0_8px_rgba(6,182,212,0.15)]'
+                ? 'border border-action-cyan/40 bg-amber-100 ring-1 ring-action-cyan/20 shadow-[0_0_8px_rgba(6,182,212,0.15)]'
                 : 'border border-transparent'
                 }`}>
                 <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider flex items-center gap-1.5">
                   Budget Máximo
                   {(isEditingRate || isEditingSuccessFee || isEditingBudget) && (
-                    <span className="text-[8px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                    <span className="text-[8px] font-extrabold text-amber-600 uppercase tracking-wider animate-pulse">
                       (Atualizando...)
                     </span>
                   )}
                 </span>
-                <span className="text-base font-extrabold text-action-cyan">
+                <span className="text-base font-extrabold text-amber-600">
                   {formatCurrencyBR(budget || 0)}
                 </span>
               </div>
@@ -1198,13 +1198,13 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             SECTION 1 — Dados Principais
         ═══════════════════════════════════════════════════════════════ */}
         <div className={sectionCls}>
-          <h3 className="font-bold text-action-cyan text-xs uppercase tracking-wider border-b border-border-subtle pb-3">
+          <h3 className="font-bold text-amber-600 text-xs uppercase tracking-wider border-b border-border-subtle pb-3">
             1. Dados Principais do Job
           </h3>
 
           {/* Núcleo */}
-          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 space-y-2">
-            <label className={labelCls + ' text-amber-800 dark:text-amber-400 flex items-center gap-1.5'}>
+          <div className="bg-amber-50 dark:bg-amber-50 border border-amber-200 dark:border-amber-800/40 rounded-xl p-4 space-y-2">
+            <label className={labelCls + ' text-amber-800 dark:text-amber-600 flex items-center gap-1.5'}>
               <Building className="w-3.5 h-3.5" />
               Núcleo Responsável pelo Job *
             </label>
@@ -1234,7 +1234,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                 placeholder="Ex: 26-0042-001"
                 value={jobCode}
                 onChange={e => setJobCode(maskJobCode(e.target.value))}
-                className={`${inputCls} font-mono font-bold tracking-wider text-action-cyan`}
+                className={`${inputCls} font-mono font-bold tracking-wider text-amber-600`}
                 required
               />
               <p className="text-[10px] text-text-muted mt-1">
@@ -1312,7 +1312,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
               <label className={labelCls}>
                 Budget Previsto Máximo (Valor Total do Job) *
                 {(isEditingRate || isEditingSuccessFee) && (
-                  <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                  <span className="ml-2 text-[10px] font-extrabold text-amber-600 uppercase tracking-wider animate-pulse">
                     (Atualizando...)
                   </span>
                 )}
@@ -1330,7 +1330,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     setIsEditingBudget(false);
                   }}
                   className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${isEditingRate || isEditingSuccessFee
-                    ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                    ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-amber-100 dark:bg-amber-100'
                     : ''
                     }`}
                   required
@@ -1348,10 +1348,10 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                 type="button"
                 onClick={handleGenerateAIScope}
                 disabled={isGeneratingAI}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-action-cyan via-cyan-600 to-purple-600 hover:from-action-cyan hover:to-purple-500 text-[var(--text-primary)] shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50 border border-action-cyan/40 shrink-0"
+                className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-[#FFCB05] hover:bg-[#FFCA00] text-black shadow-md hover:shadow-lg active:scale-95 transition-all duration-200 flex items-center gap-1.5 disabled:opacity-50 border border-[#FFCB05]/40 shrink-0"
                 title="Gerar sugestão técnica estruturada com IA com base na função, senioridade e histórico de jobs"
               >
-                <span className={`text-amber-300 text-sm ${isGeneratingAI ? 'animate-spin inline-block' : ''}`}>✨</span>
+                <span className={`text-black text-sm ${isGeneratingAI ? 'animate-spin inline-block' : ''}`}>✨</span>
                 <span>{isGeneratingAI ? 'Analisando Histórico e Gerando...' : 'Gerar Escopo com IA'}</span>
               </button>
             </div>
@@ -1366,7 +1366,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             />
             <p className="text-[10.5px] text-text-muted mt-1 italic flex items-center justify-between">
               <span>* Clique no botão acima para preencher com a sugestão técnica estruturada da IA. O texto inserido permanece 100% editável.</span>
-              {description && <span className="text-[10px] font-bold text-action-cyan not-italic">{description.length} caracteres</span>}
+              {description && <span className="text-[10px] font-bold text-amber-600 not-italic">{description.length} caracteres</span>}
             </p>
           </div>
 
@@ -1382,7 +1382,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         ═══════════════════════════════════════════════════════════════ */}
         <div className={sectionCls}>
           <div className="border-b border-border-subtle pb-3">
-            <h3 className="font-bold text-action-cyan text-xs uppercase tracking-wider flex items-center gap-2">
+            <h3 className="font-bold text-amber-600 text-xs uppercase tracking-wider flex items-center gap-2">
               <Scale className="w-4 h-4" />
               2. Modelo de Remuneração da Alocação
             </h3>
@@ -1418,7 +1418,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                 {remunerationModel === 'fixed_job' && 'Valor Total Fechado (R$) *'}
                 {remunerationModel === 'monthly_salary' && 'Valor Mensal Equivalente (R$) *'}
                 {(isEditingSuccessFee || isEditingBudget) && (
-                  <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                  <span className="ml-2 text-[10px] font-extrabold text-amber-600 uppercase tracking-wider animate-pulse">
                     (Atualizando...)
                   </span>
                 )}
@@ -1436,7 +1436,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     setIsEditingRate(false);
                   }}
                   className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${isEditingSuccessFee || isEditingBudget
-                    ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                    ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-amber-100 dark:bg-amber-100'
                     : ''
                     }`}
                   required
@@ -1446,7 +1446,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
           </div>
 
           {remunerationModel === 'monthly_salary' && isAccumulatedOverBudget && (
-            <div className="mt-4 p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-2.5 text-xs font-semibold text-red-650 dark:text-red-400">
+            <div className="mt-4 p-3.5 bg-red-500/10 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs font-semibold text-red-650 dark:text-red-600">
               <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
               <div>
                 Atenção: O custo total previsto para as parcelas mensais acumuladas ({projectedPayments.length} × {formatCurrencyBR(oneTimeRate)} = {formatCurrencyBR(expectedTotalCompensation)}) excede o budget máximo do job ({formatCurrencyBR(budget)}).
@@ -1480,7 +1480,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             <div className="mt-6 border-t border-border-subtle/50 pt-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-action-cyan" />
+                  <Calendar className="w-4 h-4 text-amber-600" />
                   <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">
                     Projeção de Pagamentos (Diretrizes de Supply)
                   </h4>
@@ -1509,7 +1509,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                   return (
                     <div key={idx} className="bg-slate-500/5 border border-border-subtle/50 rounded-xl p-3.5 flex flex-col justify-between gap-2 shadow-sm">
                       <div className="flex items-center justify-between border-b border-border-subtle/20 pb-1.5 mb-1">
-                        <span className="text-[10px] font-extrabold text-action-cyan uppercase tracking-wider">
+                        <span className="text-[10px] font-extrabold text-amber-600 uppercase tracking-wider">
                           {projectedPayments.length === 1 ? 'Parcela Única' : `Parcela ${p.cycleNumber}/${projectedPayments.length}`}
                         </span>
                         <span className="text-[10px] text-text-secondary font-medium italic">
@@ -1535,7 +1535,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                             <span className="text-[10px] font-bold text-text-secondary uppercase">
                               Valor Previsto da Parcela:
                             </span>
-                            <span className="font-extrabold text-emerald-500 dark:text-emerald-400 text-xs">
+                            <span className="font-extrabold text-emerald-500 dark:text-emerald-600 text-xs">
                               {formatCurrencyBR(parcelAmount)}
                             </span>
                           </div>
@@ -1546,7 +1546,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                 })}
               </div>
 
-              <div className="p-3 bg-amber-500/5 border border-amber-500/15 rounded-xl text-[10.5px] font-medium text-text-secondary leading-relaxed flex gap-2">
+              <div className="p-3 bg-amber-500/5 border border-amber-200 rounded-xl text-[10.5px] font-medium text-text-secondary leading-relaxed flex gap-2">
                 <span className="shrink-0 text-amber-500">⚠️</span>
                 <span>
                   <strong>Aviso Importante:</strong> O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas.
@@ -1562,7 +1562,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         <div className={sectionCls}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-border-subtle pb-3 gap-4">
             <div>
-              <h3 className="font-bold text-action-cyan text-xs uppercase tracking-wider flex items-center gap-2">
+              <h3 className="font-bold text-amber-600 text-xs uppercase tracking-wider flex items-center gap-2">
                 <Percent className="w-4 h-4" />
                 3. Bônus por Performance (Success Fee)
               </h3>
@@ -1581,14 +1581,14 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     setSuccessFeeEnabled(val);
                     syncRateFromBudget(budget, remunerationModel, val, successFeeType, successFeeFixedAmount, successFeePercent, days, projectedPayments.length, expectedHours);
                   }}
-                  className="w-4 h-4 rounded text-action-cyan border-border-subtle focus:ring-action-cyan"
+                  className="w-4 h-4 rounded text-amber-600 border-border-subtle focus:ring-action-cyan"
                 />
                 <span className="text-xs font-bold text-text-secondary uppercase tracking-wide">Habilitar Bônus por Performance (Success Fee)</span>
               </label>
               <div className="relative group ml-1.5">
-                <HelpCircle className="w-3.5 h-3.5 text-text-muted hover:text-action-cyan transition-colors cursor-help" />
+                <HelpCircle className="w-3.5 h-3.5 text-text-muted hover:text-amber-600 transition-colors cursor-help" />
                 <div className="absolute bottom-full right-0 mb-2 w-72 p-3 rounded-xl bg-[var(--bg-panel)] border border-action-cyan/30 text-[var(--text-primary)] text-[11px] leading-relaxed shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
-                  <strong className="text-action-cyan block mb-1">💰 Success Fee (Bônus)</strong>
+                  <strong className="text-amber-600 block mb-1">💰 Success Fee (Bônus)</strong>
                   <span className="text-[var(--text-muted)]">
                     Cria um <strong className="text-[var(--text-primary)]">valor financeiro adicional</strong> condicionado ao atingimento de um gatilho mensurável (ex: vitória na concorrência, KPI de projeto, meta de entrega).
                     <span className="block mt-1.5 text-[var(--text-disabled)] italic">O bônus só é pago se o resultado for marcado como &quot;Atingido&quot;. Pode ser valor fixo ou percentual sobre o fee-base.</span>
@@ -1613,7 +1613,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     }}
                     className={`p-3.5 rounded-xl border text-xs font-bold text-left flex items-start gap-3 transition-all cursor-pointer ${
                       successFeeCalcMode === 'dilute'
-                        ? 'bg-action-cyan/15 border-action-cyan text-action-cyan ring-2 ring-action-cyan/30 shadow-md'
+                        ? 'bg-amber-100 border-action-cyan text-amber-600 ring-2 ring-action-cyan/30 shadow-md'
                         : 'bg-white dark:bg-white border-border-subtle text-text-secondary hover:border-action-cyan/50'
                     }`}
                   >
@@ -1636,8 +1636,8 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     }}
                     className={`p-3.5 rounded-xl border text-xs font-bold text-left flex items-start gap-3 transition-all cursor-pointer ${
                       successFeeCalcMode === 'increment_budget'
-                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 ring-2 ring-emerald-500/30 shadow-md'
-                        : 'bg-white dark:bg-white border-border-subtle text-text-secondary hover:border-emerald-500/50'
+                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-600 ring-2 ring-emerald-500/30 shadow-md'
+                        : 'bg-white dark:bg-white border-border-subtle text-text-secondary hover:border-emerald-200'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded-full border-2 mt-0.5 shrink-0 flex items-center justify-center ${
@@ -1675,7 +1675,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     <label className={labelCls}>
                       Valor Fixo Sugerido (R$) *
                       {(isEditingRate || isEditingBudget) && (
-                        <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                        <span className="ml-2 text-[10px] font-extrabold text-amber-600 uppercase tracking-wider animate-pulse">
                           (Atualizando...)
                         </span>
                       )}
@@ -1693,7 +1693,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                           setIsEditingSuccessFee(false);
                         }}
                         className={`${inputCls} pl-9 font-semibold transition-all duration-300 ${isEditingRate || isEditingBudget
-                          ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                          ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-amber-100 dark:bg-amber-100'
                           : ''
                           }`}
                         required
@@ -1705,7 +1705,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     <label className={labelCls}>
                       Percentual Sugerido do Budget Máximo (%) *
                       {(isEditingRate || isEditingBudget) && (
-                        <span className="ml-2 text-[10px] font-extrabold text-action-cyan uppercase tracking-wider animate-pulse">
+                        <span className="ml-2 text-[10px] font-extrabold text-amber-600 uppercase tracking-wider animate-pulse">
                           (Atualizando...)
                         </span>
                       )}
@@ -1726,17 +1726,17 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                         onFocus={() => setIsEditingSuccessFee(true)}
                         onBlur={() => setIsEditingSuccessFee(false)}
                         className={`${inputCls} pr-8 font-semibold transition-all duration-300 ${isEditingRate || isEditingBudget
-                          ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-action-cyan/5 dark:bg-action-cyan/10'
+                          ? 'border-action-cyan ring-2 ring-action-cyan/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] bg-amber-100 dark:bg-amber-100'
                           : ''
                           }`}
                         required
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-extrabold text-action-cyan select-none">%</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-extrabold text-amber-600 select-none">%</span>
                     </div>
                     {successFeePercent > 0 && baseBudgetState > 0 && (
-                      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 animate-fadeIn">
+                      <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-extrabold text-emerald-600 dark:text-emerald-600 animate-fadeIn">
                         <span>💰 Equivale a:</span>
-                        <strong className="text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        <strong className="text-emerald-600 dark:text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-200">
                           {formatCurrencyBR((baseBudgetState * successFeePercent) / 100)}
                         </strong>
                         <span className="text-[10px] text-text-secondary font-normal">
@@ -1854,7 +1854,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                     {/* Card 3: Teto authorized total */}
                     <div className="policy-metric-bg p-3 rounded-xl border">
                       <span className="text-[10px] text-text-secondary block font-bold uppercase tracking-wider mb-0.5">Teto Autorizado Total</span>
-                      <span className="font-bold text-amber-600 dark:text-amber-400 text-sm block">
+                      <span className="font-bold text-amber-600 dark:text-amber-600 text-sm block">
                         {policyResult.limitAmount ? formatCurrencyBR(policyResult.limitAmount) : '—'}
                       </span>
                     </div>
@@ -1867,7 +1867,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                           ? 'forecast-status-within'
                           : (policyStatus === 'above_policy_requires_approval' || isSuccessFeeAbovePolicy)
                             ? 'forecast-status-above'
-                            : 'bg-amber-500/20 text-amber-400'
+                            : 'bg-amber-500/20 text-amber-600'
                           }`}>
                           {policyStatus === 'within_policy' && !isSuccessFeeAbovePolicy ? 'Dentro da política' :
                             (policyStatus === 'above_policy_requires_approval' || isSuccessFeeAbovePolicy) ? 'Acima da política' : 'Política não cadastrada'}
@@ -1915,7 +1915,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                       <button
                         type="button"
                         onClick={() => setIsMemoryOpenManual(!isMemoryOpen)}
-                        className="flex items-center justify-between w-full text-xs font-bold text-text-primary hover:text-action-cyan transition-colors"
+                        className="flex items-center justify-between w-full text-xs font-bold text-text-primary hover:text-amber-600 transition-colors"
                       >
                         <span className="flex items-center gap-1.5">
                           <span>Memória de cálculo</span>
@@ -1982,17 +1982,17 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                           </div>
                           {calculatedExcessAmount > 0 ? (
                             <>
-                              <div className="flex justify-between text-red-650 dark:text-red-400 font-bold border-b border-border-subtle/20 pb-1">
+                              <div className="flex justify-between text-red-650 dark:text-red-600 font-bold border-b border-border-subtle/20 pb-1">
                                 <span>Excedente:</span>
                                 <span>{formatCurrencyBR(calculatedExcessAmount)}</span>
                               </div>
-                              <div className="flex justify-between text-red-650 dark:text-red-400 font-bold">
+                              <div className="flex justify-between text-red-650 dark:text-red-600 font-bold">
                                 <span>Percentual acima do teto:</span>
                                 <span>{calculatedExcessPercent.toFixed(1)}%</span>
                               </div>
                             </>
                           ) : (
-                            <div className="text-emerald-600 dark:text-emerald-400 font-bold text-right pt-0.5">
+                            <div className="text-emerald-600 dark:text-emerald-600 font-bold text-right pt-0.5">
                               ✓ Dentro do limite autorizado
                             </div>
                           )}
@@ -2002,7 +2002,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
                   )}
                 </div>
               ) : (
-                <div className="text-xs text-text-secondary italic flex items-center gap-2 p-2 bg-amber-500/5 rounded-lg border border-amber-500/20">
+                <div className="text-xs text-text-secondary italic flex items-center gap-2 p-2 bg-amber-500/5 rounded-lg border border-amber-200">
                   <span>⚠️</span>
                   <span>Não existe política cadastrada para esta função, senioridade e modelo. Solicite validação do RH.</span>
                 </div>
@@ -2034,7 +2034,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
             {/* Success Fee Potencial */}
             <div>
               <span className="text-[10px] text-text-secondary block mb-1">Success Fee Potencial</span>
-              <span className="font-extrabold text-base text-action-cyan">
+              <span className="font-extrabold text-base text-amber-600">
                 {successFeeEnabled
                   ? (successFeeType === 'fixed'
                     ? `${formatCurrencyBR(successFeeFixedAmount)} (Fixo)`
@@ -2046,7 +2046,7 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
           </div>
 
           {successFeeEnabled && isCompetitiveBid && (
-            <p className="text-[11px] text-action-cyan mt-4 font-semibold border-t border-border-subtle pt-3">
+            <p className="text-[11px] text-amber-600 mt-4 font-semibold border-t border-border-subtle pt-3">
               💡 Este job será marcado em concorrência. O status inicial será &quot;Aguardando Resultado de Concorrência&quot;. O success fee só se tornará elegível após a confirmação de vitória.
             </p>
           )}
@@ -2055,11 +2055,11 @@ export function FormOportunidade({ db, onCancel }: { db: DatabaseProps; onCancel
         {/* ── Action buttons ── */}
         <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
           <button type="button" disabled={isSubmitting} onClick={onCancel}
-            className="btn-custom btn-secondary disabled:opacity-50">
+            className="px-5 py-2.5 bg-[#F0F0F0] hover:bg-[#E2E3E4] text-[#636466] font-bold rounded-xl text-xs transition-all cursor-pointer disabled:opacity-50">
             Cancelar
           </button>
           <button type="submit" disabled={isSubmitting}
-            className="btn-custom btn-primary disabled:opacity-50 flex items-center justify-center gap-2 shadow-md">
+            className="px-6 py-2.5 bg-[#FFCB05] hover:bg-[#FFCA00] text-black font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
             <Plus className="w-4 h-4" />
             {isSubmitting ? 'Gravando...' : 'Criar Demanda & Ver Shortlist'}
           </button>

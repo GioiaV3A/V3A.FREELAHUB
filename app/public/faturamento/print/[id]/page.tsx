@@ -100,7 +100,7 @@ export default function PrintPaymentRequestPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6">
-        <Loader2 className="w-8 h-8 text-action-cyan animate-spin" />
+        <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
         <p className="mt-2 text-xs text-text-secondary">Carregando documento...</p>
       </div>
     );
@@ -129,7 +129,7 @@ export default function PrintPaymentRequestPage() {
         <div className="bg-white dark:bg-white border-b border-slate-200 dark:border-slate-200 p-4 sticky top-0 z-10 no-print">
           <div className="max-w-4xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-sidebar-navy dark:text-action-cyan uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-sidebar-navy dark:text-amber-600 uppercase tracking-wider">
                 Relatório Unificado de Faturamentos
               </span>
             </div>
@@ -351,7 +351,7 @@ export default function PrintPaymentRequestPage() {
       <div className="bg-white dark:bg-white border-b border-slate-200 dark:border-slate-200 p-4 sticky top-0 z-10 no-print">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-sidebar-navy dark:text-action-cyan uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-sidebar-navy dark:text-amber-600 uppercase tracking-wider">
               Solicitação de Faturamento
             </span>
           </div>

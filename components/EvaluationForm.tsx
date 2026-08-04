@@ -61,7 +61,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
           width: 180,
           margin: 1,
           color: {
-            dark: '#0A192F', // matching V3A dark navy
+            dark: '#636466', // matching V3A dark navy
             light: '#FFFFFF'
           }
         },
@@ -93,12 +93,12 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
     
     // Status color and label based on consolidated score
     let statusLabel = 'Elegível';
-    let statusColor = 'text-blue-500 bg-blue-50 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30';
+    let statusColor = 'text-blue-500 bg-blue-50 border-blue-100 dark:bg-blue-50 dark:border-blue-900/30';
     let statusBadgeColor = 'bg-blue-500';
 
     if (score0to100 >= 90) {
       statusLabel = 'Preferencial';
-      statusColor = 'text-emerald-500 bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30';
+      statusColor = 'text-emerald-500 bg-emerald-50 border-emerald-100 dark:bg-emerald-50 dark:border-emerald-900/30';
       statusBadgeColor = 'bg-emerald-500';
     } else if (score0to100 >= 80) {
       statusLabel = 'Recomendado';
@@ -106,11 +106,11 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
       statusBadgeColor = 'bg-teal-500';
     } else if (score0to100 >= 65) {
       statusLabel = 'Elegível';
-      statusColor = 'text-blue-500 bg-blue-50 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/30';
+      statusColor = 'text-blue-500 bg-blue-50 border-blue-100 dark:bg-blue-50 dark:border-blue-900/30';
       statusBadgeColor = 'bg-blue-500';
     } else if (score0to100 >= 50) {
       statusLabel = 'Em observação';
-      statusColor = 'text-amber-500 bg-amber-50 border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30';
+      statusColor = 'text-amber-500 bg-amber-50 border-amber-100 dark:bg-amber-50 dark:border-amber-900/30';
       statusBadgeColor = 'bg-amber-500';
     } else if (score0to100 >= 35) {
       statusLabel = 'Restrito';
@@ -118,7 +118,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
       statusBadgeColor = 'bg-orange-500';
     } else {
       statusLabel = 'Não recomendado';
-      statusColor = 'text-rose-500 bg-rose-50 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30';
+      statusColor = 'text-rose-500 bg-rose-50 border-rose-100 dark:bg-rose-50 dark:border-rose-900/30';
       statusBadgeColor = 'bg-rose-500';
     }
 
@@ -201,7 +201,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
               background-color: white;
             }
             .card {
-              border: 2px solid #0A192F;
+              border: 2px solid #636466;
               border-radius: 20px;
               padding: 30px;
               text-align: center;
@@ -212,7 +212,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
               height: 200px;
               margin: 20px 0;
             }
-            h1 { font-size: 20px; color: #0A192F; margin: 0; }
+            h1 { font-size: 20px; color: #636466; margin: 0; }
             p { font-size: 13px; color: #4A5568; }
             .footer { font-size: 10px; color: #718096; margin-top: 10px; }
           </style>
@@ -341,7 +341,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
             onClick={() => onChange(star)}
             className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs transition border cursor-pointer
               ${star <= value 
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-500 dark:bg-amber-500/20' 
+                ? 'bg-amber-500/10 border-amber-200 text-amber-500 dark:bg-amber-500/20' 
                 : 'bg-slate-50 border-slate-200 text-[var(--text-disabled)] dark:bg-white dark:border-slate-200'
               }
               hover:scale-105 active:scale-95
@@ -357,9 +357,9 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
   return (
     <div className="space-y-6 font-sans text-xs">
       {/* Banner */}
-      <div className="bg-sidebar-navy text-[var(--text-primary)] p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#1e293b]">
+      <div className="bg-white text-[var(--text-primary)] p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border border-[#1e293b]">
         <div className="space-y-1">
-          <h3 className="font-bold text-sm text-action-cyan uppercase tracking-widest flex items-center gap-2">
+          <h3 className="font-bold text-sm text-amber-600 uppercase tracking-widest flex items-center gap-2">
             <Award className="w-4 h-4" /> Governança & Avaliação 360°
           </h3>
           <p className="text-xs text-[var(--text-muted)] leading-relaxed font-medium">
@@ -367,7 +367,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
           </p>
         </div>
         <div className="shrink-0 bg-white/15 p-2 px-3 border border-[var(--border-default)] rounded-xl flex items-center gap-1.5 text-xs font-bold">
-          <ShieldCheck className="w-4 h-4 text-action-cyan" /> Pagamento Vinculado à Avaliação
+          <ShieldCheck className="w-4 h-4 text-amber-600" /> Pagamento Vinculado à Avaliação
         </div>
       </div>
 
@@ -444,7 +444,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
         /* SUCCESS SCREEN WITH PUBLIC LINK & QR CODE */
         <div className="bg-white dark:bg-[var(--bg-surface)] border border-slate-150 dark:border-slate-200 rounded-2xl p-6 shadow-sm space-y-6 max-w-2xl mx-auto animate-fade-in">
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/50">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-50 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/50">
               <Check className="w-7 h-7 text-emerald-500" />
             </div>
             <h3 className="font-extrabold text-lg text-slate-800 dark:text-[var(--text-secondary)]">Avaliação Enviada com Sucesso!</h3>
@@ -542,7 +542,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
               {/* Criterion 9 WEIGHTED GROUP */}
               <div className="space-y-4">
                 <h5 className="font-extrabold text-slate-800 dark:text-[var(--text-secondary)] border-b border-slate-50 dark:border-slate-900 pb-1 flex items-center gap-1.5 text-xs">
-                  <Scale className="w-3.5 h-3.5 text-action-cyan" /> 1. Critérios de Desempenho Ponderados
+                  <Scale className="w-3.5 h-3.5 text-amber-600" /> 1. Critérios de Desempenho Ponderados
                 </h5>
 
                 {/* Qualidade Técnica */}
@@ -550,7 +550,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-800 dark:text-[var(--text-secondary)]">Qualidade Técnica</span>
-                      <span className="bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 25%</span>
+                      <span className="bg-emerald-100 dark:bg-emerald-50 text-emerald-600 dark:text-emerald-600 font-extrabold px-2 py-0.5 rounded-full text-[9px]">Peso: 25%</span>
                     </div>
                     <p className="text-[10px] text-[var(--text-disabled)]">Nível técnico, refino estético e precisão da entrega.</p>
                   </div>
@@ -559,8 +559,8 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
 
                 {/* Conditional Tech Quality Issues */}
                 {technicalQuality <= 2 && (
-                  <div className="p-4 bg-rose-50/50 dark:bg-rose-950/10 rounded-xl border border-rose-100 dark:border-rose-900/20 space-y-3 animate-fade-in">
-                    <label className="font-bold text-rose-700 dark:text-rose-400 block">
+                  <div className="p-4 bg-rose-50/50 dark:bg-rose-50 rounded-xl border border-rose-100 dark:border-rose-900/20 space-y-3 animate-fade-in">
+                    <label className="font-bold text-rose-700 dark:text-rose-600 block">
                       <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
                       O que comprometeu a qualidade técnica? <span className="text-rose-500">*</span>
                     </label>
@@ -657,8 +657,8 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
 
                 {/* Conditional Behavior Issues */}
                 {behavior <= 2 && (
-                  <div className="p-4 bg-rose-50/50 dark:bg-rose-950/10 rounded-xl border border-rose-100 dark:border-rose-900/20 space-y-3 animate-fade-in">
-                    <label className="font-bold text-rose-700 dark:text-rose-400 block">
+                  <div className="p-4 bg-rose-50/50 dark:bg-rose-50 rounded-xl border border-rose-100 dark:border-rose-900/20 space-y-3 animate-fade-in">
+                    <label className="font-bold text-rose-700 dark:text-rose-600 block">
                       <AlertCircle className="w-3.5 h-3.5 inline mr-1" />
                       Qual foi o problema comportamental observado? <span className="text-rose-500">*</span>
                     </label>
@@ -734,7 +734,7 @@ export default function EvaluationForm({ db }: { db: DatabaseProps }) {
               {/* SECTION 2: ADITIONAL OPERATIONAL QUESTIONS */}
               <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-200">
                 <h5 className="font-extrabold text-slate-800 dark:text-[var(--text-secondary)] pb-1 flex items-center gap-1.5 text-xs">
-                  <FileText className="w-3.5 h-3.5 text-action-cyan" /> 2. Aspectos Operacionais & Faturamento
+                  <FileText className="w-3.5 h-3.5 text-amber-600" /> 2. Aspectos Operacionais & Faturamento
                 </h5>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

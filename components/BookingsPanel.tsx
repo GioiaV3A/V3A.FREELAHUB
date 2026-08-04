@@ -31,7 +31,7 @@ function ReverseEvalBadge({ status }: { status?: string }) {
   }
   if (status === 'generated' || status === 'sent') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-amber-500/40 bg-amber-950/30 text-amber-400">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-amber-200 bg-amber-50 text-amber-600">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block animate-pulse" />
         Pendente
       </span>
@@ -39,7 +39,7 @@ function ReverseEvalBadge({ status }: { status?: string }) {
   }
   if (status === 'completed') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-emerald-500/40 bg-emerald-950/30 text-emerald-400">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-emerald-200 bg-emerald-50 text-emerald-600">
         <Check className="w-2.5 h-2.5" />
         Enviada
       </span>
@@ -47,7 +47,7 @@ function ReverseEvalBadge({ status }: { status?: string }) {
   }
   if (status === 'expired') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-red-500/40 bg-red-950/30 text-red-400">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-semibold border border-red-200 bg-red-50 text-red-600">
         <Ban className="w-2.5 h-2.5" />
         Expirada
       </span>
@@ -67,12 +67,12 @@ function EvalBadge({ alloc }: { alloc: any }) {
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold border ${
       evalCount === 2
-        ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-400'
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
         : evalCount === 1
-          ? 'border-amber-500/40 bg-amber-950/30 text-amber-400'
+          ? 'border-amber-200 bg-amber-50 text-amber-600'
           : 'border-orange-500/40 bg-orange-950/30 text-orange-400'
     }`}>
-      <Star className={`w-2.5 h-2.5 ${evalCount === 2 ? 'fill-emerald-400 text-emerald-400' : 'fill-amber-400 text-amber-400'}`} />
+      <Star className={`w-2.5 h-2.5 ${evalCount === 2 ? 'fill-emerald-400 text-emerald-600' : 'fill-amber-400 text-amber-600'}`} />
       {evalCount}/2 Env.
     </span>
   );
@@ -262,7 +262,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
         <div className="flex justify-between items-center bg-white dark:bg-white p-4 rounded-2xl border border-border-subtle shadow-xs">
           <button 
             onClick={() => setSelectedJobId(null)}
-            className="bg-bg-panel hover:bg-bg-hover text-sidebar-navy dark:text-action-cyan font-bold p-2 px-4 rounded-xl text-xs border border-border-subtle shadow-xs transition flex items-center gap-2 cursor-pointer"
+            className="bg-bg-panel hover:bg-bg-hover text-sidebar-navy dark:text-amber-600 font-bold p-2 px-4 rounded-xl text-xs border border-border-subtle shadow-xs transition flex items-center gap-2 cursor-pointer"
           >
             &larr; Voltar para Meus Bookings
           </button>
@@ -275,7 +275,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                 return (
                   <button
                     onClick={() => handleOpenConcludeModal(alloc.id)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Concluir Execução do Job</span>
@@ -301,7 +301,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-action-cyan opacity-80" />
+            <Briefcase className="w-5 h-5 text-amber-600 opacity-80" />
             <span>Meus Bookings e Alocações</span>
           </h2>
           <p className="text-xs text-text-secondary mt-0.5">
@@ -367,7 +367,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                   {/* Two evaluation sub-columns */}
                   <th className="px-3 py-3.5 text-center font-bold">
                     <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-[9px] text-action-cyan/70 font-bold uppercase tracking-widest">Avaliação 360°</span>
+                      <span className="text-[9px] text-amber-600/70 font-bold uppercase tracking-widest">Avaliação 360°</span>
                       <div className="flex items-center gap-3">
                         <span title="Avaliação da V3A ao Freelancer" className="text-[9px] leading-none text-[var(--text-disabled)] whitespace-nowrap">V3A → Freela</span>
                         <span title="Avaliação do Freelancer à V3A" className="text-[9px] leading-none text-[var(--text-disabled)] whitespace-nowrap">Freela → V3A</span>
@@ -409,7 +409,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                       <td className="px-4 py-3.5">
                         <div className="flex items-start gap-2">
                           <div>
-                            <span className="font-mono text-[9px] font-bold text-action-cyan bg-action-cyan/10 border border-action-cyan/30 px-1.5 py-0.5 rounded tracking-wider">
+                            <span className="font-mono text-[9px] font-bold text-amber-600 bg-amber-100 border border-action-cyan/30 px-1.5 py-0.5 rounded tracking-wider">
                               Job: {job?.jobCode || alloc.jobCode || alloc.allocationCode || 'PENDENTE'}
                             </span>
                             <p className="font-bold text-text-primary text-xs mt-1.5 truncate max-w-[180px]">
@@ -443,8 +443,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                         </p>
                         <span className={`inline-block text-[9px] font-semibold mt-0.5 px-1.5 py-0.5 rounded-sm uppercase tracking-wide ${
                           alloc.paymentModel === 'monthly_recurring'
-                            ? 'text-blue-400 bg-blue-950/30 border border-blue-600/20'
-                            : 'text-violet-400 bg-violet-950/30 border border-violet-600/20'
+                            ? 'text-blue-700 bg-blue-50 border border-blue-200'
+                            : 'text-violet-700 bg-violet-50 border border-violet-200'
                         }`}>
                           {alloc.paymentModel === 'monthly_recurring' ? 'Mensal' : 'Job Único'}
                         </span>
@@ -454,10 +454,10 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                       <td className="px-4 py-3.5 text-center">
                         <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded-md border ${
                           (alloc.paymentRequestStatus as any) === 'paid'
-                            ? 'bg-emerald-950/40 text-emerald-400 border-emerald-600/30'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : (alloc.paymentRequestStatus as any) === 'exported'
-                              ? 'bg-blue-950/40 text-blue-400 border-blue-600/30'
-                              : 'bg-slate-50/40 text-[var(--text-disabled)] border-slate-600/30'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-[#F0F0F0] text-[#636466] border-[#E2E3E4]'
                         }`}>
                           <CreditCard className="w-3 h-3" />
                           {(alloc.paymentRequestStatus as any) === 'paid' ? 'Pago' :
@@ -473,7 +473,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                             <EvalBadge alloc={alloc} />
                           </div>
                           {/* Divider */}
-                          <div className="w-px h-5 bg-slate-700/50" />
+                          <div className="w-px h-5 bg-[#E2E3E4]" />
                           {/* Freelancer → V3A */}
                           <div className="flex flex-col items-center gap-1 min-w-[70px]">
                             <ReverseEvalBadge status={alloc.reverseEvaluationStatus} />
@@ -484,10 +484,10 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                       {/* Operational Status */}
                       <td className="px-4 py-3.5 text-center">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[9px] font-bold border tracking-wide ${
-                          isPending ? 'bg-amber-950/40 text-amber-300 border-amber-500/30' :
-                          isActive  ? 'bg-blue-950/40 text-blue-300 border-blue-500/30' :
-                          isCompleted ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30' :
-                          'bg-red-950/40 text-red-300 border-red-500/30'
+                          isPending ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                          isActive  ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          isCompleted ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          'bg-red-50 text-red-700 border-red-200'
                         }`}>
                           {alloc.status}
                         </span>
@@ -502,8 +502,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                             onClick={() => setSelectedJobId(alloc.jobId)}
                             title="Ver detalhes"
                             className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-bold border
-                              bg-slate-50/60 border-slate-600/40 text-[var(--text-muted)]
-                              hover:bg-action-cyan/10 hover:border-action-cyan/40 hover:text-action-cyan
+                              bg-[#F0F0F0] border-[#E2E3E4] text-[#636466]
+                              hover:brightness-95 hover:border-action-cyan/40 hover:text-amber-600
                               transition-all duration-150 cursor-pointer flex-shrink-0"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -517,8 +517,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                               onClick={() => handleOpenConcludeModal(alloc.id)}
                               title="Concluir Job"
                               className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
-                                bg-emerald-950/60 border-emerald-600/40 text-emerald-400
-                                hover:bg-emerald-600 hover:border-emerald-500 hover:text-[var(--text-primary)]
+                                bg-emerald-50 border-emerald-200 text-emerald-600
+                                hover:bg-emerald-100 hover:border-emerald-300 hover:text-emerald-700
                                 disabled:opacity-40 disabled:cursor-not-allowed
                                 transition-all duration-150 cursor-pointer flex-shrink-0"
                             >
@@ -536,8 +536,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                               onClick={() => handleReopenBooking(alloc.id)}
                               title="Reabrir booking"
                               className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
-                                bg-slate-50/60 border-slate-500/40 text-[var(--text-disabled)]
-                                hover:bg-slate-600 hover:border-slate-400 hover:text-[var(--text-primary)]
+                                bg-[#F0F0F0] border-[#E2E3E4] text-[#636466]
+                                hover:bg-[#E2E3E4] hover:border-[#A4A6A9] hover:text-[#636466]
                                 disabled:opacity-40 disabled:cursor-not-allowed
                                 transition-all duration-150 cursor-pointer flex-shrink-0"
                             >
@@ -555,8 +555,8 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
                               onClick={() => handleCancelBooking(alloc.id)}
                               title="Cancelar booking"
                               className="inline-flex items-center justify-center h-7 w-7 rounded-lg border
-                                bg-red-950/40 border-red-600/30 text-red-400
-                                hover:bg-red-600 hover:border-red-500 hover:text-[var(--text-primary)]
+                                bg-red-50 border-red-200 text-red-600
+                                hover:bg-red-100 hover:border-red-300 hover:text-red-700
                                 disabled:opacity-40 disabled:cursor-not-allowed
                                 transition-all duration-150 cursor-pointer flex-shrink-0"
                             >
@@ -706,7 +706,7 @@ export default function BookingsPanel({ db }: { db: DatabaseProps }) {
               <button
                 type="submit"
                 disabled={!checklist1 || !checklist2 || !checklist3 || loadingActionId !== null}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] font-bold px-5 py-2.5 rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-5 py-2.5 rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5"
               >
                 {loadingActionId === concludeAllocId ? (
                   <Sliders className="w-4 h-4 animate-spin" />

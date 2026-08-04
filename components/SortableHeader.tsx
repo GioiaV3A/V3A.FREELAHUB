@@ -46,9 +46,9 @@ export function SortableHeader({
         <span>{label}</span>
         {isSorted && direction ? (
           direction === 'asc' ? (
-            <ChevronUp className="w-3.5 h-3.5 text-action-cyan shrink-0" />
+            <ChevronUp className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           ) : (
-            <ChevronDown className="w-3.5 h-3.5 text-action-cyan shrink-0" />
+            <ChevronDown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           )
         ) : (
           <div className="w-3.5 h-3.5 opacity-20 hover:opacity-100 flex flex-col items-center justify-center shrink-0">

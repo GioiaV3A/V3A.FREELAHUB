@@ -966,7 +966,7 @@ export default function NucleosPanel({ db }: { db: any }) {
             {/* Header */}
             <div
               className="px-6 py-5 flex items-center justify-between border-b shrink-0"
-              style={{ background: '#0A192F', borderColor: '#122035' }}
+              style={{ background: '#636466', borderColor: '#636466' }}
             >
               <div className="flex items-center gap-2">
                 <Plus className="w-5 h-5" style={{ color: '#00BCD4' }} />
@@ -1129,7 +1129,7 @@ export default function NucleosPanel({ db }: { db: any }) {
                   type="submit"
                   disabled={isSaving}
                   className="flex-1 py-3 rounded-xl font-black text-sm cursor-pointer transition flex items-center justify-center gap-2 disabled:opacity-50"
-                  style={{ background: '#0A192F', color: '#fff' }}
+                  style={{ background: '#636466', color: '#fff' }}
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" style={{ color: '#00BCD4' }} />}
                   {isSaving ? 'Registrando...' : 'Registrar Núcleo'}
@@ -1151,7 +1151,7 @@ export default function NucleosPanel({ db }: { db: any }) {
             className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border"
             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)' }}
           >
-            <div className="px-6 py-5 flex items-center justify-between border-b" style={{ background: '#0A192F', borderColor: '#122035' }}>
+            <div className="px-6 py-5 flex items-center justify-between border-b" style={{ background: '#636466', borderColor: '#636466' }}>
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5" style={{ color: '#00BCD4' }} />
                 <h3 className="font-extrabold text-base text-[var(--text-primary)]">Criar Usuário do Head (Retroativo)</h3>
@@ -1221,7 +1221,7 @@ export default function NucleosPanel({ db }: { db: any }) {
                   type="submit"
                   disabled={isSaving}
                   className="flex-1 py-2.5 rounded-xl font-bold text-sm cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                  style={{ background: '#00BCD4', color: '#0A192F' }}
+                  style={{ background: '#FFCB05', color: '#000' }}
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {isSaving ? 'Criando...' : 'Criar usuário do Head'}
@@ -1243,7 +1243,7 @@ export default function NucleosPanel({ db }: { db: any }) {
             className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border"
             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-soft)' }}
           >
-            <div className="px-6 py-5 flex items-center justify-between border-b" style={{ background: '#0A192F', borderColor: '#122035' }}>
+            <div className="px-6 py-5 flex items-center justify-between border-b" style={{ background: '#636466', borderColor: '#636466' }}>
               <div className="flex items-center gap-2">
                 <Edit2 className="w-5 h-5" style={{ color: '#00BCD4' }} />
                 <h3 className="font-extrabold text-base text-[var(--text-primary)]">Editar Cadastro de Núcleo</h3>
@@ -1296,7 +1296,7 @@ export default function NucleosPanel({ db }: { db: any }) {
                   type="submit"
                   disabled={isSaving}
                   className="flex-1 py-2.5 rounded-xl font-bold text-sm cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                  style={{ background: '#0A192F', color: '#fff' }}
+                  style={{ background: '#636466', color: '#fff' }}
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {isSaving ? 'Salvando...' : 'Salvar Alterações'}

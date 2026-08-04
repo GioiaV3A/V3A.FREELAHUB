@@ -100,7 +100,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
             <span>Painel Operacional Multi-núcleo</span>
-            <span className="bg-amber-500/10 text-amber-500 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-500/20">
+            <span className="bg-amber-500/10 text-amber-500 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">
               OPERAÇÕES
             </span>
           </h2>
@@ -109,7 +109,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
         <div className="flex gap-2">
           <button 
             onClick={() => db.setActiveTab('Criar Oportunidade')} 
-            className="bg-action-cyan hover:bg-action-cyan/85 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs"
+            className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs"
           >
             + Nova Demanda / Job
           </button>
@@ -126,7 +126,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
             <p className="text-2xl font-black text-text-primary">{activeOpportunitiesCount}</p>
             <p className="text-[10px] text-text-secondary">Aguardando definição de shortlist</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 dark:bg-cyan-950/20 dark:text-cyan-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 dark:bg-[#FFF6D6] dark:text-[#FFCB05] flex items-center justify-center">
             <Briefcase className="w-5 h-5" />
           </div>
         </div>
@@ -150,7 +150,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
             <p className="text-2xl font-black text-text-primary">{inNegotiationCount}</p>
             <p className="text-[10px] text-text-secondary">Aguardando aprovação ou fechamento</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-50 dark:text-amber-600 flex items-center justify-center">
             <Activity className="w-5 h-5" />
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
             <p className="text-2xl font-black text-text-primary">{activeAllocationsCount}</p>
             <p className="text-[10px] text-text-secondary">Freelas executando ou bookados</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-50 dark:text-emerald-600 flex items-center justify-center">
             <UserCheck className="w-5 h-5" />
           </div>
         </div>
@@ -254,7 +254,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
                           onClick={() => {
                             db.setActiveTab('Buscar Freelancers');
                           }}
-                          className="text-[11px] font-bold text-action-cyan hover:underline"
+                          className="text-[11px] font-bold text-amber-600 hover:underline"
                         >
                           Ver Alocações &rarr;
                         </button>
@@ -284,7 +284,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
                 </div>
               ) : (
                 scheduleConflicts.map((conflict, idx) => (
-                  <div key={idx} className="p-3 bg-red-500/5 border border-red-500/15 rounded-xl space-y-2.5">
+                  <div key={idx} className="p-3 bg-red-500/5 border border-red-200 rounded-xl space-y-2.5">
                     <div className="flex gap-2 items-start text-red-600">
                       <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
                       <div>
@@ -294,7 +294,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
                     </div>
 
                     <div className="text-[11px] space-y-1 pl-6">
-                      <p className="text-text-primary font-medium">&bull; <span className="font-semibold text-action-cyan">Job A:</span> {conflict.jobName}</p>
+                      <p className="text-text-primary font-medium">&bull; <span className="font-semibold text-amber-600">Job A:</span> {conflict.jobName}</p>
                       <p className="text-text-primary font-medium">&bull; <span className="font-semibold text-red-500">Job B:</span> {conflict.overlappingJobName}</p>
                       <p className="text-[10px] text-text-secondary">Período sobreposto: <span className="font-semibold">{conflict.start} &rarr; {conflict.end}</span></p>
                     </div>
@@ -303,7 +303,7 @@ export default function DashboardOperacao({ db }: { db: DatabaseProps }) {
                       <span className="text-[10px] text-text-secondary">Ajuste recomendado</span>
                       <button 
                         onClick={() => db.setActiveTab('Timeline de Alocações')}
-                        className="text-[11px] text-action-cyan font-bold hover:underline"
+                        className="text-[11px] text-amber-600 font-bold hover:underline"
                       >
                         Timeline &rarr;
                       </button>

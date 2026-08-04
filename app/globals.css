@@ -12,7 +12,7 @@
   --color-v3a-white: #FFFFFF;
 
   /* Aliasing old theme tokens to V3A for components that still use them */
-  --color-sidebar-navy: #FFFFFF;
+  --color-sidebar-navy: #636466;
   --color-action-cyan: #FFCB05;
   --color-border-subtle: #E2E3E4;
   --color-text-primary: #636466;
@@ -23,27 +23,49 @@
 :root {
   /* V3A Brand Colors */
   --v3a-yellow: #FFCB05;
+  --v3a-yellow-deep: #FFCA00;
   --v3a-gray-100: #F0F0F0;
+  --v3a-gray-200: #E2E3E4;
   --v3a-gray-400: #A4A6A9;
   --v3a-gray-700: #636466;
   --v3a-black: #000000;
   --v3a-white: #FFFFFF;
 
-  --color-sidebar-navy: var(--v3a-white);
+  --color-sidebar-navy: var(--v3a-gray-700);
   --color-action-cyan: var(--v3a-yellow);
   
   --bg-page: var(--v3a-white);
   --bg-surface: var(--v3a-white);
   --bg-hover: var(--v3a-gray-100);
+  --bg-app: var(--v3a-white);
   --text-primary: var(--v3a-gray-700);
   --text-secondary: var(--v3a-gray-400);
+  --text-muted: var(--v3a-gray-400);
+  --text-disabled: var(--v3a-gray-400);
   --border-subtle: #E2E3E4;
+  --border-default: #E2E3E4;
+  --accent: var(--v3a-yellow);
+  --accent-hover: var(--v3a-yellow-deep);
   --timeline-hover-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   --timeline-conflict-border: #EF4444;
   --danger-text: #DC2626;
+
+  /* Semantic status colors */
+  --status-success: #047857;
+  --status-success-bg: #ECFDF5;
+  --status-success-border: #A7F3D0;
+  --status-warning: #B45309;
+  --status-warning-bg: #FFFBEB;
+  --status-warning-border: #FDE68A;
+  --status-error: #BE123C;
+  --status-error-bg: #FEF2F2;
+  --status-error-border: #FECDD3;
+  --status-info: #0369A1;
+  --status-info-bg: #F0F9FF;
+  --status-info-border: #BAE6FD;
 }
 
-/* Force body text and background without destroying component specifics */
+/* Body */
 body {
   background-color: var(--v3a-white);
   color: var(--v3a-gray-700);
@@ -70,7 +92,6 @@ td {
   padding: 12px;
   border-bottom: 1px solid var(--border-subtle);
   color: var(--v3a-gray-700);
-  background-color: var(--v3a-white);
 }
 tr:hover td {
   background-color: var(--v3a-gray-100);

@@ -307,7 +307,7 @@ function getAllocationColors(status: string, hasConflict: boolean): StatusColors
     return {
       bg: 'bg-red-500/20 dark:bg-red-500/15',
       border: 'border-[var(--timeline-conflict-border)]',
-      text: 'text-red-700 dark:text-red-300',
+      text: 'text-red-700 dark:text-red-700',
       hoverBg: 'hover:bg-red-500/30',
     };
   }
@@ -315,7 +315,7 @@ function getAllocationColors(status: string, hasConflict: boolean): StatusColors
   if (s.includes('bookad') || s === 'bookada' || s === 'bookado') {
     return {
       bg: 'bg-blue-500/20 dark:bg-blue-500/15',
-      border: 'border-blue-500/50 dark:border-blue-400/40',
+      border: 'border-blue-200 dark:border-blue-400/40',
       text: 'text-blue-800 dark:text-blue-200',
       hoverBg: 'hover:bg-blue-500/30',
     };
@@ -323,7 +323,7 @@ function getAllocationColors(status: string, hasConflict: boolean): StatusColors
   if (s === 'ativo' || s === 'ativa' || s === 'em andamento' || s === 'em execução') {
     return {
       bg: 'bg-emerald-500/20 dark:bg-emerald-500/15',
-      border: 'border-emerald-500/50 dark:border-emerald-400/40',
+      border: 'border-emerald-200 dark:border-emerald-400/40',
       text: 'text-emerald-800 dark:text-emerald-200',
       hoverBg: 'hover:bg-emerald-500/30',
     };
@@ -339,7 +339,7 @@ function getAllocationColors(status: string, hasConflict: boolean): StatusColors
   if (s.includes('aguardando entrega') || s.includes('entrega')) {
     return {
       bg: 'bg-amber-400/20 dark:bg-amber-400/15',
-      border: 'border-amber-500/50 dark:border-amber-400/40',
+      border: 'border-amber-200 dark:border-amber-400/40',
       text: 'text-amber-800 dark:text-amber-200',
       hoverBg: 'hover:bg-amber-400/30',
     };
@@ -364,7 +364,7 @@ function getAllocationColors(status: string, hasConflict: boolean): StatusColors
     return {
       bg: 'bg-red-400/15 dark:bg-red-400/10',
       border: 'border-red-400/40',
-      text: 'text-red-700 dark:text-red-300',
+      text: 'text-red-700 dark:text-red-700',
       hoverBg: 'hover:bg-red-400/25',
     };
   }
@@ -427,7 +427,7 @@ function Initials({ name, size = 32 }: { name: string; size?: number }) {
   const colorIdx = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
   return (
     <div
-      className={`rounded-full flex items-center justify-center text-[var(--text-primary)] font-bold shrink-0 ${colors[colorIdx]}`}
+      className={`rounded-full flex items-center justify-center text-white font-bold shrink-0 ${colors[colorIdx]}`}
       style={{ width: size, height: size, fontSize: size * 0.35 }}
       aria-hidden="true"
     >
@@ -697,7 +697,7 @@ function AllocationHoverCard({
         {codeClean && (
           <span className={`shrink-0 font-mono text-[10px] font-bold max-w-[120px] truncate px-1.5 py-0.5 rounded ${
             isUnallocated
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              ? 'bg-amber-500/20 text-amber-700 border border-amber-200'
               : 'text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20'
           }`}>
             {codeClean}
@@ -774,7 +774,7 @@ function AllocationHoverCard({
                 onSelectJobForShortlist(allocation.jobId);
               }
             }}
-            className="w-full text-left bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-[var(--text-primary)] font-bold py-1.5 px-3 rounded-lg text-[10px] border border-amber-500/40 flex items-center justify-between transition cursor-pointer"
+            className="w-full text-left bg-amber-500/20 hover:bg-amber-500 text-amber-700 hover:text-[var(--text-primary)] font-bold py-1.5 px-3 rounded-lg text-[10px] border border-amber-200 flex items-center justify-between transition cursor-pointer"
           >
             <span>Ir para Shortlist (Alocar Talentos)</span>
             <ChevronRight className="w-3 h-3" />
@@ -942,8 +942,8 @@ function TimelineBar({
   const isUnallocated = !!(a as any)?.isUnallocatedOpportunity;
   const colors = isUnallocated ? {
     bg: 'bg-amber-500/20 dark:bg-amber-500/15',
-    border: 'border-dashed border-amber-500/80 dark:border-amber-400/80',
-    text: 'text-amber-300 dark:text-amber-200',
+    border: 'border-dashed border-amber-200 dark:border-amber-400/80',
+    text: 'text-amber-700 dark:text-amber-200',
     hoverBg: 'hover:bg-amber-500/35',
   } : getAllocationColors(a.status, a.conflict.hasConflict);
 
@@ -1067,7 +1067,7 @@ function TimelineBar({
             return (
               <div
                 key={sched.id || idx}
-                className={`absolute w-2 h-2 rounded-full border border-white/95 bottom-0.5 shadow-xs -translate-x-1/2 ${getPaymentDotColor(sched.status)}`}
+                className={`absolute w-2 h-2 rounded-full border border-[#E2E3E4] bottom-0.5 shadow-xs -translate-x-1/2 ${getPaymentDotColor(sched.status)}`}
                 style={{ left: `${dotPercent}%` }}
                 title={`Parcela ${sched.installmentNumber}: ${formatCurrency(sched.amount)}`}
               />
@@ -1116,7 +1116,7 @@ function ResourceCell({
       {/* Avatar / Icon */}
       <div className="shrink-0 mt-0.5">
         {isUnallocated ? (
-          <div className="w-[30px] h-[30px] rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center font-bold text-xs">
+          <div className="w-[30px] h-[30px] rounded-full bg-amber-500/20 text-amber-600 border border-amber-200 flex items-center justify-center font-bold text-xs">
             🎯
           </div>
         ) : (
@@ -1128,7 +1128,7 @@ function ResourceCell({
       <div className="flex flex-col gap-0.5 min-w-0 text-left overflow-visible">
         {/* Name */}
         <span
-          className={`font-bold text-[13px] leading-tight truncate w-full ${isUnallocated ? 'text-amber-400' : 'text-[var(--text-primary)]'}`}
+          className={`font-bold text-[13px] leading-tight truncate w-full ${isUnallocated ? 'text-amber-600' : 'text-[var(--text-primary)]'}`}
           title={a.freelancerName}
         >
           {a.freelancerName}
@@ -1162,7 +1162,7 @@ function ResourceCell({
                 onMouseLeave={() => {
                   if (onHoverAllocation) onHoverAllocation(null, null);
                 }}
-                className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-[var(--text-primary)] font-extrabold border border-amber-500/40 cursor-pointer transition"
+                className="inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500 text-amber-700 hover:text-[var(--text-primary)] font-extrabold border border-amber-200 cursor-pointer transition"
                 title={`Localizar vaga na Timeline (Início: ${formatShortDate(a.startDate)})`}
               >
                 Localizar na Timeline
@@ -1210,7 +1210,7 @@ function ResourceCell({
                   }}
                   className={`mt-0.5 px-2.5 py-0.5 text-[9px] font-extrabold rounded-full transition w-max cursor-pointer focus:outline-none ${
                     isUnallocated
-                      ? 'bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-[var(--text-primary)] border border-amber-500/30'
+                      ? 'bg-amber-500/20 hover:bg-amber-500 text-amber-700 hover:text-[var(--text-primary)] border border-amber-200'
                       : 'bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-[var(--text-primary)] text-[var(--accent)]'
                   }`}
                 >
@@ -1248,7 +1248,7 @@ function ResourceCell({
                             onMouseLeave={() => {
                               if (onHoverAllocation) onHoverAllocation(null, null);
                             }}
-                            className="text-[10px] font-mono font-bold text-amber-400 hover:underline cursor-pointer truncate text-left"
+                            className="text-[10px] font-mono font-bold text-amber-600 hover:underline cursor-pointer truncate text-left"
                             title={`Localizar vaga ${alloc.jobName} na Timeline (Início: ${formatShortDate(alloc.startDate)})`}
                           >
                             {alloc.jobName}
@@ -3288,12 +3288,12 @@ function TimelineAlocacoesContent({ db }: { db: DatabaseProps }) {
             onClick={() => setShowUnallocatedJobs(prev => !prev)}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
               showUnallocatedJobs
-                ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 shadow-sm ring-1 ring-amber-500/30'
+                ? 'bg-amber-500/20 border-amber-200 text-amber-700 shadow-sm ring-1 ring-amber-500/30'
                 : 'bg-[var(--bg-panel)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
             title={showUnallocatedJobs ? 'Ocultar vagas e oportunidades não alocadas na timeline/calendário' : 'Mostrar vagas e oportunidades não alocadas na timeline/calendário'}
           >
-            <Briefcase className="w-3.5 h-3.5 text-amber-400" />
+            <Briefcase className="w-3.5 h-3.5 text-amber-600" />
             <span>Vagas Não Alocadas</span>
             {unallocatedJobs.length > 0 && (
               <span className="px-1.5 py-0.2 text-[10px] font-extrabold bg-amber-500/30 text-amber-200 rounded-full">

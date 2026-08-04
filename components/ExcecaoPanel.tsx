@@ -613,19 +613,19 @@ db.setShortlists((prev: any[]) => prev.map(s =>
       <div className="border-b border-border-subtle flex gap-4 text-xs font-semibold">
         <button
           onClick={() => setActiveTab2('politica')}
-          className={`pb-2.5 border-b-2 transition-all cursor-pointer ${activeTab === 'politica' ? 'border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+          className={`pb-2.5 border-b-2 transition-all cursor-pointer ${activeTab === 'politica' ? 'border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Tabela Política de Valores ({groupedPoliciesList.length})
         </button>
         <button
           onClick={() => setActiveTab2('excecoes')}
-          className={`pb-2.5 border-b-2 transition-all cursor-pointer ${activeTab === 'excecoes' ? 'border-b-2 border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+          className={`pb-2.5 border-b-2 transition-all cursor-pointer ${activeTab === 'excecoes' ? 'border-b-2 border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Controle de Exceções Pendentes ({pendingExceptions.length})
         </button>
         <button
           onClick={() => setActiveTab2('industrias')}
-          className={`pb-2.5 border-b-2 transition-all cursor-pointer ${activeTab === 'industrias' ? 'border-b-2 border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+          className={`pb-2.5 border-b-2 transition-all cursor-pointer ${activeTab === 'industrias' ? 'border-b-2 border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
         >
           Nayos & Indústrias Homologadas
         </button>
@@ -651,7 +651,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
               {hasWritePermission && (
                 <button
                   onClick={openCreateModal}
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl flex items-center gap-1.5 shadow-xs text-xs cursor-pointer"
+                  className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-extrabold p-2 px-4 rounded-xl flex items-center gap-1.5 shadow-xs text-xs cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Nova Política
                 </button>
@@ -729,7 +729,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                     type="checkbox"
                     checked={filterIncompleteOnly}
                     onChange={(e) => setFilterIncompleteOnly(e.target.checked)}
-                    className="w-4 h-4 rounded text-action-cyan accent-action-cyan cursor-pointer"
+                    className="w-4 h-4 rounded text-amber-600 accent-action-cyan cursor-pointer"
                   />
                   <span>Apenas políticas incompletas</span>
                 </label>
@@ -740,13 +740,13 @@ db.setShortlists((prev: any[]) => prev.map(s =>
             <div className="flex border-b border-border-subtle gap-4 text-xs font-bold pt-2">
               <button
                 onClick={() => setSubTab('matriz')}
-                className={`pb-2 border-b-2 cursor-pointer transition-all ${subTab === 'matriz' ? 'border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+                className={`pb-2 border-b-2 cursor-pointer transition-all ${subTab === 'matriz' ? 'border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
               >
                 Matriz Diária / Mensal
               </button>
               <button
                 onClick={() => setSubTab('outros')}
-                className={`pb-2 border-b-2 cursor-pointer transition-all ${subTab === 'outros' ? 'border-action-cyan text-action-cyan' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
+                className={`pb-2 border-b-2 cursor-pointer transition-all ${subTab === 'outros' ? 'border-action-cyan text-amber-600' : 'border-transparent text-text-secondary hover:text-text-primary'}`}
               >
                 Outros Modelos (Hora / Job Fechado)
               </button>
@@ -818,7 +818,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             key={group.key} 
                             className={`hover:bg-slate-50 dark:hover:bg-slate-50/30 transition-colors 
                               ${!isAtivo && !isIncompleta ? 'opacity-65 bg-slate-50/50 dark:bg-white/40' : ''} 
-                              ${isIncompleta ? 'border-l-4 border-amber-500 bg-amber-50/5 dark:bg-amber-950/5' : ''}`}
+                              ${isIncompleta ? 'border-l-4 border-amber-500 bg-amber-50/5 dark:bg-amber-50' : ''}`}
                           >
                             <td className="px-6 py-3.5 font-bold">{group.role}</td>
                             <td className="px-6 py-3.5 text-text-secondary font-semibold">{group.seniority}</td>
@@ -826,7 +826,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             {/* Diária */}
                             <td className="px-6 py-3.5 text-right font-semibold">
                               {group.isDailyDefined ? (
-                                <span className="text-status-success dark:text-emerald-400 font-bold">
+                                <span className="text-status-success dark:text-emerald-600 font-bold">
                                   {formatCurrencyBRL(group.dailyRef)}
                                 </span>
                               ) : (
@@ -846,7 +846,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             {/* Mensal */}
                             <td className="px-6 py-3.5 text-right font-semibold">
                               {group.isMonthlyDefined ? (
-                                <span className="text-status-success dark:text-emerald-400 font-bold">
+                                <span className="text-status-success dark:text-emerald-600 font-bold">
                                   {formatCurrencyBRL(group.monthlyRef)}
                                 </span>
                               ) : (
@@ -1003,7 +1003,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             {/* Hora */}
                             <td className="px-6 py-3.5 text-right font-semibold">
                               {group.isHourlyDefined ? (
-                                <span className="text-status-success dark:text-emerald-400 font-bold">
+                                <span className="text-status-success dark:text-emerald-600 font-bold">
                                   {formatCurrencyBRL(group.hourlyRef)}
                                 </span>
                               ) : (
@@ -1023,7 +1023,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             {/* Job Fechado */}
                             <td className="px-6 py-3.5 text-right font-semibold">
                               {group.isFixedDefined ? (
-                                <span className="text-status-success dark:text-emerald-400 font-bold">
+                                <span className="text-status-success dark:text-emerald-600 font-bold">
                                   {formatCurrencyBRL(group.fixedRef)}
                                 </span>
                               ) : (
@@ -1135,8 +1135,8 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                           <span className="text-[10px] text-text-secondary font-semibold">{group.seniority}</span>
                         </div>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border 
-                          ${isAtivo ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900' : 
-                            isIncompleta ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900' :
+                          ${isAtivo ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-50 dark:text-emerald-600 dark:border-emerald-900' : 
+                            isIncompleta ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-50 dark:text-amber-600 dark:border-amber-900' :
                             'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-50 dark:text-[var(--text-disabled)] dark:border-slate-200'}`}>
                           {group.status}
                         </span>
@@ -1148,7 +1148,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             <strong className="text-text-secondary block font-bold">DIÁRIA</strong>
                             {group.isDailyDefined ? (
                               <div className="mt-0.5 text-text-primary">
-                                Ref: <span className="font-bold text-status-success dark:text-emerald-400">{formatCurrencyBRL(group.dailyRef)}</span>
+                                Ref: <span className="font-bold text-status-success dark:text-emerald-600">{formatCurrencyBRL(group.dailyRef)}</span>
                                 <br />
                                 Teto: <span className="font-bold text-[#B28900] dark:text-amber-500">{formatCurrencyBRL(group.dailyCeiling)}</span>
                               </div>
@@ -1161,7 +1161,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             <strong className="text-text-secondary block font-bold">MENSALIDADE</strong>
                             {group.isMonthlyDefined ? (
                               <div className="mt-0.5 text-text-primary">
-                                Ref: <span className="font-bold text-status-success dark:text-emerald-400">{formatCurrencyBRL(group.monthlyRef)}</span>
+                                Ref: <span className="font-bold text-status-success dark:text-emerald-600">{formatCurrencyBRL(group.monthlyRef)}</span>
                                 <br />
                                 Teto: <span className="font-bold text-[#B28900] dark:text-amber-550">{formatCurrencyBRL(group.monthlyCeiling)}</span>
                               </div>
@@ -1176,7 +1176,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             <strong className="text-text-secondary block font-bold">HORA</strong>
                             {group.isHourlyDefined ? (
                               <div className="mt-0.5 text-text-primary">
-                                Ref: <span className="font-bold text-status-success dark:text-emerald-400">{formatCurrencyBRL(group.hourlyRef)}</span>
+                                Ref: <span className="font-bold text-status-success dark:text-emerald-600">{formatCurrencyBRL(group.hourlyRef)}</span>
                                 <br />
                                 Teto: <span className="font-bold text-[#B28900] dark:text-amber-550">{formatCurrencyBRL(group.hourlyCeiling)}</span>
                               </div>
@@ -1189,7 +1189,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             <strong className="text-text-secondary block font-bold">JOB FECHADO</strong>
                             {group.isFixedDefined ? (
                               <div className="mt-0.5 text-text-primary">
-                                Ref: <span className="font-bold text-status-success dark:text-emerald-400">{formatCurrencyBRL(group.fixedRef)}</span>
+                                Ref: <span className="font-bold text-status-success dark:text-emerald-600">{formatCurrencyBRL(group.fixedRef)}</span>
                                 <br />
                                 Teto: <span className="font-bold text-[#B28900] dark:text-amber-550">{formatCurrencyBRL(group.fixedCeiling)}</span>
                               </div>
@@ -1207,14 +1207,14 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                             {isIncompleta && (
                               <button
                                 onClick={() => openEditModal(group)}
-                                className="bg-amber-600 hover:bg-amber-700 text-[var(--text-primary)] font-bold px-2 py-1 rounded text-[9px] cursor-pointer"
+                                className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2 py-1 rounded text-[9px] cursor-pointer"
                               >
                                 Completar
                               </button>
                             )}
                             <button
                               onClick={() => openEditModal(group)}
-                              className="text-blue-700 dark:text-blue-400 font-bold px-2 py-1 border border-blue-200 dark:border-blue-900 rounded text-[9px] cursor-pointer"
+                              className="text-blue-700 dark:text-blue-700 font-bold px-2 py-1 border border-blue-200 dark:border-blue-900 rounded text-[9px] cursor-pointer"
                             >
                               Editar
                             </button>
@@ -1363,9 +1363,9 @@ db.setShortlists((prev: any[]) => prev.map(s =>
       {isPolicyModalOpen && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 text-xs">
           <div className="bg-white dark:bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-up">
-            <div className="p-5 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center">
+            <div className="p-5 bg-white text-[var(--text-primary)] flex justify-between items-center">
               <h3 className="font-bold text-sm flex items-center gap-2">
-                <Scale className="w-5 h-5 text-action-cyan" />
+                <Scale className="w-5 h-5 text-amber-600" />
                 <span>
                   {policyModalMode === 'create' && 'Criar Nova Diretriz de Política'}
                   {policyModalMode === 'edit' && 'Editar Diretriz de Política'}
@@ -1374,7 +1374,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
               </h3>
               <button 
                 onClick={() => setIsPolicyModalOpen(false)}
-                className="text-[var(--text-primary)] hover:text-action-cyan cursor-pointer"
+                className="text-[var(--text-primary)] hover:text-amber-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1445,7 +1445,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
 
               {/* Seção 1: Diária & Mensalidade */}
               <div className="border-t border-border-subtle pt-4 space-y-4">
-                <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-action-cyan">Diária e Mensalidade</h4>
+                <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-amber-600">Diária e Mensalidade</h4>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
@@ -1500,7 +1500,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
 
               {/* Seção 2: Outros Modelos */}
               <div className="border-t border-border-subtle pt-4 space-y-4">
-                <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-action-cyan">Outros Modelos de Remuneração</h4>
+                <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-amber-600">Outros Modelos de Remuneração</h4>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-2">
@@ -1555,7 +1555,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
 
               {/* Seção 3: Success Fee */}
               <div className="border-t border-border-subtle pt-4 space-y-4">
-                <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-action-cyan">Bônus por Performance (Success Fee)</h4>
+                <h4 className="font-bold text-text-primary text-xs uppercase tracking-wider text-amber-600">Bônus por Performance (Success Fee)</h4>
                 <div className="bg-slate-50 dark:bg-slate-50/40 p-3.5 rounded-xl border border-border-subtle space-y-2 max-w-xs">
                   <span className="font-bold text-text-primary block text-[11px]">PERCENTUAL MÁXIMO</span>
                   <div>
@@ -1598,7 +1598,7 @@ db.setShortlists((prev: any[]) => prev.map(s =>
                 </button>
                 <button
                   type="submit"
-                  className="bg-action-cyan hover:bg-action-cyan/95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition cursor-pointer"
+                  className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition cursor-pointer"
                 >
                   Salvar Diretriz
                 </button>

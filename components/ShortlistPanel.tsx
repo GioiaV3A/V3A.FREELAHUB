@@ -143,7 +143,7 @@ function JobDescriptionFormatted({ description }: { description: string }) {
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-[11px] font-bold text-action-cyan hover:underline flex items-center gap-1 cursor-pointer select-none"
+          className="text-[11px] font-bold text-amber-600 hover:underline flex items-center gap-1 cursor-pointer select-none"
         >
           {isExpanded ? (
             <span className="flex items-center gap-1"><span>Contrair escopo</span> <ChevronUp className="w-3.5 h-3.5" /></span>
@@ -155,7 +155,7 @@ function JobDescriptionFormatted({ description }: { description: string }) {
 
       <div className={`mt-1.5 text-xs text-[var(--text-muted)] leading-relaxed font-sans transition-all duration-300 ${!isExpanded ? 'max-h-16 overflow-hidden relative' : ''}`}>
         {!isExpanded && (
-          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-slate-800 to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent pointer-events-none" />
         )}
         
         {lines.map((line, idx) => {
@@ -167,7 +167,7 @@ function JobDescriptionFormatted({ description }: { description: string }) {
             const isHeader = content === content.toUpperCase() && content.length > 5;
             if (isHeader) {
               return (
-                <h5 key={idx} className="font-extrabold text-action-cyan text-[11px] mt-2 mb-0.5 flex items-center gap-1.5 uppercase tracking-wide">
+                <h5 key={idx} className="font-extrabold text-amber-600 text-[11px] mt-2 mb-0.5 flex items-center gap-1.5 uppercase tracking-wide">
                   <span className="w-1.5 h-1.5 rounded-full bg-action-cyan inline-block" />
                   <span>{content}</span>
                 </h5>
@@ -175,7 +175,7 @@ function JobDescriptionFormatted({ description }: { description: string }) {
             }
             return (
               <div key={idx} className="flex items-start gap-1.5 pl-2 my-0.5">
-                <span className="text-action-cyan font-bold">•</span>
+                <span className="text-amber-600 font-bold">•</span>
                 <span>{content}</span>
               </div>
             );
@@ -183,7 +183,7 @@ function JobDescriptionFormatted({ description }: { description: string }) {
 
           if (trimmed.endsWith(':') && trimmed.length < 50) {
             return (
-              <h5 key={idx} className="font-extrabold text-action-cyan text-[11px] mt-2 mb-0.5 uppercase tracking-wide">
+              <h5 key={idx} className="font-extrabold text-amber-600 text-[11px] mt-2 mb-0.5 uppercase tracking-wide">
                 {trimmed}
               </h5>
             );
@@ -861,8 +861,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               onClick={() => handleSelectJob(job.id)}
               className={`font-bold py-1.5 px-2.5 w-full flex items-center justify-center gap-1.5 rounded-lg text-[10.5px] border transition-all cursor-pointer whitespace-nowrap truncate ${
                 isSelected 
-                  ? 'bg-emerald-600 border-emerald-600 text-[var(--text-primary)] shadow-sm' 
-                  : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
+                  ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' 
+                  : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-white dark:text-text-primary'
               }`}
             >
               {isSelected ? (
@@ -904,12 +904,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
           </div>
           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
             job.status === 'Bookado' 
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-50 dark:text-emerald-700 dark:border-emerald-900/30' 
               : job.status === 'Aguardando RH'
-                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30'
+                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-50 dark:text-amber-350 dark:border-amber-900/30'
                 : job.status === 'Encerrado'
-                  ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/20 dark:text-red-300 dark:border-red-900/30'
-                  : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30'
+                  ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-50 dark:text-red-700 dark:border-red-900/30'
+                  : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-50 dark:text-blue-700 dark:border-blue-900/30'
           }`}>
             {job.status}
           </span>
@@ -959,8 +959,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             onClick={() => handleSelectJob(job.id)}
             className={`font-bold px-4 py-2 rounded-xl text-xs border transition-all cursor-pointer w-full text-center ${
               isSelected 
-                ? 'bg-emerald-600 border-emerald-600 text-[var(--text-primary)]' 
-                : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-sidebar-navy dark:text-text-primary'
+                ? 'bg-emerald-600 border-emerald-600 text-white' 
+                : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-white dark:text-text-primary'
             }`}
           >
             {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar Oportunidade'}
@@ -1179,9 +1179,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
     // Score badge style
     let scoreBadgeStyle = "bg-slate-500/10 text-slate-700 dark:text-[var(--text-muted)] border-slate-500/20";
     if (score >= 75) {
-      scoreBadgeStyle = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20";
+      scoreBadgeStyle = "bg-emerald-500/10 text-emerald-700 dark:text-emerald-700 border-emerald-200";
     } else if (score >= 50) {
-      scoreBadgeStyle = "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20";
+      scoreBadgeStyle = "bg-blue-500/10 text-blue-700 dark:text-blue-700 border-blue-200";
     }
 
     return (
@@ -1223,7 +1223,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             <ScoreStars score={cand.averageScore} size="sm" showNumber={true} />
           </div>
           {cand.experienceWithV3A && (
-            <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold px-1.5 py-0.5 rounded">
+            <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-700 text-[10px] font-semibold px-1.5 py-0.5 rounded">
               Histórico V3A
             </span>
           )}
@@ -1263,8 +1263,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
         {/* Warning block for Pleno matching Especialista role */}
         {isBelowSeniorityButCompatRole && (
-          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-[11px] p-2.5 rounded-lg flex items-start gap-1.5 leading-snug">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="bg-amber-500/10 border border-amber-200 text-amber-800 dark:text-amber-700 text-[11px] p-2.5 rounded-lg flex items-start gap-1.5 leading-snug">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-600 shrink-0 mt-0.5" />
             <span>Apesar de estar abaixo da senioridade solicitada, possui função compatível para análise do núcleo.</span>
           </div>
         )}
@@ -1276,10 +1276,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             onClick={() => handleAddToShortlist(cand.id)}
             className={`add-to-shortlist-btn p-1.5 px-3 rounded-lg font-bold text-xs transition-all ${
               isAdded 
-                ? 'bg-emerald-600/20 border border-emerald-600/40 text-emerald-450 dark:text-emerald-400 font-semibold cursor-default' 
+                ? 'bg-emerald-600/20 border border-emerald-200 text-emerald-450 dark:text-emerald-600 font-semibold cursor-default' 
                 : activeJob?.selectedFreelancerId
                   ? 'bg-slate-50 border border-slate-200 text-[var(--text-disabled)] cursor-not-allowed'
-                  : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan'
+                  : 'bg-accent-soft border border-accent/30 text-accent hover:bg-action-cyan hover:text-white hover:border-action-cyan'
             }`}
           >
             {isAdded ? <Check className="w-3.5 h-3.5 inline mr-1" /> : ''}
@@ -2008,13 +2008,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
       
       {/* -------------------- STEPPER COMPONENT — só exibe quando um job foi selecionado -------------------- */}
       {activeStep > 1 && selectedJobIdLocal && (
-        <div className="bg-[#0f172a]/80 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl">
+        <div className="bg-[#F0F0F0] border border-[#E2E3E4] rounded-2xl shadow-sm">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-4 px-6 py-4">
 
             {/* Left: Title & Subtitle */}
             <div className="flex items-center gap-3 shrink-0">
               <div className="p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/50">
-                <Scale className="w-5 h-5 text-action-cyan" />
+                <Scale className="w-5 h-5 text-amber-600" />
               </div>
               <div>
                 <h2 className="text-sm font-extrabold text-[var(--text-primary)] leading-none tracking-wide">Workflow de Shortlist & Negociação</h2>
@@ -2023,7 +2023,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             </div>
 
             {/* Right: Modern Connective Stepper */}
-            <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto shrink-0 bg-slate-950/60 p-1.5 rounded-xl border border-slate-200/80 w-full lg:w-auto">
+            <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto shrink-0 bg-[#F0F0F0] p-1.5 rounded-xl border border-slate-200/80 w-full lg:w-auto">
               
               {/* Step 1 — Seleção do Job */}
               {(() => {
@@ -2036,12 +2036,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       active
                         ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
                         : done
-                          ? 'text-emerald-400 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-300'
+                          ? 'text-emerald-600 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-700'
                           : 'text-[var(--text-disabled)] cursor-default'
                     }`}
                   >
                     <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-50 text-[var(--text-disabled)]'
+                      active ? 'bg-black text-[#FFCB05]' : done ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-[var(--text-disabled)]'
                     }`}>
                       {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '1'}
                     </span>
@@ -2063,12 +2063,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       active
                         ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
                         : done
-                          ? 'text-emerald-400 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-300'
+                          ? 'text-emerald-600 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-700'
                           : 'text-[var(--text-disabled)] cursor-default'
                     }`}
                   >
                     <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-50 text-[var(--text-disabled)]'
+                      active ? 'bg-black text-[#FFCB05]' : done ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-[var(--text-disabled)]'
                     }`}>
                       {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '2'}
                     </span>
@@ -2090,12 +2090,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       active
                         ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
                         : done
-                          ? 'text-emerald-400 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-300'
+                          ? 'text-emerald-600 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-700'
                           : 'text-[var(--text-disabled)] cursor-default'
                     }`}
                   >
                     <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-50 text-[var(--text-disabled)]'
+                      active ? 'bg-black text-[#FFCB05]' : done ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-[var(--text-disabled)]'
                     }`}>
                       {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '3'}
                     </span>
@@ -2117,12 +2117,12 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       active
                         ? 'bg-action-cyan text-slate-950 shadow-md font-extrabold cursor-default'
                         : done
-                          ? 'text-emerald-400 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-300'
+                          ? 'text-emerald-600 hover:bg-slate-50/50 cursor-pointer hover:text-emerald-700'
                           : 'text-[var(--text-disabled)] cursor-default'
                     }`}
                   >
                     <span className={`w-4.5 h-4.5 shrink-0 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                      active ? 'bg-slate-950 text-action-cyan' : done ? 'bg-emerald-500 text-slate-950' : 'bg-slate-50 text-[var(--text-disabled)]'
+                      active ? 'bg-black text-[#FFCB05]' : done ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-[var(--text-disabled)]'
                     }`}>
                       {done ? <Check className="w-3 h-3 stroke-[3.5]" /> : '4'}
                     </span>
@@ -2143,7 +2143,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-sidebar-navy flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-action-cyan" />
+                  <Briefcase className="w-5 h-5 text-amber-600" />
                   <span>Escolha a Oportunidade de Live Marketing</span>
                 </h3>
                 <p className="text-xs text-text-secondary">Selecione uma vaga para criar sua shortlist e alocar talentos homologados.</p>
@@ -2174,7 +2174,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => setJobTabFilter('ativas')}
                 className={`p-2 px-4 rounded-xl text-xs font-bold transition-all border ${
                   jobTabFilter === 'ativas'
-                    ? 'bg-sidebar-navy text-[var(--text-primary)] border-sidebar-navy'
+                    ? 'bg-white text-[var(--text-primary)] border-sidebar-navy'
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
@@ -2184,7 +2184,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => setJobTabFilter('bookadas')}
                 className={`p-2 px-4 rounded-xl text-xs font-bold transition-all border ${
                   jobTabFilter === 'bookadas'
-                    ? 'bg-sidebar-navy text-[var(--text-primary)] border-sidebar-navy'
+                    ? 'bg-white text-[var(--text-primary)] border-sidebar-navy'
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
@@ -2194,7 +2194,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => setJobTabFilter('encerradas')}
                 className={`p-2 px-4 rounded-xl text-xs font-bold transition-all border ${
                   jobTabFilter === 'encerradas'
-                    ? 'bg-sidebar-navy text-[var(--text-primary)] border-sidebar-navy'
+                    ? 'bg-white text-[var(--text-primary)] border-sidebar-navy'
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
@@ -2204,7 +2204,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 onClick={() => setJobTabFilter('todas')}
                 className={`p-2 px-4 rounded-xl text-xs font-bold transition-all border ${
                   jobTabFilter === 'todas'
-                    ? 'bg-sidebar-navy text-[var(--text-primary)] border-sidebar-navy'
+                    ? 'bg-white text-[var(--text-primary)] border-sidebar-navy'
                     : 'bg-white hover:bg-slate-50 text-text-secondary border-border-subtle'
                 }`}
               >
@@ -2236,7 +2236,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   showAdvancedFilters ? 'bg-slate-100 border-slate-300 text-sidebar-navy' : 'bg-white border-border-subtle hover:bg-slate-50'
                 }`}
               >
-                <SlidersHorizontal className="w-4 h-4 text-action-cyan" />
+                <SlidersHorizontal className="w-4 h-4 text-amber-600" />
                 <span>Filtros</span>
               </button>
             </div>
@@ -2411,8 +2411,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           onClick={() => handleSelectJob(job.id)}
                           className={`font-bold w-[110px] h-[32px] flex items-center justify-center rounded-lg text-xs border transition-all ${
                             isSelected 
-                              ? 'bg-emerald-600 border-emerald-600 text-[var(--text-primary)]' 
-                              : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-sidebar-navy'
+                              ? 'bg-emerald-600 border-emerald-600 text-white' 
+                              : 'bg-primary/10 border-primary/20 hover:bg-action-cyan hover:text-[var(--text-primary)] hover:border-action-cyan text-white'
                           }`}
                         >
                           {isSelected ? 'Selecionado' : (job.status?.toLowerCase() === 'bookado' || job.status?.toLowerCase() === 'booked' || job.selectedFreelancerId) ? 'Ver Alocação' : 'Selecionar'}
@@ -2430,18 +2430,18 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               {activeJob.selectedFreelancerId ? (
                 <button
                   onClick={() => handleNavigateStep(4)}
-                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                  className="bg-white hover:bg-white/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
                 >
                   <span>Avançar para Alocação</span>
-                  <ArrowRight className="w-4 h-4 text-action-cyan" />
+                  <ArrowRight className="w-4 h-4 text-amber-600" />
                 </button>
               ) : (
                 <button
                   onClick={() => handleNavigateStep(2)}
-                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                  className="bg-white hover:bg-white/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
                 >
                   <span>Avançar para Shortlist</span>
-                  <ArrowRight className="w-4 h-4 text-action-cyan" />
+                  <ArrowRight className="w-4 h-4 text-amber-600" />
                 </button>
               )}
             </div>
@@ -2491,11 +2491,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               >
                 <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-950 text-[var(--text-disabled)] font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
+                    <span className="bg-slate-100 text-slate-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
-                    <span className="text-[11px] uppercase font-extrabold text-action-cyan tracking-wider">Oportunidade Selecionada</span>
-                    <span className="bg-blue-950 text-blue-300 border border-blue-800/80 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                    <span className="text-[11px] uppercase font-extrabold text-amber-600 tracking-wider">Oportunidade Selecionada</span>
+                    <span className="bg-[#FFF6D6] text-black border border-[#FFE680] px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{activeJob.status}</span>
                   </div>
 
                   <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">[{activeJob.client}] {activeJob.name}</h3>
@@ -2503,11 +2503,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[var(--text-muted)]">
                     <div>Núcleo: <strong className="text-[var(--text-primary)]">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-[var(--text-primary)]">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-600 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
                     <div>Período: <strong className="text-[var(--text-primary)]">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
-                    <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
+                    <div>Modelo / Fluxo: <strong className="text-emerald-700 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-[var(--text-primary)]">Dia {paymentDay}</strong></div>}
-                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
+                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-700 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
 
                   {/* Formatted Description with Expand/Collapse */}
@@ -2519,7 +2519,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="flex flex-col justify-between items-end gap-3 min-w-[180px] shrink-0">
                   <div className="text-right">
                     <div className="text-[10px] uppercase font-extrabold text-[var(--text-disabled)] tracking-wider">Budget Máximo do Job</div>
-                    <div className="text-lg font-black text-action-cyan">
+                    <div className="text-lg font-black text-amber-600">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
                     <div className="text-[10px] text-[var(--text-disabled)] font-medium mt-0.5">
@@ -2562,7 +2562,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="flex justify-between items-center">
                   <div>
                     <h4 className="font-bold text-sidebar-navy text-sm flex items-center gap-1.5">
-                      <Search className="w-4 h-4 text-action-cyan" />
+                      <Search className="w-4 h-4 text-amber-600" />
                       <span>Banco de Talentos Homologados V3A</span>
                     </h4>
                     <p className="text-[11px] text-text-secondary mt-0.5">Busque e filtre freelancers compatíveis no banco de dados.</p>
@@ -2574,7 +2574,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       showCandidateFilters ? 'bg-slate-100 border-slate-300 text-sidebar-navy' : 'bg-white border-border-subtle hover:bg-slate-50'
                     }`}
                   >
-                    <Filter className="w-3.5 h-3.5 text-action-cyan" />
+                    <Filter className="w-3.5 h-3.5 text-amber-600" />
                     <span>Filtros</span>
                   </button>
                 </div>
@@ -2691,7 +2691,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         onClick={() => setCandidateV3aExp(p => p === null ? true : p === true ? false : null)}
                         className={`p-1.5 px-3 rounded-lg text-[10px] font-bold border transition-all ${
                           candidateV3aExp === true 
-                            ? 'bg-sidebar-navy border-sidebar-navy text-[var(--text-primary)]' 
+                            ? 'bg-white border-sidebar-navy text-[var(--text-primary)]' 
                             : candidateV3aExp === false 
                               ? 'bg-slate-200 border-slate-300 text-slate-800' 
                               : 'bg-white border-border-subtle text-text-secondary'
@@ -2730,7 +2730,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           type="checkbox"
                           checked={requireExactRole}
                           onChange={(e) => setRequireExactRole(e.target.checked)}
-                          className="rounded text-action-cyan focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
+                          className="rounded text-amber-600 focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
                         />
                         <span>Exigir função exata</span>
                       </label>
@@ -2740,7 +2740,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           type="checkbox"
                           checked={requireExactSeniority}
                           onChange={(e) => setRequireExactSeniority(e.target.checked)}
-                          className="rounded text-action-cyan focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
+                          className="rounded text-amber-600 focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
                         />
                         <span>Exigir senioridade exata</span>
                       </label>
@@ -2750,7 +2750,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           type="checkbox"
                           checked={showBelowSeniority}
                           onChange={(e) => setShowBelowSeniority(e.target.checked)}
-                          className="rounded text-action-cyan focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
+                          className="rounded text-amber-600 focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
                         />
                         <span>Mostrar alt. abaixo senioridade</span>
                       </label>
@@ -2760,7 +2760,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           type="checkbox"
                           checked={showAboveBudget}
                           onChange={(e) => setShowAboveBudget(e.target.checked)}
-                          className="rounded text-action-cyan focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
+                          className="rounded text-amber-600 focus:ring-action-cyan w-3.5 h-3.5 bg-bg-surface border-border-subtle"
                         />
                         <span>Mostrar opções acima budget</span>
                       </label>
@@ -2775,10 +2775,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="accordion-match accordion-best border border-emerald-700/40 rounded-xl overflow-hidden shadow-xs">
                     <button 
                       onClick={() => setExpandBestMatches(!expandBestMatches)}
-                      className="w-full bg-emerald-900/30 p-3 flex justify-between items-center text-xs font-bold text-emerald-300 border-b border-emerald-700/40 hover:bg-emerald-900/40 transition-colors"
+                      className="w-full bg-emerald-50 p-3 flex justify-between items-center text-xs font-extrabold text-emerald-800 border-b border-emerald-200 hover:bg-emerald-100 transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-emerald-400" />
+                        <Award className="w-4 h-4 text-emerald-600" />
                         <span>🏆 Melhores Matches ({matches.best.length})</span>
                       </span>
                       {expandBestMatches ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -2799,10 +2799,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="accordion-match accordion-good border border-blue-700/40 rounded-xl overflow-hidden shadow-xs">
                     <button 
                       onClick={() => setExpandGoodMatches(!expandGoodMatches)}
-                      className="w-full bg-blue-900/30 p-3 flex justify-between items-center text-xs font-bold text-blue-300 border-b border-blue-700/40 hover:bg-blue-900/40 transition-colors"
+                      className="w-full bg-blue-50 p-3 flex justify-between items-center text-xs font-extrabold text-blue-800 border-b border-blue-200 hover:bg-blue-100 transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        <TrendingUp className="w-4 h-4 text-blue-400" />
+                        <TrendingUp className="w-4 h-4 text-blue-700" />
                         <span>⚡ Boas Alternativas ({matches.good.length})</span>
                       </span>
                       {expandGoodMatches ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -2823,10 +2823,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="accordion-match accordion-neutral border border-slate-600/40 rounded-xl overflow-hidden shadow-xs">
                     <button 
                       onClick={() => setExpandOtherMatches(!expandOtherMatches)}
-                      className="w-full bg-slate-700/40 p-3 flex justify-between items-center text-xs font-bold text-[var(--text-muted)] border-b border-slate-600/40 hover:bg-slate-700/60 transition-colors"
+                      className="w-full bg-slate-100 p-3 flex justify-between items-center text-xs font-extrabold text-slate-800 border-b border-slate-200 hover:bg-slate-200 transition-colors"
                     >
                       <span className="flex items-center gap-1.5">
-                        <Users className="w-4 h-4 text-[var(--text-disabled)]" />
+                        <Users className="w-4 h-4 text-slate-600" />
                         <span>👥 Outras Opções ({matches.other.length})</span>
                       </span>
                       {expandOtherMatches ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -2868,7 +2868,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 }}
                 className={`bg-white p-5 rounded-2xl border-2 transition-all shadow-xs space-y-4 ${
                   isDraggingOver 
-                    ? 'border-dashed border-action-cyan bg-action-cyan/5 scale-[1.01]' 
+                    ? 'border-dashed border-action-cyan bg-amber-100 scale-[1.01]' 
                     : 'border-border-subtle'
                 }`}
               >
@@ -2933,7 +2933,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                             <div>
                               <div className="flex justify-between items-center mb-1">
                                 <label className="text-[11px] font-bold text-text-secondary">Observações / Notas internas</label>
-                                {statusVal === 'saving' && <span className="text-[10px] text-action-cyan animate-pulse">Gravando...</span>}
+                                {statusVal === 'saving' && <span className="text-[10px] text-amber-600 animate-pulse">Gravando...</span>}
                                 {statusVal === 'saved' && <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5"><Check className="w-3 h-3" /> Salvo</span>}
                               </div>
                               <textarea
@@ -2968,17 +2968,17 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <button
                   disabled={isDispatchingEmails}
                   onClick={handleConfirmShortlistAndDispatchProposals}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-md disabled:opacity-50 transition-all"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-md disabled:opacity-50 transition-all"
                 >
                   <Mail className="w-4 h-4" />
                   <span>{isDispatchingEmails ? 'Confirmando & Disparando...' : 'Confirmar Shortlist Oficial & Disparar Propostas'}</span>
                 </button>
                 <button
                   onClick={() => handleNavigateStep(3)}
-                  className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-[var(--text-primary)] font-bold p-3 px-5 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                  className="bg-white hover:bg-white/95 text-[var(--text-primary)] font-bold p-3 px-5 rounded-xl flex items-center gap-2 text-xs shadow-xs"
                 >
                   <span>Negociação</span>
-                  <ArrowRight className="w-4 h-4 text-action-cyan" />
+                  <ArrowRight className="w-4 h-4 text-amber-600" />
                 </button>
               </div>
             )}
@@ -3028,11 +3028,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               >
                 <div className="space-y-1.5 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-950 text-[var(--text-disabled)] font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
+                    <span className="bg-slate-100 text-slate-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
-                    <span className="text-[10px] uppercase font-extrabold text-action-cyan tracking-wider">Negociação Individual</span>
-                    <span className="bg-blue-950 text-blue-300 border border-blue-800/80 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                    <span className="text-[10px] uppercase font-extrabold text-amber-600 tracking-wider">Negociação Individual</span>
+                    <span className="bg-[#FFF6D6] text-black border border-[#FFE680] px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{activeJob.status}</span>
                   </div>
 
                   <h3 className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">[{activeJob.client}] {activeJob.name}</h3>
@@ -3040,11 +3040,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[var(--text-muted)]">
                     <div>Núcleo: <strong className="text-[var(--text-primary)]">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-[var(--text-primary)]">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-600 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
                     <div>Período: <strong className="text-[var(--text-primary)]">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
-                    <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
+                    <div>Modelo / Fluxo: <strong className="text-emerald-700 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-[var(--text-primary)]">Dia {paymentDay}</strong></div>}
-                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
+                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-700 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
 
                   {/* Formatted Description with Expand/Collapse */}
@@ -3056,7 +3056,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="flex flex-col justify-between items-end gap-2 shrink-0">
                   <div className="text-right">
                     <div className="text-[10px] uppercase font-extrabold text-[var(--text-disabled)] tracking-wider">Budget Máximo do Job</div>
-                    <div className="text-base font-black text-action-cyan">
+                    <div className="text-base font-black text-amber-600">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
                     <div className="text-[10px] text-[var(--text-disabled)] font-medium mt-0.5">
@@ -3077,11 +3077,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
           {/* COMPARISON GRID BETWEEN FREELANCERS */}
           {jobShortlists.length > 1 && (
-            <div className="bg-[#1E293B] border border-slate-200/50 p-6 rounded-2xl shadow-lg space-y-4">
+            <div className="bg-white border border-[#E2E3E4] p-6 rounded-2xl shadow-lg space-y-4">
               <div className="flex justify-between items-center flex-wrap gap-4">
                 <div>
                   <h4 className="font-extrabold text-[var(--text-primary)] text-sm uppercase tracking-wider flex items-center gap-1.5">
-                    <SlidersHorizontal className="w-5 h-5 text-action-cyan" />
+                    <SlidersHorizontal className="w-5 h-5 text-amber-600" />
                     <span>Painel Comparativo de Propostas</span>
                   </h4>
                   <p className="text-xs text-slate-600">RH, Master e Heads de Núcleo podem comparar o impacto financeiro de cada opção.</p>
@@ -3095,7 +3095,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     onClick={() => setCompareSortKey('default')}
                     className={`p-2 px-3 rounded-lg font-bold transition-all border ${
                       compareSortKey === 'default'
-                        ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
+                        ? 'bg-action-cyan text-black border-action-cyan'
                         : 'bg-slate-50 text-[var(--text-muted)] border-slate-750 hover:bg-slate-750'
                     }`}
                   >
@@ -3106,7 +3106,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     onClick={() => setCompareSortKey('saving')}
                     className={`p-2 px-3 rounded-lg font-bold transition-all border ${
                       compareSortKey === 'saving'
-                        ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
+                        ? 'bg-action-cyan text-black border-action-cyan'
                         : 'bg-slate-50 text-[var(--text-muted)] border-slate-750 hover:bg-slate-750'
                     }`}
                   >
@@ -3117,7 +3117,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     onClick={() => setCompareSortKey('total')}
                     className={`p-2 px-3 rounded-lg font-bold transition-all border ${
                       compareSortKey === 'total'
-                        ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
+                        ? 'bg-action-cyan text-black border-action-cyan'
                         : 'bg-slate-50 text-[var(--text-muted)] border-slate-750 hover:bg-slate-750'
                     }`}
                   >
@@ -3128,7 +3128,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     onClick={() => setCompareSortKey('score')}
                     className={`p-2 px-3 rounded-lg font-bold transition-all border ${
                       compareSortKey === 'score'
-                        ? 'bg-action-cyan text-sidebar-navy border-action-cyan'
+                        ? 'bg-action-cyan text-black border-action-cyan'
                         : 'bg-slate-50 text-[var(--text-muted)] border-slate-750 hover:bg-slate-750'
                     }`}
                   >
@@ -3162,11 +3162,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         <td className="p-3.5">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                             sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head'
-                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/50'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : sl.candidateStatus === 'Valor fora da política' || sl.candidateStatus === 'Reprovado pelo Head' || sl.candidateStatus === 'Aceitou com ressalva'
-                                ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
                                 : sl.candidateStatus === 'Bloqueado por conflito de agenda' || sl.candidateStatus === 'Não aceitou'
-                                  ? 'bg-red-950 text-red-400 border border-red-800/50'
+                                  ? 'bg-red-50 text-red-700 border border-red-200'
                                   : 'bg-slate-50 text-[var(--text-muted)] border border-slate-200/60'
                           }`}>
                             {sl.candidateStatus}
@@ -3182,7 +3182,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           savingAmount > 0 
                             ? 'text-emerald-450' 
                             : savingAmount < 0 
-                              ? 'text-red-400' 
+                              ? 'text-red-600' 
                               : 'text-[var(--text-muted)]'
                         }`}>
                           {savingAmount < 0 
@@ -3194,7 +3194,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           savingAmount > 0 
                             ? 'text-emerald-450' 
                             : savingAmount < 0 
-                              ? 'text-red-400' 
+                              ? 'text-red-600' 
                               : 'text-[var(--text-muted)]'
                         }`}>
                           {savingAmount < 0 
@@ -3204,16 +3204,16 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                         </td>
                         <td className="p-3.5 text-center">
                           {exceedsCeiling ? (
-                            <span className="text-red-400 font-bold bg-red-950/40 p-1 px-2 rounded border border-red-900/40">Excedeu</span>
+                            <span className="text-red-600 font-bold bg-red-50 p-1 px-2 rounded border border-red-900/40">Excedeu</span>
                           ) : (
-                            <span className="text-emerald-400 font-bold bg-emerald-950/40 p-1 px-2 rounded border border-emerald-900/40">Dentro</span>
+                            <span className="text-emerald-600 font-bold bg-emerald-50 p-1 px-2 rounded border border-emerald-900/40">Dentro</span>
                           )}
                         </td>
                         <td className="p-3.5 text-center">
                           {hasConflict ? (
-                            <span className="text-red-400 font-bold bg-red-950/40 p-1 px-2 rounded border border-red-900/40">Conflito</span>
+                            <span className="text-red-600 font-bold bg-red-50 p-1 px-2 rounded border border-red-900/40">Conflito</span>
                           ) : (
-                            <span className="text-emerald-400 font-semibold bg-emerald-950/40 p-1 px-2 rounded border border-emerald-900/40">Livre</span>
+                            <span className="text-emerald-600 font-semibold bg-emerald-50 p-1 px-2 rounded border border-emerald-900/40">Livre</span>
                           )}
                         </td>
                       </tr>
@@ -3233,11 +3233,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
                         sl.candidateStatus === 'Aceitou' || sl.candidateStatus === 'Aprovado pelo Head'
-                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : sl.candidateStatus === 'Valor fora da política' || sl.candidateStatus === 'Reprovado pelo Head' || sl.candidateStatus === 'Aceitou com ressalva'
-                            ? 'bg-amber-950 text-amber-400 border border-amber-800/50'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
                             : sl.candidateStatus === 'Bloqueado por conflito de agenda' || sl.candidateStatus === 'Não aceitou'
-                              ? 'bg-red-950 text-red-400 border border-red-800/50'
+                              ? 'bg-red-50 text-red-700 border border-red-200'
                               : 'bg-slate-50 text-slate-600'
                       }`}>
                         {sl.candidateStatus}
@@ -3255,7 +3255,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       </div>
                       <div>
                         <span className="text-[var(--text-disabled)] block">Saving Gerado:</span>
-                        <strong className={savingAmount > 0 ? 'text-emerald-400' : savingAmount < 0 ? 'text-red-400' : 'text-[var(--text-muted)]'}>
+                        <strong className={savingAmount > 0 ? 'text-emerald-600' : savingAmount < 0 ? 'text-red-600' : 'text-[var(--text-muted)]'}>
                           {savingAmount < 0 
                             ? `-${formatCurrencyBRL(Math.abs(savingAmount))}` 
                             : formatCurrencyBRL(savingAmount)
@@ -3264,7 +3264,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       </div>
                       <div>
                         <span className="text-[var(--text-disabled)] block">Saving %:</span>
-                        <strong className={savingAmount > 0 ? 'text-emerald-400' : savingAmount < 0 ? 'text-red-400' : 'text-[var(--text-muted)]'}>
+                        <strong className={savingAmount > 0 ? 'text-emerald-600' : savingAmount < 0 ? 'text-red-600' : 'text-[var(--text-muted)]'}>
                           {savingAmount < 0 
                             ? `${Math.abs(Math.round(savingPercentage))}% acima` 
                             : formatPercentage(savingPercentage)
@@ -3274,10 +3274,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     </div>
 
                     <div className="pt-2 border-t border-slate-200/80 flex flex-wrap gap-2 text-[9px] font-bold">
-                      <span className={`p-1 px-2 rounded ${exceedsCeiling ? 'bg-red-950 text-red-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                      <span className={`p-1 px-2 rounded ${exceedsCeiling ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
                         Política: {exceedsCeiling ? 'Excedeu' : 'Dentro'}
                       </span>
-                      <span className={`p-1 px-2 rounded ${hasConflict ? 'bg-red-950 text-red-400' : 'bg-emerald-950 text-emerald-400'}`}>
+                      <span className={`p-1 px-2 rounded ${hasConflict ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
                         Agenda: {hasConflict ? 'Conflito' : 'Livre'}
                       </span>
                     </div>
@@ -3385,7 +3385,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   <button
                                     type="button"
                                     onClick={() => handleRequestApproval(sl.id, cand.id, 'schedule_conflict')}
-                                    className="bg-red-600 hover:bg-red-700 text-[var(--text-primary)] font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
                                   >
                                     Solicitar aprovação RH
                                   </button>
@@ -3427,7 +3427,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           loading: false,
                                           error: null
                                         })}
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
                                       >
                                         Aprovar
                                       </button>
@@ -3442,7 +3442,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                           loading: false,
                                           error: null
                                         })}
-                                        className="bg-red-600 hover:bg-red-700 text-[var(--text-primary)] font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
+                                        className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded text-[10px] transition-all cursor-pointer"
                                       >
                                         Reprovar
                                       </button>
@@ -3455,7 +3455,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   <button
                                     type="button"
                                     onClick={() => handleRequestApproval(sl.id, cand.id, 'value_exception', rate)}
-                                    className="bg-red-600 hover:bg-red-700 text-[var(--text-primary)] font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] mt-1 transition-all cursor-pointer"
                                   >
                                     Solicitar aprovação Head
                                   </button>
@@ -3587,7 +3587,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                           <div className="sm:col-span-2 space-y-4">
                             {/* Contract dates and terms */}
                             <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-xl border border-border-subtle space-y-3 text-left">
-                              <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
+                              <span className="font-bold text-[11px] text-sidebar-navy dark:text-amber-600 uppercase tracking-wider block">
                                 Informações Contratuais & Operacionais
                               </span>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -3709,7 +3709,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   <div className="bg-white/80 border border-slate-750 p-2.5 rounded-lg flex items-center justify-between text-xs">
                                     <div>
                                       <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--text-disabled)] block">Forma de Aplicação do Success Fee</span>
-                                      <strong className="text-action-cyan font-extrabold text-xs">
+                                      <strong className="text-amber-600 font-extrabold text-xs">
                                         {calcMode === 'increment_budget' ? 'INCREMENTAR E ATUALIZAR O BUDGET' : 'DILUIR SUCCESS FEE NAS PROJEÇÕES'}
                                       </strong>
                                     </div>
@@ -3745,7 +3745,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         {candNeg.successFeeType === 'percentage' ? (
                                           <div>
                                             <label className="text-[10px] font-bold text-text-secondary dark:text-[var(--text-muted)] block mb-0.5">
-                                              Percentual (%) {jobMaxPercent > 0 && <span className="text-amber-400 font-normal">(Teto: {Math.round(jobMaxPercent * 10) / 10}%)</span>} *
+                                              Percentual (%) {jobMaxPercent > 0 && <span className="text-amber-600 font-normal">(Teto: {Math.round(jobMaxPercent * 10) / 10}%)</span>} *
                                             </label>
                                             <input
                                               type="number"
@@ -3764,7 +3764,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         ) : (
                                           <div>
                                             <label className="text-[10px] font-bold text-text-secondary dark:text-[var(--text-muted)] block mb-0.5">
-                                              Valor Fixo (R$) {jobMaxFixed > 0 && <span className="text-amber-400 font-normal">(Teto: R$ {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(jobMaxFixed)})</span>} *
+                                              Valor Fixo (R$) {jobMaxFixed > 0 && <span className="text-amber-600 font-normal">(Teto: R$ {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(jobMaxFixed)})</span>} *
                                             </label>
                                             <div className="relative">
                                               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-text-secondary">R$</span>
@@ -3904,10 +3904,10 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
               <button
                 onClick={() => handleNavigateStep(4)}
-                className="bg-sidebar-navy hover:bg-sidebar-navy/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
+                className="bg-white hover:bg-white/95 text-[var(--text-primary)] font-bold p-3 px-6 rounded-xl flex items-center gap-2 text-xs shadow-xs"
               >
                 <span>Avançar para Homologação</span>
-                <ArrowRight className="w-4 h-4 text-action-cyan" />
+                <ArrowRight className="w-4 h-4 text-amber-600" />
               </button>
               );
             })()}
@@ -3957,11 +3957,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               >
                 <div className="space-y-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-slate-950 text-[var(--text-disabled)] font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
+                    <span className="bg-slate-100 text-slate-800 font-mono text-[10px] font-bold px-2 py-0.5 rounded border border-slate-300">
                       COD: {activeJob.id.slice(0, 8).toUpperCase()}
                     </span>
-                    <span className="text-[11px] uppercase font-extrabold text-action-cyan tracking-wider">Homologação da Alocação</span>
-                    <span className="bg-emerald-950 text-emerald-300 border border-emerald-800/90 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
+                    <span className="text-[11px] uppercase font-extrabold text-amber-600 tracking-wider">Homologação da Alocação</span>
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-800/90 px-2.5 py-0.5 rounded text-[10px] font-bold">{activeJob.status}</span>
                   </div>
 
                   <h3 className="text-base font-extrabold text-[var(--text-primary)] leading-tight">[{activeJob.client}] {activeJob.name}</h3>
@@ -3969,11 +3969,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                   <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[var(--text-muted)]">
                     <div>Núcleo: <strong className="text-[var(--text-primary)]">{nucleoName}</strong></div>
                     <div>Função: <strong className="text-[var(--text-primary)]">{activeJob.roleNeeded} ({activeJob.seniorityNeeded})</strong></div>
-                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-400 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
+                    <div>Urgência: <strong className={activeJob.urgency === 'Alta' ? 'text-red-600 font-bold' : 'text-[var(--text-secondary)]'}>{activeJob.urgency}</strong></div>
                     <div>Período: <strong className="text-[var(--text-primary)]">{isoToBR(activeJob.startDate)} a {isoToBR(activeJob.endDate)}</strong></div>
-                    <div>Modelo / Fluxo: <strong className="text-emerald-300 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
+                    <div>Modelo / Fluxo: <strong className="text-emerald-700 font-bold">{paymentFlowLabel}{installmentSummaryText}</strong></div>
                     {paymentDay && <div>Vencimento Preferencial: <strong className="text-[var(--text-primary)]">Dia {paymentDay}</strong></div>}
-                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-300 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
+                    {referenceRate > 0 && <div>{referenceRateLabel}: <strong className="text-amber-700 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(referenceRate)}</strong></div>}
                   </div>
 
                   {/* Formatted Description with Expand/Collapse */}
@@ -3985,7 +3985,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                 <div className="flex flex-col justify-between items-end gap-3 min-w-[180px] shrink-0">
                   <div className="text-right">
                     <div className="text-[10px] uppercase font-extrabold text-[var(--text-disabled)] tracking-wider">Budget Máximo do Job</div>
-                    <div className="text-lg font-black text-action-cyan">
+                    <div className="text-lg font-black text-amber-600">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(activeJob.budget)}
                     </div>
                     <div className="text-[10px] text-[var(--text-disabled)] font-medium mt-0.5">
@@ -4094,7 +4094,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 const el = document.getElementById(`head-comment-${ap.id}`) as HTMLTextAreaElement;
                                 handleHeadDecision(ap.id, 'reject', el?.value || '');
                               }}
-                              className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-[var(--text-primary)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                              className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5" />
                               Rejeitar
@@ -4105,7 +4105,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 const el = document.getElementById(`head-comment-${ap.id}`) as HTMLTextAreaElement;
                                 handleHeadDecision(ap.id, 'approve', el?.value || '');
                               }}
-                              className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                              className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
                               Aprovar Exceção
@@ -4159,7 +4159,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                 {/* Allocation details contract details */}
                 <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-emerald-300 shadow-xs space-y-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 bg-emerald-600 text-[var(--text-primary)] text-[10px] font-bold p-1 px-4 rounded-bl-xl uppercase tracking-wider">
+                  <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-bold p-1 px-4 rounded-bl-xl uppercase tracking-wider">
                     Alocação Consolidada
                   </div>
 
@@ -4180,7 +4180,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-border-subtle space-y-1">
                       <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Status do Pagamento</span>
                       <div className="font-semibold text-xs flex items-center gap-1 text-sidebar-navy">
-                        <Clock className="w-4 h-4 text-action-cyan shrink-0" />
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0" />
                         <span>{payCode?.paymentStatus || 'Aguardando encerramento do job'}</span>
                       </div>
                     </div>
@@ -4333,7 +4333,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                       const isButtonDisabled = isHoursMissing || isJustificationMissing || isConflictPending || isBudgetPending;
 
                       return (
-                        <div key={sl.id} className="border border-border-subtle hover:border-emerald-500/50 p-6 rounded-2xl bg-white dark:bg-white/60 shadow-sm space-y-6 transition-all text-left">
+                        <div key={sl.id} className="border border-border-subtle hover:border-emerald-200 p-6 rounded-2xl bg-white dark:bg-white/60 shadow-sm space-y-6 transition-all text-left">
                           {/* GRID LAYOUT (Left Column: Candidate & Commercial | Right Column: Supply Projections) */}
                           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                             
@@ -4348,8 +4348,8 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   </div>
                                   <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${
                                     isButtonDisabled
-                                      ? 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
-                                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                      ? 'bg-red-50 dark:bg-red-50 text-red-700 dark:text-red-700 border-red-200 dark:border-red-800'
+                                      : 'bg-emerald-50 dark:bg-emerald-50 text-emerald-700 dark:text-emerald-700 border-emerald-200 dark:border-emerald-800'
                                   }`}>
                                     {isButtonDisabled ? 'Bloqueado por Pendências' : 'Pronto para Alocação'}
                                   </span>
@@ -4388,7 +4388,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                   return (
                                     <div className="bg-slate-50 dark:bg-slate-50/40 p-4 rounded-xl border border-border-subtle space-y-3">
                                       <div className="flex items-center justify-between">
-                                        <span className="font-bold text-[11px] text-sidebar-navy dark:text-action-cyan uppercase tracking-wider block">
+                                        <span className="font-bold text-[11px] text-sidebar-navy dark:text-amber-600 uppercase tracking-wider block">
                                           Condições Comerciais & Faturamento
                                         </span>
                                         {totalDays > 0 && (
@@ -4436,7 +4436,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
 
                                 {/* Warnings & Justifications */}
                                 {isConflictPending && (
-                                  <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                  <div className="p-3 bg-red-50 dark:bg-red-50 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-600 flex items-start gap-2 leading-relaxed">
                                     <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
                                     <div>
                                       <span className="font-bold block">Aprovação do RH Pendente</span>
@@ -4446,7 +4446,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 )}
 
                                 {isBudgetPending && (
-                                  <div className="p-3 bg-red-50 dark:bg-red-955/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                  <div className="p-3 bg-red-50 dark:bg-red-955/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-600 flex items-start gap-2 leading-relaxed">
                                     <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
                                     <div>
                                       <span className="font-bold block">Aprovação do Head Pendente</span>
@@ -4456,7 +4456,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                 )}
 
                                 {isHoursMissing && (
-                                  <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+                                  <div className="p-3 bg-red-50 dark:bg-red-50 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-600 flex items-start gap-2 leading-relaxed">
                                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-650 dark:text-red-500" />
                                     <div>
                                       <span className="font-bold block">Horas Estimadas Obrigatórias</span>
@@ -4515,7 +4515,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                     case 'critical':
                                       return {
                                         label: '🚨 ALERTA CRÍTICO: Abertura de RC Imediata',
-                                        badgeClass: 'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/40',
+                                        badgeClass: 'bg-red-500/20 text-red-700 dark:text-red-700 border-red-200',
                                       };
                                     case 'urgent':
                                       return {
@@ -4525,13 +4525,13 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                     case 'attention':
                                       return {
                                         label: '⚡ ATENÇÃO: 4 a 10 dias para Prazo da RC',
-                                        badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40',
+                                        badgeClass: 'bg-amber-500/20 text-amber-700 dark:text-amber-700 border-amber-200',
                                       };
                                     case 'informational':
                                     default:
                                       return {
                                         label: '✅ REGULAR: Mais de 10 dias até o Prazo da RC',
-                                        badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+                                        badgeClass: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-700 border-emerald-200',
                                       };
                                   }
                                 };
@@ -4542,7 +4542,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                     <div className="bg-white/90 text-[var(--text-primary)] p-5 rounded-2xl border border-slate-200/80 shadow-md space-y-4 flex-1">
                                       <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
                                         <div className="flex items-center gap-2.5">
-                                          <div className="p-2 rounded-lg bg-action-cyan/10 border border-action-cyan/30 text-action-cyan">
+                                          <div className="p-2 rounded-lg bg-amber-100 border border-action-cyan/30 text-amber-600">
                                             <Clock className="w-4 h-4" />
                                           </div>
                                           <div>
@@ -4568,7 +4568,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                                     <span className="font-bold text-[var(--text-primary)] text-[11px] bg-slate-700/90 border border-slate-600 px-2.5 py-0.5 rounded">
                                                       {projections.length > 1 ? `Parcela ${p.cycleNumber}/${projections.length}` : 'Parcela Única'}
                                                     </span>
-                                                    <span className="text-[11px] text-action-cyan font-extrabold">
+                                                    <span className="text-[11px] text-amber-600 font-extrabold">
                                                       Mês de Referência: {monthLabel}
                                                     </span>
                                                   </div>
@@ -4587,11 +4587,11 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                                     </span>
                                                   </div>
 
-                                                  <div className="bg-emerald-950/40 border border-emerald-800/50 rounded-xl p-3 flex flex-col justify-between">
-                                                    <span className="block text-[9px] font-extrabold uppercase tracking-wider text-emerald-400 mb-1">
+                                                  <div className="bg-emerald-50 border border-emerald-800/50 rounded-xl p-3 flex flex-col justify-between">
+                                                    <span className="block text-[9px] font-extrabold uppercase tracking-wider text-emerald-600 mb-1">
                                                       VALOR PREVISTO DA PARCELA
                                                     </span>
-                                                    <span className="text-base font-extrabold text-emerald-300 block">
+                                                    <span className="text-base font-extrabold text-emerald-700 block">
                                                       {parcelVal > 0 
                                                         ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parcelVal) 
                                                         : 'Sob consulta'}
@@ -4609,9 +4609,9 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                       )}
 
                                       {/* Mandatory Notice Disclaimer */}
-                                      <div className="pt-3 border-t border-slate-200/80 text-[11px] text-amber-300 bg-amber-950/30 border border-amber-900/40 rounded-xl p-3.5 space-y-1">
-                                        <strong className="block font-bold text-amber-400 text-[11.5px] flex items-center gap-1.5">
-                                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                                      <div className="pt-3 border-t border-slate-200/80 text-[11px] text-amber-700 bg-amber-50 border border-amber-900/40 rounded-xl p-3.5 space-y-1">
+                                        <strong className="block font-bold text-amber-600 text-[11.5px] flex items-center gap-1.5">
+                                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                                           <span>Aviso Obrigatório da Política de Supply</span>
                                         </strong>
                                         <p className="text-amber-200/90 leading-relaxed text-[11px]">
@@ -4629,7 +4629,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
                                         className={`font-extrabold px-6 py-3 rounded-xl text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer ${
                                           isButtonDisabled 
                                             ? 'bg-slate-100 text-[var(--text-disabled)] border border-slate-200 cursor-not-allowed opacity-60' 
-                                            : 'bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] shadow-emerald-900/20'
+                                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
                                         }`}
                                       >
                                         <CheckCircle className="w-4 h-4" />
@@ -4661,7 +4661,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
         </div>
       )}      {/* Custom Approval Request Modal */}
       {approvalModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs font-sans">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F0F0F0] backdrop-blur-xs font-sans">
           <div className="bg-[#0b1329] border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col relative animate-scale-up">
             {/* Header */}
             <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-[#0e172e]">
@@ -4712,7 +4712,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               </div>
 
               {approvalModal.error && (
-                <div className="p-3 rounded-lg bg-red-950/40 border border-red-800/80 text-[11px] text-red-400 font-semibold">
+                <div className="p-3 rounded-lg bg-red-50 border border-red-800/80 text-[11px] text-red-600 font-semibold">
                   ⚠️ {approvalModal.error}
                 </div>
               )}
@@ -4801,7 +4801,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               </div>
 
               {headDecisionModal.error && (
-                <div className="p-3 rounded-lg bg-red-955/40 border border-red-800/80 text-[11px] text-red-400 font-semibold">
+                <div className="p-3 rounded-lg bg-red-955/40 border border-red-800/80 text-[11px] text-red-600 font-semibold">
                   ⚠️ {headDecisionModal.error}
                 </div>
               )}
@@ -4820,7 +4820,7 @@ export default function ShortlistPanel({ db }: { db: DatabaseProps }) {
               <button
                 type="button"
                 onClick={handleSubmitHeadDecision}
-                className={`px-4 py-2 text-xs font-bold text-[var(--text-primary)] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`px-4 py-2 text-xs font-bold text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   headDecisionModal.decision === 'approve'
                     ? 'bg-emerald-600 hover:bg-emerald-700'
                     : 'bg-red-600 hover:bg-red-700'

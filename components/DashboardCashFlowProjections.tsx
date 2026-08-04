@@ -446,7 +446,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
   if (!isAuthorized) {
     return (
       <div id="dashboard-cashflow-projections-panel" className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center space-y-4">
-        <div className="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto border border-amber-500/20">
+        <div className="w-12 h-12 bg-amber-500/10 text-amber-600 rounded-full flex items-center justify-center mx-auto border border-amber-200">
           <Lock className="w-6 h-6" />
         </div>
         <h3 className="text-lg font-bold text-[var(--text-primary)]">Acesso Restrito à Gestão Executiva</h3>
@@ -464,7 +464,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between border-b border-slate-200 pb-5 gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-action-cyan/10 border border-action-cyan/30 text-action-cyan flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.25)]">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 border border-action-cyan/30 text-amber-600 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.25)]">
               <Wallet className="w-5 h-5" />
             </div>
             <div>
@@ -479,12 +479,12 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-[11px] font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-[11px] font-extrabold text-emerald-600 bg-emerald-500/10 border border-emerald-200 px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
             <span>Previsão Operacional Ativa</span>
           </span>
           <span className="text-[11px] font-bold text-[var(--text-muted)] bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full">
-            Perfil: <strong className="text-action-cyan">{userRole}</strong>
+            Perfil: <strong className="text-amber-600">{userRole}</strong>
           </span>
         </div>
       </div>
@@ -502,7 +502,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
               Ref. alocações homologadas
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0">
             <DollarSign className="w-5 h-5" />
           </div>
         </div>
@@ -518,7 +518,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
               Em {uniqueJobsCount} {uniqueJobsCount === 1 ? 'job impactado' : 'jobs impactados'}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-action-cyan/10 border border-action-cyan/20 text-action-cyan flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 border border-action-cyan/20 text-amber-600 flex items-center justify-center shrink-0">
             <Calendar className="w-5 h-5" />
           </div>
         </div>
@@ -527,14 +527,14 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         <div className="bg-slate-50/60 border border-slate-200/80 p-4 rounded-xl flex items-center justify-between shadow-sm hover:border-action-cyan/40 transition-all">
           <div>
             <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">Pico de Desembolso</span>
-            <span className="text-base font-extrabold text-amber-400 block mt-1 truncate max-w-[140px]">
+            <span className="text-base font-extrabold text-amber-600 block mt-1 truncate max-w-[140px]">
               {peakMonthObj ? peakMonthObj.monthLabel : '—'}
             </span>
             <span className="text-[11px] font-bold text-[var(--text-muted)] block mt-0.5">
               {peakMonthObj ? formatCurrencyBR(peakMonthObj.totalAmount) : 'R$ 0,00'}
             </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0">
             <BarChart3 className="w-5 h-5" />
           </div>
         </div>
@@ -544,7 +544,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           <div>
             <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">Prazos de RC em Risco</span>
             <div className="flex items-baseline gap-1.5 mt-1">
-              <span className={`text-lg font-black ${riskAlertsCount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+              <span className={`text-lg font-black ${riskAlertsCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                 {riskAlertsCount}
               </span>
               <span className="text-[10px] font-bold text-[var(--text-disabled)]">
@@ -555,7 +555,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
               Requer atenção operacional
             </span>
           </div>
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${riskAlertsCount > 0 ? 'bg-red-500/10 border border-red-500/20 text-red-400 animate-pulse' : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'}`}>
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${riskAlertsCount > 0 ? 'bg-red-500/10 border border-red-200 text-red-600 animate-pulse' : 'bg-emerald-500/10 border border-emerald-200 text-emerald-600'}`}>
             <AlertTriangle className="w-5 h-5" />
           </div>
         </div>
@@ -654,7 +654,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           {/* Risk Filter Toggle */}
           <button
             onClick={() => setRiskOnlyFilter(!riskOnlyFilter)}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${riskOnlyFilter ? 'bg-red-500/20 text-red-300 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-white text-[var(--text-disabled)] border-slate-200 hover:text-[var(--text-primary)]'}`}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 ${riskOnlyFilter ? 'bg-red-500/20 text-red-700 border-red-200 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'bg-white text-[var(--text-disabled)] border-slate-200 hover:text-[var(--text-primary)]'}`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>Apenas Alertas RC</span>
@@ -669,7 +669,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
-              <Clock className="w-4 h-4 text-action-cyan" />
+              <Clock className="w-4 h-4 text-amber-600" />
               <span>Evolução Mensal das Projeções (Curvas por Núcleo Contratante)</span>
             </h4>
 
@@ -718,12 +718,12 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           ) : (
             <div className="space-y-6">
               {/* Interactive SVG Timeline Curve with Multi-Color Nuclei Lines */}
-              <div className="bg-slate-950/90 border border-slate-200 rounded-2xl p-6 relative overflow-hidden transition-all duration-500 space-y-4">
+              <div className="bg-[#F0F0F0] border border-slate-200 rounded-2xl p-6 relative overflow-hidden transition-all duration-500 space-y-4">
                 
                 {/* ── MULTI-COLOR NUCLEI INTERACTIVE LEGEND BAR ── */}
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
                   <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider flex items-center gap-1.5">
-                    <Layers3 className="w-3.5 h-3.5 text-action-cyan" />
+                    <Layers3 className="w-3.5 h-3.5 text-amber-600" />
                     <span>Legenda de Núcleos no Gráfico</span>
                   </span>
 
@@ -929,7 +929,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                             key={m.monthKey}
                             onMouseEnter={() => setHoveredMonthKey(m.monthKey)}
                             onMouseLeave={() => setHoveredMonthKey(null)}
-                            className={`cursor-pointer transition-all duration-300 text-center px-1 py-0.5 rounded-md ${isHovered ? 'text-action-cyan bg-action-cyan/10 scale-110' : 'hover:text-[var(--text-primary)]'}`}
+                            className={`cursor-pointer transition-all duration-300 text-center px-1 py-0.5 rounded-md ${isHovered ? 'text-amber-600 bg-amber-100 scale-110' : 'hover:text-[var(--text-primary)]'}`}
                           >
                             <span>{m.monthLabel}</span>
                           </div>
@@ -943,22 +943,22 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                 {activeFocusMonth && (
                   <div className="mt-6 bg-white/90 border border-action-cyan/40 rounded-xl p-4 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 animate-fadeIn">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-action-cyan/10 border border-action-cyan/30 text-action-cyan flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-amber-100 border border-action-cyan/30 text-amber-600 flex items-center justify-center shrink-0">
                         <Sparkles className="w-5 h-5" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-extrabold text-action-cyan uppercase tracking-wider">Mês em Foco</span>
+                          <span className="text-[10px] font-extrabold text-amber-600 uppercase tracking-wider">Mês em Foco</span>
                           <span className="text-[var(--text-primary)] font-extrabold text-sm">{activeFocusMonth.monthLabel}</span>
                           {activeFocusMonth.momPercent !== 0 && (
-                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border flex items-center gap-0.5 ${activeFocusMonth.momPercent > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
+                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border flex items-center gap-0.5 ${activeFocusMonth.momPercent > 0 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-200' : 'bg-red-500/10 text-red-600 border-red-200'}`}>
                               {activeFocusMonth.momPercent > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                               {Math.abs(activeFocusMonth.momPercent).toFixed(1)}% MoM
                             </span>
                           )}
                         </div>
                         <div className="text-xs text-[var(--text-muted)] mt-0.5">
-                          <strong className="text-emerald-400 font-extrabold text-sm">{formatCurrencyBR(activeFocusMonth.totalAmount)}</strong>
+                          <strong className="text-emerald-600 font-extrabold text-sm">{formatCurrencyBR(activeFocusMonth.totalAmount)}</strong>
                           <span className="text-[var(--text-disabled)] ml-2">({activeFocusMonth.parcelCount} parcelas · {activeFocusMonth.jobsSet.size} jobs)</span>
                         </div>
                       </div>
@@ -980,11 +980,11 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                       <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-1.5">
                         <span className="text-[10px] text-[var(--text-disabled)] uppercase">Alertas RC:</span>
                         {activeFocusMonth.alertCounts.critical > 0 ? (
-                          <span className="text-red-400 font-bold">🚨 {activeFocusMonth.alertCounts.critical} crít.</span>
+                          <span className="text-red-600 font-bold">🚨 {activeFocusMonth.alertCounts.critical} crít.</span>
                         ) : activeFocusMonth.alertCounts.urgent > 0 ? (
                           <span className="text-orange-400 font-bold">🔥 {activeFocusMonth.alertCounts.urgent} urg.</span>
                         ) : (
-                          <span className="text-emerald-400 font-bold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Em dia</span>
+                          <span className="text-emerald-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Em dia</span>
                         )}
                       </div>
                     </div>
@@ -1009,14 +1009,14 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="font-black text-[var(--text-primary)] text-base tracking-tight">{m.monthLabel}</span>
                             {m.momPercent !== 0 && (
-                              <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border flex items-center gap-0.5 ${m.momPercent > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
+                              <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border flex items-center gap-0.5 ${m.momPercent > 0 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-200' : 'bg-red-500/10 text-red-600 border-red-200'}`}>
                                 {m.momPercent > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                                 {Math.abs(m.momPercent).toFixed(1)}%
                               </span>
                             )}
                           </div>
 
-                          <div className="text-base font-black text-emerald-400 tracking-tight">
+                          <div className="text-base font-black text-emerald-600 tracking-tight">
                             {formatCurrencyBR(m.totalAmount)}
                           </div>
                         </div>
@@ -1057,7 +1057,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                           {/* Risk Badges */}
                           <div className="flex items-center gap-1 pt-1">
                             {m.alertCounts.critical > 0 && (
-                              <span className="text-[9px] font-extrabold bg-red-500/20 text-red-300 border border-red-500/40 px-1.5 py-0.5 rounded">
+                              <span className="text-[9px] font-extrabold bg-red-500/20 text-red-700 border border-red-200 px-1.5 py-0.5 rounded">
                                 🚨 {m.alertCounts.critical} crít.
                               </span>
                             )}
@@ -1067,7 +1067,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                               </span>
                             )}
                             {m.alertCounts.critical === 0 && m.alertCounts.urgent === 0 && (
-                              <span className="text-[9px] font-bold text-emerald-400 flex items-center gap-1">
+                              <span className="text-[9px] font-bold text-emerald-600 flex items-center gap-1">
                                 <CheckCircle2 className="w-3 h-3" /> Prazos em dia
                               </span>
                             )}
@@ -1088,7 +1088,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         <div className="space-y-6">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
-              <Building className="w-4 h-4 text-action-cyan" />
+              <Building className="w-4 h-4 text-amber-600" />
               <span>Análise Gráfica de Concentração por Núcleo Contratante</span>
             </h4>
             <span className="text-[11px] text-[var(--text-disabled)] font-medium">
@@ -1097,7 +1097,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           </div>
 
           {/* 1. Proportional Segmented Visual Bar Chart */}
-          <div className="bg-slate-950/90 border border-slate-200 rounded-2xl p-6 space-y-4">
+          <div className="bg-[#F0F0F0] border border-slate-200 rounded-2xl p-6 space-y-4">
             <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider block">
               Distribuição Proporcional do Volume Total (100%)
             </span>
@@ -1150,8 +1150,8 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                   </div>
 
                   <div className="text-right">
-                    <div className="text-lg font-black text-emerald-400">{formatCurrencyBR(n.amount)}</div>
-                    <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-slate-50 text-action-cyan border border-slate-200">
+                    <div className="text-lg font-black text-emerald-600">{formatCurrencyBR(n.amount)}</div>
+                    <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-slate-50 text-amber-600 border border-slate-200">
                       {n.percentage.toFixed(1)}% do total
                     </span>
                   </div>
@@ -1184,7 +1184,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         <div className="space-y-6">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
-              <Users className="w-4 h-4 text-action-cyan" />
+              <Users className="w-4 h-4 text-amber-600" />
               <span>Análise Gráfica de Concentração por Cliente / Projeto</span>
             </h4>
             <span className="text-[11px] text-[var(--text-disabled)] font-medium">
@@ -1193,13 +1193,13 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
           </div>
 
           {/* Top 5 Visual Ranking Horizontal Bar Chart */}
-          <div className="bg-slate-950/90 border border-slate-200 rounded-2xl p-6 space-y-4">
+          <div className="bg-[#F0F0F0] border border-slate-200 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-extrabold text-[var(--text-disabled)] uppercase tracking-wider flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-amber-400" />
+                <Award className="w-4 h-4 text-amber-600" />
                 <span>Ranking dos Maiores Clientes por Volume Projetado</span>
               </span>
-              <span className="text-xs text-action-cyan font-bold">{clientsBreakdown.length} clientes ativos</span>
+              <span className="text-xs text-amber-600 font-bold">{clientsBreakdown.length} clientes ativos</span>
             </div>
 
             <div className="space-y-3.5 pt-2">
@@ -1212,8 +1212,8 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                       <span className="text-[10px] text-[var(--text-disabled)]">({c.jobsCount} jobs · {c.parcelCount} parcelas)</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-extrabold text-emerald-400 text-sm">{formatCurrencyBR(c.amount)}</span>
-                      <span className="text-[11px] font-bold text-action-cyan bg-action-cyan/10 border border-action-cyan/30 px-2 py-0.5 rounded-md">
+                      <span className="font-extrabold text-emerald-600 text-sm">{formatCurrencyBR(c.amount)}</span>
+                      <span className="text-[11px] font-bold text-amber-600 bg-amber-100 border border-action-cyan/30 px-2 py-0.5 rounded-md">
                         {c.percentage.toFixed(1)}%
                       </span>
                     </div>
@@ -1236,7 +1236,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
               <div key={c.name} className="bg-white/90 border border-slate-200 hover:border-action-cyan/40 rounded-2xl p-4 space-y-3 transition-all duration-300 shadow-md">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 text-action-cyan font-black text-xs flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 text-amber-600 font-black text-xs flex items-center justify-center">
                       #{idx + 1}
                     </div>
                     <div>
@@ -1246,8 +1246,8 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                   </div>
 
                   <div className="text-right">
-                    <div className="text-sm font-black text-emerald-400">{formatCurrencyBR(c.amount)}</div>
-                    <span className="text-[10px] font-bold text-action-cyan">{c.percentage.toFixed(1)}% do total</span>
+                    <div className="text-sm font-black text-emerald-600">{formatCurrencyBR(c.amount)}</div>
+                    <span className="text-[10px] font-bold text-amber-600">{c.percentage.toFixed(1)}% do total</span>
                   </div>
                 </div>
 
@@ -1273,7 +1273,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h4 className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
-              <Table className="w-4 h-4 text-action-cyan" />
+              <Table className="w-4 h-4 text-amber-600" />
               <span>Tabela Analítica de Projeções de Pagamento</span>
             </h4>
 
@@ -1313,7 +1313,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                     </td>
                     <td className="p-3 text-purple-300 font-medium">{item.nucleoName}</td>
                     <td className="p-3 text-[var(--text-muted)]">{item.freelancerName}</td>
-                    <td className="p-3 font-bold text-action-cyan">{item.referenceMonth}</td>
+                    <td className="p-3 font-bold text-amber-600">{item.referenceMonth}</td>
                     <td className="p-3 text-[var(--text-muted)] font-medium">
                       {item.suggestedPaymentDate.split('T')[0].split('-').reverse().join('/')}
                     </td>
@@ -1322,17 +1322,17 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
                     </td>
                     <td className="p-3">
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${
-                        item.alertLevel === 'critical' ? 'bg-red-500/20 text-red-300 border-red-500/40' :
+                        item.alertLevel === 'critical' ? 'bg-red-500/20 text-red-700 border-red-200' :
                         item.alertLevel === 'urgent' ? 'bg-orange-500/20 text-orange-300 border-orange-500/40' :
-                        item.alertLevel === 'attention' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
-                        'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        item.alertLevel === 'attention' ? 'bg-amber-500/20 text-amber-700 border-amber-200' :
+                        'bg-emerald-500/20 text-emerald-700 border-emerald-200'
                       }`}>
                         {item.alertLevel === 'critical' ? 'Crítico' :
                          item.alertLevel === 'urgent' ? 'Urgente' :
                          item.alertLevel === 'attention' ? 'Atenção' : 'Informativo'}
                       </span>
                     </td>
-                    <td className="p-3 text-right font-black text-emerald-400">
+                    <td className="p-3 text-right font-black text-emerald-600">
                       {formatCurrencyBR(item.amount)}
                     </td>
                   </tr>
@@ -1344,10 +1344,10 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       )}
 
       {/* ── 5. MANDATORY COMPLIANCE DISCLAIMER ── */}
-      <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-[var(--text-muted)] flex items-start gap-3 shadow-md">
-        <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+      <div className="p-4 bg-amber-500/10 border border-amber-200 rounded-xl text-xs text-[var(--text-muted)] flex items-start gap-3 shadow-md">
+        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
         <div className="leading-relaxed">
-          <strong className="text-amber-300 font-extrabold block mb-0.5">Aviso Obrigatório de Governança de Supply:</strong>
+          <strong className="text-amber-700 font-extrabold block mb-0.5">Aviso Obrigatório de Governança de Supply:</strong>
           O pagamento depende da abertura e aprovação da RC pelo núcleo contratante no ERP de Supply, respeitando os prazos e políticas internas.
         </div>
       </div>

@@ -89,7 +89,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
         <div className="flex gap-2">
           <button 
             onClick={() => db.setActiveTab('Criar Oportunidade')} 
-            className="bg-action-cyan hover:bg-action-cyan/85 text-[var(--text-primary)] font-bold p-1.5 px-3 rounded-lg text-xs"
+            className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-bold p-1.5 px-3 rounded-lg text-xs"
           >
             + Nova Demanda / Job
           </button>
@@ -103,7 +103,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
           <div>
             <div className="flex justify-between items-start mb-2">
               <span className="text-text-secondary text-xs font-semibold">Consumo de Budget do Núcleo</span>
-              <TrendingUp className="w-5 h-5 text-action-cyan" />
+              <TrendingUp className="w-5 h-5 text-amber-600" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-text-primary">
@@ -159,7 +159,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
               <p className="text-3xl font-bold text-text-primary mt-1">{myJobs.length}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-              <Briefcase className="w-5 h-5 text-action-cyan" />
+              <Briefcase className="w-5 h-5 text-amber-600" />
             </div>
           </div>
           <div className="flex gap-2 text-[10px] items-center pt-3 mt-3 border-t border-border-subtle">
@@ -232,7 +232,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
                                 db.setSelectedJobId(job.id); 
                                 db.setActiveTab('Shortlist'); 
                               }}
-                              className="text-[11px] font-bold text-action-cyan border border-action-cyan/30 hover:bg-action-cyan/5 p-1 px-2.5 rounded-lg"
+                              className="text-[11px] font-bold text-amber-600 border border-action-cyan/30 hover:brightness-95 p-1 px-2.5 rounded-lg"
                             >
                               Adicionar Shortlist
                             </button>
@@ -243,7 +243,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
                                 db.setSelectedJobId(job.id); 
                                 db.setActiveTab('Shortlist'); 
                               }}
-                              className="text-[11px] font-bold text-action-cyan hover:underline"
+                              className="text-[11px] font-bold text-amber-600 hover:underline"
                             >
                               Ver Shortlist
                             </button>
@@ -265,7 +265,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
                                 db.setSelectedJobId(job.id); 
                                 db.setActiveTab('Meus Bookings'); 
                               }}
-                              className="text-[11px] font-bold text-action-cyan border border-action-cyan/35 hover:bg-action-cyan/10 p-1.5 px-3 rounded-lg"
+                              className="text-[11px] font-bold text-amber-600 border border-action-cyan/35 hover:brightness-95 p-1.5 px-3 rounded-lg"
                             >
                               Ver Alocação
                             </button>
@@ -307,7 +307,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
                     </div>
 
                     <div className="text-[11px] space-y-1 pl-6">
-                      <p className="text-text-primary font-medium">&bull; <span className="font-semibold text-action-cyan">Job 1:</span> {conflict.jobName}</p>
+                      <p className="text-text-primary font-medium">&bull; <span className="font-semibold text-amber-600">Job 1:</span> {conflict.jobName}</p>
                       <p className="text-text-primary font-medium">&bull; <span className="font-semibold text-status-error">Job 2:</span> {conflict.overlappingJobName}</p>
                       <p className="text-[10px] text-text-secondary">Período sobreposto: <span className="font-semibold">{conflict.start} &rarr; {conflict.end}</span></p>
                     </div>
@@ -316,7 +316,7 @@ export default function DashboardNucleo({ db }: { db: DatabaseProps }) {
                       <span className="text-[10px] text-text-secondary">Ajuste de cronograma sugerido</span>
                       <button 
                         onClick={() => db.setActiveTab('Timeline')}
-                        className="text-[11px] text-action-cyan font-bold hover:underline"
+                        className="text-[11px] text-amber-600 font-bold hover:underline"
                       >
                         Remanejar &rarr;
                       </button>

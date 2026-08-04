@@ -63,9 +63,9 @@ export default function CnpjInput({
   if (disabled) {
     borderClass = 'border-[var(--border-subtle)] opacity-50 cursor-not-allowed';
   } else if (displayError) {
-    borderClass = 'border-red-500/80 focus:border-red-500';
+    borderClass = 'border-red-200 focus:border-red-500';
   } else if (isValid && showValidationStatus) {
-    borderClass = 'border-emerald-500/80 focus:border-emerald-500';
+    borderClass = 'border-emerald-200 focus:border-emerald-500';
   }
 
   return (
@@ -98,13 +98,13 @@ export default function CnpjInput({
       </div>
       
       {displayError && (
-        <span className="text-[11px] text-red-400 font-medium px-1">
+        <span className="text-[11px] text-red-600 font-medium px-1">
           {displayError}
         </span>
       )}
       
       {isValid && !displayError && showValidationStatus && (
-        <span className="text-[10px] text-emerald-400 font-semibold px-1 uppercase tracking-wider">
+        <span className="text-[10px] text-emerald-600 font-semibold px-1 uppercase tracking-wider">
           CNPJ Válido {validateCnpj(value).format === 'alphanumeric' ? '(Alfanumérico)' : ''}
         </span>
       )}

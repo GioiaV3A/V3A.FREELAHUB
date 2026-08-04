@@ -329,7 +329,7 @@ export default function JobDetailPage() {
 
           <button
             onClick={() => router.push(`/shortlist/${id}`)}
-            className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white p-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+            className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-slate-900 p-2.5 px-4 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
           >
             <span>Visualizar histórico do Workflow</span>
           </button>
@@ -348,7 +348,7 @@ export default function JobDetailPage() {
             <span className="bg-bg-panel border border-border-subtle text-text-secondary text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider">
               {job.jobCode}
             </span>
-            <span className="bg-[#0F2342] text-white text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider">
+            <span className="bg-[#0F2342] text-slate-900 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider">
               {job.requestCode}
             </span>
             <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg border ${
@@ -577,7 +577,7 @@ export default function JobDetailPage() {
                 <div key={pay.id} className="p-4 bg-bg-panel border border-border-subtle rounded-xl space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-text-primary">{pay.freelancers?.full_name}</span>
-                    <span className="font-mono text-[10px] font-bold text-white bg-[#0F2342] px-2 py-0.5 rounded-lg">
+                    <span className="font-mono text-[10px] font-bold text-slate-900 bg-[#0F2342] px-2 py-0.5 rounded-lg">
                       {pay.allocation_code}
                     </span>
                   </div>
@@ -642,7 +642,7 @@ export default function JobDetailPage() {
         <div className="bg-bg-surface border border-indigo-200 dark:border-indigo-900/40 rounded-2xl p-6 shadow-xs space-y-4 text-left">
           <div className="flex justify-between items-center border-b border-indigo-100 dark:border-indigo-950 pb-3">
             <div>
-              <h2 className="text-lg font-black text-indigo-900 dark:text-action-cyan flex items-center gap-2">
+              <h2 className="text-lg font-black text-indigo-900 dark:text-amber-600 flex items-center gap-2">
                 <Award className="w-5 h-5" />
                 <span>Painel de Resultados da Success Fee (Gatilho)</span>
               </h2>
@@ -745,7 +745,7 @@ export default function JobDetailPage() {
                 const alertColors = 
                   p.alertLevel === 'critical' ? 'border-status-error bg-red-500/10 text-status-error' :
                   p.alertLevel === 'urgent' ? 'border-warning-border bg-warning-bg text-warning-text' :
-                  p.alertLevel === 'attention' ? 'border-amber-500/15 bg-amber-500/10 text-amber-600' :
+                  p.alertLevel === 'attention' ? 'border-amber-200 bg-amber-500/10 text-amber-600' :
                   'border-border-subtle bg-bg-panel text-text-primary';
 
                 return (

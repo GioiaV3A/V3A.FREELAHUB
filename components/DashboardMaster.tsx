@@ -95,7 +95,7 @@ export default function DashboardMaster({ db }: { db: DatabaseProps }) {
         <div id="master-kpi-alocacoes-ativas" className="bg-white border border-border-subtle rounded-xl p-4 shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-2">
             <span className="text-text-secondary text-sm font-semibold">Alocações Ativas</span>
-            <div className="w-8 h-8 rounded-full bg-action-cyan/15 flex items-center justify-center text-action-cyan">
+            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
               <Briefcase className="w-4 h-4" />
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function DashboardMaster({ db }: { db: DatabaseProps }) {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white border border-border-subtle rounded-xl p-4 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-primary border border-border-subtle">
-            <TrendingUp className="w-5 h-5 text-action-cyan" />
+            <TrendingUp className="w-5 h-5 text-amber-600" />
           </div>
           <div>
             <span className="text-xl font-bold text-text-primary block leading-none">{totalJobs}</span>
@@ -211,7 +211,7 @@ export default function DashboardMaster({ db }: { db: DatabaseProps }) {
               <div className="border-t border-border-subtle pt-3 mt-3 text-right">
                 <button 
                   onClick={() => db.setActiveTab('Alocações')}
-                  className="text-xs font-semibold text-action-cyan hover:underline"
+                  className="text-xs font-semibold text-amber-600 hover:underline"
                 >
                   Visualizar mapa e timeline completo &rarr;
                 </button>
@@ -228,7 +228,7 @@ export default function DashboardMaster({ db }: { db: DatabaseProps }) {
               </h3>
               <button 
                 onClick={() => db.setActiveTab('Jobs/Oportunidades')} 
-                className="text-xs font-semibold text-action-cyan hover:underline"
+                className="text-xs font-semibold text-amber-600 hover:underline"
               >
                 Ver todos
               </button>

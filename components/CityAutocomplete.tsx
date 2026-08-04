@@ -101,7 +101,7 @@ export default function CityAutocomplete({
         autoComplete="off"
       />
       {isOpen && suggestions.length > 0 && (
-        <ul className="absolute z-55 left-0 right-0 mt-1 bg-[var(--bg-input)] border border-white/15 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-white/5 select-none">
+        <ul className="absolute z-55 left-0 right-0 mt-1 bg-[var(--bg-input)] border border-[#E2E3E4] rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-white/5 select-none">
           {suggestions.map((city) => (
             <li
               key={city.id}
@@ -109,7 +109,7 @@ export default function CityAutocomplete({
               className="p-3 text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)] cursor-pointer flex justify-between items-center transition-colors text-xs font-semibold"
             >
               <span>{city.city_name}</span>
-              <span className="text-[10px] text-action-cyan font-extrabold uppercase border border-action-cyan/30 px-1.5 py-0.5 rounded">
+              <span className="text-[10px] text-amber-600 font-extrabold uppercase border border-action-cyan/30 px-1.5 py-0.5 rounded">
                 {city.state_code}
               </span>
             </li>

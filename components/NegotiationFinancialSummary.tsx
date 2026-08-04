@@ -114,11 +114,11 @@ export default function NegotiationFinancialSummary({
 
   if (deltaStatus === 'saving') {
     themeStyles = {
-      bg: 'bg-emerald-50/70 dark:bg-emerald-950/20',
+      bg: 'bg-emerald-50/70 dark:bg-emerald-50',
       border: 'border-emerald-200 dark:border-emerald-900/40',
       text: 'text-emerald-800 dark:text-emerald-350',
       accentText: 'text-emerald-900 dark:text-emerald-255',
-      badgeBg: 'bg-emerald-100/90 dark:bg-emerald-950/45 text-emerald-800 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-800/70',
+      badgeBg: 'bg-emerald-100/90 dark:bg-emerald-50 text-emerald-800 dark:text-emerald-700 border-emerald-300/80 dark:border-emerald-800/70',
       icon: <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />,
       label: 'Saving gerado',
       statusLabel: 'Dentro do budget'
@@ -136,11 +136,11 @@ export default function NegotiationFinancialSummary({
     };
   } else if (deltaStatus === 'over_budget') {
     themeStyles = {
-      bg: 'bg-red-50/70 dark:bg-red-950/20',
+      bg: 'bg-red-50/70 dark:bg-red-50',
       border: 'border-red-200 dark:border-red-900/40',
       text: 'text-red-800 dark:text-red-350',
       accentText: 'text-red-900 dark:text-red-255',
-      badgeBg: 'bg-red-100/90 dark:bg-red-950/45 text-red-800 dark:text-red-300 border-red-300/85 dark:border-red-800/70',
+      badgeBg: 'bg-red-100/90 dark:bg-red-50 text-red-800 dark:text-red-700 border-red-300/85 dark:border-red-800/70',
       icon: <AlertCircle className="w-5 h-5 text-red-650 dark:text-red-500" />,
       label: 'Estouro de budget',
       statusLabel: 'Acima do budget'
@@ -187,7 +187,7 @@ export default function NegotiationFinancialSummary({
             <span className="text-[10px] text-text-secondary block">
               {deltaStatus === 'over_budget' ? 'Estouro vs Budget:' : 'Saving Gerado:'}
             </span>
-            <strong className={`${deltaStatus === 'over_budget' ? 'text-red-600 dark:text-red-400' : deltaStatus === 'saving' ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-primary'} font-extrabold`}>
+            <strong className={`${deltaStatus === 'over_budget' ? 'text-red-600 dark:text-red-600' : deltaStatus === 'saving' ? 'text-emerald-600 dark:text-emerald-600' : 'text-text-primary'} font-extrabold`}>
               {deltaStatus === 'over_budget' 
                 ? `Estouro: ${formatCurrencyBRL(savingAmount !== null ? Math.abs(savingAmount) : null)}` 
                 : formatCurrencyBRL(savingAmount)
@@ -255,9 +255,9 @@ export default function NegotiationFinancialSummary({
           </span>
           <div className={`text-base font-extrabold ${
             deltaStatus === 'over_budget' 
-              ? 'text-red-650 dark:text-red-400' 
+              ? 'text-red-650 dark:text-red-600' 
               : deltaStatus === 'saving' 
-                ? 'text-emerald-650 dark:text-emerald-400' 
+                ? 'text-emerald-650 dark:text-emerald-600' 
                 : 'text-slate-600 dark:text-[var(--text-muted)]'
           }`}>
             {deltaStatus === 'over_budget' 
@@ -364,7 +364,7 @@ export default function NegotiationFinancialSummary({
 
             {/* Warn when over budget */}
             {deltaStatus === 'over_budget' && (
-              <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-400 flex items-start gap-2 leading-relaxed">
+              <div className="p-3 bg-red-50 dark:bg-red-50 border border-red-200 dark:border-red-900/40 rounded-xl text-[11px] text-red-800 dark:text-red-600 flex items-start gap-2 leading-relaxed">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600 dark:text-red-500" />
                 <div>
                   <span className="font-bold block">Alerta de Orçamento Estourado</span>
@@ -375,7 +375,7 @@ export default function NegotiationFinancialSummary({
             
             {/* Warning if Hora billing model and hours missing */}
             {remunerationModel?.toLowerCase() === 'hora' && !estimatedHours && (
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-400 flex items-start gap-2 leading-relaxed">
+              <div className="p-3 bg-amber-50 dark:bg-amber-50 border border-amber-200 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-600 flex items-start gap-2 leading-relaxed">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-650 dark:text-amber-500" />
                 <div>
                   <span className="font-bold block">Horas Estimadas Pendentes</span>

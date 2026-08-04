@@ -11,10 +11,10 @@ interface PublicFormLayoutProps {
 
 export default function PublicFormLayout({ children, title, subtitle }: PublicFormLayoutProps) {
   return (
-    <div className="dark min-h-screen bg-[var(--bg-app)] text-slate-800 flex flex-col items-center justify-between p-4 md:p-8 selection:bg-action-cyan selection:text-[var(--text-primary)] font-sans">
+    <div className="min-h-screen bg-white text-[#636466] flex flex-col items-center justify-between p-4 md:p-8 selection:bg-[#FFCB05] selection:text-black font-sans relative">
       {/* Background radial glow effect */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-action-cyan/5 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#FFF6D6] blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-[#F0F0F0] blur-[120px] rounded-full pointer-events-none"></div>
 
       {/* Header */}
       <header className="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between py-6 border-b border-[var(--border-subtle)] relative z-10 gap-4">
@@ -22,9 +22,9 @@ export default function PublicFormLayout({ children, title, subtitle }: PublicFo
           <BrandLogo variant="login" className="shrink-0" />
           <div className="text-center sm:text-left">
             <h1 className="text-xl font-black tracking-wider text-[var(--text-primary)] uppercase leading-tight select-none">
-              Freela <span className="text-action-cyan">Hub</span>
+              Freela <span className="text-[#FFCB05]">Hub</span>
             </h1>
-            <p className="text-[9px] text-[#A2E9F2] font-bold uppercase tracking-wider select-none mt-0.5">
+            <p className="text-[9px] text-[#A4A6A9] font-bold uppercase tracking-wider select-none mt-0.5">
               Portal Externo &bull; V3A Agência
             </p>
           </div>
@@ -43,7 +43,7 @@ export default function PublicFormLayout({ children, title, subtitle }: PublicFo
           </div>
         )}
         <div className="bg-[var(--bg-surface)] rounded-3xl p-6 md:p-10 border border-[var(--border-subtle)] shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-action-cyan/10 blur-xl rounded-full pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-[#FFF6D6] blur-xl rounded-full pointer-events-none"></div>
           {children}
         </div>
       </main>

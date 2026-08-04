@@ -294,7 +294,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
           <div className="overflow-x-auto min-h-64">
             {isLoading ? (
               <div className="h-64 flex items-center justify-center text-[var(--text-disabled)] select-none">
-                <Loader2 className="w-8 h-8 text-action-cyan animate-spin" />
+                <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
               </div>
             ) : sortedSubmissions.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-center text-text-secondary select-none">
@@ -396,7 +396,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                   <h3 className="text-base font-extrabold text-text-primary uppercase tracking-wider">Detalhes da Submissão</h3>
                   <p className="text-[10px] text-text-secondary mt-0.5">
                     Recebido em {new Date(selectedSubmission.created_at).toLocaleString('pt-BR')} | Tipo:{' '}
-                    <span className="font-extrabold text-action-cyan uppercase">
+                    <span className="font-extrabold text-amber-600 uppercase">
                       {selectedSubmission.submission_type === 'new_freelancer' ? 'Novo Cadastro' : 'Atualização de Cadastro'}
                     </span>
                   </p>
@@ -411,14 +411,14 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
               </div>
 
             {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/20 text-rose-800 p-3 rounded-xl flex gap-2">
+              <div className="bg-red-500/10 border border-red-200 text-rose-800 p-3 rounded-xl flex gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             {successMsg && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 p-3 rounded-xl flex gap-2">
+              <div className="bg-emerald-500/10 border border-emerald-200 text-emerald-800 p-3 rounded-xl flex gap-2">
                 <Check className="w-4 h-4 shrink-0 text-emerald-500" />
                 <span>{successMsg}</span>
               </div>
@@ -426,7 +426,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
 
             {/* Warning banner for possible duplicate freelancer */}
             {dupFreelancer && (
-              <div className="bg-amber-500/10 border border-amber-500/35 text-amber-900 p-3.5 rounded-2xl flex flex-col gap-2 select-none animate-scale-up">
+              <div className="bg-amber-500/10 border border-amber-200 text-amber-900 p-3.5 rounded-2xl flex flex-col gap-2 select-none animate-scale-up">
                 <div className="flex gap-2">
                   <AlertTriangle className="w-4.5 h-4.5 shrink-0 text-amber-600 animate-bounce" />
                   <div className="text-[10px] leading-relaxed">
@@ -438,7 +438,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 mt-1 pt-2 border-t border-amber-500/20">
+                <div className="flex flex-col gap-2 mt-1 pt-2 border-t border-amber-200">
                   <button
                     onClick={() => {
                       db.setSelectedFreelancerId(dupFreelancer.id);
@@ -453,7 +453,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                     <button
                       onClick={() => handleReview('approve', { mergeToFreelancerId: dupFreelancer.id })}
                       disabled={isActionLoading}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-extrabold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 transition text-[10px] cursor-pointer disabled:opacity-50"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-xl flex items-center justify-center gap-1 transition text-[10px] cursor-pointer disabled:opacity-50"
                     >
                       {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                       Mesclar Dados
@@ -468,7 +468,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                   </div>
 
                   {showForceCreateInput && (
-                    <div className="space-y-2 mt-2 p-3 bg-white/60 dark:bg-white/60 rounded-xl border border-amber-500/25 animate-scale-up">
+                    <div className="space-y-2 mt-2 p-3 bg-white/60 dark:bg-white/60 rounded-xl border border-amber-200 animate-scale-up">
                       <label className="text-[9px] text-amber-955 font-bold uppercase tracking-wider block">
                         Justificativa Administrativa *
                       </label>
@@ -482,7 +482,7 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                       <button
                         onClick={() => handleReview('approve', { bypassDuplicateCheck: true, justification: forceCreateJustification })}
                         disabled={isActionLoading || !forceCreateJustification.trim()}
-                        className="w-full bg-amber-600 hover:bg-amber-700 text-[var(--text-primary)] font-black py-1.5 rounded-lg flex items-center justify-center gap-1 transition text-[10px] disabled:opacity-50 cursor-pointer"
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-1.5 rounded-lg flex items-center justify-center gap-1 transition text-[10px] disabled:opacity-50 cursor-pointer"
                       >
                         {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                         Confirmar Inclusão Forçada
@@ -646,19 +646,19 @@ export default function PublicSubmissionsPanel({ db }: PublicSubmissionsPanelPro
                   <button
                     onClick={() => handleReview('reject')}
                     disabled={isActionLoading}
-                    className="flex-1 bg-white dark:bg-white hover:bg-red-50 dark:hover:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition select-none cursor-pointer disabled:opacity-50"
+                    className="flex-1 bg-white dark:bg-white hover:bg-red-50 dark:hover:bg-red-50 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-600 font-extrabold py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition select-none cursor-pointer disabled:opacity-50"
                   >
                     <X className="w-4 h-4 text-red-500" /> Rejeitar
                   </button>
                   {selectedSubmission.submission_type === 'new_freelancer' && dupFreelancer ? (
-                    <div className="flex-1 text-[10px] text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 text-center select-none">
+                    <div className="flex-1 text-[10px] text-amber-700 dark:text-amber-600 font-bold bg-amber-500/10 p-2.5 rounded-xl border border-amber-200 text-center select-none">
                       Utilize as opções de Duplicidade acima para Aprovar/Mesclar.
                     </div>
                   ) : (
                     <button
                       onClick={() => handleReview('approve')}
                       disabled={isActionLoading}
-                      className="flex-1 bg-action-cyan hover:bg-[#0ea5e9] text-[#0F2342] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition select-none cursor-pointer disabled:opacity-50"
+                      className="flex-1 bg-action-cyan hover:brightness-95 text-black font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition select-none cursor-pointer disabled:opacity-50"
                     >
                       {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4 text-slate-900" />}
                       {selectedSubmission.submission_type === 'new_freelancer' ? 'Aprovar e Incluir' : 'Aprovar e Atualizar'}

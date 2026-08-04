@@ -440,13 +440,13 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
             <span className="bg-slate-50 text-slate-800 border border-slate-200 font-mono text-[10px] font-bold px-2 py-0.5 rounded">
               ALOC: {allocation.allocationCode || 'ALOC-PENDENTE'}
             </span>
-            <span className="text-[11px] uppercase font-bold text-action-cyan tracking-wider">
+            <span className="text-[11px] uppercase font-bold text-amber-600 tracking-wider">
               Booking Consolidado
             </span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
               allocation.status === 'Concluído'
-                ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                : 'bg-blue-950 text-blue-300 border-blue-800'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-800'
+                : 'bg-blue-950 text-blue-700 border-blue-800'
             }`}>
               {allocation.status}
             </span>
@@ -461,7 +461,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
 
         <div className="text-right min-w-[200px]">
           <div className="text-[10px] uppercase font-bold text-[var(--text-disabled)]">Total Homologado</div>
-          <div className="text-xl font-extrabold text-action-cyan">
+          <div className="text-xl font-extrabold text-amber-600">
             {formatCurrencyBRL(allocation.totalContractValue || allocation.approvedValue)}
           </div>
           <div className="text-[10px] text-[var(--text-disabled)] mt-1">
@@ -474,12 +474,12 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
         {/* 2. Freelancer Professional Card */}
         <div className="bg-white dark:bg-white p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
           <div className="text-center pb-4 border-b border-border-subtle">
-            <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/30 rounded-full flex items-center justify-center mx-auto mb-2 text-emerald-600">
+            <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2 text-emerald-600">
               <User className="w-8 h-8" />
             </div>
-            <h4 className="font-bold text-sidebar-navy dark:text-action-cyan text-sm">{freelancer?.name || 'Profissional'}</h4>
+            <h4 className="font-bold text-sidebar-navy dark:text-amber-600 text-sm">{freelancer?.name || 'Profissional'}</h4>
             <p className="text-[11px] text-text-secondary">{freelancer?.mainRole} ({freelancer?.seniority})</p>
-            <span className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-250 dark:border-emerald-900/40 inline-block mt-2">
+            <span className="bg-emerald-50 dark:bg-emerald-50 text-emerald-800 dark:text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-250 dark:border-emerald-900/40 inline-block mt-2">
               Status Operacional: {freelancer?.operationalStatus || 'Elegível'}
             </span>
           </div>
@@ -510,7 +510,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
 
           <div className="space-y-4">
             <div>
-              <h4 className="font-bold text-sidebar-navy dark:text-action-cyan text-sm flex items-center gap-1.5">
+              <h4 className="font-bold text-sidebar-navy dark:text-amber-600 text-sm flex items-center gap-1.5">
                 <FileCheck className="w-5 h-5 text-emerald-650" />
                 <span>Detalhes Administrativos do Booking</span>
               </h4>
@@ -527,7 +527,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                 <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider">Status do Pagamento</span>
                 <div className="font-semibold text-xs flex flex-col gap-0.5 text-sidebar-navy dark:text-[var(--text-primary)]">
                   <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4 text-action-cyan shrink-0" />
+                    <Clock className="w-4 h-4 text-amber-600 shrink-0" />
                     <span className="font-bold">{paymentStatus.statusText}</span>
                   </div>
                   {paymentStatus.details && (
@@ -569,8 +569,8 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                     <div>
                       <span className="text-[10px] text-text-secondary block">Status do Gatilho</span>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold mt-0.5 border ${
-                        successFee.status === 'eligible' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' :
-                        successFee.status === 'not_eligible' ? 'bg-red-950 text-red-300 border-red-800' :
+                        successFee.status === 'eligible' ? 'bg-emerald-50 text-emerald-700 border-emerald-800' :
+                        successFee.status === 'not_eligible' ? 'bg-red-950 text-red-700 border-red-800' :
                         'bg-slate-50 text-slate-600 border-slate-200'
                       }`}>
                         {successFee.status === 'eligible' ? 'Atingido (Elegível)' :
@@ -598,8 +598,8 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                 !isAllocationActive || schedules.length === 0
                   ? 'bg-slate-100 dark:bg-slate-50 text-[var(--text-disabled)] dark:text-slate-650 cursor-not-allowed border border-border-subtle'
                   : hasExportedAny
-                    ? 'bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)]'
-                    : 'bg-action-cyan hover:bg-action-cyan/85 text-[var(--text-primary)]'
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-action-cyan hover:brightness-95 text-white'
               }`}
             >
               <Download className="w-4 h-4" />
@@ -611,7 +611,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
         {/* Projeções de Faturamento & Compliance de RC (Supply) */}
         <div className="bg-white dark:bg-white p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
           <div>
-            <h4 className="font-bold text-sidebar-navy dark:text-action-cyan text-sm flex items-center gap-1.5">
+            <h4 className="font-bold text-sidebar-navy dark:text-amber-600 text-sm flex items-center gap-1.5">
               <Clock className="w-5 h-5 text-amber-500" />
               <span>Projeções de Faturamento & Compliance de RC (Supply)</span>
             </h4>
@@ -628,9 +628,9 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {projections.map((p) => {
                   const alertColors = 
-                    p.alertLevel === 'critical' ? 'border-red-500 bg-red-50/50 dark:bg-red-950/15 text-red-800 dark:text-red-400' :
+                    p.alertLevel === 'critical' ? 'border-red-500 bg-red-50/50 dark:bg-red-50 text-red-800 dark:text-red-600' :
                     p.alertLevel === 'urgent' ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/15 text-orange-850 dark:text-orange-400' :
-                    p.alertLevel === 'attention' ? 'border-amber-500 bg-amber-55/50 dark:bg-amber-955/15 text-amber-900 dark:text-amber-400' :
+                    p.alertLevel === 'attention' ? 'border-amber-500 bg-amber-55/50 dark:bg-amber-955/15 text-amber-900 dark:text-amber-600' :
                     'border-slate-200 bg-slate-50 dark:bg-slate-50/30 text-text-primary';
 
                   const badgeColors = 
@@ -684,7 +684,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
       {/* 3. Payments Schedule Timeline (Full Width Below) */}
       <div className="bg-white dark:bg-white p-6 rounded-2xl border border-border-subtle shadow-xs space-y-4">
         <div>
-          <h4 className="font-bold text-sidebar-navy dark:text-action-cyan text-sm flex items-center gap-1.5">
+          <h4 className="font-bold text-sidebar-navy dark:text-amber-600 text-sm flex items-center gap-1.5">
             <FileCheck className="w-5 h-5 text-emerald-650" />
             <span>Agenda de Faturamentos & Parcelas</span>
           </h4>
@@ -743,7 +743,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                         <button
                           disabled={loadingScheduleId !== null || isRh}
                           onClick={() => handleGenerateRequest(sch.id)}
-                          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-[var(--text-primary)] font-extrabold p-1 px-2.5 rounded-lg text-[10px] transition-colors cursor-pointer inline-flex items-center gap-1"
+                          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold p-1 px-2.5 rounded-lg text-[10px] transition-colors cursor-pointer inline-flex items-center gap-1"
                         >
                           {loadingScheduleId === sch.id ? (
                             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -771,7 +771,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                                 setShowFinanceForm(req.id);
                                 setFinanceCodeValue('');
                               }}
-                              className="bg-action-cyan/10 hover:bg-action-cyan/20 text-action-cyan border border-action-cyan/35 font-extrabold p-1 px-2.5 rounded-lg text-[10px] transition-colors cursor-pointer"
+                              className="bg-amber-100 hover:brightness-95 text-amber-600 border border-action-cyan/35 font-extrabold p-1 px-2.5 rounded-lg text-[10px] transition-colors cursor-pointer"
                             >
                               Cod. ERP
                             </button>
@@ -808,7 +808,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
               />
               <button
                 onClick={() => handleRegisterFinanceCode(showFinanceForm)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-extrabold px-4 rounded-lg text-xs"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 rounded-lg text-xs"
               >
                 Salvar
               </button>
@@ -821,7 +821,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
       {allocation.status === 'Concluído' && (
         <div className="bg-white dark:bg-white p-6 rounded-2xl border border-border-subtle shadow-xs space-y-6">
           <div>
-            <h4 className="font-bold text-sidebar-navy dark:text-action-cyan text-sm flex items-center gap-1.5">
+            <h4 className="font-bold text-sidebar-navy dark:text-amber-600 text-sm flex items-center gap-1.5">
               <Award className="w-5 h-5 text-emerald-650" />
               <span>Avaliações e Auditoria Operacional 360°</span>
             </h4>
@@ -832,7 +832,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
 
           {/* Lock Warning Banner */}
           {!firstRequestExported && (
-            <div className="bg-amber-55 text-amber-900 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 p-4 rounded-2xl flex items-start gap-3">
+            <div className="bg-amber-55 text-amber-900 dark:bg-amber-50 dark:text-amber-600 border border-amber-200 dark:border-amber-900/40 p-4 rounded-2xl flex items-start gap-3">
               <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-amber-600" />
               <div>
                 <strong className="text-xs block">Avaliações Bloqueadas por Governança</strong>
@@ -848,7 +848,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
             <div className="border border-border-subtle p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-50/20 space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <h5 className="font-bold text-xs text-sidebar-navy dark:text-action-cyan uppercase tracking-wider flex items-center gap-1.5">
+                  <h5 className="font-bold text-xs text-sidebar-navy dark:text-amber-600 uppercase tracking-wider flex items-center gap-1.5">
                     <User className="w-4 h-4" />
                     <span>Avaliar Freelancer (Comportamental)</span>
                   </h5>
@@ -881,7 +881,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
             <div className="border border-border-subtle p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-50/20 space-y-4 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <h5 className="font-bold text-xs text-sidebar-navy dark:text-action-cyan uppercase tracking-wider flex items-center gap-1.5">
+                  <h5 className="font-bold text-xs text-sidebar-navy dark:text-amber-600 uppercase tracking-wider flex items-center gap-1.5">
                     <Briefcase className="w-4 h-4" />
                     <span>Avaliar Entrega (Qualidade Técnica)</span>
                   </h5>
@@ -913,10 +913,10 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
 
           {/* 5. Reverse Evaluation Link / QR Code Panel (Visible only when both are submitted) */}
           {allocation.evaluatedFreelancer && allocation.evaluatedDelivery && (
-            <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/40 p-6 rounded-2xl space-y-4 animate-fade-in text-left">
+            <div className="bg-emerald-50/50 dark:bg-emerald-50 border border-emerald-200 dark:border-emerald-900/40 p-6 rounded-2xl space-y-4 animate-fade-in text-left">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="space-y-1">
-                  <h5 className="font-bold text-sm text-emerald-850 dark:text-emerald-400 flex items-center gap-1.5">
+                  <h5 className="font-bold text-sm text-emerald-850 dark:text-emerald-600 flex items-center gap-1.5">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                     <span>Link de Avaliação Reversa Gerado!</span>
                   </h5>
@@ -931,7 +931,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                       navigator.clipboard.writeText(reverseEvalUrl);
                       alert('📋 Link copiado para a área de transferência!');
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <LinkIcon className="w-3.5 h-3.5" />
                     Copiar Link Público
@@ -963,12 +963,12 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
 
       {/* 6. Modals for Evaluations */}
       {activeEvalType && (
-        <div className="fixed inset-0 bg-white/60 dark:bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-55 overflow-y-auto">
+        <div className="fixed inset-0 bg-white/60 dark:bg-[#F0F0F0] backdrop-blur-xs flex items-center justify-center p-4 z-55 overflow-y-auto">
           <div className="bg-white dark:bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border border-border-subtle max-h-[90vh] flex flex-col animate-scale-up">
             {/* Modal Header */}
             <div className="bg-white text-[var(--text-primary)] p-4 px-6 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-action-cyan" />
+                <Award className="w-5 h-5 text-amber-600" />
                 <span className="font-bold text-sm uppercase tracking-wider">
                   {activeEvalType === 'delivery' ? 'Avaliação de Entrega & Qualidade' : 'Avaliação do Profissional (Comportamento)'}
                 </span>
@@ -1234,7 +1234,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 p-3 rounded-xl">
+                  <div className="flex items-center gap-2 bg-red-50 dark:bg-red-50 border border-red-200 dark:border-red-900/40 p-3 rounded-xl">
                     <input
                       type="checkbox"
                       id="criticalProblemCheckbox"
@@ -1242,7 +1242,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                       onChange={(e) => setCriticalProblem(e.target.checked)}
                       className="w-4 h-4 text-red-650 bg-white border-slate-300 rounded focus:ring-red-500 cursor-pointer"
                     />
-                    <label htmlFor="criticalProblemCheckbox" className="font-bold text-red-800 dark:text-red-400 cursor-pointer">
+                    <label htmlFor="criticalProblemCheckbox" className="font-bold text-red-800 dark:text-red-600 cursor-pointer">
                       Houve algum problema operacional crítico com esta entrega?
                     </label>
                   </div>
@@ -1273,7 +1273,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                 <button
                   type="submit"
                   disabled={evalLoading}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)] font-extrabold px-5 py-2.5 rounded-xl text-xs disabled:opacity-50 cursor-pointer transition-all flex items-center gap-1.5"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs disabled:opacity-50 cursor-pointer transition-all flex items-center gap-1.5"
                 >
                   {evalLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                   <span>Salvar Avaliação</span>
@@ -1286,12 +1286,12 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
 
       {/* 7. Modal for Recurring Export */}
       {isExportModalOpen && (
-        <div className="fixed inset-0 bg-white/60 dark:bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 z-55 overflow-y-auto">
+        <div className="fixed inset-0 bg-white/60 dark:bg-[#F0F0F0] backdrop-blur-xs flex items-center justify-center p-4 z-55 overflow-y-auto">
           <div className="bg-white dark:bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden border border-border-subtle max-h-[90vh] flex flex-col animate-scale-up text-xs">
             {/* Modal Header */}
             <div className="bg-white text-[var(--text-primary)] p-4 px-6 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <FileCheck className="w-5 h-5 text-action-cyan" />
+                <FileCheck className="w-5 h-5 text-amber-600" />
                 <span className="font-bold text-sm uppercase tracking-wider">
                   Exportar Solicitação de Pagamento — Parcelas
                 </span>
@@ -1315,7 +1315,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                 <div className="flex gap-2">
                   <button
                     onClick={handleExportNextPending}
-                    className="bg-action-cyan hover:bg-action-cyan/85 text-[var(--text-primary)] font-extrabold px-3 py-1.5 rounded-lg text-[10px] cursor-pointer"
+                    className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-extrabold px-3 py-1.5 rounded-lg text-[10px] cursor-pointer"
                   >
                     Exportar próxima parcela pendente
                   </button>
@@ -1375,7 +1375,7 @@ export default function ConsolidatedAllocation({ db, jobId }: { db: DatabaseProp
                                 className={`font-bold px-2.5 py-1 rounded-lg text-[10px] cursor-pointer transition-colors ${
                                   isExported
                                     ? 'bg-slate-150 hover:bg-slate-200 text-slate-700 dark:bg-slate-50 dark:text-[var(--text-muted)]'
-                                    : 'bg-emerald-600 hover:bg-emerald-700 text-[var(--text-primary)]'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                                 }`}
                               >
                                 {isExported ? 'Baixar PDF' : 'Exportar'}

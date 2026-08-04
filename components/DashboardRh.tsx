@@ -257,9 +257,9 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
             <p className="text-[10px] text-[var(--text-disabled)] mt-0.5">Alertas de vencimento de RCs com base na regra de antecedência de 10 dias.</p>
           </div>
           <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-            <div className="bg-red-50 dark:bg-red-950/15 p-2 rounded-lg border border-red-200 dark:border-red-900/30">
+            <div className="bg-red-50 dark:bg-red-50 p-2 rounded-lg border border-red-200 dark:border-red-900/30">
               <span className="text-[9px] font-bold text-red-600 block uppercase">Crítico</span>
-              <strong className="text-lg font-bold text-red-755 dark:text-red-400">{rcRiskStats.critical}</strong>
+              <strong className="text-lg font-bold text-red-755 dark:text-red-600">{rcRiskStats.critical}</strong>
             </div>
             <div className="bg-orange-50 dark:bg-orange-950/15 p-2 rounded-lg border border-orange-200 dark:border-orange-900/30">
               <span className="text-[9px] font-bold text-orange-600 block uppercase">Urgente</span>
@@ -267,7 +267,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
             </div>
             <div className="bg-amber-50 dark:bg-[#2e2515] p-2 rounded-lg border border-amber-200 dark:border-amber-900/30">
               <span className="text-[9px] font-bold text-amber-600 block uppercase">Atenção</span>
-              <strong className="text-lg font-bold text-amber-700 dark:text-amber-400">{rcRiskStats.attention}</strong>
+              <strong className="text-lg font-bold text-amber-700 dark:text-amber-600">{rcRiskStats.attention}</strong>
             </div>
           </div>
         </div>
@@ -285,9 +285,9 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
               <span className="text-[9px] font-bold text-indigo-650 block uppercase">Gatilhos Pendentes</span>
               <strong className="text-lg font-bold text-indigo-755 dark:text-indigo-400">{successFeeStats.totalActiveSF}</strong>
             </div>
-            <div className="bg-emerald-50 dark:bg-emerald-950/15 p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
+            <div className="bg-emerald-50 dark:bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900/30">
               <span className="text-[9px] font-bold text-emerald-650 block uppercase">Gatilhos Aprovados</span>
-              <strong className="text-lg font-bold text-emerald-755 dark:text-emerald-400">{successFeeStats.totalEligibleSF}</strong>
+              <strong className="text-lg font-bold text-emerald-755 dark:text-emerald-600">{successFeeStats.totalEligibleSF}</strong>
             </div>
           </div>
         </div>
@@ -302,10 +302,10 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
         <div id="rh-suggested-panel" className="bg-white dark:bg-[var(--bg-surface)] rounded-2xl shadow-xs border border-slate-150 dark:border-slate-200 overflow-hidden flex flex-col justify-between min-h-[300px]">
           <div className="p-4 border-b border-slate-150 dark:border-slate-200 bg-slate-50 dark:bg-white/40 flex justify-between items-center">
             <h3 className="font-bold text-slate-800 dark:text-[var(--text-secondary)] text-sm flex items-center gap-2">
-              <ClipboardCheck className="w-4 h-4 text-action-cyan" />
+              <ClipboardCheck className="w-4 h-4 text-amber-600" />
               <span>Análise de Pré-cadastros</span>
             </h3>
-            <span className="text-[10px] bg-action-cyan/15 text-action-cyan border border-action-cyan/20 px-2 py-0.5 rounded-full font-bold uppercase">
+            <span className="text-[10px] bg-amber-100 text-amber-600 border border-action-cyan/20 px-2 py-0.5 rounded-full font-bold uppercase">
               Fila Pública
             </span>
           </div>
@@ -316,7 +316,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
             </div>
             {loadingSubmissionsCount ? (
               <div className="flex items-center gap-2 text-[var(--text-disabled)] font-semibold text-xs">
-                <Loader2 className="w-4 h-4 animate-spin text-action-cyan" /> Carregando fila...
+                <Loader2 className="w-4 h-4 animate-spin text-amber-600" /> Carregando fila...
               </div>
             ) : (
               <div className="space-y-1">
@@ -347,7 +347,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
               <FileWarning className="w-4 h-4 text-status-error" />
               <span>Aprovações de Exceções de Governança ({pendingApprovals.length})</span>
             </h3>
-            <span className="text-[10px] bg-rose-500/10 text-rose-500 border border-rose-500/20 px-2 py-0.5 rounded-full font-bold uppercase">
+            <span className="text-[10px] bg-rose-500/10 text-rose-500 border border-rose-200 px-2 py-0.5 rounded-full font-bold uppercase">
               Alerta de Conformidade
             </span>
           </div>
@@ -381,11 +381,11 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                           </span>
                           
                           {isValueException ? (
-                            <span className="bg-rose-500/10 text-rose-500 border border-rose-500/20 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase">
+                            <span className="bg-rose-500/10 text-rose-500 border border-rose-200 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase">
                               Estouro Budget ({diffPercentage}% acima do teto)
                             </span>
                           ) : (
-                            <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase flex items-center gap-1">
+                            <span className="bg-amber-500/10 text-amber-500 border border-amber-200 font-extrabold px-1.5 py-0.5 rounded-md text-[9px] uppercase flex items-center gap-1">
                               <CalendarDays className="w-3 h-3" /> Conflito de Agenda
                             </span>
                           )}
@@ -396,7 +396,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                         <button
                           disabled={processingId === ap.id}
                           onClick={() => handleDecideApproval(ap.id, 'approved')}
-                          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-[var(--text-primary)] p-1.5 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
+                          className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white p-1.5 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
                         >
                           {processingId === ap.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                           Aprovar
@@ -404,7 +404,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                         <button
                           disabled={processingId === ap.id}
                           onClick={() => handleDecideApproval(ap.id, 'rejected')}
-                          className="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-[var(--text-primary)] p-1.5 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
+                          className="bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white p-1.5 px-3 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition"
                         >
                           {processingId === ap.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
                           Reprovar
@@ -438,7 +438,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
 
                     {/* Schedule conflict details if agenda overlap */}
                     {!isValueException && (
-                      <div className="p-2.5 bg-amber-500/5 border border-amber-500/15 rounded-xl text-[11px] text-amber-700 dark:text-amber-400 font-medium leading-relaxed">
+                      <div className="p-2.5 bg-amber-500/5 border border-amber-200 rounded-xl text-[11px] text-amber-700 dark:text-amber-600 font-medium leading-relaxed">
                         ⚠️ Profissional possui uma alocação ativa confirmada que coincide com o cronograma desta demanda ({job?.startDate ? job.startDate.split('T')[0].split('-').reverse().join('/') : ''} a {job?.endDate ? job.endDate.split('T')[0].split('-').reverse().join('/') : ''}). O RH precisa validar o remanejamento ou autorizar a sobreposição.
                       </div>
                     )}
@@ -446,7 +446,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                     {/* Justification details */}
                     <div className="bg-slate-50 dark:bg-white/60 border border-slate-150 dark:border-slate-200/80 p-2.5 rounded-xl space-y-2.5">
                       <div className="flex gap-1.5 items-start text-slate-600 dark:text-[var(--text-disabled)]">
-                        <BadgeInfo className="w-3.5 h-3.5 text-action-cyan shrink-0 mt-0.5" />
+                        <BadgeInfo className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                         <span className="font-medium text-[11px]">
                           <span className="font-bold text-[var(--text-disabled)]">Justificativa de {requester?.name || 'Solicitante'}:</span> &ldquo;{ap.reason}&rdquo;
                         </span>
@@ -548,8 +548,8 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider
                       ${proj.reworkLevel === 'Alta' 
-                        ? 'bg-rose-500/10 text-rose-500 border border-rose-500/15' 
-                        : 'bg-amber-500/10 text-amber-500 border border-amber-500/15'}`}>
+                        ? 'bg-rose-500/10 text-rose-500 border border-rose-200' 
+                        : 'bg-amber-500/10 text-amber-500 border border-amber-200'}`}>
                       Refação {proj.reworkLevel}
                     </span>
                   </div>
@@ -577,7 +577,7 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
           </div>
           <button 
             onClick={() => db.setActiveTab('Banco de Freelancers')} 
-            className="text-[10px] font-bold text-action-cyan hover:underline cursor-pointer uppercase tracking-wider"
+            className="text-[10px] font-bold text-amber-600 hover:underline cursor-pointer uppercase tracking-wider"
           >
             Acessar banco de talentos
           </button>
@@ -598,8 +598,8 @@ export default function DashboardRh({ db }: { db: DatabaseProps }) {
                       <span className="font-bold text-xs text-slate-800 dark:text-[var(--text-secondary)]">{f.name}</span>
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border 
                         ${f.status === 'Bloqueado' 
-                          ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' 
-                          : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
+                          ? 'bg-rose-500/10 text-rose-500 border-rose-200' 
+                          : 'bg-amber-500/10 text-amber-500 border-amber-200'}`}>
                         {f.status}
                       </span>
                     </div>

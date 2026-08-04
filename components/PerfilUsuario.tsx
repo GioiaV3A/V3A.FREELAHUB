@@ -144,7 +144,7 @@ export default function PerfilUsuario({ db }: { db: DatabaseProps & { users: Use
         {/* Left Column Part 2: Theme Settings */}
         <div className="md:col-span-5 bg-white border border-border-subtle rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
-            <Sparkles className="w-5 h-5 text-action-cyan" />
+            <Sparkles className="w-5 h-5 text-amber-600" />
             <h3 className="font-bold text-text-primary text-sm">Preferências de Interface</h3>
           </div>
 
@@ -174,7 +174,7 @@ export default function PerfilUsuario({ db }: { db: DatabaseProps & { users: Use
         {/* Right Column: Change Password Forms */}
         <div className="md:col-span-7 bg-white border border-border-subtle rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-border-subtle">
-            <Key className="w-5 h-5 text-action-cyan" />
+            <Key className="w-5 h-5 text-amber-600" />
             <h3 className="font-bold text-text-primary text-sm">Atualizar Senha de Segurança</h3>
           </div>
 
@@ -225,9 +225,9 @@ export default function PerfilUsuario({ db }: { db: DatabaseProps & { users: Use
             <div className="pt-2">
               <button
                 type="submit"
-                className="bg-sidebar-navy hover:bg-slate-50 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition flex items-center gap-1.5 shadow-xs text-xs"
+                className="bg-white hover:bg-slate-50 text-[var(--text-primary)] font-extrabold p-2.5 px-6 rounded-xl transition flex items-center gap-1.5 shadow-xs text-xs"
               >
-                <Lock className="w-4 h-4 text-action-cyan" /> Salvar nova senha
+                <Lock className="w-4 h-4 text-amber-600" /> Salvar nova senha
               </button>
             </div>
 

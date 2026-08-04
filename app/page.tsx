@@ -1725,17 +1725,17 @@ export default function Home() {
   // 1. LOGIN SCREEN RENDER
   if (!isLoggedIn || !currentUser) {
     return (
-      <div id="login-container" className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4 selection:bg-action-cyan selection:text-\[var(--v3a-black)\]">
+      <div id="login-container" className="min-h-screen bg-[var(--bg-app)] flex items-center justify-center p-4 selection:bg-action-cyan selection:text-black">
         <div className="w-full max-w-sm bg-[var(--bg-surface)] rounded-3xl overflow-hidden border border-[var(--border-subtle)] shadow-2xl p-8 space-y-6 animate-fade-in relative">
           
-          <div className="absolute top-0 right-0 w-32 h-32 bg-action-cyan/10 blur-2xl rounded-full"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-100 blur-2xl rounded-full"></div>
           
           {/* Logo and Subtitle Section */}
           <div className="text-center space-y-3 relative z-10 flex flex-col items-center">
             <BrandLogo variant="login" />
             <div>
               <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] select-none mt-2">
-                Freela <span className="text-action-cyan">Hub</span>
+                Freela <span className="text-amber-600">Hub</span>
               </h1>
               <p className="text-xs text-[var(--text-muted)] font-medium select-none mt-1">Gestão centralizada de freelancers</p>
               <p className="text-[10px] text-[var(--text-disabled)] font-extrabold uppercase tracking-wider mt-1">Plataforma interna V3A</p>
@@ -1744,8 +1744,8 @@ export default function Home() {
 
           {/* Login Validation Messages inside the card block */}
           {loginError && (
-            <div className="bg-red-500/15 border border-red-500/30 text-rose-200 p-3 px-4 rounded-xl text-[11px] leading-relaxed flex gap-2 animate-shake">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+            <div className="bg-red-500/15 border border-red-200 text-rose-200 p-3 px-4 rounded-xl text-[11px] leading-relaxed flex gap-2 animate-shake">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
               <span>{loginError}</span>
             </div>
           )}
@@ -1780,7 +1780,7 @@ export default function Home() {
             <div className="pt-2">
               <button
                 type="submit"
-                className="bg-action-cyan hover:bg-action-cyan/95 text-[#0A192F] font-extrabold p-3 w-full rounded-xl flex items-center justify-center gap-1 transition-all text-xs cursor-pointer shadow-sm"
+                className="bg-action-cyan hover:brightness-95 text-black font-extrabold p-3 w-full rounded-xl flex items-center justify-center gap-1 transition-all text-xs cursor-pointer shadow-sm"
               >
                 Entrar na Plataforma <ChevronRight className="w-4 h-4" />
               </button>
@@ -1814,7 +1814,7 @@ export default function Home() {
           </div>
 
           {compulsoryError && (
-            <div className="bg-red-500/15 border border-red-500/35 text-rose-200 p-3 rounded-xl leading-relaxed flex gap-2">
+            <div className="bg-red-500/15 border border-red-200 text-rose-200 p-3 rounded-xl leading-relaxed flex gap-2">
               <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
               <span>{compulsoryError}</span>
             </div>
@@ -1861,7 +1861,7 @@ export default function Home() {
             <div className="pt-2">
               <button
                 type="submit"
-                className="bg-amber-500 hover:bg-amber-600 text-[#0A192F] font-extrabold p-3 w-full rounded-xl text-xs transition duration-200 flex justify-center items-center gap-1 cursor-pointer"
+                className="bg-amber-500 hover:bg-amber-600 text-black font-extrabold p-3 w-full rounded-xl text-xs transition duration-200 flex justify-center items-center gap-1 cursor-pointer"
               >
                 Atualizar senha e acessar plataforma
               </button>
@@ -1887,7 +1887,7 @@ export default function Home() {
     <div 
       id="app-workspace" 
       style={{ '--sidebar-width': isSidebarCollapsed ? '80px' : '256px' } as React.CSSProperties}
-      className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] selection:bg-action-cyan selection:text-\[var(--v3a-black)\]"
+      className="min-h-screen md:h-screen md:overflow-hidden bg-bg-app flex flex-col md:grid md:grid-cols-[var(--sidebar-width)_minmax(0,1fr)] selection:bg-action-cyan selection:text-black"
     >
       
       {/* ============ MOBILE BACKDROP ============ */}
@@ -1905,8 +1905,8 @@ export default function Home() {
         className={`
           fixed inset-y-0 left-0 z-50 w-72
           md:relative md:z-40
-          bg-sidebar-navy flex flex-col text-slate-800 shrink-0
-          border-r border-[#1e293b]
+          bg-white flex flex-col text-slate-800 shrink-0
+          border-r border-[#E2E3E4]
           overflow-y-auto overflow-x-hidden
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0
@@ -1916,7 +1916,7 @@ export default function Home() {
       >
         {/* Brand header */}
         <div className={`
-          border-b border-[#14233c] flex bg-[var(--bg-sidebar)] transition-[height,padding] duration-300 ease-in-out
+          border-b border-[#E2E3E4] flex bg-white transition-[height,padding] duration-300 ease-in-out
           ${isSidebarCollapsed 
             ? 'h-[100px] flex-col justify-center items-center gap-3 py-4 px-2' 
             : 'h-[120px] items-center justify-between px-6 py-5'}
@@ -1957,17 +1957,17 @@ export default function Home() {
                   onClick={() => handleMenuClick(item.name)}
                   className={`w-full text-left p-3 rounded-xl flex items-center transition-all cursor-pointer min-h-[44px]
                     ${isSelected 
-                      ? 'bg-action-cyan text-[#0F2342] shadow-sm font-extrabold' 
+                      ? 'bg-action-cyan text-black shadow-sm font-extrabold' 
                       : 'text-slate-600 hover:bg-white/5 hover:text-[var(--text-primary)]'}
                     ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}
                   aria-label={item.name}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#0F2342]' : 'text-[var(--text-disabled)]'}`} />
+                  <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-black' : 'text-[var(--text-disabled)]'}`} />
                   {!isSidebarCollapsed && <span>{item.name}</span>}
                 </button>
 
                 {isSidebarCollapsed && (
-                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1.5 bg-white text-[var(--text-primary)] text-[11px] font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50 whitespace-nowrap border border-[var(--border-default)]">
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2.5 py-1.5 bg-[#636466] text-white text-[11px] font-bold rounded-lg shadow-lg opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 pointer-events-none z-50 whitespace-nowrap border border-[var(--border-default)]">
                     {item.name}
                   </div>
                 )}
@@ -1977,8 +1977,8 @@ export default function Home() {
         </nav>
 
         {/* Static Sidebar Identity Card */}
-        <div className={`p-4 border-t border-[#1e293b] bg-[var(--bg-sidebar)] text-xs safe-bottom flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}>
-          <div className="w-7 h-7 rounded-full bg-action-cyan/15 flex items-center justify-center font-bold text-action-cyan text-[10px] uppercase shrink-0" title={`${currentUser.name} (Perfil: ${getRoleLabel(currentUser.profile)})`}>
+        <div className={`p-4 border-t border-[#E2E3E4] bg-white text-xs safe-bottom flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-2.5'}`}>
+          <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center font-bold text-amber-600 text-[10px] uppercase shrink-0" title={`${currentUser.name} (Perfil: ${getRoleLabel(currentUser.profile)})`}>
             {currentUser.name.slice(0, 2)}
           </div>
           {!isSidebarCollapsed && (

@@ -21,7 +21,7 @@ export default function BrandLogo({ variant = 'compact', className = '' }: Brand
     switch (variant) {
       case 'login':
         return (
-          <div className="h-14 w-14 rounded-2xl bg-action-cyan/20 flex items-center justify-center border border-action-cyan/40 text-[var(--text-primary)] font-black text-xl tracking-wider select-none">
+          <div className="h-14 w-14 rounded-2xl bg-amber-100 flex items-center justify-center border border-action-cyan/40 text-[var(--text-primary)] font-black text-xl tracking-wider select-none">
             V3A
           </div>
         );
@@ -33,14 +33,14 @@ export default function BrandLogo({ variant = 'compact', className = '' }: Brand
         );
       case 'report':
         return (
-          <div className="h-12 w-12 rounded-xl bg-[var(--bg-surface)]/10 flex items-center justify-center border border-[#0F2342]/20 text-[#0F2342] font-black text-base tracking-wider select-none">
+          <div className="h-12 w-12 rounded-xl bg-[var(--bg-surface)]/10 flex items-center justify-center border border-[#0F2342]/20 text-black font-black text-base tracking-wider select-none">
             V3A
           </div>
         );
       case 'compact':
       default:
         return (
-          <div className="h-6 w-6 rounded-md bg-action-cyan/15 flex items-center justify-center text-action-cyan font-black text-[9px] tracking-wider select-none">
+          <div className="h-6 w-6 rounded-md bg-amber-100 flex items-center justify-center text-amber-600 font-black text-[9px] tracking-wider select-none">
             V3A
           </div>
         );

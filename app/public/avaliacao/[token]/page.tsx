@@ -106,8 +106,8 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
             <Star 
               className={`w-9 h-9 transition ${
                 star <= value 
-                  ? 'text-amber-400 fill-amber-400 drop-shadow-sm' 
-                  : 'text-slate-600 hover:text-amber-300'
+                  ? 'text-amber-600 fill-amber-400 drop-shadow-sm' 
+                  : 'text-slate-600 hover:text-amber-700'
               }`} 
             />
           </button>
@@ -147,7 +147,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
             <h4 className="font-bold text-slate-700 text-xs sm:text-sm">{label}</h4>
             <p className="text-[10px] sm:text-xs text-slate-600">{description}</p>
           </div>
-          <span className="font-black text-sm text-action-cyan bg-action-cyan/10 px-3 py-1 rounded-lg border border-action-cyan/20">
+          <span className="font-black text-sm text-amber-600 bg-amber-100 px-3 py-1 rounded-lg border border-action-cyan/20">
             {value} ★
           </span>
         </div>
@@ -170,9 +170,9 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070d19] flex flex-col items-center justify-center p-6 text-white font-sans text-xs">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-slate-900 font-sans text-xs">
         <div className="flex flex-col items-center space-y-3">
-          <Loader2 className="w-10 h-10 text-action-cyan animate-spin" />
+          <Loader2 className="w-10 h-10 text-amber-600 animate-spin" />
           <p className="text-slate-600 font-bold">Validando link de avaliação...</p>
         </div>
       </div>
@@ -181,9 +181,9 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
 
   if (validatingError) {
     return (
-      <div className="min-h-screen bg-[#070d19] flex flex-col items-center justify-center p-6 text-white font-sans text-xs">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-slate-900 font-sans text-xs">
         <div className="max-w-md bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
-          <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-200 flex items-center justify-center mx-auto">
             <AlertTriangle className="w-6 h-6 text-rose-500" />
           </div>
           <div className="space-y-2">
@@ -200,9 +200,9 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
 
   if (submittedSuccess) {
     return (
-      <div className="min-h-screen bg-[#070d19] flex flex-col items-center justify-center p-6 text-white font-sans text-xs">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-slate-900 font-sans text-xs">
         <div className="max-w-md bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-5 shadow-2xl">
-          <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-200 flex items-center justify-center mx-auto">
             <CheckCircle className="w-7 h-7 text-emerald-500" />
           </div>
           <div className="space-y-2">
@@ -212,7 +212,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
             </p>
           </div>
           <div className="text-[10px] text-slate-600 border-t border-slate-200/80 pt-4 font-semibold uppercase tracking-wider flex items-center justify-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-action-cyan" /> Compliance de Anonimato Ativo
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-600" /> Compliance de Anonimato Ativo
           </div>
         </div>
       </div>
@@ -220,15 +220,15 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
   }
 
   return (
-    <div className="min-h-screen bg-[#070d19] text-slate-700 font-sans py-12 px-4 text-xs">
+    <div className="min-h-screen bg-white text-slate-700 font-sans py-12 px-4 text-xs">
       <div className="max-w-3xl mx-auto space-y-8">
         
         {/* HEADER BRAND */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-1.5 rounded-full text-[10px] font-bold text-action-cyan uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 bg-white border border-slate-200 px-4 py-1.5 rounded-full text-[10px] font-bold text-amber-600 uppercase tracking-widest">
             <Sparkles className="w-3.5 h-3.5" /> Avaliação Reversa de Projeto
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">Freela Hub V3A</h1>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900">Freela Hub V3A</h1>
           <p className="text-xs text-slate-600 max-w-xl mx-auto leading-relaxed">
             Sua opinião é fundamental para aprimorarmos nossa organização, condições de trabalho e liderança. Este formulário é totalmente <strong>anônimo</strong>.
           </p>
@@ -238,12 +238,12 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
         <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xl grid grid-cols-1 md:grid-cols-2 gap-4 text-left border-l-4 border-l-action-cyan">
           <div>
             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Campanha / Job</p>
-            <h3 className="text-sm font-extrabold text-white mt-0.5">{tokenDetails?.jobTitle}</h3>
+            <h3 className="text-sm font-extrabold text-slate-900 mt-0.5">{tokenDetails?.jobTitle}</h3>
             <p className="text-xs text-slate-600 mt-1">Cliente: {tokenDetails?.clientName}</p>
           </div>
           <div>
             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Núcleo & Coordenação</p>
-            <h3 className="text-sm font-extrabold text-white mt-0.5">{tokenDetails?.nucleoName}</h3>
+            <h3 className="text-sm font-extrabold text-slate-900 mt-0.5">{tokenDetails?.nucleoName}</h3>
             <p className="text-xs text-slate-600 mt-1">Líder Relacionado: {tokenDetails?.leaderName}</p>
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
           
           {/* Section 1: 8 sliders */}
           <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-white border-b border-slate-200 pb-2 flex items-center gap-2">
+            <h3 className="text-sm font-extrabold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-action-cyan"></span>
               1. Critérios de Experiência no Projeto
             </h3>
@@ -312,7 +312,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
 
           {/* Section 2: CSAT, CES, NPS */}
           <div className="space-y-6 pt-6 border-t border-slate-200">
-            <h3 className="text-sm font-extrabold text-white border-b border-slate-200 pb-2 flex items-center gap-2">
+            <h3 className="text-sm font-extrabold text-slate-900 border-b border-slate-200 pb-2 flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-action-cyan"></span>
               2. Satisfação Geral & Métricas de Relacionamento
             </h3>
@@ -326,7 +326,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
                   <p className="text-[10px] text-slate-600">Qual o seu nível de satisfação geral com este job?</p>
                 </div>
                 <StarRating value={csatProject} onChange={setCsatProject} />
-                <div className="text-[11px] font-black text-amber-400 capitalize">
+                <div className="text-[11px] font-black text-amber-600 capitalize">
                   {csatProject === 5 ? 'Excelente' : csatProject === 4 ? 'Muito Bom' : csatProject === 3 ? 'Regular' : csatProject === 2 ? 'Ruim' : 'Muito Ruim'}
                 </div>
               </div>
@@ -341,7 +341,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
                 <div className="space-y-2">
                   <div className="flex justify-between items-center text-[10px] text-slate-600 font-bold uppercase">
                     <span>1 (Muito Difícil)</span>
-                    <span className="text-action-cyan bg-action-cyan/10 px-2 py-0.5 rounded border border-action-cyan/15 font-black">
+                    <span className="text-amber-600 bg-amber-100 px-2 py-0.5 rounded border border-action-cyan/15 font-black">
                       {getCesLabel(cesOperational)}
                     </span>
                     <span>5 (Muito Fácil)</span>
@@ -376,7 +376,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
                     className={`flex-1 h-9 rounded-xl font-black transition text-xs border cursor-pointer
                       ${npsProject === score 
                         ? 'bg-action-cyan border-action-cyan text-slate-900 scale-105 shadow-md shadow-action-cyan/10' 
-                        : 'bg-slate-950/45 border-slate-200 text-slate-600 hover:border-slate-600'
+                        : 'bg-[#F0F0F0] border-slate-200 text-slate-600 hover:border-slate-600'
                       }
                     `}
                   >
@@ -393,7 +393,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
             {/* Suggestions / Observations */}
             <div className="space-y-1.5">
               <label className="font-bold text-slate-600 block flex items-center gap-1.5">
-                <MessageSquare className="w-4 h-4 text-action-cyan" />
+                <MessageSquare className="w-4 h-4 text-amber-600" />
                 Comentários ou Sugestões de Melhoria (Opcional):
               </label>
               <textarea
@@ -401,7 +401,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
                 onChange={(e) => setObservations(e.target.value)}
                 placeholder="Compartilhe feedbacks livres ou observações sobre o projeto. Não se preocupe, suas observações não serão associadas ao seu nome."
                 rows={4}
-                className="w-full bg-slate-950/65 border border-slate-200 rounded-2xl p-3 outline-none focus:border-action-cyan/45 text-slate-700 font-medium"
+                className="w-full bg-[#F0F0F0] border border-slate-200 rounded-2xl p-3 outline-none focus:border-action-cyan/45 text-slate-700 font-medium"
               />
             </div>
 
@@ -416,7 +416,7 @@ export default function PublicReverseEvaluationPage({ params }: { params: Promis
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full sm:w-auto px-8 py-3.5 bg-action-cyan hover:bg-cyan-400 text-slate-900 font-black rounded-xl text-xs uppercase tracking-widest transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto px-8 py-3.5 bg-action-cyan hover:brightness-95 text-slate-900 font-black rounded-xl text-xs uppercase tracking-widest transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
             >
               {isSubmitting ? (
                 <>

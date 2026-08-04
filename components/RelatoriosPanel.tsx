@@ -91,7 +91,7 @@ export default function RelatoriosPanel({ db }: { db: DatabaseProps }) {
               Prontos para contratação: <strong className="text-status-success font-bold">{db.freelancers.filter((f: any) => f.status === 'Elegível').length}</strong>
             </p>
           </div>
-          <div className="w-12 h-12 bg-action-cyan/15 text-action-cyan rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function RelatoriosPanel({ db }: { db: DatabaseProps }) {
               </button>
               <button
                 onClick={() => handleExport('PDF')}
-                className="bg-sidebar-navy text-[var(--text-primary)] hover:brightness-110 font-bold p-2 px-4 rounded-xl flex items-center gap-1.5"
+                className="bg-white text-[var(--text-primary)] hover:brightness-110 font-bold p-2 px-4 rounded-xl flex items-center gap-1.5"
               >
                 Gerar PDF Fiscal
               </button>

@@ -464,7 +464,7 @@ export default function BancoFreelas({ db }: { db: any }) {
         <div className="flex items-center gap-1">
           <span>{label}</span>
           {isSorted ? (
-            sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-action-cyan shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-action-cyan shrink-0" />
+            sortOrder === 'asc' ? <ChevronUp className="w-3.5 h-3.5 text-amber-600 shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
           ) : (
             <div className="w-3.5 h-3.5 opacity-20 hover:opacity-100 flex flex-col items-center justify-center shrink-0">
               <ChevronUp className="w-2.5 h-2.5" />
@@ -487,14 +487,14 @@ export default function BancoFreelas({ db }: { db: any }) {
         const initials = f.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
         return (
           <div className="flex items-center gap-3 min-w-0">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[var(--text-primary)] uppercase text-[10px] shrink-0
-              ${isBlocked ? 'bg-rose-600/40' : 'bg-sidebar-navy'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white uppercase text-[10px] shrink-0
+              ${isBlocked ? 'bg-rose-600/40' : 'bg-white'}`}>
               {initials}
             </div>
             <div className="truncate">
               <p 
                 onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }} 
-                className="font-bold text-text-primary hover:text-action-cyan cursor-pointer transition-colors hover:underline truncate text-sm"
+                className="font-bold text-text-primary hover:text-amber-600 cursor-pointer transition-colors hover:underline truncate text-sm"
               >
                 {f.name}
               </p>
@@ -551,15 +551,15 @@ export default function BancoFreelas({ db }: { db: any }) {
       render: (f: any) => (
         <div className="flex flex-wrap gap-1">
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold border
-            ${f.availability === 'Imediata' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' : ''}
-            ${f.availability === '15 dias' ? 'bg-blue-50 text-blue-700 border-blue-150 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-900/30' : ''}
-            ${f.availability === '30+ dias' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30' : ''}
-            ${f.availability === 'Indisponível' ? 'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-50 dark:text-slate-600 dark:border-slate-200' : ''}
+            ${f.availability === 'Imediata' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 ' : ''}
+            ${f.availability === '15 dias' ? 'bg-blue-50 text-blue-700 border-blue-150 ' : ''}
+            ${f.availability === '30+ dias' ? 'bg-amber-50 text-[#B28900] border-amber-150 ' : ''}
+            ${f.availability === 'Indisponível' ? 'bg-slate-100 text-slate-650 border-slate-200 ' : ''}
           `}>
             {f.availability}
           </span>
           {f.contractType && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-150 dark:bg-indigo-950/20 dark:text-indigo-300 dark:border-indigo-900/30">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
               {f.contractType}
             </span>
           )}
@@ -603,11 +603,11 @@ export default function BancoFreelas({ db }: { db: any }) {
         return (
           <div className="flex flex-col gap-1 items-end">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border
-              ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' : ''}
-              ${f.status === 'Em onboarding' ? 'bg-cyan-50 text-cyan-800 border-cyan-150 dark:bg-cyan-950/20 dark:text-cyan-300 dark:border-cyan-900/30' : ''}
-              ${f.status === 'Em observação' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30' : ''}
-              ${f.status === 'Em análise' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-350 dark:border-amber-900/30' : ''}
-              ${f.status === 'Bloqueado' ? 'bg-rose-50 text-rose-700 border-rose-150 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/30' : ''}
+              ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 ' : ''}
+              ${f.status === 'Em onboarding' ? 'bg-cyan-50 text-cyan-800 border-cyan-150 dark:bg-[#FFF6D6] dark:text-cyan-300 dark:border-cyan-900/30' : ''}
+              ${f.status === 'Em observação' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-50 dark:text-amber-350 dark:border-amber-900/30' : ''}
+              ${f.status === 'Em análise' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-50 dark:text-amber-350 dark:border-amber-900/30' : ''}
+              ${f.status === 'Bloqueado' ? 'bg-rose-50 text-rose-700 border-rose-150 dark:bg-rose-50 dark:text-rose-700 dark:border-rose-900/30' : ''}
               ${f.status === 'Inativo' ? 'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-50 dark:text-slate-455 dark:border-slate-200' : ''}
             `}>
               {f.status}
@@ -615,7 +615,7 @@ export default function BancoFreelas({ db }: { db: any }) {
             <div className="flex items-center justify-end gap-0.5 mt-1">
               <button
                 onClick={() => { db.setSelectedFreelancerId(f.id); db.setActiveTab('Perfil do Freelancer'); }}
-                className="p-1 text-[var(--text-disabled)] hover:text-action-cyan hover:bg-slate-100 dark:hover:bg-slate-50 rounded-lg transition-colors"
+                className="p-1 text-[var(--text-disabled)] hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-50 rounded-lg transition-colors"
                 title="Visualizar dossiê"
               >
                 <Eye className="w-3.5 h-3.5" />
@@ -632,8 +632,8 @@ export default function BancoFreelas({ db }: { db: any }) {
                   <button
                     onClick={() => handleToggleBlock(f.id, f.status)}
                     className={`p-1 rounded-lg transition-colors ${isBlocked 
-                      ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20' 
-                      : 'text-rose-605 hover:bg-rose-50 dark:hover:bg-rose-950/20'}`}
+                      ? 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-50' 
+                      : 'text-rose-605 hover:bg-rose-50 dark:hover:bg-rose-50'}`}
                     title={isBlocked ? 'Desbloquear Profissional' : 'Bloquear / Aplicar Veto'}
                   >
                     {isBlocked ? <Check className="w-3.5 h-3.5" /> : <ShieldAlert className="w-3.5 h-3.5" />}
@@ -663,12 +663,12 @@ export default function BancoFreelas({ db }: { db: any }) {
     return (
       <div 
         className={`p-4 bg-white dark:bg-bg-card rounded-2xl border border-border-soft space-y-3.5 transition-shadow hover:shadow-xs
-          ${isBlocked ? 'bg-rose-50/20 border-rose-200 dark:bg-rose-950/5' : ''}`}
+          ${isBlocked ? 'bg-rose-50/20 border-rose-200 dark:bg-rose-50' : ''}`}
       >
         <div className="flex justify-between items-start gap-2">
           <div className="flex items-center gap-3 animate-fade-in">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-[var(--text-primary)] uppercase text-[11px] shrink-0
-              ${isBlocked ? 'bg-rose-600/40' : 'bg-sidebar-navy'}`}>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-white uppercase text-[11px] shrink-0
+              ${isBlocked ? 'bg-rose-600/40' : 'bg-white'}`}>
               {initials}
             </div>
             <div>
@@ -682,12 +682,12 @@ export default function BancoFreelas({ db }: { db: any }) {
             </div>
           </div>
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-bold border
-            ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 dark:bg-emerald-950/20 dark:text-emerald-300 dark:border-emerald-900/30' : ''}
-            ${f.status === 'Em onboarding' ? 'bg-cyan-50 text-cyan-800 border-cyan-150 dark:bg-cyan-950/20 dark:text-cyan-300 dark:border-cyan-900/30' : ''}
-            ${f.status === 'Em observação' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30' : ''}
-            ${f.status === 'Em análise' ? 'bg-amber-50 text-[#B28900] border-amber-150 dark:bg-amber-950/20 dark:text-amber-300 dark:border-amber-900/30' : ''}
-            ${f.status === 'Bloqueado' ? 'bg-rose-50 text-rose-700 border-rose-150 dark:bg-rose-950/20 dark:text-rose-300 dark:border-rose-900/30' : ''}
-            ${f.status === 'Inativo' ? 'bg-slate-100 text-slate-650 border-slate-200 dark:bg-slate-50 dark:text-slate-600 dark:border-slate-200' : ''}
+            ${f.status === 'Elegível' ? 'bg-emerald-50 text-emerald-700 border-emerald-150 ' : ''}
+            ${f.status === 'Em onboarding' ? 'bg-cyan-50 text-cyan-800 border-cyan-150 dark:bg-[#FFF6D6] dark:text-cyan-300 dark:border-cyan-900/30' : ''}
+            ${f.status === 'Em observação' ? 'bg-amber-50 text-[#B28900] border-amber-150 ' : ''}
+            ${f.status === 'Em análise' ? 'bg-amber-50 text-[#B28900] border-amber-150 ' : ''}
+            ${f.status === 'Bloqueado' ? 'bg-rose-50 text-rose-700 border-rose-150 dark:bg-rose-50 dark:text-rose-700 dark:border-rose-900/30' : ''}
+            ${f.status === 'Inativo' ? 'bg-slate-100 text-slate-650 border-slate-200 ' : ''}
           `}>
             {f.status}
           </span>
@@ -761,8 +761,8 @@ export default function BancoFreelas({ db }: { db: any }) {
                 <button
                   onClick={() => handleToggleBlock(f.id, f.status)}
                   className={`p-2 rounded-xl border transition-colors ${isBlocked 
-                    ? 'border-emerald-200 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20' 
-                    : 'border-rose-200 text-rose-600 bg-rose-50 dark:bg-rose-950/20'}`}
+                    ? 'border-emerald-200 text-emerald-600 bg-emerald-50 dark:bg-emerald-50' 
+                    : 'border-rose-200 text-rose-600 bg-rose-50 dark:bg-rose-50'}`}
                   title={isBlocked ? 'Desbloquear' : 'Bloquear'}
                 >
                   {isBlocked ? <Check className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
@@ -772,7 +772,7 @@ export default function BancoFreelas({ db }: { db: any }) {
             {db.selectedJobId && f.status === 'Elegível' && (
               <button
                 onClick={() => handleAddToShortlistDirect(f)}
-                className="p-2 rounded-xl border hover:bg-cyan-50 dark:hover:bg-slate-50 transition-colors"
+                className="p-2 rounded-xl border hover:brightness-95 dark:hover:bg-slate-50 transition-colors"
                 style={{ borderColor: 'var(--border-soft)', color: 'var(--accent)' }}
                 title="Adicionar à Shortlist"
               >
@@ -799,7 +799,7 @@ export default function BancoFreelas({ db }: { db: any }) {
           {(db.currentUser.profile === 'MASTER' || db.currentUser.profile === 'RH') ? (
             <button
               onClick={() => db.setActiveTab('Cadastrar Freelancer')}
-              className="bg-action-cyan hover:bg-action-cyan/90 text-[var(--text-primary)] font-bold p-1.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
+              className="bg-action-cyan hover:brightness-95 text-[var(--text-primary)] font-bold p-1.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="w-4 h-4" /> Cadastrar Novo Freela
             </button>
@@ -808,7 +808,7 @@ export default function BancoFreelas({ db }: { db: any }) {
               onClick={() => db.setActiveTab('Sugerir Freelancer')}
               className="bg-primary hover:bg-primary/95 text-[var(--text-primary)] font-bold p-1.5 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
             >
-              <Sparkles className="w-4 h-4 text-action-cyan fill-action-cyan" /> Sugerir Novo Freela
+              <Sparkles className="w-4 h-4 text-amber-600 fill-action-cyan" /> Sugerir Novo Freela
             </button>
           )}
         </div>
@@ -1018,12 +1018,12 @@ export default function BancoFreelas({ db }: { db: any }) {
       {isEditModalOpen && editingFreelancer && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200 w-full max-w-2xl text-xs animate-scale-up my-8">
-            <div className="p-5 bg-sidebar-navy text-[var(--text-primary)] flex justify-between items-center shrink-0">
+            <div className="p-5 bg-white text-[var(--text-primary)] flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2">
-                <Edit2 className="w-5 h-5 text-action-cyan" />
+                <Edit2 className="w-5 h-5 text-amber-600" />
                 <h3 className="font-extrabold text-sm">Editar Cadastro de Freelancer</h3>
               </div>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-[var(--text-primary)] hover:text-action-cyan transition">
+              <button onClick={() => setIsEditModalOpen(false)} className="text-[var(--text-primary)] hover:text-amber-600 transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1318,9 +1318,9 @@ export default function BancoFreelas({ db }: { db: any }) {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="bg-sidebar-navy text-[var(--text-primary)] font-bold p-1.5 px-4 rounded-lg disabled:opacity-50 flex items-center gap-1.5"
+                  className="bg-white text-[var(--text-primary)] font-bold p-1.5 px-4 rounded-lg disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  <Save className="w-4 h-4 text-action-cyan" /> {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                  <Save className="w-4 h-4 text-amber-600" /> {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
               </div>
             </form>
