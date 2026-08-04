@@ -33,9 +33,14 @@
   --color-action-cyan: var(--v3a-yellow);
   
   --bg-page: var(--v3a-white);
+  --bg-surface: var(--v3a-white);
+  --bg-hover: var(--v3a-gray-100);
   --text-primary: var(--v3a-gray-700);
   --text-secondary: var(--v3a-gray-400);
   --border-subtle: #E2E3E4;
+  --timeline-hover-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --timeline-conflict-border: #EF4444;
+  --danger-text: #DC2626;
 }
 
 /* Force body text and background without destroying component specifics */

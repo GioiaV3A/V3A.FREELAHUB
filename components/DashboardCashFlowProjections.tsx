@@ -104,7 +104,7 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
       const freelancerName = freelancer?.fullName || freelancer?.name || 'Freelancer homologado';
       const jobTitle = job?.title || 'Job sem título';
       const model = alloc.remunerationModel || job?.remunerationModel || 'monthly_salary';
-      const val = alloc.totalContractValue || alloc.negotiatedTotal || alloc.approvedValue || job?.budget || 0;
+      const val = alloc.totalContractValue || alloc.negotiatedTotal || alloc.approvedValue || 0;
 
       const projections = simulatePaymentProjections(alloc.startDate, alloc.endDate, model);
       if (projections.length > 0) {
@@ -112,17 +112,13 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
 
         projections.forEach((p, pIdx) => {
           if (!p.startDate) return;
-          const refMonth = p.referenceMonth || getDominantMonthLabel(p.startDate, p.endDate);
-          const parts = p.startDate.split('T')[0].split('-');
-          let monthKey = `${parts[0]}-${parts[1]}`;
-
-          // Map reference month key accurately
+          const payDateStr = p.suggestedPaymentDate || p.startDate;
+          const payParts = payDateStr.split('T')[0].split('-');
+          let monthKey = `${payParts[0]}-${payParts[1]}`;
+          
           const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-          const [mName, mYear] = refMonth.split('/');
-          const mIdx = monthNames.indexOf(mName);
-          if (mIdx !== -1 && mYear) {
-            monthKey = `${mYear}-${String(mIdx + 1).padStart(2, '0')}`;
-          }
+          const monthIndex = parseInt(payParts[1], 10) - 1;
+          const refMonth = `${monthNames[monthIndex]}/${payParts[0]}`;
 
           const hasSf = Boolean(alloc.successFeeEnabled || job?.successFeeEnabled);
           const sfAmt = alloc.successFeeAmount || (job as any)?.successFeeFixedAmount || 0;
@@ -172,14 +168,13 @@ export default function DashboardCashFlowProjections({ db }: { db: DatabaseProps
 
           projections.forEach((p, pIdx) => {
             if (!p.startDate) return;
-            const refMonth = p.referenceMonth || getDominantMonthLabel(p.startDate, p.endDate);
+            const payDateStr = p.suggestedPaymentDate || p.startDate;
+            const payParts = payDateStr.split('T')[0].split('-');
+            let monthKey = `${payParts[0]}-${payParts[1]}`;
+            
             const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-            const [mName, mYear] = refMonth.split('/');
-            const mIdx = monthNames.indexOf(mName);
-            let monthKey = `${p.startDate.split('T')[0].split('-')[0]}-${p.startDate.split('T')[0].split('-')[1]}`;
-            if (mIdx !== -1 && mYear) {
-              monthKey = `${mYear}-${String(mIdx + 1).padStart(2, '0')}`;
-            }
+            const monthIndex = parseInt(payParts[1], 10) - 1;
+            const refMonth = `${monthNames[monthIndex]}/${payParts[0]}`;
 
             items.push({
               id: `job-${job.id || jobIdx}-p-${pIdx}`,
